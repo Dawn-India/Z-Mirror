@@ -200,7 +200,7 @@ class MirrorListener:
             msg += f'\n<b>Total Files: </b>{folders}'
             if typ != 0:
                 msg += f'\n<b>Corrupted Files: </b>{typ}'
-            msg += f'\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror\n'
+            msg += f'\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror</b>\n'
             if not files:
                 sendMessage(msg, self.bot, self.message)
             else:
@@ -218,7 +218,7 @@ class MirrorListener:
             if ospath.isdir(f'{DOWNLOAD_DIR}{self.uid}/{name}'):
                 msg += f'\n<b>SubFolders: </b>{folders}'
                 msg += f'\n<b>Files: </b>{files}'
-            msg += f'\n\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror'
+            msg += f'\n\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror</b>'
             buttons = ButtonMaker()
             link = short_url(link)
             buttons.buildbutton("☁️ Drive Link", link)
