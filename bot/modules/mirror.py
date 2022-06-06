@@ -200,7 +200,7 @@ class MirrorListener:
             msg += f'\n<b>Total Files: </b>{folders}'
             if typ != 0:
                 msg += f'\n<b>Corrupted Files: </b>{typ}'
-            msg += f'\n<b>cc: </b>{self.tag}\n\n'
+            msg += f'\n<b>Hey </b>{self.tag} <b>Your Job is Done</b>\n<b>Thanks For using @Z_Mirror\n'
             if not files:
                 sendMessage(msg, self.bot, self.message)
             else:
