@@ -72,12 +72,12 @@ def start(update, context):
     reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''
-Welcome ! Z Mirror service is ready for you.
+Welcome | Z Mirror service is ready for you
 Type /{BotCommands.HelpCommand} to get a list of available commands
 '''
         sendMarkup(start_string, context.bot, update.message, reply_markup)
     else:
-        sendMarkup('Sorry, You don't have permission to use me.', context.bot, update.message, reply_markup)
+        sendMarkup('Sorry, You cannot use me', context.bot, update.message, reply_markup)
 
 def restart(update, context):
     restart_message = sendMessage("Restarting...", context.bot, update.message)
