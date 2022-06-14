@@ -24,9 +24,8 @@ def rss_list(update, context):
 
 def rss_get(update, context):
     try:
-        args = update.message.text.split(" ")
-        title = args[1]
-        count = int(args[2])
+        title = context.args[0]
+        count = int(context.args[1])
         feed_url = rss_dict.get(title)
         if feed_url is not None and count > 0:
             try:
