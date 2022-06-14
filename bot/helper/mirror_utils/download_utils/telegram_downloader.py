@@ -1,7 +1,6 @@
 from logging import getLogger, WARNING
 from time import time
 from threading import RLock, Lock
-from pyrogram import Client, enums
 
 from bot import LOGGER, download_dict, download_dict_lock, STOP_DUPLICATE, STORAGE_THRESHOLD, app
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
