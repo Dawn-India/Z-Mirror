@@ -128,7 +128,7 @@ def removeSudo(update, context):
             SUDO_USERS.remove(user_id)
         else:
             msg = 'Not sudo user to demote!'
-        else:
+    else:
         msg = "Give ID or Reply To message of whom you want to remove from Sudo"
     sendMessage(msg, context.bot, update.message)
 
