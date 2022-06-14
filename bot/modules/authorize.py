@@ -29,7 +29,7 @@ def authorize(update, context):
         else:
             AUTHORIZED_CHATS.add(user_id)
             msg = 'User Authorized'
-            else:
+    else:
         # Trying to authorize a chat
         chat_id = update.effective_chat.id
         if chat_id in AUTHORIZED_CHATS:
