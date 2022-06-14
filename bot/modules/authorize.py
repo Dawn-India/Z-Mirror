@@ -65,7 +65,7 @@ def unauthorize(update, context):
             AUTHORIZED_CHATS.remove(user_id)
         else:
             msg = 'User Already Unauthorized!'
-            else:
+    else:
         # Trying to unauthorize a chat
         chat_id = update.effective_chat.id
         if chat_id in AUTHORIZED_CHATS:
@@ -102,7 +102,7 @@ def addSudo(update, context):
         else:
             SUDO_USERS.add(user_id)
             msg = 'Promoted as Sudo'
-        else:
+    else:
             msg = "Give ID or Reply To message of whom you want to Promote."
     sendMessage(msg, context.bot, update.message)
 
