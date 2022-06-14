@@ -1,2 +1,2 @@
-# This code for edit use it with UPSTREAM_REPO.
-I will add notes later...
+# This code for edit Heroku, use it with UPSTREAM_REPO.
+Do all of your stupid customizations here.
