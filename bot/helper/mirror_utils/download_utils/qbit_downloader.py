@@ -29,7 +29,7 @@ class QbDownloader:
         self.__periodic = None
         self.__stalled_time = time()
         self.__uploaded = False
-        self.__seeding = False
+        self.is_seeding = False
         self.__sizeChecked = False
         self.__dupChecked = False
         self.__rechecked = False
