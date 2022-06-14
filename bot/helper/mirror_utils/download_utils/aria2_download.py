@@ -75,7 +75,8 @@ def __onDownloadComplete(api, gid):
         new_gid = download.followed_by_ids[0]
         LOGGER.info(f'Changed gid from {gid} to {new_gid}')
     elif dl:
-        Thread(target=dl.getListener().onDownloadComplete).start()
+        dl.getListener().onDownloadComplete()
+        #Thread(target=dl.getListener().onDownloadComplete).start()
 
 @new_thread
 def __onDownloadStopped(api, gid):

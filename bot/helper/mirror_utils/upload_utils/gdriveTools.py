@@ -101,8 +101,6 @@ class GoogleDriveHelper:
         parsed = urlparse(link)
         return parse_qs(parsed.query)['id'][0]
 
-    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
-           retry=retry_if_exception_type(HttpError), before=before_log(LOGGER, DEBUG))
     def _on_upload_progress(self):
         if self.status is not None:
             chunk_size = self.status.total_size * self.status.progress() - self._file_uploaded_bytes
@@ -164,7 +162,7 @@ class GoogleDriveHelper:
         # File body description
         file_metadata = {
             'name': file_name,
-            'description': 'Uploaded by Mirror-leech-telegram-bot',
+            'description': 'Uploaded by Z-Mirror-Bot',
             'mimeType': mime_type,
         }
         if parent_id is not None:
@@ -434,7 +432,7 @@ class GoogleDriveHelper:
     def __create_directory(self, directory_name, parent_id):
         file_metadata = {
             "name": directory_name,
-            "description": "Uploaded by Mirror-leech-telegram-bot",
+            "description": "Uploaded by Z-Mirror-Bot",
             "mimeType": self.__G_DRIVE_DIR_MIME_TYPE
         }
         if parent_id is not None:
@@ -679,7 +677,7 @@ class GoogleDriveHelper:
         for content in telegraph_content:
             path.append(
                 telegraph.create_page(
-                    title='Mirror-Leech-Bot Drive Search',
+                    title='Z-Mirror-Bot Search',
                     content=content
                 )["path"]
             )

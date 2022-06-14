@@ -44,38 +44,62 @@ def stats(update, context):
     mem_t = get_readable_file_size(memory.total)
     mem_a = get_readable_file_size(memory.available)
     mem_u = get_readable_file_size(memory.used)
-    stats = f'<b>Commit Date:</b> {last_commit}\n\n'\
+
+    stats = f'<b>Commit Date:</b> {last_commit}\n'\
             f'<b>Bot Uptime:</b> {currentTime}\n'\
-            f'<b>OS Uptime:</b> {osUptime}\n\n'\
+            f'<b>OS Uptime:</b> {osUptime}\n'\
             f'<b>Total Disk Space:</b> {total}\n'\
-            f'<b>Used:</b> {used} | <b>Free:</b> {free}\n\n'\
+            f'<b>Used:</b> {used} | <b>Free:</b> {free}\n'\
             f'<b>Upload:</b> {sent}\n'\
-            f'<b>Download:</b> {recv}\n\n'\
+            f'<b>Download:</b> {recv}\n'\
             f'<b>CPU:</b> {cpuUsage}%\n'\
             f'<b>RAM:</b> {mem_p}%\n'\
-            f'<b>DISK:</b> {disk}%\n\n'\
+            f'<b>DISK:</b> {disk}%\n'\
             f'<b>Physical Cores:</b> {p_core}\n'\
-            f'<b>Total Cores:</b> {t_core}\n\n'\
+            f'<b>Total Cores:</b> {t_core}\n'\
             f'<b>SWAP:</b> {swap_t} | <b>Used:</b> {swap_p}%\n'\
             f'<b>Memory Total:</b> {mem_t}\n'\
             f'<b>Memory Free:</b> {mem_a}\n'\
             f'<b>Memory Used:</b> {mem_u}\n'
+
+    # stats = f'<b>Commit Date:</b> {last_commit}\n\n'\
+    #         f'<b>Bot Uptime:</b> {currentTime}\n'\
+    #         f'<b>OS Uptime:</b> {osUptime}\n\n'\
+    #         f'<b>Total Disk Space:</b> {total}\n'\
+    #         f'<b>Used:</b> {used} | <b>Free:</b> {free}\n\n'\
+    #         f'<b>Upload:</b> {sent}\n'\
+    #         f'<b>Download:</b> {recv}\n\n'\
+    #         f'<b>CPU:</b> {cpuUsage}%\n'\
+    #         f'<b>RAM:</b> {mem_p}%\n'\
+    #         f'<b>DISK:</b> {disk}%\n\n'\
+    #         f'<b>Physical Cores:</b> {p_core}\n'\
+    #         f'<b>Total Cores:</b> {t_core}\n\n'\
+    #         f'<b>SWAP:</b> {swap_t} | <b>Used:</b> {swap_p}%\n'\
+    #         f'<b>Memory Total:</b> {mem_t}\n'\
+    #         f'<b>Memory Free:</b> {mem_a}\n'\
+    #         f'<b>Memory Used:</b> {mem_u}\n'
     sendMessage(stats, context.bot, update.message)
 
 
 def start(update, context):
     buttons = ButtonMaker()
-    buttons.buildbutton("Repo", "https://www.github.com/anasty17/mirror-leech-telegram-bot")
+
+    buttons.buildbutton("Orginal Repo", "https://www.github.com/anasty17/mirror-leech-telegram-bot")
     buttons.buildbutton("Report Group", "https://t.me/+PRRzqHd31XY3ZWZk")
+    buttons.buildbutton("My Repo", "https://github.com/shuvam-dawn/MLTB-Custom-UI")
+    buttons.buildbutton("Mirror Group", "https://t.me/z_mirror")
+
+    # buttons.buildbutton("Repo", "https://www.github.com/anasty17/mirror-leech-telegram-bot")
+    # buttons.buildbutton("Report Group", "https://t.me/+PRRzqHd31XY3ZWZk")
     reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''
-This bot can mirror all your links to Google Drive!
+Welcome | Z Mirror service is ready for you
 Type /{BotCommands.HelpCommand} to get a list of available commands
 '''
         sendMarkup(start_string, context.bot, update.message, reply_markup)
     else:
-        sendMarkup('Not Authorized user, deploy your own mirror-leech bot', context.bot, update.message, reply_markup)
+        sendMarkup('Sorry, You cannot use me', context.bot, update.message, reply_markup)
 
 def restart(update, context):
     restart_message = sendMessage("Restarting...", context.bot, update.message)
@@ -170,7 +194,7 @@ help_string_telegraph = f'''<br>
 '''
 
 help = telegraph.create_page(
-        title='Mirror-Leech-Bot Help',
+        title='Z-Mirror-Bot Help',
         content=help_string_telegraph,
     )["path"]
 
@@ -295,7 +319,7 @@ def main():
     dispatcher.add_handler(stats_handler)
     dispatcher.add_handler(log_handler)
     updater.start_polling(drop_pending_updates=IGNORE_PENDING_REQUESTS)
-    LOGGER.info("Bot Started!")
+    LOGGER.info("Bot Started !")
     signal(SIGINT, exit_clean_up)
 
 app.start()
