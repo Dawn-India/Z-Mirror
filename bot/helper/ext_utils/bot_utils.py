@@ -348,7 +348,7 @@ def bot_sys_stats():
                 num_extract += 1
        if stats.status() == MirrorStatus.STATUS_SPLITTING:
                 num_split += 1
-    stats = f"<b>Bot Statistics</b>"
+    stats = f"Bot Statistics"
     stats += f"""
 Bot Uptime: {currentTime}
 DN: {recv} | UP: {sent}
