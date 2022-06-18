@@ -22,7 +22,7 @@ from .modules import authorize, list, cancel_mirror, mirror_status, mirror, clon
 
 def stats(update, context):
     if ospath.exists('.git'):
-        last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd <b>From</b> %cr'"], shell=True).decode()
+        last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>From</b> %cr'"], shell=True).decode()
     else:
         last_commit = 'No UPSTREAM_REPO'
     currentTime = get_readable_time(time() - botStartTime)
@@ -62,35 +62,17 @@ def stats(update, context):
             f'<b>Memory Free:</b> {mem_a}\n'\
             f'<b>Memory Used:</b> {mem_u}\n'
 
-    # stats = f'<b>Commit Date:</b> {last_commit}\n\n'\
-    #         f'<b>Bot Uptime:</b> {currentTime}\n'\
-    #         f'<b>OS Uptime:</b> {osUptime}\n\n'\
-    #         f'<b>Total Disk Space:</b> {total}\n'\
-    #         f'<b>Used:</b> {used} | <b>Free:</b> {free}\n\n'\
-    #         f'<b>Upload:</b> {sent}\n'\
-    #         f'<b>Download:</b> {recv}\n\n'\
-    #         f'<b>CPU:</b> {cpuUsage}%\n'\
-    #         f'<b>RAM:</b> {mem_p}%\n'\
-    #         f'<b>DISK:</b> {disk}%\n\n'\
-    #         f'<b>Physical Cores:</b> {p_core}\n'\
-    #         f'<b>Total Cores:</b> {t_core}\n\n'\
-    #         f'<b>SWAP:</b> {swap_t} | <b>Used:</b> {swap_p}%\n'\
-    #         f'<b>Memory Total:</b> {mem_t}\n'\
-    #         f'<b>Memory Free:</b> {mem_a}\n'\
-    #         f'<b>Memory Used:</b> {mem_u}\n'
     sendMessage(stats, context.bot, update.message)
 
 
 def start(update, context):
     buttons = ButtonMaker()
 
-    buttons.buildbutton("Orginal Repo", "https://www.github.com/anasty17/mirror-leech-telegram-bot")
-    buttons.buildbutton("Report Group", "https://t.me/+PRRzqHd31XY3ZWZk")
-    buttons.buildbutton("My Repo", "https://github.com/shuvam-dawn/MLTB-Custom-UI")
+    buttons.buildbutton("Report Group", "https://t.me/Mltb_chat_unofficial")
+    buttons.buildbutton("Repo", "https://github.com/shuvam-dawn/MLTB-Custom-UI")
     buttons.buildbutton("Mirror Group", "https://t.me/z_mirror")
+    buttons.buildbutton("Owner", "https://t.me/dawn_in")
 
-    # buttons.buildbutton("Repo", "https://www.github.com/anasty17/mirror-leech-telegram-bot")
-    # buttons.buildbutton("Report Group", "https://t.me/+PRRzqHd31XY3ZWZk")
     reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''
