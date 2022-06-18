@@ -315,6 +315,54 @@ def get_content_type(link: str) -> str:
             content_type = None
     return content_type
 
+# ONE, TWO, THREE = range(3)
+# def pop_up_stats(update, context):
+#     query = update.callback_query
+#     stats = bot_sys_stats()
+#     query.answer(text=stats, show_alert=True)
+# def bot_sys_stats():
+#     currentTime = get_readable_time(time() - botStartTime)
+#     osCurrentTime = psutil.boot_time()
+#     cpu = psutil.cpu_percent()
+#     mem = psutil.virtual_memory().percent
+#     disk = psutil.disk_usage(DOWNLOAD_DIR).percent
+#     total, used, free = shutil.disk_usage(DOWNLOAD_DIR)
+#     total = get_readable_file_size(total)
+#     used = get_readable_file_size(used)
+#     free = get_readable_file_size(free)
+#     recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
+#     sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
+#     num_active = 0
+#     num_upload = 0
+#     num_split = 0
+#     num_extract = 0
+#     num_archi = 0
+#     tasks = len(download_dict)
+#     for stats in list(download_dict.values()):
+#        if stats.status() == MirrorStatus.STATUS_DOWNLOADING:
+#                 num_active += 1
+#        if stats.status() == MirrorStatus.STATUS_UPLOADING:
+#                 num_upload += 1
+#        if stats.status() == MirrorStatus.STATUS_ARCHIVING:
+#                 num_archi += 1
+#        if stats.status() == MirrorStatus.STATUS_EXTRACTING:
+#                 num_extract += 1
+#        if stats.status() == MirrorStatus.STATUS_SPLITTING:
+#                 num_split += 1
+#     stats = f"""
+# <b><i>Z Mirror</i></b>
+# <b>Bot Uptime:</b> {currentTime}
+# <b>OS UpTime:</b> {osCurrentTime}
+# <b>Disk:</b> {total} | <b>Free:</b> {free}
+# <b>Used:</b> {used} of {disk}
+# <b>Sent:</b> {sent} | <b>Recv:</b> {recv}
+# <b>CPU:</b> {cpu}% | <b>RAM:</b> {mem}%
+# """
+#     return stats
+# dispatcher.add_handler(
+#     CallbackQueryHandler(pop_up_stats, pattern="^" + str(THREE) + "$")
+# )
+
 ONE, TWO, THREE = range(3)
 def pop_up_stats(update, context):
     query = update.callback_query
@@ -322,7 +370,6 @@ def pop_up_stats(update, context):
     query.answer(text=stats, show_alert=True)
 def bot_sys_stats():
     currentTime = get_readable_time(time() - botStartTime)
-    osCurrentTime = psutil.boot_time()
     cpu = psutil.cpu_percent()
     mem = psutil.virtual_memory().percent
     disk = psutil.disk_usage(DOWNLOAD_DIR).percent
@@ -350,13 +397,14 @@ def bot_sys_stats():
        if stats.status() == MirrorStatus.STATUS_SPLITTING:
                 num_split += 1
     stats = f"""
-<b><i>Z Mirror</i></b>
-<b>Bot Uptime:</b> {currentTime}
-<b>OS UpTime:</b> {osCurrentTime}
-<b>Disk:</b> {total} | <b>Free:</b> {free}
-<b>Used:</b> {used} of {disk}
-<b>Sent:</b> {sent} | <b>Recv:</b> {recv}
-<b>CPU:</b> {cpu}% | <b>RAM:</b> {mem}%
+Made by : Team qbit
+Sent : {sent} | Recv : {recv}
+CPU : {cpu}% | RAM : {mem}%
+
+DL : {num_active} | UP : {num_upload} | SPLIT : {num_split}
+ZIP : {num_archi} | UNZIP : {num_extract} | TOTAL : {tasks}
+
+Limits : T/D : {TORRENT_DIRECT_LIMIT}GB | Z/U : {ZIP_UNZIP_LIMIT}GB
 """
     return stats
 dispatcher.add_handler(
