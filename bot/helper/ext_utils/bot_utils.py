@@ -167,11 +167,11 @@ def get_readable_message():
                     msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
                 except:
                     pass
-                try:
-                    if download.status() == MirrorStatus.STATUS_UPLOADING:
-                        msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
-                except BaseException:
-                    pass
+#                 try:
+#                     if download.status() == MirrorStatus.STATUS_UPLOADING:
+#                         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
+#                 except BaseException:
+#                     pass
                 # msg += f"\n<b>Requested By:</b> ️<code>{download.message.from_user.first_name}</code>️"
                 # msg += f"\n<b>Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
