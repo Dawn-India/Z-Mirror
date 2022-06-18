@@ -326,11 +326,11 @@ def bot_sys_stats():
     cpu = psutil.cpu_percent()
     mem = psutil.virtual_memory().percent
     disk = psutil.disk_usage(DOWNLOAD_DIR).percent
-    total, used, free, percentage = shutil.disk_usage(DOWNLOAD_DIR)
+    total, used, free = shutil.disk_usage(DOWNLOAD_DIR)
     total = get_readable_file_size(total)
     used = get_readable_file_size(used)
     free = get_readable_file_size(free)
-    percentage = get_readable_file_size(percentage)
+    percentage = get_readable_file_size(psutil.percentage)
     recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
     sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
     num_active = 0
