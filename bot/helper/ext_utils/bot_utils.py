@@ -319,7 +319,7 @@ ONE, TWO, THREE = range(3)
 def pop_up_stats(update, context):
     query = update.callback_query
     stats = bot_sys_stats()
-    query.answer(text=stats, show_alert=True)
+   # query.answer(text=stats, show_alert=True)
 def bot_sys_stats():
     currentTime = get_readable_time(time() - botStartTime)
     osCurrentTime = psutil.boot_time()
