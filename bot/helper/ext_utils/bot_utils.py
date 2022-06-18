@@ -330,7 +330,7 @@ def bot_sys_stats():
     total = get_readable_file_size(total)
     used = get_readable_file_size(used)
     free = get_readable_file_size(free)
-    percentage = get_readable_file_size(psutil.percentage)
+    #percentage = get_readable_file_size(psutil.percentage)
     recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
     sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
     num_active = 0
@@ -356,7 +356,7 @@ def bot_sys_stats():
 <b>Bot Uptime:</b> {currentTime}
 <b>OS UpTime:</b> {osCurrentTime}
 <b>Disk:</b> {total} | <b>Free:</b> {free}
-<b>Used:</b> {used} {percentage}
+<b>Used:</b> {used} of {total}
 <b>Sent:</b> {sent} | <b>Recv:</b> {recv}
 <b>CPU:</b> {cpu}% | <b>RAM:</b> {mem}%
 
