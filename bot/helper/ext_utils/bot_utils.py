@@ -397,13 +397,13 @@ def bot_sys_stats():
        if stats.status() == MirrorStatus.STATUS_SPLITTING:
                 num_split += 1
     stats = f"""
-Z Mirror
+Bot Statistics
 
 Bot Uptime: {currentTime}
 DN: {recv} | UP: {sent}
 CPU: {cpu}% | RAM: {mem}%
 Disk: {total} | Free: {free}
-Used: {used} of {disk}
+Used: {used} {disk}%
 """
     return stats
 dispatcher.add_handler(
