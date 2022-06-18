@@ -370,6 +370,7 @@ def pop_up_stats(update, context):
     query.answer(text=stats, show_alert=True)
 def bot_sys_stats():
     currentTime = get_readable_time(time() - botStartTime)
+    osCurrentTime = psutil.boot_time()
     cpu = psutil.cpu_percent()
     mem = psutil.virtual_memory().percent
     disk = psutil.disk_usage(DOWNLOAD_DIR).percent
@@ -397,7 +398,9 @@ def bot_sys_stats():
        if stats.status() == MirrorStatus.STATUS_SPLITTING:
                 num_split += 1
     stats = f"""
-<b>Z Mirror</b>
+Z Mirror
+Bot Uptime: {currentTime}
+OS UpTime: {osCurrentTime}
 Sent : {sent} | Recv : {recv}
 CPU : {cpu}% | RAM : {mem}%
 """
