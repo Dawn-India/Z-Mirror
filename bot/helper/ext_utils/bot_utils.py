@@ -109,24 +109,13 @@ def get_progress_bar_string(status):
     p = 0 if total == 0 else round(completed * 100 / total)
     p = min(max(p, 0), 100)
     cFull = p // 8
-    cPart = p % 8 - 1
+    cPart = p % 12 - 1
     p_str = '⬤' * cFull
     if cPart >= 0:
         p_str += PROGRESS_INCOMPLETE[cPart]
     p_str += '○' * (PROGRESS_MAX_SIZE - cFull)
     p_str = f"「{p_str}」"
     return p_str
-
-# def get_progress_bar_string(status):
-#     completed = status.processed_bytes() / 8
-#     total = status.size_raw() / 8
-#     p = 0 if total == 0 else round(completed * 100 / total)
-#     p = min(max(p, 0), 100)
-#     cFull = p // 8
-#     p_str = '■' * cFull
-#     p_str += '□' * (12 - cFull)
-#     p_str = f"[{p_str}]"
-#     return p_str
 
 def get_readable_message():
     with download_dict_lock:
@@ -186,9 +175,9 @@ def get_readable_message():
             msg += "\n\n"
             if STATUS_LIMIT is not None and index == STATUS_LIMIT:
                 break
-        bmsg = f"<b>📊<i>Performance Meter</i>📊</b>"
-        bmsg += f"\n<b>CPU        :</b> {cpu_percent()}%\n<b>SSD        :</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
-        bmsg += f"\n<b>RAM       :</b> {virtual_memory().percent}%\n<b>UPTIME  :</b> {get_readable_time(time() - botStartTime)}"
+        bmsg = f"<b>-----------------------</b>"
+        bmsg += f"\n<b>Disk:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
+        bmsg += f"<b> | UPTM:</b> {get_readable_time(time() - botStartTime)}"
         dlspeed_bytes = 0
         upspeed_bytes = 0
         for download in list(download_dict.values()):
@@ -203,11 +192,11 @@ def get_readable_message():
                     upspeed_bytes += float(spd.split('K')[0]) * 1024
                 elif 'MB/s' in spd:
                     upspeed_bytes += float(spd.split('M')[0]) * 1048576
-        bmsg += f"\n\n<b>🎛️<i>Speedometer</i>🎛️</b>\n<b>Download :</b> {get_readable_file_size(dlspeed_bytes)}/s\n<b>Upload      :</b> {get_readable_file_size(upspeed_bytes)}/s"
+        bmsg += f"\n<b>DN:</b> {get_readable_file_size(dlspeed_bytes)}/s<b> | UP:</b> {get_readable_file_size(upspeed_bytes)}/s"
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"<b>Page:</b> {PAGE_NO}/{pages} | <b>Tasks:</b> {tasks}\n"
             buttons = ButtonMaker()
-            buttons.sbutton("Previous", "status pre")
+            buttons.sbutton("Prev", "status pre")
             buttons.sbutton("Next", "status nex")
             button = InlineKeyboardMarkup(buttons.build_menu(2))
             return msg + bmsg, button
