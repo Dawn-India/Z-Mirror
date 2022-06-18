@@ -221,7 +221,7 @@ def get_readable_message():
             buttons.sbutton("Next", "status nex")
             button = InlineKeyboardMarkup(buttons.build_menu(3))
             return msg + bmsg, button
-        return msg + bmsg, ""
+        return msg + bmsg, sbutton
 
 def turn(data):
     try:
