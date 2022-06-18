@@ -167,11 +167,11 @@ def get_readable_message():
                     msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
                 except:
                     pass
-#                 try:
-#                     if download.status() == MirrorStatus.STATUS_UPLOADING:
-#                         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
-#                 except BaseException:
-#                     pass
+                try:
+                    if download.status() == MirrorStatus.STATUS_UPLOADING:
+                        msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
+                except BaseException:
+                    pass
                 # msg += f"\n<b>Requested By:</b> ️<code>{download.message.from_user.first_name}</code>️"
                 # msg += f"\n<b>Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
@@ -209,9 +209,9 @@ def get_readable_message():
                     upspeed_bytes += float(spd.split('M')[0]) * 1048576
         bmsg += f"\n<b>DN:</b> {get_readable_file_size(dlspeed_bytes)}/s<b> | UP:</b> {get_readable_file_size(upspeed_bytes)}/s"
         
-        buttons = ButtonMaker()
-        buttons.sbutton("Statistics", str(THREE))
-        sbutton = InlineKeyboardMarkup(buttons.build_menu(1))
+#         buttons = ButtonMaker()
+#         buttons.sbutton("Statistics", str(THREE))
+#         sbutton = InlineKeyboardMarkup(buttons.build_menu(1))
         
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"<b>Page:</b> {PAGE_NO}/{pages} | <b>Tasks:</b> {tasks}\n"
