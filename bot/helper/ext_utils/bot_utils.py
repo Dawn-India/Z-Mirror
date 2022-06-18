@@ -397,7 +397,7 @@ def bot_sys_stats():
        if stats.status() == MirrorStatus.STATUS_SPLITTING:
                 num_split += 1
     stats = f"""
-Made by : Team qbit
+<b>Z Mirror</b>
 Sent : {sent} | Recv : {recv}
 CPU : {cpu}% | RAM : {mem}%
 """
