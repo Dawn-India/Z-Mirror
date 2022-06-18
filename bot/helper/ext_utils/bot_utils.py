@@ -12,6 +12,14 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot import download_dict, download_dict_lock, STATUS_LIMIT, botStartTime, DOWNLOAD_DIR
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
+import shutil
+import psutil
+from telegram.error import RetryAfter
+from telegram.ext import CallbackQueryHandler
+from telegram.message import Message
+from telegram.update import Update
+from bot import *
+
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 
 URL_REGEX = r"(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+"
@@ -145,6 +153,8 @@ def get_readable_message():
                 else:
                     msg += f"\n<b>Downloaded:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
                 msg += f"\n<b>Speed:</b> {download.speed()}\n<b>Waiting Time:</b> {download.eta()}"
+                msg += f"\n<b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
+                msg += f'\n<b>Source :</b> <a href="https://t.me/c/{str(download.message.chat.id)[4:]}/{download.message.message_id}">{download.message.from_user.first_name}</a>'
                 try:
                     msg += f"\n<b>Seeders:</b> {download.aria_download().num_seeders}" \
                            f" | <b>Peers:</b> {download.aria_download().connections}"
@@ -157,8 +167,8 @@ def get_readable_message():
                     msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
                 except:
                     pass
-                msg += f"\n<b>Requested By:</b> ️<code>{download.message.from_user.first_name}</code>️"
-                msg += f"\n<b>Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
+                # msg += f"\n<b>Requested By:</b> ️<code>{download.message.from_user.first_name}</code>️"
+                # msg += f"\n<b>Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             elif download.status() == MirrorStatus.STATUS_SEEDING:
                 msg += f"\n<b>Size: </b>{download.size()}"
@@ -167,15 +177,15 @@ def get_readable_message():
                 msg += f" | <b>Uploaded: </b>{get_readable_file_size(download.torrent_info().uploaded)}"
                 msg += f"\n<b>Ratio: </b>{round(download.torrent_info().ratio, 3)}"
                 msg += f" | <b>Time: </b>{get_readable_time(download.torrent_info().seeding_time)}"
-                msg += f"\n<b>Requested By:</b> ️<code>{download.message.from_user.first_name}</code>️"
-                msg += f"\n<b>Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
+#                 msg += f"\n<b>Requested By:</b> ️<code>{download.message.from_user.first_name}</code>️"
+#                 msg += f"\n<b>Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             else:
                 msg += f"\n<b>Size: </b>{download.size()}"
             msg += "\n\n"
             if STATUS_LIMIT is not None and index == STATUS_LIMIT:
                 break
-        bmsg = f"<b>----------------------------------------------</b>"
+        bmsg = f"<b>--------------------------------------------</b>"
         bmsg += f"\n<b>Disk:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
         bmsg += f"<b> | UPTM:</b> {get_readable_time(time() - botStartTime)}"
         dlspeed_bytes = 0
@@ -294,3 +304,53 @@ def get_content_type(link: str) -> str:
             content_type = None
     return content_type
 
+ONE, TWO, THREE = range(3)
+def pop_up_stats(update, context):
+    query = update.callback_query
+    stats = bot_sys_stats()
+    query.answer(text=stats, show_alert=True)
+def bot_sys_stats():
+    currentTime = get_readable_time(time() - botStartTime)
+    osCurrentTime = boot_time()
+    cpu = psutil.cpu_percent()
+    mem = psutil.virtual_memory().percent
+    disk = psutil.disk_usage(DOWNLOAD_DIR).percent
+    total, used, free = shutil.disk_usage(DOWNLOAD_DIR)
+    total = get_readable_file_size(total)
+    used = get_readable_file_size(used)
+    free = get_readable_file_size(free)
+    percentage = get_readable_file_size(percentage)
+    recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
+    sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
+    num_active = 0
+    num_upload = 0
+    num_split = 0
+    num_extract = 0
+    num_archi = 0
+    tasks = len(download_dict)
+    for stats in list(download_dict.values()):
+       if stats.status() == MirrorStatus.STATUS_DOWNLOADING:
+                num_active += 1
+       if stats.status() == MirrorStatus.STATUS_UPLOADING:
+                num_upload += 1
+       if stats.status() == MirrorStatus.STATUS_ARCHIVING:
+                num_archi += 1
+       if stats.status() == MirrorStatus.STATUS_EXTRACTING:
+                num_extract += 1
+       if stats.status() == MirrorStatus.STATUS_SPLITTING:
+                num_split += 1
+    stats = f"""
+<b><i>Z Mirror</i></b>
+
+<b>Bot Uptime:</b> {currentTime}
+<b>OS UpTime:</b> {osCurrentTime}
+<b>Disk:</b> {total} | <b>Free:</b> {free}
+<b>Used:</b> {used} {percentage}
+<b>Sent:</b> {sent} | <b>Recv:</b> {recv}
+<b>CPU:</b> {cpu}% | <b>RAM:</b> {mem}%
+
+"""
+    return stats
+dispatcher.add_handler(
+    CallbackQueryHandler(pop_up_stats, pattern="^" + str(THREE) + "$")
+)
