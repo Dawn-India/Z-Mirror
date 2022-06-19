@@ -172,8 +172,6 @@ def get_readable_message():
                         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
                 except BaseException:
                     pass
-                # msg += f"\n<b>Requested By:</b> ️<code>{download.message.from_user.first_name}</code>️"
-                # msg += f"\n<b>Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             elif download.status() == MirrorStatus.STATUS_SEEDING:
                 msg += f"\n<b>Size: </b>{download.size()}"
@@ -182,8 +180,6 @@ def get_readable_message():
                 msg += f" | <b>Uploaded: </b>{get_readable_file_size(download.torrent_info().uploaded)}"
                 msg += f"\n<b>Ratio: </b>{round(download.torrent_info().ratio, 3)}"
                 msg += f" | <b>Time: </b>{get_readable_time(download.torrent_info().seeding_time)}"
-#                 msg += f"\n<b>Requested By:</b> ️<code>{download.message.from_user.first_name}</code>️"
-#                 msg += f"\n<b>Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             else:
                 msg += f"\n<b>Size: </b>{download.size()}"
@@ -214,7 +210,7 @@ def get_readable_message():
         sbutton = InlineKeyboardMarkup(buttons.build_menu(1))
         
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
-            msg += f"<b>Page:</b> {PAGE_NO}/{pages} | <b>Tasks:</b> {tasks}\n"
+            msg += f"<b>Tasks:</b> {tasks}\n"
             buttons = ButtonMaker()
             buttons.sbutton("Prev", "status pre")
             buttons.sbutton(f"{PAGE_NO}/{pages}", str(THREE))
@@ -350,11 +346,14 @@ def bot_sys_stats():
                 num_split += 1
     stats = f"Bot Statistics"
     stats += f"""
+
 Bot Uptime: {currentTime}
-DN: {recv} | UP: {sent}
+T-DN: {recv} | T-UP: {sent}
 CPU: {cpu}% | RAM: {mem}%
 Disk: {total} | Free: {free}
-Used: {used} {disk}%
+Used: [{disk}%] is {used}
+
+Made with ❤️ by Dawn
 """
     return stats
 dispatcher.add_handler(
