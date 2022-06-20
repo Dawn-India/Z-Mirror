@@ -182,13 +182,13 @@ def get_readable_message():
                 msg += f"\n<b>Ratio: </b>{round(download.torrent_info().ratio, 3)}"
                 msg += f" | <b>Time: </b>{get_readable_time(download.torrent_info().seeding_time)}"
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
-            # else:
-            #     if download.status() == MirrorStatus.STATUS_ARCHIVING:
-            #             msg += f"\n<b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
-            #             msg += f"\n<b>Engine:</b> <code>p7zip v16.02</code>"
-            #             msg += f"\n<b>Size: </b>{download.size()}"
-            #             msg += "\n\n"
             else:
+                if download.status() == MirrorStatus.STATUS_ARCHIVING:
+                        # msg += f"\n<b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
+                        msg += f"\n<b>Engine:</b> <code>p7zip v16.02</code>"
+                        msg += f"\n<b>Size: </b>{download.size()}"
+                        msg += "\n\n"
+                else:
                     msg += f"\n<b>Size: </b>{download.size()}"
                     msg += "\n\n"
             if STATUS_LIMIT is not None and index == STATUS_LIMIT:
