@@ -1,5 +1,5 @@
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus, get_readable_time
-from telegram.message import Message, Update
+from telegram.message import Message
 from time import time
 from bot import *
 
