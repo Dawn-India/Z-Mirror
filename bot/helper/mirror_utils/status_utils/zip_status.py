@@ -4,11 +4,10 @@ from time import time
 from bot import *
 
 class ZipStatus:
-    def __init__(self, name, path, size, listener):
+    def __init__(self, name, path, size):
         self.__name = name
         self.__path = path
         self.__size = size
-        self.message = listener.message
 
     def progress(self):
         return '0'
