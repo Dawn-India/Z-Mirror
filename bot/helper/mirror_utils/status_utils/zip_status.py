@@ -36,4 +36,7 @@ class ZipStatus:
         return get_readable_time(self.__info.eta)
 
     def message(self):
-        return Message(self.__message.date)
+        return Message(self.__message)
+
+    def messaage(date):
+        return(date)
