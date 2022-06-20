@@ -140,7 +140,7 @@ def get_readable_message():
             msg += f"\n\n<b>File Name:</b> <code>{escape(str(download.name()))}</code>"
             msg += f"\n<b>Status:</b> <i>{download.status()}</i>"
             if download.status() not in [
-                MirrorStatus.STATUS_ARCHIVING,
+                # MirrorStatus.STATUS_ARCHIVING,
                 MirrorStatus.STATUS_EXTRACTING,
                 MirrorStatus.STATUS_SPLITTING,
                 MirrorStatus.STATUS_SEEDING,
@@ -148,6 +148,8 @@ def get_readable_message():
                 msg += f"\n{get_progress_bar_string(download)}\n<b>Progress:</b> {download.progress()}"
                 if download.status() == MirrorStatus.STATUS_CLONING:
                     msg += f"\n<b>Cloned:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
+                # elif download.status() == MirrorStatus.STATUS_ARCHIVING:
+                #     msg += f"\n<b></b>"
                 elif download.status() == MirrorStatus.STATUS_UPLOADING:
                     msg += f"\n<b>Uploaded:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
                 else:
@@ -172,7 +174,23 @@ def get_readable_message():
                         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
                 except BaseException:
                     pass
+                try:
+                    if download.status() == MirrorStatus.STATUS_ARCHIVING:
+                        msg += f"\n<b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
+                        msg += f"\n<b>Engine:</b> <code>p7zip v16.02</code>"
+                except BaseException:
+                    pass
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
+            
+            # elif download.status() == MirrorStatus.STATUS_ARCHIVING:
+            #     msg += f"\n<b>Size: </b>{download.size()}"
+            #     msg += f"\n<b>Engine:</b> <code>WinRAR 6.11</code>"
+            #     # msg += f"\n<b>Speed: </b>{get_readable_file_size(download.torrent_info().upspeed)}/s"
+            #     msg += f" | <b>Uploaded: </b>{get_readable_file_size(download.torrent_info().uploaded)}"
+            #     msg += f"\n<b>Ratio: </b>{round(download.torrent_info().ratio, 3)}"
+            #     msg += f" | <b>Time: </b>{get_readable_time(download.torrent_info().seeding_time)}"
+            #     msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
+
             elif download.status() == MirrorStatus.STATUS_SEEDING:
                 msg += f"\n<b>Size: </b>{download.size()}"
                 msg += f"\n<b>Engine:</b> <code>qBittorrent v4.4.2</code>"
