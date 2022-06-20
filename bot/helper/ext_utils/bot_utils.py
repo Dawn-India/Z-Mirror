@@ -193,7 +193,7 @@ def get_readable_message():
                     msg += "\n\n"
             if STATUS_LIMIT is not None and index == STATUS_LIMIT:
                 break
-        bmsg = f"<b>--------------------------------------------</b>"
+        bmsg = f"\n<b>--------------------------------------------</b>"
         bmsg += f"\n<b>Disk:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
         bmsg += f"<b> | UPTM:</b> {get_readable_time(time() - botStartTime)}"
         dlspeed_bytes = 0

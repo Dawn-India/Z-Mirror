@@ -1,11 +1,13 @@
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus
+from telegram.message import Message
 
 
 class ZipStatus:
-    def __init__(self, name, path, size):
+    def __init__(self, name, path, size, message):
         self.__name = name
         self.__path = path
         self.__size = size
+        self.__message = message
 
     def progress(self):
         return '0'
