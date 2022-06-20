@@ -38,5 +38,5 @@ class ZipStatus:
     def message(self):
         return Message(self.__message)
 
-    def messaage(date):
-        return(date)
+    def date(self):
+        return(self.__date)
