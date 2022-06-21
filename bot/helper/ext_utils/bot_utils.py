@@ -223,6 +223,14 @@ def get_readable_message():
                         msg += f"\n<b>Engine:</b> <code>p7zip v16.02</code>"
                         msg += f"\n<b>Size: </b>{download.size()}"
                         msg += "\n\n"
+                elif download.status() == MirrorStatus.STATUS_UPLOADING_TG:
+                        msg += f"\n<b>{get_progress_bar_string(download)}</b>\n<b>Progress:</b> {download.progress()}"
+                        msg += f"\n<b>Uploaded:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
+                        msg += f"\n<b>Speed:</b> {download.speed()}\n<b>Waiting Time:</b> {download.eta()}"
+                        msg += f"\n<b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
+                        msg += f'\n<b>Source :</b> <a href="https://t.me/c/{str(download.message.chat.id)[4:]}/{download.message.message_id}">{download.message.from_user.first_name}</a>'
+                        msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
+                        msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
                 else:
                     msg += f"\n<b>Size: </b>{download.size()}"
                     msg += "\n\n"
