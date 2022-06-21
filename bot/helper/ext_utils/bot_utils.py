@@ -177,36 +177,36 @@ def get_readable_message():
                         msg += f"\n<b>Engine:</b> <code>Aria2c v1.35.0</code>"
                 except:
                     pass
-                try:
-                    if download.status() == MirrorStatus.STATUS_DOWNLOADING_GD:
-                        msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
-                except:
-                    pass
-                try:
-                    if download.status() == MirrorStatus.STATUS_DOWNLOADING_MEGA:
-                        msg += f"\n<b>Engine:</b> <code>MegaSdk v3.12.0</code>"
-                except:
-                    pass
-                try:
-                    if download.status() == MirrorStatus.STATUS_DOWNLOADING_YT:
-                        msg += f"\n<b>Engine:</b> <code>YT-dlp v22.5.18</code>"
-                except:
-                    pass
-                try:
-                    if download.status() == MirrorStatus.STATUS_DOWNLOADING_TG:
-                        msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
-                except:
-                    pass
+                # try:
+                #     if download.status() == MirrorStatus.STATUS_DOWNLOADING_GD:
+                #         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
+                # except:
+                #     pass
+                # try:
+                #     if download.status() == MirrorStatus.STATUS_DOWNLOADING_MEGA:
+                #         msg += f"\n<b>Engine:</b> <code>MegaSdk v3.12.0</code>"
+                # except:
+                #     pass
+                # try:
+                #     if download.status() == MirrorStatus.STATUS_DOWNLOADING_YT:
+                #         msg += f"\n<b>Engine:</b> <code>YT-dlp v22.5.18</code>"
+                # except:
+                #     pass
+                # try:
+                #     if download.status() == MirrorStatus.STATUS_DOWNLOADING_TG:
+                #         msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
+                # except:
+                #     pass
                 try:
                     if download.status() == MirrorStatus.STATUS_UPLOADING:
                         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
                 except:
                     pass
-                try:
-                    if download.status() == MirrorStatus.STATUS_UPLOADING_TG:
-                        msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
-                except BaseException:
-                    pass
+                # try:
+                #     if download.status() == MirrorStatus.STATUS_UPLOADING_TG:
+                #         msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
+                # except:
+                #     pass
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
 
             elif download.status() == MirrorStatus.STATUS_SEEDING:
