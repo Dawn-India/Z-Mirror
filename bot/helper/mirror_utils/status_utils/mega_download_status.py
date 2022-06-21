@@ -24,7 +24,7 @@ class MegaDownloadStatus:
         return get_readable_file_size(self.size_raw())
 
     def status(self):
-        return MirrorStatus.STATUS_DOWNLOADING
+        return MirrorStatus.STATUS_DOWNLOADING_MEGA
 
     def name(self):
         return self.__obj.name

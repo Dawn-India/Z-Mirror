@@ -23,7 +23,7 @@ class TgUploadStatus:
         return get_readable_file_size(self.__size)
 
     def status(self):
-        return MirrorStatus.STATUS_UPLOADING
+        return MirrorStatus.STATUS_UPLOADING_TG
 
     def name(self):
         return self.__obj.name

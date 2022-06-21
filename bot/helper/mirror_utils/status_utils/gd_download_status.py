@@ -23,7 +23,7 @@ class GdDownloadStatus:
         return get_readable_file_size(self.__size)
 
     def status(self):
-        return MirrorStatus.STATUS_DOWNLOADING
+        return MirrorStatus.STATUS_DOWNLOADING_GD
 
     def name(self):
         return self.__obj.name

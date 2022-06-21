@@ -30,7 +30,11 @@ PAGE_NO = 1
 
 class MirrorStatus:
     STATUS_UPLOADING = "Uploading...📤"
+    STATUS_UPLOADING_TG = "Uploading...📤"
     STATUS_DOWNLOADING = "Downloading...📥"
+    STATUS_DOWNLOADING_GD = "Downloading...📥"
+    STATUS_DOWNLOADING_TG = "Downloading...📥"
+    STATUS_DOWNLOADING_MEGA = "Downloading...📥"
     STATUS_DOWNLOADING_YT = "Downloading...📥"
     STATUS_CLONING = "Cloning...♻️"
     STATUS_WAITING = "Queued...💤"
@@ -169,13 +173,38 @@ def get_readable_message():
                 except:
                     pass
                 try:
+                    if download.status() == MirrorStatus.STATUS_DOWNLOADING:
+                        msg += f"\n<b>Engine:</b> <code>Aria2c v1.35.0</code>"
+                except BaseException:
+                    pass
+                try:
+                    if download.status() == MirrorStatus.STATUS_DOWNLOADING_GD:
+                        msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
+                except BaseException:
+                    pass
+                try:
+                    if download.status() == MirrorStatus.STATUS_DOWNLOADING_MEGA:
+                        msg += f"\n<b>Engine:</b> <code>MegaSdk v3.12.0</code>"
+                except BaseException:
+                    pass
+                try:
                     if download.status() == MirrorStatus.STATUS_DOWNLOADING_YT:
                         msg += f"\n<b>Engine:</b> <code>YT-dlp v22.5.18</code>"
                 except BaseException:
                     pass
                 try:
+                    if download.status() == MirrorStatus.STATUS_DOWNLOADING_TG:
+                        msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
+                except BaseException:
+                    pass
+                try:
                     if download.status() == MirrorStatus.STATUS_UPLOADING:
                         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
+                except BaseException:
+                    pass
+                try:
+                    if download.status() == MirrorStatus.STATUS_UPLOADING_TG:
+                        msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
                 except BaseException:
                     pass
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
