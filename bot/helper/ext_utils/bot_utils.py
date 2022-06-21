@@ -197,11 +197,11 @@ def get_readable_message():
                 #         msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
                 # except:
                 #     pass
-                try:
-                    if download.status() == MirrorStatus.STATUS_UPLOADING:
-                        msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
-                except:
-                    pass
+                # try:
+                #     if download.status() == MirrorStatus.STATUS_UPLOADING:
+                #         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
+                # except:
+                #     pass
                 # try:
                 #     if download.status() == MirrorStatus.STATUS_UPLOADING_TG:
                 #         msg += f"\n<b>Engine:</b> <code>Pyrogram v2.0.27</code>"
