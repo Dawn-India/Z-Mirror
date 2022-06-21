@@ -31,6 +31,7 @@ PAGE_NO = 1
 class MirrorStatus:
     STATUS_UPLOADING = "Uploading...📤"
     STATUS_DOWNLOADING = "Downloading...📥"
+    STATUS_DOWNLOADING_YT = "Downloading...📥"
     STATUS_CLONING = "Cloning...♻️"
     STATUS_WAITING = "Queued...💤"
     STATUS_FAILED = "Failed 🚫. Cleaning Download..."
@@ -145,7 +146,7 @@ def get_readable_message():
                 MirrorStatus.STATUS_SPLITTING,
                 MirrorStatus.STATUS_SEEDING,
             ]:
-                msg += f"\n{get_progress_bar_string(download)}\n<b>Progress:</b> {download.progress()}"
+                msg += f"\n<b>{get_progress_bar_string(download)}</b>\n<b>Progress:</b> {download.progress()}"
                 if download.status() == MirrorStatus.STATUS_CLONING:
                     msg += f"\n<b>Cloned:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
                 elif download.status() == MirrorStatus.STATUS_UPLOADING:
@@ -168,6 +169,11 @@ def get_readable_message():
                 except:
                     pass
                 try:
+                    if download.status() == MirrorStatus.STATUS_DOWNLOADING_YT:
+                        msg += f"\n<b>Engine:</b> <code>YT-dlp v22.5.18</code>"
+                except BaseException:
+                    pass
+                try:
                     if download.status() == MirrorStatus.STATUS_UPLOADING:
                         msg += f"\n<b>Engine:</b> <code>Google Api v2.49.0</code>"
                 except BaseException:
@@ -184,7 +190,7 @@ def get_readable_message():
                 msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             else:
                 if download.status() == MirrorStatus.STATUS_ARCHIVING:
-                        # msg += f"\n<b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
+                        msg += f"\n<b>Elapsed : </b>{get_readable_time(time())}"
                         msg += f"\n<b>Engine:</b> <code>p7zip v16.02</code>"
                         msg += f"\n<b>Size: </b>{download.size()}"
                         msg += "\n\n"
