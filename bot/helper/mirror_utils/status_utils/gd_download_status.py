@@ -61,5 +61,5 @@ class GdDownloadStatus:
 
     def eng(self):
         return EngineStatus.STATUS_GD
-    else:
-        return MirrorStatus.STATUS_DOWNLOADING
+    # else:
+    #     return MirrorStatus.STATUS_DOWNLOADING

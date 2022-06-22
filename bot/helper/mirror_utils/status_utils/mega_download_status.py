@@ -56,5 +56,5 @@ class MegaDownloadStatus:
 
     def eng(self):
         return EngineStatus.STATUS_MEGA
-    else:
-        return MirrorStatus.STATUS_DOWNLOADING
+    # else:
+    #     return MirrorStatus.STATUS_DOWNLOADING
