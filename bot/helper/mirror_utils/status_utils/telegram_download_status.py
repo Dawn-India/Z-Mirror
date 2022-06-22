@@ -57,5 +57,4 @@ class TelegramDownloadStatus:
 
     def eng(self):
         return EngineStatus.STATUS_TG
-    # else:
-    #     return MirrorStatus.STATUS_DOWNLOADING
+

@@ -37,5 +37,3 @@ class ExtractStatus:
 
     def eng(self):
         return EngineStatus.STATUS_EXT
-    # else:
-    #     return MirrorStatus.STATUS_EXTRACTING

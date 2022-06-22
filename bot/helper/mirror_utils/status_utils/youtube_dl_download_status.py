@@ -60,5 +60,3 @@ class YoutubeDLDownloadStatus:
 
     def eng(self):
         return EngineStatus.STATUS_YT
-    # else:
-    #     return MirrorStatus.STATUS_DOWNLOADING

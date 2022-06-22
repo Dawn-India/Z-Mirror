@@ -33,5 +33,3 @@ class SplitStatus:
 
     def eng(self):
         return EngineStatus.STATUS_SPLIT
-    # else:
-    #     return MirrorStatus.STATUS_SPLITTING

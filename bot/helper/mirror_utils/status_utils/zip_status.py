@@ -33,5 +33,3 @@ class ZipStatus:
 
     def eng(self):
         return EngineStatus.STATUS_ZIP
-    # else:
-    #     return MirrorStatus.STATUS_ARCHIVING

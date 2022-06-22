@@ -46,7 +46,7 @@ class QbDownloader:
                         if len(tor_info) > 0:
                             break
                         elif time() - self.__stalled_time >= 12:
-                            msg = "This Torrent already added or not a torrent. If something wrong please report."
+                            msg = "This Torrent already added or not a torrent."
                             sendMessage(msg, self.__listener.bot, self.__listener.message)
                             self.client.auth_log_out()
                             return
@@ -128,8 +128,8 @@ class QbDownloader:
                     if qbname is not None:
                         qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
                         if qbmsg:
-                            self.__onDownloadError("File/Folder is already available in Drive.")
-                            sendMarkup("Here are the search results:", self.__listener.bot, self.__listener.message, button)
+                            self.__onDownloadError("Someone already mirrored it for you !")
+                            sendMarkup("Here you go:", self.__listener.bot, self.__listener.message, button)
                     self.__dupChecked = True
                 if not self.__sizeChecked:
                     size = tor_info.size
@@ -225,7 +225,7 @@ def get_confirm(update, context):
         query.answer(text="This task has been cancelled!", show_alert=True)
         query.message.delete()
     elif user_id != qbdl.listener().message.from_user.id:
-        query.answer(text="This task is not for you!", show_alert=True)
+        query.answer(text="This is not your task, STFU !", show_alert=True)
     elif data[1] == "pin":
         query.answer(text=data[3], show_alert=True)
     elif data[1] == "done":

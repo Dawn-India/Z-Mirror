@@ -120,7 +120,7 @@ class MegaDownloader:
             if mname is not None:
                 smsg, button = GoogleDriveHelper().drive_list(mname, True)
                 if smsg:
-                    msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
+                    msg1 = "Someone already mirrored it for you !\nHere you go:"
                     return sendMarkup(msg1, self.__listener.bot, self.__listener.message, button)
         if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT]):
             arch = any([self.__listener.isZip, self.__listener.extract])

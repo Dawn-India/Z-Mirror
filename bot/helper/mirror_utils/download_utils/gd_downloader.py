@@ -25,7 +25,7 @@ def add_gd_download(link, listener, is_gdtot):
         if gname is not None:
             gmsg, button = GoogleDriveHelper().drive_list(gname, True)
             if gmsg:
-                msg = "File/Folder is already available in Drive.\nHere are the search results:"
+                msg = "Someone already mirrored it for you !\nHere you go:"
                 return sendMarkup(msg, listener.bot, listener.message, button)
     if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT]):
         arch = any([listener.extract, listener.isZip])

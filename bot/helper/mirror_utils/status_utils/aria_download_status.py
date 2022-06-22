@@ -100,5 +100,3 @@ class AriaDownloadStatus:
 
     def eng(self):
         return EngineStatus.STATUS_ARIA
-    # else:
-    #     return MirrorStatus.STATUS_DOWNLOADING

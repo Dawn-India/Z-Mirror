@@ -89,5 +89,3 @@ class QbDownloadStatus:
 
     def eng(self):
         return EngineStatus.STATUS_QB
-    # else:
-    #     return MirrorStatus.STATUS_DOWNLOADING
