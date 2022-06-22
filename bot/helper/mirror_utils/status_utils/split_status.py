@@ -1,6 +1,5 @@
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus, EngineStatus
 
-
 class SplitStatus:
     def __init__(self, name, path, size, message):
         self.__name = name

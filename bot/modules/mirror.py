@@ -1,4 +1,5 @@
 from base64 import b64encode
+from email import message
 from requests import utils as rutils
 from re import match as re_match, search as re_search, split as re_split
 from time import sleep, time
@@ -75,7 +76,7 @@ class MirrorListener:
         if self.isZip:
             try:
                 with download_dict_lock:
-                    download_dict[self.uid] = ZipStatus(name, m_path, size)
+                    download_dict[self.uid] = ZipStatus(name, m_path, size, message)
                 path = m_path + ".zip"
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
                 if self.pswd is not None:
