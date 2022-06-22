@@ -1,4 +1,4 @@
-from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time
+from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time, EngineStatus
 from bot import DOWNLOAD_DIR
 
 
@@ -23,7 +23,7 @@ class TgUploadStatus:
         return get_readable_file_size(self.__size)
 
     def status(self):
-        return MirrorStatus.STATUS_UPLOADING_TG
+        return MirrorStatus.STATUS_UPLOADING
 
     def name(self):
         return self.__obj.name
@@ -58,3 +58,8 @@ class TgUploadStatus:
 
     def download(self):
         return self.__obj
+
+    def eng(self):
+        return EngineStatus.STATUS_TG
+    else:
+        return MirrorStatus.STATUS_UPLOADING
