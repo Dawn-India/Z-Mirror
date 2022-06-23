@@ -67,7 +67,7 @@ def start(update, context):
     buttons = ButtonMaker()
     
     buttons.buildbutton("Report Group", "https://t.me/Mltb_chat_unofficial")
-    buttons.buildbutton("Repo", "https://github.com/shuvam-dawn/MLTB-Custom-UI")
+    buttons.buildbutton("Repo", "https://github.com/Dawn-India/Z-Mirror")
     buttons.buildbutton("Mirror Group", "https://t.me/z_mirror")
     buttons.buildbutton("Owner", "https://t.me/dawn_in")
     
