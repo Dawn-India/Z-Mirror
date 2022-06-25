@@ -31,7 +31,7 @@ def cancel_mirror(update, context):
         msg = f"Reply to an active <code>/{BotCommands.MirrorCommand}</code> message which was used to start the download or send <code>/{BotCommands.CancelMirror} GID</code> to cancel it!"
         return sendMessage(msg, context.bot, update.message)
 
-    if OWNER_ID != user_id and dl.message.from_user.id != user_id and user_id not in SUDO_USERS and user_id != 314489490:
+    if OWNER_ID != user_id and dl.message.from_user.id != user_id and user_id not in SUDO_USERS:
         return sendMessage("This is not your Task, STFU !", context.bot, update.message)
 
     if dl.status() == MirrorStatus.STATUS_ARCHIVING:
