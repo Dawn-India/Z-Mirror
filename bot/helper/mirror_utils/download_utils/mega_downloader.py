@@ -164,7 +164,7 @@ def add_mega_download(mega_link: str, path: str, listener):
         if mname is not None:
             smsg, button = GoogleDriveHelper().drive_list(mname, True)
             if smsg:
-                msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
+                msg1 = "Someone already mirrored it for you !\nHere you go:"
                 return sendMarkup(msg1, listener.bot, listener.message, button)
     if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT]):
         size = api.getSize(node)

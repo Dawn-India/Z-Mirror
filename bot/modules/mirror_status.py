@@ -9,15 +9,14 @@ from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 
-
 def mirror_status(update, context):
     with download_dict_lock:
         if len(download_dict) == 0:
             currentTime = get_readable_time(time() - botStartTime)
             free = get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)
-            message = 'No Active Downloads !\nStart Mirroring Now !\n___________________________'
-            message += f"\n<b>CPU:</b> {cpu_percent()}% | <b>FREE:</b> {free}" \
-                       f"\n<b>RAM:</b> {virtual_memory().percent}% | <b>UPTIME:</b> {currentTime}"
+            message = 'Nothing To Do !\n_______________'
+            message += f"\n\n<b>CPU        :</b> {cpu_percent()}%\n<b>SSD        :</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}" \
+                       f"\n<b>RAM       :</b> {virtual_memory().percent}%\n<b>UPTM     :</b> {get_readable_time(time() - botStartTime)}"
             reply_message = sendMessage(message, context.bot, update.message)
             Thread(target=auto_delete_message, args=(context.bot, update.message, reply_message)).start()
             return
@@ -39,7 +38,6 @@ def status_pages(update, context):
         update_all_messages()
     else:
         query.message.delete()
-
 
 mirror_status_handler = CommandHandler(BotCommands.StatusCommand, mirror_status,
                                        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)

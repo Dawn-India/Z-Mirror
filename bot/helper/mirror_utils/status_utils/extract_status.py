@@ -1,11 +1,12 @@
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus, EngineStatus
 
 
 class ExtractStatus:
-    def __init__(self, name, path, size):
+    def __init__(self, name, path, size, message):
         self.__name = name
         self.__path = path
         self.__size = size
+        self.message = message
 
     # The progress of extract function cannot be tracked. So we just return dummy values.
     # If this is possible in future,we should implement it
@@ -33,3 +34,6 @@ class ExtractStatus:
 
     def processed_bytes(self):
         return 0
+
+    def eng(self):
+        return EngineStatus.STATUS_EXT
