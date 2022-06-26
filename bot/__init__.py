@@ -108,8 +108,9 @@ AUTHORIZED_CHATS = set()
 SUDO_USERS = set()
 AS_DOC_USERS = set()
 AS_MEDIA_USERS = set()
-EXTENSION_FILTER = set()
-
+EXTENSION_FILTER = set(['.torrent'])
+LEECH_LOG = set()
+MIRROR_LOGS = set()
 try:
     aid = getConfig('AUTHORIZED_CHATS')
     aid = aid.split()
@@ -129,7 +130,21 @@ try:
     if len(fx) > 0:
         fx = fx.split()
         for x in fx:
-            EXTENSION_FILTER.add(x.strip().lower())
+            EXTENSION_FILTER.add(x.lower())
+except:
+    pass
+try:
+    aid = getConfig('LEECH_LOG')
+    aid = aid.split(' ')
+    for _id in aid:
+        LEECH_LOG.add(int(_id))
+except:
+    pass
+try:
+    aid = getConfig('MIRROR_LOGS')
+    aid = aid.split(' ')
+    for _id in aid:
+        MIRROR_LOGS.add(int(_id))
 except:
     pass
 try:
@@ -449,6 +464,11 @@ try:
         raise KeyError
 except:
     laravel_session = None
+try:	
+    BOT_PM = getConfig('BOT_PM')	
+    BOT_PM = BOT_PM.lower() == 'true'	
+except KeyError:	
+    BOT_PM = False
 try:
     TOKEN_PICKLE_URL = getConfig('TOKEN_PICKLE_URL')
     if len(TOKEN_PICKLE_URL) == 0:
