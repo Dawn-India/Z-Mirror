@@ -10,7 +10,7 @@ from subprocess import run as srun
 from pathlib import PurePath
 from html import escape
 from telegram.ext import CommandHandler
-from telegram import InlineKeyboardMarkup, ParseMode
+from telegram import InlineKeyboardMarkup, ParseMode, InlineKeyboardButton
 from bot import bot, Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, \
                 BUTTON_SIX_NAME, BUTTON_SIX_URL, VIEW_LINK, aria2, QB_SEED, dispatcher, DOWNLOAD_DIR, \
                 download_dict, download_dict_lock, TG_SPLIT_SIZE, LOGGER, MEGA_KEY, DB_URI, INCOMPLETE_TASK_NOTIFIER, \
@@ -37,6 +37,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.telegraph_helper import telegraph
 
 class MirrorListener:
     def __init__(self, bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, tag=None):
@@ -50,6 +51,8 @@ class MirrorListener:
         self.pswd = pswd
         self.tag = tag
         self.isPrivate = self.message.chat.type in ['private', 'group']
+        self.user_id = self.message.from_user.id	
+        reply_to = self.message.reply_to_message
 
     def clean(self):
         try:
@@ -174,6 +177,13 @@ class MirrorListener:
             drive.upload(up_name)
 
     def onDownloadError(self, error):
+        reply_to = self.message.reply_to_message	
+        if reply_to is not None:	
+            try:	
+                reply_to.delete()	
+            except Exception as error:	
+                LOGGER.warning(error)	
+            pass
         error = error.replace('<', ' ').replace('>', ' ')
         clean_download(f'{DOWNLOAD_DIR}{self.uid}')
         with download_dict_lock:
@@ -314,6 +324,24 @@ class MirrorListener:
             DbManger().rm_complete_task(self.message.link)
 
 def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0):
+    buttons = ButtonMaker()	
+    if BOT_PM and message.chat.type != 'private':	
+        try:	
+            msg1 = f'Added your Requested link to Download\n'	
+            send = bot.sendMessage(message.from_user.id, text=msg1)	
+            send.delete()	
+        except Exception as e:	
+            LOGGER.warning(e)	
+            bot_d = bot.get_me()	
+            b_uname = bot_d.username	
+            uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'	
+            botstart = f"http://t.me/{b_uname}"	
+            buttons.buildbutton("Click Here to Start Me", f"{botstart}")	
+            startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \	
+                        f"From now on i will give link and leeched files in PM and log channel only"	
+            message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))	
+            Thread(target=auto_delete_message, args=(bot, message, message)).start()	
+            return
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     name_args = mesg[0].split('|', maxsplit=1)
