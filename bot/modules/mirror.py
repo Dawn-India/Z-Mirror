@@ -51,7 +51,7 @@ class MirrorListener:
         self.pswd = pswd
         self.tag = tag
         self.isPrivate = self.message.chat.type in ['private', 'group']
-        self.user_id = self.message.from_user.id	
+        self.user_id = self.message.from_user.id
         reply_to = self.message.reply_to_message
 
     def clean(self):
@@ -207,10 +207,10 @@ class MirrorListener:
             DbManger().rm_complete_task(self.message.link)
         msg = f"<b>File Name: </b><code>{escape(name)}</code>\n<b>File Size: </b>{size}"
         if self.isLeech:
-            if BOT_PM:	
-                bot_d = bot.get_me()	
-                b_uname = bot_d.username	
-                botstart = f"http://t.me/{b_uname}"	
+            if BOT_PM:
+                bot_d = bot.get_me()
+                b_uname = bot_d.username
+                botstart = f"http://t.me/{b_uname}"
                 buttons.buildbutton("View file in PM", f"{botstart}")
             msg += f'\n<b>Total Files: </b>{folders}'
             if typ != 0:
@@ -337,10 +337,9 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
             uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'	
             botstart = f"http://t.me/{b_uname}"	
             buttons.buildbutton("Click Here to Start Me", f"{botstart}")	
-            startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \	
+            startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \
                         f"From now on i will give link and leeched files in PM and log channel only"	
-            message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))	
-            Thread(target=auto_delete_message, args=(bot, message, message)).start()	
+            message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
             return
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
