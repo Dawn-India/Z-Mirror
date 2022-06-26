@@ -10,10 +10,11 @@ from subprocess import run as srun
 from pathlib import PurePath
 from html import escape
 from telegram.ext import CommandHandler
-from telegram import InlineKeyboardMarkup
-from bot import Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, \
+from telegram import InlineKeyboardMarkup, ParseMode
+from bot import bot, Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, \
                 BUTTON_SIX_NAME, BUTTON_SIX_URL, VIEW_LINK, aria2, QB_SEED, dispatcher, DOWNLOAD_DIR, \
-                download_dict, download_dict_lock, TG_SPLIT_SIZE, LOGGER, MEGA_KEY, DB_URI, INCOMPLETE_TASK_NOTIFIER
+                download_dict, download_dict_lock, TG_SPLIT_SIZE, LOGGER, MEGA_KEY, DB_URI, INCOMPLETE_TASK_NOTIFIER, \
+                    LEECH_LOG, BOT_PM, MIRROR_LOGS
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download
 from bot.helper.ext_utils.shortenurl import short_url
@@ -196,6 +197,11 @@ class MirrorListener:
             DbManger().rm_complete_task(self.message.link)
         msg = f"<b>File Name: </b><code>{escape(name)}</code>\n<b>File Size: </b>{size}"
         if self.isLeech:
+            if BOT_PM:	
+                bot_d = bot.get_me()	
+                b_uname = bot_d.username	
+                botstart = f"http://t.me/{b_uname}"	
+                buttons.buildbutton("View file in PM", f"{botstart}")
             msg += f'\n<b>Total Files: </b>{folders}'
             if typ != 0:
                 msg += f'\n<b>Corrupted Files: </b>{typ}'
@@ -247,6 +253,22 @@ class MirrorListener:
             if BUTTON_SIX_NAME is not None and BUTTON_SIX_URL is not None:
                 buttons.buildbutton(f"{BUTTON_SIX_NAME}", f"{BUTTON_SIX_URL}")
             sendMarkup(msg, self.bot, self.message, InlineKeyboardMarkup(buttons.build_menu(2)))
+            if MIRROR_LOGS:	
+                try:	
+                    for chatid in MIRROR_LOGS:	
+                        bot.sendMessage(chat_id=chatid, text=msg,	
+                                        reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
+                                        parse_mode=ParseMode.HTML)	
+                except Exception as e:	
+                    LOGGER.warning(e)	
+            if BOT_PM and self.message.chat.type != 'private':	
+                try:	
+                    bot.sendMessage(chat_id=self.user_id, text=msg,	
+                                    reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
+                                    parse_mode=ParseMode.HTML)	
+                except Exception as e:	
+                    LOGGER.warning(e)	
+                    return
             if self.isQbit and QB_SEED and not self.extract:
                 if self.isZip:
                     try:
@@ -267,6 +289,13 @@ class MirrorListener:
             update_all_messages()
 
     def onUploadError(self, error):
+        reply_to = self.message.reply_to_message	
+        if reply_to is not None:	
+            try:	
+                reply_to.delete()	
+            except Exception as error:	
+                LOGGER.warning(f"ewww {error}")	
+            pass
         e_str = error.replace('<', '').replace('>', '')
         clean_download(f'{DOWNLOAD_DIR}{self.uid}')
         with download_dict_lock:
