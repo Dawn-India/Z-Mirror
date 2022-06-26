@@ -177,12 +177,12 @@ class MirrorListener:
             drive.upload(up_name)
 
     def onDownloadError(self, error):
-        reply_to = self.message.reply_to_message	
-        if reply_to is not None:	
-            try:	
-                reply_to.delete()	
-            except Exception as error:	
-                LOGGER.warning(error)	
+        reply_to = self.message.reply_to_message
+        if reply_to is not None:
+            try:
+                reply_to.delete()
+            except Exception as error:
+                LOGGER.warning(error)
             pass
         error = error.replace('<', ' ').replace('>', ' ')
         clean_download(f'{DOWNLOAD_DIR}{self.uid}')
@@ -263,21 +263,21 @@ class MirrorListener:
             if BUTTON_SIX_NAME is not None and BUTTON_SIX_URL is not None:
                 buttons.buildbutton(f"{BUTTON_SIX_NAME}", f"{BUTTON_SIX_URL}")
             sendMarkup(msg, self.bot, self.message, InlineKeyboardMarkup(buttons.build_menu(2)))
-            if MIRROR_LOGS:	
-                try:	
-                    for chatid in MIRROR_LOGS:	
-                        bot.sendMessage(chat_id=chatid, text=msg,	
-                                        reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
-                                        parse_mode=ParseMode.HTML)	
-                except Exception as e:	
-                    LOGGER.warning(e)	
-            if BOT_PM and self.message.chat.type != 'private':	
-                try:	
-                    bot.sendMessage(chat_id=self.user_id, text=msg,	
-                                    reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
-                                    parse_mode=ParseMode.HTML)	
-                except Exception as e:	
-                    LOGGER.warning(e)	
+            if MIRROR_LOGS:
+                try:
+                    for chatid in MIRROR_LOGS:
+                        bot.sendMessage(chat_id=chatid, text=msg,
+                                        reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),
+                                        parse_mode=ParseMode.HTML)
+                except Exception as e:
+                    LOGGER.warning(e)
+            if BOT_PM and self.message.chat.type != 'private':
+                try:
+                    bot.sendMessage(chat_id=self.user_id, text=msg,
+                                    reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),
+                                    parse_mode=ParseMode.HTML)
+                except Exception as e:
+                    LOGGER.warning(e)
                     return
             if self.isQbit and QB_SEED and not self.extract:
                 if self.isZip:
@@ -299,12 +299,12 @@ class MirrorListener:
             update_all_messages()
 
     def onUploadError(self, error):
-        reply_to = self.message.reply_to_message	
-        if reply_to is not None:	
-            try:	
-                reply_to.delete()	
-            except Exception as error:	
-                LOGGER.warning(f"ewww {error}")	
+        reply_to = self.message.reply_to_message
+        if reply_to is not None:
+            try:
+                reply_to.delete()
+            except Exception as error:
+                LOGGER.warning(f"ewww {error}")
             pass
         e_str = error.replace('<', '').replace('>', '')
         clean_download(f'{DOWNLOAD_DIR}{self.uid}')
@@ -324,21 +324,21 @@ class MirrorListener:
             DbManger().rm_complete_task(self.message.link)
 
 def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0):
-    buttons = ButtonMaker()	
-    if BOT_PM and message.chat.type != 'private':	
-        try:	
-            msg1 = f'Added your Requested link to Download\n'	
-            send = bot.sendMessage(message.from_user.id, text=msg1)	
-            send.delete()	
-        except Exception as e:	
-            LOGGER.warning(e)	
-            bot_d = bot.get_me()	
-            b_uname = bot_d.username	
-            uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'	
-            botstart = f"http://t.me/{b_uname}"	
-            buttons.buildbutton("Click Here to Start Me", f"{botstart}")	
+    buttons = ButtonMaker()
+    if BOT_PM and message.chat.type != 'private':
+        try:
+            msg1 = f'Added your Requested link to Download\n'
+            send = bot.sendMessage(message.from_user.id, text=msg1)
+            send.delete()
+        except Exception as e:
+            LOGGER.warning(e)
+            bot_d = bot.get_me()
+            b_uname = bot_d.username
+            uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
+            botstart = f"http://t.me/{b_uname}"
+            buttons.buildbutton("Click Here to Start Me", f"{botstart}")
             startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \
-                        f"From now on i will give link and leeched files in PM and log channel only"	
+                        f"From now on i will give link and leeched files in PM and log channel only"
             message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
             return
     mesg = message.text.split('\n')
