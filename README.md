@@ -1,6 +1,6 @@
 # Features:
 
-- Appdrive
+- UNIFIED LOGIN (AppDrive, DriveApp, GDFlix, DriveBit, DriveLinks, DriveSharer, DriveAce, DrivePro, Sharer)
 - qBittorrent
 - Select files from Torrent before downloading using qbittorrent
 - Leech (splitting, thumbnail for each user, setting as document or as media for each user)
@@ -21,7 +21,7 @@
 - Mirror/Leech/Watch/Clone/Count/Del by reply
 - YT-DLP quality buttons
 - Search on torrents with Torrent Search API or with variable plugins using qBittorrent search engine
-- Docker image support for linux `amd64, arm64, arm/v7, arm/v6, s390x, arm64/v8` (**Note**: Use `anasty17/mltb:arm64` for `arm64/v8` or oracle)
+- Docker image support for linux `amd64, arm64, arm/v7, arm/v6, s390x, arm64/v8` (**Note**: Use `412314/mltb:arm64` for `arm64/v8` or oracle)
 - Update bot at startup and with restart command using `UPSTREAM_REPO`
 - Qbittorrent seed until reaching specific ratio or time
 - Rss feed and filter. Based on this repository [rss-chan](https://github.com/hyPnOtICDo0g/rss-chan)
@@ -170,6 +170,23 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 
 ### GDTOT
 - `CRYPT`: Cookie for gdtot google drive link generator. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
+
+### UNIFIED LOGIN (AppDrive, DriveApp, GDFlix, DriveBit, DriveLinks, DriveSharer, DriveAce, DrivePro, Sharer)
+- `UNIFIED_EMAIL` = Fill your Email address. (Note: Use same email in unified login sites.)
+- `UNIFIED_PASS` = Password for login. (Same password for all sites.)
+
+### HUBDRIVE COOKIES
+- `HUBDRIVE_CRYPT` = Cookie for Hubdrive. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
+
+### (KATDRIVE + KOLOP + DRIVEHUB) COOKIES
+- `KATDRIVE_CRYPT` = Cookie for Katdrive, Kolop, Drivehub. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
+
+### (DRIVEFIRE + DRIVEBUZZ) COOKIES
+- `DRIVEFIRE_CRYPT` = Cookie for DriveFire, DriveBuzz. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
+
+### Sharer.pw COOKIES
+- `XSRF_TOKEN` = For XSRF Token use this chrome extension: [Cick here to download](https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid)
+- `laravel_session` = For Laravel session use the same extension addressed above: [Click here to download](https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid)
 
 ### Size Limits
 - `TORRENT_DIRECT_LIMIT`: To limit the Torrent/Direct mirror size. Don't add unit. Default unit is `GB`.
@@ -499,6 +516,44 @@ Where host is the name of extractor (eg. instagram, Twitch). Multiple accounts o
 ## Gdtot Cookies
 To Clone or Leech gdtot link follow these steps:
 1. Login/Register to [gdtot](https://new.gdtot.top).
+2. Copy this script and paste it in browser address bar.
+   - **Note**: After pasting it check at the beginning of the script in broswer address bar if `javascript:` exists or not, if not so write it as shown below.
+   ```javascript
+   javascript:(function () {
+    const input = document.createElement('input');
+    COOKIE = JSON.parse(JSON.stringify({cookie : document.cookie}));
+    input.value = COOKIE['cookie'].split('crypt=')[1];
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    var result = document.execCommand('copy');
+    document.body.removeChild(input);
+     if(result)
+       alert('Crypt copied to clipboard');
+     else
+       prompt('Failed to copy Crypt. Manually copy below Crypt\n\n', input.value);
+   })();
+   ```
+   - After pressing enter your browser will prompt a alert.
+3. Now you'll get Crypt value in your clipboard
+   ```
+   NGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxWdSVT0%3D
+   ```
+4. From this you have to paste value for **CRYPT** in config.env file.
+
+-----
+
+## Unified Cookies
+To Clone or Leech AppDrive, DriveApp, GDFlix, DriveBit, DriveLinks, DriveSharer, DriveAce, DrivePro link follow these steps:
+1. Login/Register to [AppDrive](https://appdrive.in/).
+   Login/Register to [DriveApp](https://driveapp.in/).
+   Login/Register to [GDFlix](https://gdflix.pro/).
+   Login/Register to [DriveBit](https://drivebit.in/).
+   Login/Register to [DriveLinks](https://drivelinks.in/).
+   Login/Register to [DriveSharer](https://drivesharer.in/).
+   Login/Register to [DriveAce](https://driveace.in/).
+   Login/Register to [DrivePro](https://drivepro.in/).
+
 2. Copy this script and paste it in browser address bar.
    - **Note**: After pasting it check at the beginning of the script in broswer address bar if `javascript:` exists or not, if not so write it as shown below.
    ```javascript
