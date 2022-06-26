@@ -68,7 +68,7 @@ class DbManger:
                         makedirs('Thumbnails')
                     with open(path, 'wb+') as f:
                         f.write(row[5])
-                elif row[6] and row[0] not in LEECH_LOG:
+                if row[6] and row[0] not in LEECH_LOG:
                     LEECH_LOG.add(row[0])
             LOGGER.info("Users data has been imported from Database")
         # Rss Data
