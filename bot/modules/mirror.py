@@ -192,11 +192,11 @@ class MirrorListener:
                 LOGGER.error(str(e))
             count = len(download_dict)
         msg = f"{self.tag} your download has been stopped due to: {error}"
-        # sendMessage(msg, self.bot, self.message)
-        # if count == 0:
-        #     self.clean()
-        # else:
-        #     update_all_messages()
+        sendMessage(msg, self.bot, self.message)
+        if count == 0:
+            self.clean()
+        else:
+            update_all_messages()
 
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
