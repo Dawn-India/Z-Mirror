@@ -129,7 +129,7 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `UPSTREAM_BRANCH`: Upstream branch for update. Default is `master`.
 
 ### Mirror
-`MIRROR_LOGS`: Group/Channel ID where Mirror-logs are posted.( **Note** Don't add "" )
+- `MIRROR_LOGS`: Group/Channel ID where Mirror-logs are posted.( **Note** Don't add "" )
 ### Leech
 - `BOT_PM`: To send Leeched files and mirrored links in PM, set it `True` (`False` by Default)
 - `LEECH_LOG`: Group/Channel ID where Leech-logs are posted.( **Note** Don't add "" )
@@ -549,14 +549,15 @@ To Clone or Leech gdtot link follow these steps:
 
 ## Unified Cookies
 To Clone or Leech AppDrive, DriveApp, GDFlix, DriveBit, DriveLinks, DriveSharer, DriveAce, DrivePro link follow these steps:
-1. Login/Register to [AppDrive](https://appdrive.in/).
-   Login/Register to [DriveApp](https://driveapp.in/).
-   Login/Register to [GDFlix](https://gdflix.pro/).
-   Login/Register to [DriveBit](https://drivebit.in/).
-   Login/Register to [DriveLinks](https://drivelinks.in/).
-   Login/Register to [DriveSharer](https://drivesharer.in/).
-   Login/Register to [DriveAce](https://driveace.in/).
-   Login/Register to [DrivePro](https://drivepro.in/).
+1. Here's all available sites:
+-   Login/Register to [AppDrive](https://appdrive.in/).
+-   Login/Register to [DriveApp](https://driveapp.in/).
+-   Login/Register to [GDFlix](https://gdflix.pro/).
+-   Login/Register to [DriveBit](https://drivebit.in/).
+-   Login/Register to [DriveLinks](https://drivelinks.in/).
+-   Login/Register to [DriveSharer](https://drivesharer.in/).
+-   Login/Register to [DriveAce](https://driveace.in/).
+-   Login/Register to [DrivePro](https://drivepro.in/).
 
 2. Copy this script and paste it in browser address bar.
    - **Note**: After pasting it check at the beginning of the script in broswer address bar if `javascript:` exists or not, if not so write it as shown below.
