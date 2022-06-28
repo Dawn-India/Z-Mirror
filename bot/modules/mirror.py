@@ -177,13 +177,6 @@ class MirrorListener:
             drive.upload(up_name)
 
     def onDownloadError(self, error):
-        reply_to = self.message.reply_to_message
-        if reply_to is not None:
-            try:
-                reply_to.delete()
-            except Exception as error:
-                LOGGER.warning(error)
-            pass
         error = error.replace('<', ' ').replace('>', ' ')
         clean_download(f'{DOWNLOAD_DIR}{self.uid}')
         with download_dict_lock:
