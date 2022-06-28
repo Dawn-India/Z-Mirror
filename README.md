@@ -1,5 +1,5 @@
 # Features:
-
+- Leech-Log, Mirror-Log, Bot-PM
 - UNIFIED LOGIN (AppDrive, DriveApp, GDFlix, DriveBit, DriveLinks, DriveSharer, DriveAce, DrivePro, Sharer)
 - qBittorrent
 - Select files from Torrent before downloading using qbittorrent
@@ -128,7 +128,11 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `UPSTREAM_REPO`: Your github repository link, if your repo is private add `https://username:{githubtoken}@github.com/{username}/{reponame}` format. Get token from [Github settings](https://github.com/settings/tokens). So you can update your bot from filled repository on each restart. **NOTE**: Any change in docker or requirements you need to deploy/build again with updated repo to take effect. DON'T delete .gitignore file. For more information read [THIS](https://github.com/Dawn-India/Z-Mirror/tree/master#upstream-repo-recommended).
 - `UPSTREAM_BRANCH`: Upstream branch for update. Default is `master`.
 
+### Mirror
+`MIRROR_LOGS`: Group/Channel ID where Mirror-logs are posted.( **Note** Don't add "" )
 ### Leech
+- `BOT_PM`: To send Leeched files and mirrored links in PM, set it `True` (`False` by Default)
+- `LEECH_LOG`: Group/Channel ID where Leech-logs are posted.( **Note** Don't add "" )
 - `TG_SPLIT_SIZE`: Size of split in bytes. Default is `2GB`.
 - `AS_DOCUMENT`: Default type of Telegram file upload. Default is `False` mean as media. `Bool`
 - `EQUAL_SPLITS`: Split files larger than **TG_SPLIT_SIZE** into equal parts size (Not working with zip cmd). Default is `False`. `Bool`
