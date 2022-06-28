@@ -2,13 +2,10 @@
 
 from string import ascii_letters
 from random import SystemRandom
-
 from time import sleep
 from telegraph import Telegraph
 from telegraph.exceptions import RetryAfterError
-
 from bot import LOGGER
-
 
 class TelegraphHelper:
     def __init__(self, author_name=None, author_url=None):
@@ -76,6 +73,5 @@ class TelegraphHelper:
                 content=content
             )
         return
-
 
 telegraph=TelegraphHelper('Z-Mirror-Bot', 'https://github.com/shuvam-dawn/MLTB-Custom-UI')
