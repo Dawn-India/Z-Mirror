@@ -6,7 +6,6 @@ from time import sleep, time
 from re import search as re_search
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
-
 from bot import download_dict, download_dict_lock, BASE_URL, dispatcher, get_client, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, STOP_DUPLICATE, WEB_PINCODE, QB_SEED, TORRENT_TIMEOUT, LOGGER, STORAGE_THRESHOLD
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
@@ -14,7 +13,6 @@ from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, de
 from bot.helper.ext_utils.bot_utils import getDownloadByGid, get_readable_file_size, get_readable_time, setInterval
 from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, check_storage_threshold
 from bot.helper.telegram_helper import button_build
-
 
 class QbDownloader:
     POLLING_INTERVAL = 3
@@ -29,7 +27,7 @@ class QbDownloader:
         self.__periodic = None
         self.__stalled_time = time()
         self.__uploaded = False
-        self.__seeding = False
+        self.is_seeding = False
         self.__sizeChecked = False
         self.__dupChecked = False
         self.__rechecked = False
@@ -197,7 +195,7 @@ class QbDownloader:
                             self.__periodic.cancel()
                             return
                         download_dict[self.__listener.uid] = QbDownloadStatus(self.__listener, self)
-                    self.__seeding = True
+                    self.is_seeding = True
                     update_all_messages()
                     LOGGER.info(f"Seeding started: {self.__name}")
                 else:
@@ -222,7 +220,7 @@ class QbDownloader:
         self.__periodic.cancel()
 
     def cancel_download(self):
-        if self.__seeding:
+        if self.is_seeding:
             LOGGER.info(f"Cancelling Seed: {self.__name}")
             self.client.torrents_pause(torrent_hashes=self.ext_hash)
         else:
@@ -232,7 +230,7 @@ def get_confirm(update, context):
     query = update.callback_query
     user_id = query.from_user.id
     data = query.data
-    data = data.split(" ")
+    data = data.split()
     qbdl = getDownloadByGid(data[2])
     if not qbdl:
         query.answer(text="This task has been cancelled!", show_alert=True)
