@@ -303,13 +303,6 @@ class MirrorListener:
             update_all_messages()
 
     def onUploadError(self, error):
-        reply_to = self.message.reply_to_message
-        if reply_to is not None:
-            try:
-                reply_to.delete()
-            except Exception as error:
-                LOGGER.warning(f"ewww {error}")
-                pass
         e_str = error.replace('<', '').replace('>', '')
         clean_download(f'{DOWNLOAD_DIR}{self.uid}')
         with download_dict_lock:
