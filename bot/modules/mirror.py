@@ -200,13 +200,6 @@ class MirrorListener:
         mesg = self.message.text.split('\n')
         message_args = mesg[0].split(' ', maxsplit=1)
         reply_to = self.message.reply_to_message
-        if self.message.chat.type != 'private':
-            if reply_to is not None:
-                try:
-                    reply_to.delete()
-                except Exception as error:
-                    LOGGER.warning(error)
-                    pass
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
         msg = f"<b>File Name: </b><code>{escape(name)}</code>\n<b>File Size: </b>{size}"
@@ -343,7 +336,7 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
     name_args = mesg[0].split('|', maxsplit=1)
     qbitsel = False
     is_gdtot = False
-    
+
     if len(message_args) > 1:
         link = message_args[1].strip()
         if link.startswith("s ") or link == "s":
@@ -360,17 +353,17 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
             link = ''
     else:
         link = ''
-    
+
     if len(name_args) > 1:
         name = name_args[1]
         name = name.split(' pswd:')[0]
         name = name.strip()
     else:
         name = ''
-    
+
     link = re_split(r"pswd:|\|", link)[0]
     link = link.strip()
-    
+
     pswd_arg = mesg[0].split(' pswd: ')
     if len(pswd_arg) > 1:
         pswd = pswd_arg[1]
