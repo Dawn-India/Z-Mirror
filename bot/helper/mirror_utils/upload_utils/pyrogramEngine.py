@@ -4,20 +4,15 @@ from time import time, sleep
 from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
-
 from bot import DOWNLOAD_DIR, AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, \
                  EXTENSION_FILTER, app, LEECH_LOG, BOT_PM
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_path_size
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
-
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(WARNING)
-
 VIDEO_SUFFIXES = ("MKV", "MP4", "MOV", "WMV", "3GP", "MPG", "WEBM", "AVI", "FLV", "M4V", "GIF")
 AUDIO_SUFFIXES = ("MP3", "M4A", "M4B", "FLAC", "WAV", "AIF", "OGG", "AAC", "DTS", "MID", "AMR", "MKA")
 IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "WEBP", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
-
-
 class TgUploader:
 
     def __init__(self, name=None, listener=None):
@@ -40,6 +35,7 @@ class TgUploader:
         self.__leech_log = LEECH_LOG.copy()  # copy then pop to keep the original var as it is
         self.__app = app
         self.__user_id = listener.message.from_user.id
+        self.isPrivate = listener.message.chat.type in ['private', 'group']
     def upload(self):
         path = f"{DOWNLOAD_DIR}{self.__listener.uid}"
         size = get_readable_file_size(get_path_size(path))
@@ -126,7 +122,7 @@ class TgUploader:
                                                                       supports_streaming=True,
                                                                       disable_notification=True,
                                                                       progress=self.__upload_progress)
-                        if BOT_PM:
+                        if not self.isPrivate and BOT_PM:
                             try:
                                 app.send_video(chat_id=self.__user_id, video=self.__sent_msg.video.file_id,
                                                caption=cap_mono)
@@ -160,7 +156,7 @@ class TgUploader:
                                                                       thumb=thumb,
                                                                       disable_notification=True,
                                                                       progress=self.__upload_progress)
-                        if BOT_PM:
+                        if not self.isPrivate and BOT_PM:
                             try:
                                 app.send_audio(chat_id=self.__user_id, audio=self.__sent_msg.audio.file_id,
                                                caption=cap_mono)
@@ -186,7 +182,7 @@ class TgUploader:
                                                                       caption=cap_mono,
                                                                       disable_notification=True,
                                                                       progress=self.__upload_progress)
-                        if BOT_PM:
+                        if not self.isPrivate and BOT_PM:
                             try:
                                 app.send_photo(chat_id=self.__user_id, photo=self.__sent_msg.photo.file_id,
                                                caption=cap_mono)
@@ -221,7 +217,7 @@ class TgUploader:
                                                                      caption=cap_mono,
                                                                      disable_notification=True,
                                                                      progress=self.__upload_progress)
-                    if BOT_PM:
+                    if not self.isPrivate and BOT_PM:
                         try:
                             app.send_document(chat_id=self.__user_id, document=self.__sent_msg.document.file_id,
                                               caption=cap_mono)
