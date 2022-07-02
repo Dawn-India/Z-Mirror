@@ -1,7 +1,7 @@
 from random import SystemRandom
 from string import ascii_letters, digits
 
-from bot import download_dict, download_dict_lock, ZIP_UNZIP_LIMIT, LOGGER, STOP_DUPLICATE, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT
+from bot import download_dict, download_dict_lock, ZIP_UNZIP_LIMIT, LOGGER, STOP_DUPLICATE, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, DL_LIMIT
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gd_download_status import GdDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendMarkup
@@ -27,7 +27,7 @@ def add_gd_download(link, listener, is_gdtot):
             if gmsg:
                 msg = "Someone already mirrored it for you !\nHere you go:"
                 return sendMarkup(msg, listener.bot, listener.message, button)
-    if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT]):
+    if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, DL_LIMIT]):
         arch = any([listener.extract, listener.isZip])
         limit = None
         if STORAGE_THRESHOLD is not None:
@@ -42,6 +42,9 @@ def add_gd_download(link, listener, is_gdtot):
         elif TORRENT_DIRECT_LIMIT is not None:
             mssg = f'Torrent/Direct limit is {TORRENT_DIRECT_LIMIT}GB'
             limit = TORRENT_DIRECT_LIMIT
+        elif DL_LIMIT is not None:
+                    mssg = f'Download limit is {DL_LIMIT}GB'
+                    limit = DL_LIMIT
         if limit is not None:
             LOGGER.info('Checking File/Folder Size...')
             if size > limit * 1024**3:
