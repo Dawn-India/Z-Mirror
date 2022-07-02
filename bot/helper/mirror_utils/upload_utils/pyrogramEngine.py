@@ -12,7 +12,7 @@ LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(WARNING)
 VIDEO_SUFFIXES = ("MKV", "MP4", "MOV", "WMV", "3GP", "MPG", "WEBM", "AVI", "FLV", "M4V", "GIF")
 AUDIO_SUFFIXES = ("MP3", "M4A", "M4B", "FLAC", "WAV", "AIF", "OGG", "AAC", "DTS", "MID", "AMR", "MKA")
-IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "WEBP", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
+IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
 class TgUploader:
 
     def __init__(self, name=None, listener=None):
@@ -25,7 +25,6 @@ class TgUploader:
         self.__is_cancelled = False
         self.__as_doc = AS_DOCUMENT
         self.__thumb = f"Thumbnails/{listener.message.from_user.id}.jpg"
-        self.__sent_msg = None
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__resource_lock = RLock()

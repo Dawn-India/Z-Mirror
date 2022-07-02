@@ -3,8 +3,7 @@ from time import sleep, time
 from re import search as re_search
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
-
-from bot import download_dict, download_dict_lock, BASE_URL, dispatcher, get_client, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, STOP_DUPLICATE, WEB_PINCODE, QB_SEED, TORRENT_TIMEOUT, LOGGER, STORAGE_THRESHOLD
+from bot import download_dict, download_dict_lock, BASE_URL, dispatcher, get_client, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, STOP_DUPLICATE, WEB_PINCODE, TORRENT_TIMEOUT, LOGGER, STORAGE_THRESHOLD
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, sendStatusMessage, update_all_messages
@@ -17,16 +16,16 @@ class QbDownloader:
     POLLING_INTERVAL = 3
 
     def __init__(self, listener):
-        self.__listener = listener
-        self.__path = ''
-        self.__name = ''
         self.select = False
+        self.is_seeding = False
         self.client = None
         self.periodic = None
         self.ext_hash = ''
+        self.__listener = listener
+        self.__path = ''
+        self.__name = ''
         self.__stalled_time = time()
         self.__uploaded = False
-        self.is_seeding = False
         self.__sizeChecked = False
         self.__dupChecked = False
         self.__rechecked = False
@@ -171,14 +170,14 @@ class QbDownloader:
             elif (tor_info.state.lower().endswith("up") or tor_info.state == "uploading") and \
                  not self.__uploaded and len(listdir(self.__path)) != 0:
                 self.__uploaded = True
-                if not QB_SEED:
+                if not self.__listener.seed:
                     self.client.torrents_pause(torrent_hashes=self.ext_hash)
                 if self.select:
                     clean_unwanted(self.__path)
                 self.__listener.onDownloadComplete()
-                if QB_SEED and not self.__listener.isLeech and not self.__listener.extract:
+                if self.__listener.seed and not self.__listener.isLeech and not self.__listener.extract:
                     with download_dict_lock:
-                        if self.__listener.uid not in list(download_dict.keys()):
+                        if self.__listener.uid not in download_dict:
                             self.client.torrents_delete(torrent_hashes=self.ext_hash, delete_files=True)
                             self.client.auth_log_out()
                             self.periodic.cancel()
@@ -191,7 +190,7 @@ class QbDownloader:
                     self.client.torrents_delete(torrent_hashes=self.ext_hash, delete_files=True)
                     self.client.auth_log_out()
                     self.periodic.cancel()
-            elif tor_info.state == 'pausedUP' and QB_SEED:
+            elif tor_info.state == 'pausedUP' and self.__listener.seed:
                 self.__listener.onUploadError(f"Seeding stopped with Ratio: {round(tor_info.ratio, 3)} and Time: {get_readable_time(tor_info.seeding_time)}")
                 self.client.torrents_delete(torrent_hashes=self.ext_hash, delete_files=True)
                 self.client.auth_log_out()

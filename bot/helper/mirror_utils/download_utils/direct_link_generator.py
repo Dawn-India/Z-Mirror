@@ -253,8 +253,8 @@ def racaty(url: str) -> str:
     soup = BeautifulSoup(r.text, "lxml")
     op = soup.find("input", {"name": "op"})["value"]
     ids = soup.find("input", {"name": "id"})["value"]
-    rpost = scraper.post(url, data = {"op": op, "id": ids})
-    rsoup = BeautifulSoup(rpost.text, "lxml")
+    rapost = scraper.post(url, data = {"op": op, "id": ids})
+    rsoup = BeautifulSoup(rapost.text, "lxml")
     dl_url = rsoup.find("a", {"id": "uniqueExpirylink"})["href"].replace(" ", "%20")
     return dl_url
 
