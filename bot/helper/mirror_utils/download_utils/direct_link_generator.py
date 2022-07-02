@@ -21,7 +21,6 @@ from cfscrape import create_scraper
 import cloudscraper
 from bs4 import BeautifulSoup
 from base64 import standard_b64encode
-
 from bot import LOGGER, UPTOBOX_TOKEN, CRYPT, UNIFIED_EMAIL, UNIFIED_PASS, HUBDRIVE_CRYPT, KATDRIVE_CRYPT, DRIVEFIRE_CRYPT, XSRF_TOKEN, laravel_session
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.bot_utils import *
@@ -549,6 +548,10 @@ def udrive(url: str) -> str:
         return flink
     elif 'drivehub' in url:
         gd_id = res.rsplit("=", 1)[-1]
+        flink = f"https://drive.google.com/open?id={gd_id}"
+        return flink
+    elif 'hubdrive' in url:
+        gd_id = res.rsplit("gd=", 1)[-1]
         flink = f"https://drive.google.com/open?id={gd_id}"
         return flink
     elif 'drivebuzz' in url:
