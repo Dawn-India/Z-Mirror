@@ -345,13 +345,6 @@ try:
 except:
     ZIP_UNZIP_LIMIT = None
 try:
-    DL_LIMIT = getConfig('DL_LIMIT')
-    if len(DL_LIMIT) == 0:
-        raise KeyError
-    DL_LIMIT = float(DL_LIMIT)
-except:
-    DL_LIMIT = None
-try:
     RSS_CHAT_ID = getConfig('RSS_CHAT_ID')
     if len(RSS_CHAT_ID) == 0:
         raise KeyError
