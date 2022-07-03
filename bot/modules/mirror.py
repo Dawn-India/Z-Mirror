@@ -326,7 +326,6 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
             user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", message.from_user.id)
             LOGGER.error(user.status)
             if user.status not in ('member', 'creator', 'administrator'):
-                buttons = ButtonMaker()
                 buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
                 reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
                 message = sendMarkup(
