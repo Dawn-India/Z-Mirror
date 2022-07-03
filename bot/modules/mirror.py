@@ -327,14 +327,14 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
             LOGGER.info(user.status)
             if user.status not in ("member", "creator", "administrator"):
                 buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
-                reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
-                message = sendMarkup(
-                    str(f"<b>Dear {uname}️ You haven't join our Updates Channel yet.</b>\n\nKindly Join @{CHANNEL_USERNAME} To Use Bots. "),
-                    bot, reply_markup)
+                reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
+                startwarn = f"Dear {uname},\n\n<b>I found that you haven't joined our channel: {CHANNEL_USERNAME} yet.</b>\n\n" \
+                            f"You can use me after joinning the channel."
+                message = replyMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
                 return
         except:
             pass
-    
+
     if BOT_PM and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
@@ -344,7 +344,6 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
             LOGGER.warning(e)
             bot_d = bot.get_me()
             b_uname = bot_d.username
-            uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
             botstart = f"http://t.me/{b_uname}"
             buttons.buildbutton("Click Here to Start Me", f"{botstart}")
             startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \
