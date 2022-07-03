@@ -318,38 +318,38 @@ class MirrorListener:
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
 
-def mir(bot, update, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
-    buttons = ButtonMaker()
-    if FSUB and message.chat.type != 'private':
-        try:
-            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", update.message.from_user.id)
-            LOGGER.error(user.status)
-            if user.status not in ('member', 'creator', 'administrator'):
-                buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
-                reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
-                message = sendMarkup(
-                    str(f"<b>Dear {uname}️ You haven't join our Updates Channel yet.</b>\n\nKindly Join @{CHANNEL_USERNAME} To Use Bots. "),
-                    bot, update, reply_markup)
-                Thread(target=auto_delete_upload_message, args=(bot, update.message, message)).start()
+    def __mirror(bot, update, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
+        buttons = ButtonMaker()
+        if FSUB and message.chat.type != 'private':
+            try:
+                user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", update.message.from_user.id)
+                LOGGER.error(user.status)
+                if user.status not in ('member', 'creator', 'administrator'):
+                    buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
+                    reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
+                    message = sendMarkup(
+                        str(f"<b>Dear {uname}️ You haven't join our Updates Channel yet.</b>\n\nKindly Join @{CHANNEL_USERNAME} To Use Bots. "),
+                        bot, update, reply_markup)
+                    Thread(target=auto_delete_upload_message, args=(bot, update.message, message)).start()
+                    return
+            except:
+                pass
+        if BOT_PM and message.chat.type != 'private':
+            try:
+                msg1 = f'Added your Requested link to Download\n'
+                send = bot.sendMessage(message.from_user.id, text=msg1)
+                send.delete()
+            except Exception as e:
+                LOGGER.warning(e)
+                bot_d = bot.get_me()
+                b_uname = bot_d.username
+                uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
+                botstart = f"http://t.me/{b_uname}"
+                buttons.buildbutton("Click Here to Start Me", f"{botstart}")
+                startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \
+                            f"From now on i will give link and leeched files in PM and log channel only"
+                message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
                 return
-        except:
-            pass
-    if BOT_PM and message.chat.type != 'private':
-        try:
-            msg1 = f'Added your Requested link to Download\n'
-            send = bot.sendMessage(message.from_user.id, text=msg1)
-            send.delete()
-        except Exception as e:
-            LOGGER.warning(e)
-            bot_d = bot.get_me()
-            b_uname = bot_d.username
-            uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-            botstart = f"http://t.me/{b_uname}"
-            buttons.buildbutton("Click Here to Start Me", f"{botstart}")
-            startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \
-                        f"From now on i will give link and leeched files in PM and log channel only"
-            message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
-            return
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     name_args = mesg[0].split('|', maxsplit=1)
