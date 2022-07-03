@@ -334,7 +334,7 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
                 Thread(target=auto_delete_upload_message, args=(bot, message, message)).start()
                 return
         except:
-            pass
+            return
     if BOT_PM:
         try:
             msg1 = f'Added your Requested link to Download ☺️\n'
