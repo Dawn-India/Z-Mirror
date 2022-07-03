@@ -318,7 +318,7 @@ class MirrorListener:
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
 
-def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
+def _mirror(bot, message, update, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
     buttons = ButtonMaker()
     uname = f'<a href="tg://user?id={update.message.from_user.id}">{update.message.from_user.first_name}</a>'
     if FSUB:
