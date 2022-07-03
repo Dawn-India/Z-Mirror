@@ -318,24 +318,23 @@ class MirrorListener:
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
 
-def _mirror(bot, message, update, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
+def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
     buttons = ButtonMaker()
+    uname = f'<a href="tg://user?id={update.message.from_user.id}">{update.message.from_user.first_name}</a>'
     if FSUB:
         try:
             user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", update.message.from_user.id)
-            LOGGER.info(user.status)
-            if user.status not in ("member", "creator", "administrator", "supergroup"):
-                uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-                buttons.buildbutton("Join", f"https://t.me/{chat_u}")
-                help_msg = f"<b>⚠️‼️ Hey {uname},\nYou Haven't yet Joined our Channel.\n<u>Join & Use BoTs Without Any Restriction</u>😊</b>"
-                reply_message = sendMarkup(
-                    help_msg, bot, message, InlineKeyboardMarkup(buttons.build_menu(1))
-                )
-                Thread(
-                    target=auto_delete_message, args=(bot, message, reply_message)
-                ).start()
-                return reply_message
-        except Exception:
+            LOGGER.error(user.status)
+            if user.status not in ('member', 'creator', 'administrator'):
+                buttons = ButtonMaker()
+                buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
+                reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
+                message = sendMarkup(
+                    str(f"<b>Dear {uname}️ You haven't join our Updates Channel yet.</b>\n\nKindly Join @{CHANNEL_USERNAME} To Use Bots. "),
+                    bot, update, reply_markup)
+                Thread(target=auto_delete_upload_message, args=(bot, update.message, message)).start()
+                return
+        except:
             pass
     
     if BOT_PM and message.chat.type != 'private':
@@ -516,40 +515,40 @@ def _mirror(bot, message, update, isZip=False, extract=False, isQbit=False, isLe
 
 
 def mirror(update, context):
-    _mirror(context.bot, update.message)
+    _mirror(context.bot, update)
 
 def unzip_mirror(update, context):
-    _mirror(context.bot, update.message, extract=True)
+    _mirror(context.bot, update, extract=True)
 
 def zip_mirror(update, context):
-    _mirror(context.bot, update.message, True)
+    _mirror(context.bot, update, True)
 
 def qb_mirror(update, context):
-    _mirror(context.bot, update.message, isQbit=True)
+    _mirror(context.bot, update, isQbit=True)
 
 def qb_unzip_mirror(update, context):
-    _mirror(context.bot, update.message, extract=True, isQbit=True)
+    _mirror(context.bot, update, extract=True, isQbit=True)
 
 def qb_zip_mirror(update, context):
-    _mirror(context.bot, update.message, True, isQbit=True)
+    _mirror(context.bot, update, True, isQbit=True)
 
 def leech(update, context):
-    _mirror(context.bot, update.message, isLeech=True)
+    _mirror(context.bot, update, isLeech=True)
 
 def unzip_leech(update, context):
-    _mirror(context.bot, update.message, extract=True, isLeech=True)
+    _mirror(context.bot, update, extract=True, isLeech=True)
 
 def zip_leech(update, context):
-    _mirror(context.bot, update.message, True, isLeech=True)
+    _mirror(context.bot, update, True, isLeech=True)
 
 def qb_leech(update, context):
-    _mirror(context.bot, update.message, isQbit=True, isLeech=True)
+    _mirror(context.bot, update, isQbit=True, isLeech=True)
 
 def qb_unzip_leech(update, context):
-    _mirror(context.bot, update.message, extract=True, isQbit=True, isLeech=True)
+    _mirror(context.bot, update, extract=True, isQbit=True, isLeech=True)
 
 def qb_zip_leech(update, context):
-    _mirror(context.bot, update.message, True, isQbit=True, isLeech=True)
+    _mirror(context.bot, update, True, isQbit=True, isLeech=True)
 
 mirror_handler = CommandHandler(BotCommands.MirrorCommand, mirror,
                                 filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
