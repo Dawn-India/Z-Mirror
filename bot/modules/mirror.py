@@ -321,21 +321,6 @@ class MirrorListener:
 def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
     buttons = ButtonMaker()
     uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-    if FSUB:
-        try:
-            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", message.from_user.id)
-            LOGGER.info(user.status)
-            if user.status not in ("member", "creator", "administrator"):
-                
-                    buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
-                    reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
-                    startwarn = f"Dear {uname},\n\n<b>I found that you haven't joined our channel: {CHANNEL_USERNAME} yet.</b>\n\n" \
-                            f"You can use me after joinning the channel."
-                    message = reply_Markup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
-                
-        except:
-            pass
-
     if BOT_PM and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
@@ -351,6 +336,20 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
                         f"From now on i will give link and leeched files in PM and log channel only"
             message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
         return
+    if FSUB:
+        try:
+            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", message.from_user.id)
+            LOGGER.info(user.status)
+            if user.status not in ("member", "creator", "administrator"):
+                    buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
+                    reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
+                    startwarn = f"Dear {uname},\n\n<b>I found that you haven't joined our channel: {CHANNEL_USERNAME} yet.</b>\n\n" \
+                            f"You can use me after joinning the channel."
+                    message = reply_Markup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
+            else:
+                return
+        except:
+            pass
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     name_args = mesg[0].split('|', maxsplit=1)
