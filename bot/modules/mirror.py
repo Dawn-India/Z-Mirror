@@ -319,10 +319,10 @@ class MirrorListener:
             DbManger().rm_complete_task(self.message.link)
 
 def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
-    uname = f'<a href="tg://user?id={update.message.from_user.id}">{update.message.from_user.first_name}</a>'
+    uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
     if FSUB:
         try:
-            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", update.message.from_user.id)
+            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", message.from_user.id)
             LOGGER.error(user.status)
             if user.status not in ('member', 'creator', 'administrator'):
                 buttons = ButtonMaker()
@@ -330,29 +330,29 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
                 reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
                 message = sendMarkup(
                     str(f"<b>Dear {uname}️ You haven't join our Updates Channel yet.</b>\n\nKindly Join @{CHANNEL_USERNAME} To Use Bots. "),
-                    bot, update, reply_markup)
-                Thread(target=auto_delete_upload_message, args=(bot, update.message, message)).start()
+                    bot, reply_markup)
+                Thread(target=auto_delete_upload_message, args=(bot, message, message)).start()
                 return
         except:
             pass
     if BOT_PM:
         try:
             msg1 = f'Added your Requested link to Download ☺️\n'
-            send = bot.sendMessage(update.message.from_user.id, text=msg1, )
+            send = bot.sendMessage(message.from_user.id, text=msg1, )
             send.delete()
         except Exception as e:
             LOGGER.warning(e)
             bot_d = bot.get_me()
             b_uname = bot_d.username
-            uname = f'<a href="tg://user?id={update.message.from_user.id}">{update.message.from_user.first_name}</a>'
+            uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
             channel = CHANNEL_USERNAME
             botstart = f"http://t.me/{b_uname}"
             keyboard = [
                 [InlineKeyboardButton("Click Here to Start Me 😜", url=f"{botstart}")]]
             message = sendMarkup(
                 f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet 😁.</b>\n\nFrom now on i will give link and leeched files in PM and log channel only 🤫 (Join Log Channel).",
-                bot, update, reply_markup=InlineKeyboardMarkup(keyboard))
-            Thread(target=auto_delete_message, args=(bot, update.message, message)).start()
+                bot, reply_markup=InlineKeyboardMarkup(keyboard))
+            Thread(target=auto_delete_message, args=(bot, message, message)).start()
             return
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
