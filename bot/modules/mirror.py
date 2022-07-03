@@ -318,19 +318,21 @@ class MirrorListener:
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
 
-def _mirror(bot, update, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
+def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
     buttons = ButtonMaker()
     if FSUB and message.chat.type != 'private':
         try:
-            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", update.message.from_user.id)
+            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", message.from_user.id)
             LOGGER.error(user.status)
             if user.status not in ('member', 'creator', 'administrator'):
                 buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
                 reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
                 message = sendMarkup(
                     str(f"<b>Dear {uname}️ You haven't join our Updates Channel yet.</b>\n\nKindly Join @{CHANNEL_USERNAME} To Use Bots. "),
-                    bot, update, reply_markup)
-                Thread(target=auto_delete_upload_message, args=(bot, update.message, message)).start()
+                    bot, reply_markup)
+                Thread(
+                    target=auto_delete_message, args=(bot, message, reply_message)
+                ).start()
             return
         except:
             pass
