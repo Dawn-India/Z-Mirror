@@ -252,8 +252,8 @@ def racaty(url: str) -> str:
     soup = BeautifulSoup(r.text, "lxml")
     op = soup.find("input", {"name": "op"})["value"]
     ids = soup.find("input", {"name": "id"})["value"]
-    rapost = scraper.post(url, data = {"op": op, "id": ids})
-    rsoup = BeautifulSoup(rapost.text, "lxml")
+    rpost = scraper.post(url, data = {"op": op, "id": ids})
+    rsoup = BeautifulSoup(rpost.text, "lxml")
     dl_url = rsoup.find("a", {"id": "uniqueExpirylink"})["href"].replace(" ", "%20")
     return dl_url
 
@@ -542,21 +542,7 @@ def udrive(url: str) -> str:
         res = client.post(req_url, headers=headers, data=data).json()['file']
     except: return {'error': True, 'src_url': url}
 
-    if 'hubdrive' in url:
-        match = re_findall(r'https?://hubdrive\.(.+)\/\S+', url)[0]
-
-        with rsession() as client:
-            client.cookies.update({'crypt': HUBDRIVE_CRYPT})
-            client.get(url)
-            res = client.get(f"https://{match[0]}.hubdrive.{match[1]}/dl?id={url.split('/')[-1]}")
-        matches = re_findall('gd=(.*?)', res.text)
-        try:
-            decoded_id = b64decode(str(matches[0])).decode('utf-8')
-        except:
-            raise DirectDownloadLinkException("ERROR: Try in your broswer, mostly file not found or user limit exceeded!")
-        flink = f'https://drive.google.com/open?id={decoded_id}'
-        return flink
-    elif 'drivefire' in url:
+    if 'drivefire' in url:
         decoded_id = res.rsplit('/', 1)[-1]
         flink = f"https://drive.google.com/file/d/{decoded_id}"
         return flink
@@ -576,7 +562,6 @@ def udrive(url: str) -> str:
     flink = info_parsed['gdrive_url']
 
     return flink 
-
     
 def sharer_pw(url, forced_login=False):
     client = cloudscraper.create_scraper(delay=10, browser='chrome')
