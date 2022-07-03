@@ -514,7 +514,7 @@ try:
         CHANNEL_USERNAME = 'Z_Mirror'
 except KeyError:
     logging.warning('CHANNEL_USERNAME not provided')
-    CHANNEL_USERNAME = 'Z_Mirror'
+    CHANNEL_USERNAME = '@Z_Mirror'
 try:
     TOKEN_PICKLE_URL = getConfig('TOKEN_PICKLE_URL')
     if len(TOKEN_PICKLE_URL) == 0:
