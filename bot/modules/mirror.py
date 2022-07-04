@@ -321,21 +321,6 @@ class MirrorListener:
 def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
     buttons = ButtonMaker()
     uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-
-    # if FSUB:
-    #     try:
-    #         user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", message.from_user.id)
-    #         LOGGER.info(user.status)
-    #         if user.status not in ('member', 'creator', 'administrator'):
-    #             buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
-    #             reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
-    #             message = sendMarkup(
-    #                 str(f"<b>Dear {uname}, You haven't join our Updates Channel yet.</b>\n\nKindly Join @{CHANNEL_USERNAME} To Use Bots. "),
-    #                 bot, message, reply_markup)
-    #             return
-    #     except:
-    #         pass
-
     if BOT_PM and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
