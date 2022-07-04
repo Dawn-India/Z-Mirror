@@ -324,13 +324,13 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
 
     if FSUB:
         try:
-            LOGGER.info(msg)(user.status)
+            LOGGER.info(user.status)
             if user.status not in ('member', 'creator', 'administrator'):
                 buttons.buildbutton("Click Here To Join Updates Channel", f"https://t.me/{CHANNEL_USERNAME}")
                 reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
-                message = sendMarkup(
-                    str(f"<b>Dear {uname}️ You haven't join our Updates Channel yet.</b>\n\nKindly Join @{CHANNEL_USERNAME} To Use Bots. "),
-                    bot, message, reply_markup)
+                startwarn = f"Dear {uname},\n\n<b>I found that you haven't joined my channel {CHANNEL_USERNAME} yet.</b>\n\n" \
+                            f"You can use me after joinning the  channel only"
+                message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
                 return
         except:
             pass
