@@ -500,22 +500,6 @@ try:
 except KeyError:
     BOT_PM = False
 try:
-    FSUB = getConfig('FSUB')
-    FSUB = FSUB.lower() == 'true'
-except KeyError:
-    FSUB = False
-try:
-    FSUB_CHANNEL_ID = int(getConfig('FSUB_CHANNEL_ID'))
-except KeyError:
-    FSUB_CHANNEL_ID = ""
-try:
-    CHANNEL_USERNAME: str = getConfig('CHANNEL_USERNAME').replace("@", "")
-    if len(CHANNEL_USERNAME) == 0:
-        CHANNEL_USERNAME = 'Z_Mirror'
-except KeyError:
-    logging.warning('CHANNEL_USERNAME not provided')
-    CHANNEL_USERNAME = '@Z_Mirror'
-try:
     TOKEN_PICKLE_URL = getConfig('TOKEN_PICKLE_URL')
     if len(TOKEN_PICKLE_URL) == 0:
         raise KeyError
