@@ -7,11 +7,9 @@ from psutil import virtual_memory, cpu_percent, disk_usage
 from requests import head as rhead
 from urllib.request import urlopen
 from telegram import InlineKeyboardMarkup
-
-from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot import download_dict, download_dict_lock, STATUS_LIMIT, botStartTime, DOWNLOAD_DIR
+from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-
 import shutil
 import psutil
 from telegram.error import RetryAfter
@@ -26,7 +24,6 @@ URL_REGEX = r"(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+"
 
 COUNT = 0
 PAGE_NO = 1
-
 
 class MirrorStatus:
     STATUS_UPLOADING = "Uploading...📤"
@@ -56,7 +53,6 @@ PROGRESS_MAX_SIZE = 100 // 9
 PROGRESS_INCOMPLETE = ['◔', '◔', '◑', '◑', '◑', '◕', '◕']
     
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-
 
 class setInterval:
     def __init__(self, interval, action):
@@ -276,26 +272,8 @@ def is_gdtot_link(url: str):
     url = re_match(r'https?://.+\.gdtot\.\S+', url)
     return bool(url)
 
-def is_unified_link(url: str):
-    url1 = re_match(r'https?://(anidrive|driveroot|driveflix|indidrive|drivehub)\.in/\S+', url)
-    url = re_match(r'https?://(appdrive|driveapp|driveace|gdflix|drivelinks|drivebit|drivesharer|drivepro)\.\S+', url)
-    if bool(url1) == True:
-        return bool(url1)
-    elif bool(url) == True:
-        return bool(url)
-    else:
-        return False
-
-def is_udrive_link(url: str):
-    if 'drivehub.ws' in url:
-        return 'drivehub.ws' in url
-    else:
-        url = re_match(r'https?://(hubdrive|katdrive|kolop|drivefire|drivebuzz)\.\S+', url)
-        return bool(url)
-
-def is_sharer_link(url: str):
-    url = re_match(r'https?://(sharer)\.pw/\S+', url)
-    return bool(url)
+def is_appdrive_link(url: str):
+    url = re_match(r'https?://(?:\S*\.)?(?:appdrive|driveapp)\.in/\S+', url)
 
 def is_mega_link(url: str):
     return "mega.nz" in url or "mega.co.nz" in url
@@ -373,11 +351,13 @@ def bot_sys_stats():
                 num_split += 1
     stats = f"Bot Statistics"
     stats += f"""
+
 Bot Uptime: {currentTime}
 T-DN: {recv} | T-UP: {sent}
 CPU: {cpu}% | RAM: {mem}%
 Disk: {total} | Free: {free}
 Used: [{disk}%] is {used}
+
 Made with ❤️ by Dawn
 """
     return stats
