@@ -471,8 +471,8 @@ try:
     if len(CHANNEL_USERNAME) == 0:
         raise KeyError
 except KeyError:
-    log_info("CHANNEL_USERNAME not provided! Using default @salmanfarish26")
-    CHANNEL_USERNAME = "@Z_Mirror"
+    log_info("CHANNEL_USERNAME not provided! Using default @z_mirror")
+    CHANNEL_USERNAME = "Z_Mirror"
 try:
     FSUB_CHANNEL_ID = getConfig("FSUB_CHANNEL_ID")
     if len(FSUB_CHANNEL_ID) == 0:
