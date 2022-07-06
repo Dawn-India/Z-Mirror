@@ -3,6 +3,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram import InlineKeyboardMarkup
 from time import sleep
 from re import split as re_split
+
 from bot import DOWNLOAD_DIR, dispatcher
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage
 from bot.helper.telegram_helper import button_build
@@ -22,10 +23,10 @@ def _watch(bot, message, isZip=False, isLeech=False, multi=0):
     link = mssg.split()
     if len(link) > 1:
         link = link[1].strip()
-        if link.strip().isdigit():
+        if link.isdigit():
             multi = int(link)
             link = ''
-        elif link.strip().startswith(("|", "pswd:", "args:")):
+        elif link.startswith(("|", "pswd:", "args:")):
             link = ''
     else:
         link = ''
@@ -63,7 +64,7 @@ def _watch(bot, message, isZip=False, isLeech=False, multi=0):
     reply_to = message.reply_to_message
     if reply_to is not None:
         if len(link) == 0:
-            link = reply_to.text.split(maxsplit=1)[0].strip()
+            link = reply_to.text.strip()
         if reply_to.from_user.username:
             tag = f"@{reply_to.from_user.username}"
         else:

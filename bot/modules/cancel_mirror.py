@@ -1,12 +1,14 @@
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from time import sleep
-from bot import download_dict, dispatcher, download_dict_lock, SUDO_USERS, OWNER_ID
+
+from bot import download_dict, dispatcher, download_dict_lock, QB_SEED, SUDO_USERS, OWNER_ID
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup
 from bot.helper.ext_utils.bot_utils import getDownloadByGid, MirrorStatus, getAllDownload
 from bot.helper.telegram_helper import button_build
+
 
 def cancel_mirror(update, context):
     user_id = update.message.from_user.id
@@ -57,7 +59,8 @@ def cancell_all_buttons(update, context):
     buttons = button_build.ButtonMaker()
     buttons.sbutton("Downloading", "canall down")
     buttons.sbutton("Uploading", "canall up")
-    buttons.sbutton("Seeding", "canall seed")
+    if QB_SEED:
+        buttons.sbutton("Seeding", "canall seed")
     buttons.sbutton("Cloning", "canall clone")
     buttons.sbutton("All", "canall all")
     button = InlineKeyboardMarkup(buttons.build_menu(2))

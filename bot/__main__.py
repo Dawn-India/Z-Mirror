@@ -6,6 +6,7 @@ from time import time
 from sys import executable
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler
+
 from bot import bot, dispatcher, updater, botStartTime, IGNORE_PENDING_REQUESTS, LOGGER, Interval, INCOMPLETE_TASK_NOTIFIER, DB_URI, app, main_loop
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.telegraph_helper import telegraph
@@ -15,7 +16,9 @@ from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendLogFile
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
+
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror, clone, watch, shell, eval, delete, count, leech_settings, search, rss
+
 
 def stats(update, context):
     if ospath.exists('.git'):
@@ -61,6 +64,7 @@ def stats(update, context):
 
     sendMessage(stats, context.bot, update.message)
 
+
 def start(update, context):
     buttons = ButtonMaker()
 
@@ -82,7 +86,7 @@ Type /{BotCommands.HelpCommand} to get a list of available commands
 def restart(update, context):
     restart_message = sendMessage("Restarting...", context.bot, update.message)
     if Interval:
-        Interval.clear()
+        Interval[0].cancel()
     clean_all()
     srun(["pkill", "-f", "gunicorn|aria2c|qbittorrent-nox"])
     srun(["python3", "update.py"])
@@ -91,14 +95,17 @@ def restart(update, context):
         f.write(f"{restart_message.chat.id}\n{restart_message.message_id}\n")
     osexecl(executable, executable, "-m", "bot")
 
+
 def ping(update, context):
     start_time = int(round(time() * 1000))
     reply = sendMessage("Starting Ping", context.bot, update.message)
     end_time = int(round(time() * 1000))
     editMessage(f'{end_time - start_time} ms', reply)
 
+
 def log(update, context):
     sendLogFile(context.bot, update.message)
+
 
 help_string_telegraph = f'''<br>
 <b>/{BotCommands.HelpCommand}</b>: To get this message
@@ -109,7 +116,7 @@ help_string_telegraph = f'''<br>
 <br><br>
 <b>/{BotCommands.UnzipMirrorCommand}</b> [download_url][magnet_link]: Start mirroring and upload the file/folder extracted from any archive extension
 <br><br>
-<b>/{BotCommands.QbMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start Mirroring using qBittorrent, Use <b>/{BotCommands.QbMirrorCommand} s</b> to select files before downloading and use <b>/{BotCommands.QbMirrorCommand} d</b> to seed specific torrent
+<b>/{BotCommands.QbMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start Mirroring using qBittorrent, Use <b>/{BotCommands.QbMirrorCommand} s</b> to select files before downloading
 <br><br>
 <b>/{BotCommands.QbZipMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start mirroring using qBittorrent and upload the file/folder compressed with zip extension
 <br><br>

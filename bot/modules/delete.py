@@ -14,7 +14,7 @@ def deletefile(update, context):
     if len(context.args) == 1:
         link = context.args[0]
     elif reply_to:
-        link = reply_to.text.split(maxsplit=1)[0].strip()
+        link = reply_to.text
     else:
         link = ''
     if is_gdrive_link(link):
