@@ -408,7 +408,7 @@ def gen_payload(data, boundary=f'{"-"*6}_'):
     return data_string
 
 def parse_info(data):
-    info = re_findall(r'>(.*?)<\/li>', data)
+    info = re_findall('>(.*?)<\/li>', data)
     info_parsed = {}
     for item in info:
         kv = [s.strip() for s in item.split(':', maxsplit=1)]
@@ -424,7 +424,7 @@ def appdrive(url: str) -> str:
     account_login(client, url, account['email'], account['passwd'])
 
     res = client.get(url)
-    key = re_findall(r'"key",\s+"(.*?)"', res.text)[0]
+    key = re_findall('"key",\s+"(.*?)"', res.text)[0]
 
     ddl_btn = etree.HTML(res.content).xpath("//button[@id='drc']")
 
