@@ -453,47 +453,13 @@ try:
 except:
     CRYPT = None
 try:
-    UNIFIED_EMAIL = getConfig('UNIFIED_EMAIL')
-    if len(UNIFIED_EMAIL) == 0:
+    APPDRIVE_EMAIL = getConfig('APPDRIVE_EMAIL')
+    APPDRIVE_PASS = getConfig('APPDRIVE_PASS')
+    if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
         raise KeyError
-except:
-    UNIFIED_EMAIL = None
-try:
-    UNIFIED_PASS = getConfig('UNIFIED_PASS')
-    if len(UNIFIED_PASS) == 0:
-        raise KeyError
-except:
-    UNIFIED_PASS = None
-try:
-    HUBDRIVE_CRYPT = getConfig('HUBDRIVE_CRYPT')
-    if len(HUBDRIVE_CRYPT) == 0:
-        raise KeyError
-except:
-    HUBDRIVE_CRYPT = None
-try:
-    KATDRIVE_CRYPT = getConfig('KATDRIVE_CRYPT')
-    if len(KATDRIVE_CRYPT) == 0:
-        raise KeyError
-except:
-    KATDRIVE_CRYPT = None
-try:
-    DRIVEFIRE_CRYPT = getConfig('DRIVEFIRE_CRYPT')
-    if len(DRIVEFIRE_CRYPT) == 0:
-        raise KeyError
-except:
-    DRIVEFIRE_CRYPT = None
-try:
-    XSRF_TOKEN = getConfig('XSRF_TOKEN')
-    if len(XSRF_TOKEN) == 0:
-        raise KeyError
-except:
-    XSRF_TOKEN = None
-try:
-    laravel_session = getConfig('laravel_session')
-    if len(laravel_session) == 0:
-        raise KeyError
-except:
-    laravel_session = None
+except KeyError:
+    APPDRIVE_EMAIL = None
+    APPDRIVE_PASS = None
 try:
     BOT_PM = getConfig('BOT_PM')
     BOT_PM = BOT_PM.lower() == 'true'

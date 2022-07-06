@@ -9,8 +9,8 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
 from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS
-from bot.helper.ext_utils.bot_utils import *
-from bot.helper.mirror_utils.download_utils.direct_link_generator import *
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_gdrive_link, is_gdtot_link, new_thread, is_appdrive_link
+from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, appdrive
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from telegram import InlineKeyboardMarkup, ParseMode
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -52,24 +52,26 @@ def _clone(message, bot, multi=0):
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
     is_gdtot = is_gdtot_link(link)
-    is_unified = is_unified_link(link)
-    is_udrive = is_udrive_link(link)
-    is_sharer = is_sharer_link(link)
-    if (is_gdtot or is_unified or is_udrive or is_sharer):
+    is_appdrive = is_appdrive_link(link)
+    if is_gdtot:
         try:
             msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
-            LOGGER.info(f"Processing: {link}")
-            if is_unified:
-                link = unified(link)
-            if is_gdtot:
-                link = gdtot(link)
-            if is_udrive:
-                link = udrive(link)
-            if is_sharer:
-                link = sharer_pw(link)
+            link = gdtot(link)
+            LOGGER.info(f"Processing GdToT: {link}")
             deleteMessage(bot, msg)
         except DirectDownloadLinkException as e:
             deleteMessage(bot, msg)
+            return sendMessage(str(e), bot, message)
+    if is_appdrive:
+        msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
+        try:
+            apdict = appdrive(link)
+            link = apdict.get('gdrive_link')
+            LOGGER.info(f"Processing AppDrive: {link}")
+            deleteMessage(bot, msg)
+        except DirectDownloadLinkException as e:
+            deleteMessage(bot, msg)
+            return sendMessage(str(e), bot, message)
     if is_gdrive_link(link):
         gd = GoogleDriveHelper()
         res, size, name, files = gd.helper(link)
@@ -124,10 +126,14 @@ def _clone(message, bot, multi=0):
         else:
             sendMarkup(result + cc, bot, message, button)
             LOGGER.info(f'Cloning Done: {name}')
-        if (is_gdtot or is_unified or is_udrive or is_sharer):
+        if is_gdtot:
             gd.deletefile(link)
+        elif is_appdrive:
+            if apdict.get('link_type') == 'login':
+                LOGGER.info(f"Deleting: {link}")
+                gd.deletefile(link)
     else:
-        sendMessage('Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveBit/DriveLinks/DrivePro/DriveAce/DriveSharer/HubDrive/DriveHub/KatDrive/Kolop/DriveFire/SharerPw link along with command or by replying to the link by command', bot, message)
+        sendMessage('Send Gdrive or GDToT/AppDrive link along with command or by replying to the link by command', bot, message)
 
 @new_thread
 def cloneNode(update, context):
