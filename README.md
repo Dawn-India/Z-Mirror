@@ -1,6 +1,7 @@
 # Features:
 - Leech-Log, Mirror-Log, Bot-PM
-- UNIFIED LOGIN (AppDrive, DriveApp, GDFlix, DriveBit, DriveLinks, DriveSharer, DriveAce, DrivePro, Sharer)
+- Force Sub to channel
+- AppDrive & GdToT Support
 - qBittorrent
 - Select files from Torrent before downloading using qbittorrent
 - Leech (splitting, thumbnail for each user, setting as document or as media for each user)
@@ -128,11 +129,16 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `UPSTREAM_REPO`: Your github repository link, if your repo is private add `https://username:{githubtoken}@github.com/{username}/{reponame}` format. Get token from [Github settings](https://github.com/settings/tokens). So you can update your bot from filled repository on each restart. **NOTE**: Any change in docker or requirements you need to deploy/build again with updated repo to take effect. DON'T delete .gitignore file. For more information read [THIS](https://github.com/Dawn-India/Z-Mirror/tree/master#upstream-repo-recommended).
 - `UPSTREAM_BRANCH`: Upstream branch for update. Default is `master`.
 
+### Force SUB
+- `FSUB`: Force BOT users to subscribe a specific channel in order to use the bot. Set it `True` if you want to use FSUB. Default is `False`.
+- `CHANNEL_USERNAME`: Add the channel username for force sub. (Example: If the channel link is `https://t.me/z_mirror` then write `z_mirror`)
+- `FSUB_CHANNEL_ID`: Add channel id for `FSUB`. (Ex: `-1001232292892`). ( **Note** Don't add "" )
+
 ### Mirror
-- `MIRROR_LOGS`: Group/Channel ID where Mirror-logs are posted.( **Note** Don't add "" )
+- `MIRROR_LOGS`: Group/Channel ID where Mirror-logs are posted. (Ex: `-1001628216471`). ( **Note** Don't add "" )
 ### Leech
 - `BOT_PM`: To send Leeched files and mirrored links in PM, set it `True` (`False` by Default)
-- `LEECH_LOG`: Group/Channel ID where Leech-logs are posted.( **Note** Don't add "" )
+- `LEECH_LOG`: Group/Channel ID where Leech-logs are posted. (Ex: `-1001232292892`). ( **Note** Don't add "" )
 - `TG_SPLIT_SIZE`: Size of split in bytes. Default is `2GB`.
 - `AS_DOCUMENT`: Default type of Telegram file upload. Default is `False` mean as media. `Bool`
 - `EQUAL_SPLITS`: Split files larger than **TG_SPLIT_SIZE** into equal parts size (Not working with zip cmd). Default is `False`. `Bool`
@@ -175,22 +181,9 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 ### GDTOT
 - `CRYPT`: Cookie for gdtot google drive link generator. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
 
-### UNIFIED LOGIN (AppDrive, DriveApp, GDFlix, DriveBit, DriveLinks, DriveSharer, DriveAce, DrivePro, Sharer)
-- `UNIFIED_EMAIL` = Fill your Email address. (Note: Use same email in unified login sites.)
-- `UNIFIED_PASS` = Password for login. (Same password for all sites.)
-
-### HUBDRIVE COOKIES
-- `HUBDRIVE_CRYPT` = Cookie for Hubdrive. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
-
-### (KATDRIVE + KOLOP + DRIVEHUB) COOKIES
-- `KATDRIVE_CRYPT` = Cookie for Katdrive, Kolop, Drivehub. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
-
-### (DRIVEFIRE + DRIVEBUZZ) COOKIES
-- `DRIVEFIRE_CRYPT` = Cookie for DriveFire, DriveBuzz. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
-
-### Sharer.pw COOKIES
-- `XSRF_TOKEN` = For XSRF Token use this chrome extension: [Cick here to download](https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid)
-- `laravel_session` = For Laravel session use the same extension addressed above: [Click here to download](https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid)
+### AppDrive
+- `APPDRIVE_EMAIL` = Fill your AppDrive Email address.
+- `APPDRIVE_PASS` = AppDrive Password for login.
 
 ### Size Limits
 - `TORRENT_DIRECT_LIMIT`: To limit the Torrent/Direct mirror size. Don't add unit. Default unit is `GB`.
@@ -278,11 +271,11 @@ sudo apt install docker.io
 ```
 - Build Docker image:
 ```
-sudo docker build . -t mirror-bot
+sudo docker build . -t z_mirror
 ```
 - Run the image:
 ```
-sudo docker run -p 80:80 mirror-bot
+sudo docker run -p 80:80 z_mirror
 ```
 - To stop the image:
 ```
@@ -332,6 +325,7 @@ sudo docker-compose start
 ## Bot commands to be set in [@BotFather](https://t.me/BotFather)
 
 ```
+start - Auth Stats
 mirror - Mirror
 zipmirror - Mirror and upload as zip
 unzipmirror - Mirror and extract files
@@ -472,7 +466,7 @@ python3 add_to_team_drive.py -d SharedTeamDriveSrcID
 **2. Using Heroku PostgreSQL**
 <p><a href="https://dev.to/prisma/how-to-setup-a-free-postgresql-database-on-heroku-1dc1"> <img src="https://img.shields.io/badge/See%20Dev.to-black?style=for-the-badge&logo=dev.to" width="160""/></a></p>
 
-**3. Using ElephantSQL**
+**3. Using ElephantSQL** (Recommended)
 - Go to [elephantsql](https://elephantsql.com) and create account
 - Hit `Create New Instance`
 - Follow the further instructions in the screen
@@ -520,45 +514,6 @@ Where host is the name of extractor (eg. instagram, Twitch). Multiple accounts o
 ## Gdtot Cookies
 To Clone or Leech gdtot link follow these steps:
 1. Login/Register to [gdtot](https://new.gdtot.top).
-2. Copy this script and paste it in browser address bar.
-   - **Note**: After pasting it check at the beginning of the script in broswer address bar if `javascript:` exists or not, if not so write it as shown below.
-   ```javascript
-   javascript:(function () {
-    const input = document.createElement('input');
-    COOKIE = JSON.parse(JSON.stringify({cookie : document.cookie}));
-    input.value = COOKIE['cookie'].split('crypt=')[1];
-    document.body.appendChild(input);
-    input.focus();
-    input.select();
-    var result = document.execCommand('copy');
-    document.body.removeChild(input);
-     if(result)
-       alert('Crypt copied to clipboard');
-     else
-       prompt('Failed to copy Crypt. Manually copy below Crypt\n\n', input.value);
-   })();
-   ```
-   - After pressing enter your browser will prompt a alert.
-3. Now you'll get Crypt value in your clipboard
-   ```
-   NGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxWdSVT0%3D
-   ```
-4. From this you have to paste value for **CRYPT** in config.env file.
-
------
-
-## Unified Cookies
-To Clone or Leech AppDrive, DriveApp, GDFlix, DriveBit, DriveLinks, DriveSharer, DriveAce, DrivePro link follow these steps:
-1. Here's all available sites:
--   Login/Register to [AppDrive](https://appdrive.in/).
--   Login/Register to [DriveApp](https://driveapp.in/).
--   Login/Register to [GDFlix](https://gdflix.pro/).
--   Login/Register to [DriveBit](https://drivebit.in/).
--   Login/Register to [DriveLinks](https://drivelinks.in/).
--   Login/Register to [DriveSharer](https://drivesharer.in/).
--   Login/Register to [DriveAce](https://driveace.in/).
--   Login/Register to [DrivePro](https://drivepro.in/).
-
 2. Copy this script and paste it in browser address bar.
    - **Note**: After pasting it check at the beginning of the script in broswer address bar if `javascript:` exists or not, if not so write it as shown below.
    ```javascript
