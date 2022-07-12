@@ -348,14 +348,14 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
                         f"From now on i will give link and leeched files in PM and log channel only"
             message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
             return
-            
+
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     name_args = mesg[0].split('|', maxsplit=1)
     qbsel = False
     index = 1
     is_gdtot = False
-    
+
     if len(message_args) > 1:
         args = mesg[0].split(maxsplit=3)
         if "s" in [x.strip() for x in args]:
@@ -370,32 +370,29 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
             if link.isdigit():
                 multi = int(link)
                 link = ''
-        elif link.startswith(("|", "pswd:")):
+            elif link.startswith(("|", "pswd:")):
                 link = ''
         else:
             link = ''
     else:
         link = ''
-    
+
     if len(name_args) > 1:
         name = name_args[1]
         name = name.split(' pswd:')[0]
         name = name.strip()
     else:
         name = ''
-    
+
     link = re_split(r"pswd:|\|", link)[0]
     link = link.strip()
-    
     pswd_arg = mesg[0].split(' pswd: ')
     if len(pswd_arg) > 1:
         pswd = pswd_arg[1]
-
     if message.from_user.username:
         tag = f"@{message.from_user.username}"
     else:
         tag = message.from_user.mention_html(message.from_user.first_name)
-
     reply_to = message.reply_to_message
     if reply_to is not None:
         file = None
@@ -404,19 +401,16 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
             if i is not None:
                 file = i
                 break
-
         if not reply_to.from_user.is_bot:
             if reply_to.from_user.username:
                 tag = f"@{reply_to.from_user.username}"
             else:
                 tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
-
         if (
             not is_url(link)
             and not is_magnet(link)
             or len(link) == 0
         ):
-
             if file is None:
                 reply_text = reply_to.text.split(maxsplit=1)[0].strip()
                 if is_url(reply_text) or is_magnet(reply_text):
@@ -508,7 +502,6 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
         multi -= 1
         sleep(4)
         Thread(target=_mirror, args=(bot, nextmsg, isZip, extract, isQbit, isLeech, pswd, multi)).start()
-
 
 def mirror(update, context):
     _mirror(context.bot, update.message)

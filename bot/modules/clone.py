@@ -8,7 +8,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, de
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
-from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS
+from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, FSUB_CHANNEL_ID
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_gdrive_link, is_gdtot_link, new_thread, is_appdrive_link
 from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, appdrive
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
@@ -17,6 +17,18 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def _clone(message, bot, multi=0):
     buttons = ButtonMaker()
+
+    if FSUB:
+        try:
+            uname = message.from_user.mention_html(message.from_user.first_name)
+            user = bot.get_chat_member(FSUB_CHANNEL_ID, message.from_user.id)
+            if user.status not in ['member', 'creator', 'administrator']:
+                buttons.buildbutton("Z Mirrror", f"https://t.me/{CHANNEL_USERNAME}")
+                reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
+                return sendMarkup(f"<b>Dear {uname}️,\nYou haven't joined our Updates Channel yet.\nJoin and <u>Use Bots Without Restrictions.</u></b>", bot, message, reply_markup)
+        except Exception as e:
+            LOGGER.info(str(e))
+
     if BOT_PM:
         try:
             msg1 = f'Added your Requested link to Download\n'
@@ -32,6 +44,7 @@ def _clone(message, bot, multi=0):
             startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\nFrom now on i will give link and leeched files in PM and log channel only"
             message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
             return
+
     args = message.text.split()
     reply_to = message.reply_to_message
     link = ''
