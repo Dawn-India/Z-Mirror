@@ -129,7 +129,7 @@ def get_progress_bar_string(status):
     p_str = '■' * cFull
     if cPart >= 0:
         p_str += PROGRESS_INCOMPLETE[cPart]
-    p_str += '○' * (PROGRESS_MAX_SIZE - cFull)
+    p_str += '□' * (PROGRESS_MAX_SIZE - cFull)
     p_str = f"⠧{p_str}⠹"
     return p_str
 

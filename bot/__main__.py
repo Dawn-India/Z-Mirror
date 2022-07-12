@@ -35,11 +35,11 @@ def stats(update, context):
     mem_p = memory.percent
     stats = f'<b><i>@Z_Mirror Bot Statistics</i></b>\n\n'\
             f'<b>Updated:</b> {last_commit}\n'\
-            f'<b>Working For:</b> {currentTime}\n'\
-            f'<b>Total Disk:</b> {total} [{disk}%]\n'\
+            f'<b>I am Working For:</b> {currentTime}\n'\
+            f'<b>Total Disk:</b> {total} [{disk}% In use]\n'\
             f'<b>Used:</b> {used} | <b>Free:</b> {free}\n'\
             f'<b>T-Up:</b> {sent} | <b>T-Dn:</b> {recv}\n'\
-            f'CPU: {cpuUsage}% | RAM: {mem_p}% | SSD: {disk}%\n'
+            f'<b>CPU Usage:</b> {cpuUsage}% | <b>RAM Usage:</b> {mem_p}%\n'
     heroku = getHerokuDetails(HEROKU_API_KEY, HEROKU_APP_NAME)
     if heroku: stats += heroku
     sendMessage(stats, context.bot, update.message)
