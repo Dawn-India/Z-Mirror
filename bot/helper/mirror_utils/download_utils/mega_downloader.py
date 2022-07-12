@@ -140,7 +140,7 @@ class MegaDownloader:
             if ZIP_UNZIP_LIMIT is not None and arch:
                 msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
                 limit = ZIP_UNZIP_LIMIT
-            if LEECH_LIMIT is not None and arch:
+            if LEECH_LIMIT is not None and self.__listener.isLeech:
                 msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
                 limit = LEECH_LIMIT
             elif MEGA_LIMIT is not None:
