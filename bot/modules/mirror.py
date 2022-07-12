@@ -82,7 +82,7 @@ class MirrorListener:
             try:
                 with download_dict_lock:
                     download_dict[self.uid] = ZipStatus(name, m_path, size, self.message)
-                path = f"{m_path}.zip"
+                path = m_path + ".zip"
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
                 if self.pswd is not None:
                     if self.isLeech and int(size) > TG_SPLIT_SIZE:
@@ -300,6 +300,7 @@ class MirrorListener:
                 reply_to.delete()
             except Exception as error:
                 LOGGER.warning(f"ewww {error}")
+            pass
         e_str = error.replace('<', '').replace('>', '')
         clean_download(f'{DOWNLOAD_DIR}{self.uid}')
         with download_dict_lock:

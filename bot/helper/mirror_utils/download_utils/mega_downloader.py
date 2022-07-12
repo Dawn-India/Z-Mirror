@@ -67,15 +67,9 @@ class MegaDownloader:
 
     def __onInterval(self):
         dlInfo = self.__mega_client.getDownloadInfo(self.gid)
-        if (
-            dlInfo['state']
-            in [
-                constants.State.TYPE_STATE_COMPLETED,
-                constants.State.TYPE_STATE_CANCELED,
-                constants.State.TYPE_STATE_FAILED,
-            ]
-            and self.__periodic is not None
-        ):
+        if (dlInfo['state'] == constants.State.TYPE_STATE_COMPLETED or dlInfo[
+            'state'] == constants.State.TYPE_STATE_CANCELED or dlInfo[
+                'state'] == constants.State.TYPE_STATE_FAILED) and self.__periodic is not None:
             self.__periodic.cancel()
         if dlInfo['state'] == constants.State.TYPE_STATE_COMPLETED:
             self.__onDownloadComplete()
@@ -117,7 +111,7 @@ class MegaDownloader:
             LOGGER.info('Checking File/Folder if already in Drive')
             mname = file_name
             if self.__listener.isZip:
-                mname = f"{mname}.zip"
+                mname = mname + ".zip"
             elif self.__listener.extract:
                 try:
                     mname = get_base_name(mname)

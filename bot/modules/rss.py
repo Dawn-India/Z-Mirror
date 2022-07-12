@@ -56,7 +56,7 @@ def rss_sub(update, context):
         title = args[1].strip()
         feed_link = args[2].strip()
         f_lists = []
-
+        
         if len(args) == 4:
             filters = args[3].lstrip().lower()
             if filters.startswith('f: '):
@@ -143,7 +143,7 @@ def rss_settings(update, context):
     else:
         buttons.sbutton("Start", "rss start")
     if AUTO_DELETE_MESSAGE_DURATION == -1:
-        buttons.sbutton("Close", "rss close")
+        buttons.sbutton("Close", f"rss close")
     button = InlineKeyboardMarkup(buttons.build_menu(1))
     setting = sendMarkup('Rss Settings', context.bot, update.message, button)
     Thread(target=auto_delete_message, args=(context.bot, update.message, setting)).start()
@@ -209,11 +209,7 @@ def rss_monitor(context):
                     break
                 parse = True
                 for list in data[3]:
-                    if all(
-                        x
-                        not in str(rss_d.entries[feed_count]['title']).lower()
-                        for x in list
-                    ):
+                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
                         parse = False
                         feed_count += 1
                         break
