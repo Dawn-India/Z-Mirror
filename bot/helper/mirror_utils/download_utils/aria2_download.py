@@ -41,7 +41,7 @@ def __onDownloadStarted(api, gid):
                 sleep(1)
                 limit = None
                 size = download.total_length
-                arch = any([dl.getListener().isZip, dl.getListener().extract])
+                arch = any([dl.getListener().isZip, dl.getListener().isLeech, dl.getListener().extract])
                 if STORAGE_THRESHOLD is not None:
                     acpt = check_storage_threshold(size, arch, True)
                     # True if files allocated, if allocation disabled remove True arg
@@ -53,6 +53,9 @@ def __onDownloadStarted(api, gid):
                 if ZIP_UNZIP_LIMIT is not None and arch:
                     mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
                     limit = ZIP_UNZIP_LIMIT
+                if LEECH_LIMIT is not None and arch:
+                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
+                    limit = LEECH_LIMIT
                 elif TORRENT_DIRECT_LIMIT is not None:
                     mssg = f'Torrent/Direct limit is {TORRENT_DIRECT_LIMIT}GB'
                     limit = TORRENT_DIRECT_LIMIT
@@ -60,19 +63,6 @@ def __onDownloadStarted(api, gid):
                     LOGGER.info('Checking File/Folder Size...')
                     if size > limit * 1024**3:
                         dl.getListener().onDownloadError(f'{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}')
-                        return api.remove([download], force=True, files=True)
-            if any([LEECH_LIMIT]):
-                sleep(1)
-                limit = None
-                size = download.total_length
-                arch = any([dl.getListener().isLeech])
-                if LEECH_LIMIT is not None and arch:
-                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
-                    limit = LEECH_LIMIT
-                if limit is not None:
-                    LOGGER.info('Checking File Size...')
-                    if size > limit * 1024**3:
-                        dl.getListener().onDownloadError(f'{mssg}.\nYour File size is {get_readable_file_size(size)}')
                         return api.remove([download], force=True, files=True)
     except Exception as e:
         LOGGER.error(f"{e} onDownloadStart: {gid} stop duplicate and size check didn't pass")
