@@ -54,7 +54,7 @@ def getHerokuDetails(h_api_key, h_app_name):
             "Authorization": f"Bearer {h_api_key}",
             "Accept": "application/vnd.heroku+json; version=3.account-quotas",
         }
-        path = "/accounts/" + user_id + "/actions/get-quota"
+        path = f"/accounts/{user_id}/actions/get-quota"
         session = Session()
         result = (session.get(heroku_api + path, headers=headers)).json()
         stats = "\n\n<b><i><u>Heroku Dyno Stats</u></i></b>\n\n"
