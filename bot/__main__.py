@@ -30,11 +30,12 @@ def stats(update, context):
     free = get_readable_file_size(free)
     sent = get_readable_file_size(net_io_counters().bytes_sent)
     recv = get_readable_file_size(net_io_counters().bytes_recv)
-    cpuUsage = cpu_percent(interval=0.5)
+    cpuUsage = cpu_percent(interval=1)
+    memory = virtual_memory()
     mem_p = memory.percent
     stats = f'<b><i>@Z_Mirror Bot Statistics</i></b>\n\n'\
             f'<b>Updated:</b> {last_commit}\n'\
-            f'<b>Working For:</b> {currentTime}\n\n'\
+            f'<b>Working For:</b> {currentTime}\n'\
             f'<b>Total Disk:</b> {total} [{disk}%]\n'\
             f'<b>Used:</b> {used} | <b>Free:</b> {free}\n'\
             f'<b>T-Up:</b> {sent} | <b>T-Dn:</b> {recv}\n'\
