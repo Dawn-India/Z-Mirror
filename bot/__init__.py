@@ -345,6 +345,13 @@ try:
 except:
     ZIP_UNZIP_LIMIT = None
 try:
+    LEECH_LIMIT = getConfig('LEECH_LIMIT')
+    if len(LEECH_LIMIT) == 0:
+        raise KeyError
+    LEECH_LIMIT = float(LEECH_LIMIT)
+except:
+    LEECH_LIMIT = None
+try:
     RSS_CHAT_ID = getConfig('RSS_CHAT_ID')
     if len(RSS_CHAT_ID) == 0:
         raise KeyError
