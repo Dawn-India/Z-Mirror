@@ -185,14 +185,15 @@ class YoutubeDLHelper:
                 msg = f'Leech Limit is: {LEECH_LIMIT}GB.'
                 msg += f'\nYour File/Folder size is {get_readable_file_size(self.size)}'
                 return self.__onDownloadError(msg)
-        if self.is_playlist:
-            self.opts['outtmpl'] = f"{path}/{self.name}/%(title)s.%(ext)s"
-        elif args is None:
-            self.opts['outtmpl'] = f"{path}/{self.name}"
+        if not self.is_playlist:
+            if args is None:
+                self.opts['outtmpl'] = f"{path}/{self.name}"
+            else:
+                folder_name = self.name.rsplit('.', 1)[0]
+                self.opts['outtmpl'] = f"{path}/{folder_name}/{self.name}"
+                self.name = folder_name
         else:
-            folder_name = self.name.rsplit('.', 1)[0]
-            self.opts['outtmpl'] = f"{path}/{folder_name}/{self.name}"
-            self.name = folder_name
+            self.opts['outtmpl'] = f"{path}/{self.name}/%(title)s.%(ext)s"
         self.__download(link)
 
     def cancel_download(self):
