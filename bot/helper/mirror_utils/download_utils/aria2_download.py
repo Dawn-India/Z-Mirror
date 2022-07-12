@@ -37,7 +37,7 @@ def __onDownloadStarted(api, gid):
                         dl.getListener().onDownloadError('Someone already mirrored it for you !\n\n')
                         api.remove([download], force=True, files=True)
                         return sendMarkup("Here you go:", dl.getListener().bot, dl.getListener().message, button)
-            if any([ZIP_UNZIP_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]):
+            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]):
                 sleep(1)
                 limit = None
                 size = download.total_length

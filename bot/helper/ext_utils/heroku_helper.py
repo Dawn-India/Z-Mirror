@@ -57,12 +57,12 @@ def getHerokuDetails(h_api_key, h_app_name):
         path = "/accounts/" + user_id + "/actions/get-quota"
         session = Session()
         result = (session.get(heroku_api + path, headers=headers)).json()
-        stats = "\n<b>Heroku Dyno Stats</b>\n\n"
+        stats = "\n\n<b><i><u>Heroku Dyno Stats</u></i></b>\n\n"
         account_quota = result["account_quota"]
         quota_used = result["quota_used"]
         quota_remain = account_quota - quota_used
-        stats += f"<b>Total Dyno Hours:</b> {get_readable_time(account_quota)}\n"
-        stats += f"<b>Used:</b> {get_readable_time(quota_used)} \n<b>Available:</b> {get_readable_time(quota_remain)}"
+        stats += f"<b>Total Dyno Hours:</b> <code>{get_readable_time(account_quota)}</code>\n"
+        stats += f"<b>Used:</b> <code>{get_readable_time(quota_used)}</code> \n<b>Available:</b> <code>{get_readable_time(quota_remain)}</code>"
         return stats
     except Exception as error:
         LOGGER.error(error)

@@ -25,7 +25,7 @@ def add_gd_download(link, listener, is_gdtot):
             if gmsg:
                 msg = "Someone already mirrored it for you !\nHere you go:"
                 return sendMarkup(msg, listener.bot, listener.message, button)
-    if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT]):
+    if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT]):
         arch = any([listener.extract, listener.isZip, listener.isLeech])
         limit = None
         if STORAGE_THRESHOLD is not None:

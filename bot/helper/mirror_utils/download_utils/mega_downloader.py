@@ -122,7 +122,7 @@ class MegaDownloader:
                 if smsg:
                     msg1 = "Someone already mirrored it for you !\nHere you go:"
                     return sendMarkup(msg1, self.__listener.bot, self.__listener.message, button)
-        if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]):
+        if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, LEECH_LIMIT, MEGA_LIMIT]):
             arch = any([self.__listener.isZip, self.__listener.extract, self.__listener.isLeech])
             if STORAGE_THRESHOLD is not None:
                 acpt = check_storage_threshold(file_size, arch)
