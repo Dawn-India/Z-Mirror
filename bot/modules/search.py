@@ -5,7 +5,6 @@ from html import escape
 from urllib.parse import quote
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler, CallbackQueryHandler
-
 from bot import dispatcher, LOGGER, SEARCH_API_LINK, SEARCH_PLUGINS, get_client, SEARCH_LIMIT
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.message_utils import editMessage, sendMessage, sendMarkup
@@ -44,7 +43,6 @@ SITES = {
 }
 
 TELEGRAPH_LIMIT = 300
-
 
 def torser(update, context):
     user_id = update.message.from_user.id

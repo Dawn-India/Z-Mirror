@@ -5,7 +5,6 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManger
 
-
 def authorize(update, context):
     reply_message = update.message.reply_to_message
     if len(context.args) == 1:
@@ -131,7 +130,6 @@ def sendAuthChats(update, context):
     user += '\n'.join(f"<code>{uid}</code>" for uid in AUTHORIZED_CHATS)
     sudo += '\n'.join(f"<code>{uid}</code>" for uid in SUDO_USERS)
     sendMessage(f'<b><u>Authorized Chats:</u></b>\n{user}\n<b><u>Sudo Users:</u></b>\n{sudo}', context.bot, update.message)
-
 
 send_auth_handler = CommandHandler(command=BotCommands.AuthorizedUsersCommand, callback=sendAuthChats,
                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)

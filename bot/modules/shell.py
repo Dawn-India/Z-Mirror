@@ -1,10 +1,8 @@
 from subprocess import Popen, PIPE
 from telegram.ext import CommandHandler
-
 from bot import LOGGER, dispatcher
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-
 
 def shell(update, context):
     message = update.effective_message
@@ -36,7 +34,6 @@ def shell(update, context):
         message.reply_text(reply, parse_mode='Markdown')
     else:
         message.reply_text('No Reply', parse_mode='Markdown')
-
 
 SHELL_HANDLER = CommandHandler(BotCommands.ShellCommand, shell,
                                                   filters=CustomFilters.owner_filter, run_async=True)

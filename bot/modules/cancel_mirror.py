@@ -70,8 +70,6 @@ def cancel_all_update(update, context):
     else:
         query.answer(text="This is not yours, STFU !", show_alert=True)
 
-
-
 cancel_mirror_handler = CommandHandler(BotCommands.CancelMirror, cancel_mirror,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 
