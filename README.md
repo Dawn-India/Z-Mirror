@@ -1,4 +1,6 @@
 # Features:
+- Heroku Dyno Status
+- Leech Size Limit
 - Leech-Log, Mirror-Log, Bot-PM
 - Force Sub to channel
 - AppDrive & GdToT Support
@@ -166,7 +168,9 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `YT_COOKIES_URL`: Youtube authentication cookies. Check setup [Here](https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl). Use gist raw link and remove commit id from the link, so you can edit it from gists only.
 - `NETRC_URL`: To create .netrc file contains authentication for aria2c and yt-dlp. Use gist raw link and remove commit id from the link, so you can edit it from gists only. **NOTE**: After editing .nterc you need to restart the docker or if deployed on heroku so restart dyno in case your edits related to aria2c authentication.
   - **NOTE**: All above url variables used incase you want edit them in future easily without deploying again or if you want to deploy from public fork. If deploying using cli or private fork you can leave these variables empty add token.pickle, accounts folder, drive_folder, .netrc and cookies.txt directly to root but you can't update them without rebuild OR simply leave all above variables and use private UPSTREAM_REPO.
-
+### HEROKU 
+- `HEROKU_API_KEY`: Heroku.com API key to view Dyno status.
+- `HEROKU_APP_NAME`: Heroku.com App Name to view Dyno status.
 ### MEGA
 - `MEGA_API_KEY`: Mega.nz API key to mirror mega.nz links. Get it from [Mega SDK Page](https://mega.nz/sdk)
 - `MEGA_EMAIL_ID`: E-Mail ID used to sign up on mega.nz for using premium account.
@@ -190,6 +194,7 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `ZIP_UNZIP_LIMIT`: To limit the size of zip and unzip commands. Don't add unit. Default unit is `GB`.
 - `CLONE_LIMIT`: To limit the size of Google Drive folder/file which you can clone. Don't add unit. Default unit is `GB`.
 - `MEGA_LIMIT`: To limit the size of Mega download. Don't add unit. Default unit is `GB`.
+- `LEECH_LIMIT`: To limit the size of Leech download. Don't add unit. Default unit is `GB`.
 - `STORAGE_THRESHOLD`: To leave specific storage free and any download will lead to leave free storage less than this value will be cancelled. Don't add unit. Default unit is `GB`.
 
 ### Buttons
