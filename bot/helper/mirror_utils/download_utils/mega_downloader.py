@@ -113,7 +113,7 @@ class MegaDownloader:
         info = self.__mega_client.getDownloadInfo(gid)
         file_name = info['name']
         file_size = info['total_length']
-        if STOP_DUPLICATE:
+        if STOP_DUPLICATE and not self.__listener.isLeech:
             LOGGER.info('Checking File/Folder if already in Drive')
             mname = file_name
             if self.__listener.isZip:

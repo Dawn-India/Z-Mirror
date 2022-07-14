@@ -111,7 +111,7 @@ class QbDownloader:
                     self.__onDownloadError("Dead Torrent!")
             elif tor_info.state == "downloading":
                 self.__stalled_time = time()
-                if not self.__dupChecked and STOP_DUPLICATE and ospath.isdir(f'{self.__path}') and not self.select:
+                if not self.__dupChecked and STOP_DUPLICATE and ospath.isdir(f'{self.__path}') and not self.__listener.isLeech and not self.select:
                     LOGGER.info('Checking File/Folder if already in Drive')
                     qbname = str(listdir(f'{self.__path}')[-1])
                     if qbname.endswith('.!qB'):
