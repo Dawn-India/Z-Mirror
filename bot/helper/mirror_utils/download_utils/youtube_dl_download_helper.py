@@ -20,10 +20,9 @@ class MyLogger:
     def debug(self, msg):
         # Hack to fix changing extension
         if not self.obj.is_playlist:
-            match = re_search(r'.Merger..Merging formats into..(.*?).$', msg) # To mkv
-            if not match:
-                match = re_search(r'.ExtractAudio..Destination..(.*?)$', msg) # To mp3
-            if match:
+            if match := re_search(
+                r'.Merger..Merging formats into..(.*?).$', msg
+            ) or re_search(r'.ExtractAudio..Destination..(.*?)$', msg):
                 LOGGER.info(msg)
                 newname = match.group(1)
                 newname = newname.rsplit("/", 1)[-1]
@@ -138,10 +137,7 @@ class YoutubeDLHelper:
             ext = realName.split('.')[-1]
             if name == "":
                 newname = str(realName).split(f" [{result['id'].replace('*', '_')}]")
-                if len(newname) > 1:
-                    self.name = newname[0] + '.' + ext
-                else:
-                    self.name = newname[0]
+                self.name = f'{newname[0]}.{ext}' if len(newname) > 1 else newname[0]
             else:
                 self.name = f"{name}.{ext}"
 
@@ -169,10 +165,7 @@ class YoutubeDLHelper:
         if qual.startswith('ba/b'):
             audio_info = qual.split('-')
             qual = audio_info[0]
-            if len(audio_info) == 2:
-                rate = audio_info[1]
-            else:
-                rate = 320
+            rate = audio_info[1] if len(audio_info) == 2 else 320
             self.opts['postprocessors'] = [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3','preferredquality': f'{rate}'}]
         self.opts['format'] = qual
         LOGGER.info(f"Downloading with YT-DLP: {link}")
@@ -185,15 +178,14 @@ class YoutubeDLHelper:
                 msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
                 msg += f'\nYour File/Folder size is {get_readable_file_size(self.size)}'
                 return self.__onDownloadError(msg)
-        if not self.is_playlist:
-            if args is None:
-                self.opts['outtmpl'] = f"{path}/{self.name}"
-            else:
-                folder_name = self.name.rsplit('.', 1)[0]
-                self.opts['outtmpl'] = f"{path}/{folder_name}/{self.name}"
-                self.name = folder_name
-        else:
+        if self.is_playlist:
             self.opts['outtmpl'] = f"{path}/{self.name}/%(title)s.%(ext)s"
+        elif args is None:
+            self.opts['outtmpl'] = f"{path}/{self.name}"
+        else:
+            folder_name = self.name.rsplit('.', 1)[0]
+            self.opts['outtmpl'] = f"{path}/{folder_name}/{self.name}"
+            self.name = folder_name
         self.__download(link)
 
     def cancel_download(self):

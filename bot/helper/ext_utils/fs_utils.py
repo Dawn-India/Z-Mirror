@@ -89,10 +89,9 @@ def check_storage_threshold(size: int, arch=False, alloc=False):
     return True
 
 def get_base_name(orig_path: str):
-    ext = [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]
-    if len(ext) > 0:
+    if ext := [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]:
         ext = ext[0]
-        return re_split(ext + '$', orig_path, maxsplit=1, flags=I)[0]
+        return re_split(f'{ext}$', orig_path, maxsplit=1, flags=I)[0]
     else:
         raise NotSupportedExtractionArchive('File format not supported for extraction')
 
@@ -130,8 +129,8 @@ def split_file(path, size, file_, dirpath, split_size, start_time=0, i=1, inLoop
     if file_.upper().endswith(VIDEO_SUFFIXES):
         base_name, extension = ospath.splitext(file_)
         split_size = split_size - 5000000
-        while i <= parts :
-            parted_name = "{}.part{}{}".format(str(base_name), str(i).zfill(3), str(extension))
+        while i <= parts:
+            parted_name = f"{str(base_name)}.part{str(i).zfill(3)}{str(extension)}"
             out_path = ospath.join(dirpath, parted_name)
             srun(["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", str(start_time),
                   "-i", path, "-fs", str(split_size), "-map", "0", "-map_chapters", "-1", "-c", "copy", out_path])
@@ -148,11 +147,11 @@ def split_file(path, size, file_, dirpath, split_size, start_time=0, i=1, inLoop
             start_time += lpd - 3
             i = i + 1
     else:
-        out_path = ospath.join(dirpath, file_ + ".")
+        out_path = ospath.join(dirpath, f"{file_}.")
         srun(["split", "--numeric-suffixes=1", "--suffix-length=3", f"--bytes={split_size}", path, out_path])
 
 def get_media_info(path):
-    
+
     result = check_output(["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format",
                            "json", "-show_format", path]).decode('utf-8')
 
