@@ -59,8 +59,7 @@ class YoutubeDLHelper:
                      'cookiefile': 'cookies.txt',
                      'allow_multiple_video_streams': True,
                      'allow_multiple_audio_streams': True,
-                     'trim_file_name': 200,
-                     'ffmpeg_location': '/bin/new-api'}
+                     'trim_file_name': 200,}
 
     @property
     def download_speed(self):
