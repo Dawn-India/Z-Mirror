@@ -5,7 +5,7 @@ from yt_dlp import YoutubeDL, DownloadError
 from threading import RLock
 from time import time
 from re import search as re_search
-from bot import download_dict_lock, download_dict, STORAGE_THRESHOLD
+from bot import download_dict_lock, download_dict, STORAGE_THRESHOLD, LEECH_LIMIT
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from bot.helper.telegram_helper.message_utils import sendStatusMessage
 from ..status_utils.youtube_dl_download_status import YoutubeDLDownloadStatus
@@ -177,6 +177,10 @@ class YoutubeDLHelper:
                 msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
                 msg += f'\nYour File/Folder size is {get_readable_file_size(self.size)}'
                 return self.__onDownloadError(msg)
+        if LEECH_LIMIT is not None and self.__listener.isLeech:
+            msg = f'Leech Limit is: {LEECH_LIMIT}GB.'
+            msg += f'\nYour File/Folder size is {get_readable_file_size(self.size)}'
+            return self.__onDownloadError(msg)
         if self.is_playlist:
             self.opts['outtmpl'] = f"{path}/{self.name}/%(title)s.%(ext)s"
         elif args is None:

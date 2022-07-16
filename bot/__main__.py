@@ -30,17 +30,18 @@ def stats(update, context):
     free = get_readable_file_size(free)
     sent = get_readable_file_size(net_io_counters().bytes_sent)
     recv = get_readable_file_size(net_io_counters().bytes_recv)
-    cpuUsage = cpu_percent(interval=0.5)
+    cpuUsage = cpu_percent(interval=1)
+    memory = virtual_memory()
     mem_p = memory.percent
-    stats = f'<b><i>@Z_Mirror Bot Statistics</i></b>\n\n'\
-            f'<b>Updated:</b> {last_commit}\n'\
-            f'<b>Working For:</b> {currentTime}\n\n'\
-            f'<b>Total Disk:</b> {total} [{disk}%]\n'\
-            f'<b>Used:</b> {used} | <b>Free:</b> {free}\n'\
-            f'<b>T-Up:</b> {sent} | <b>T-Dn:</b> {recv}\n'\
-            f'CPU: {cpuUsage}% | RAM: {mem_p}% | SSD: {disk}%\n'
-    heroku = getHerokuDetails(HEROKU_API_KEY, HEROKU_APP_NAME)
-    if heroku: stats += heroku
+    stats = f'<b><i><u>@Z_Mirror Bot Statistics</u></i></b>\n\n'\
+            f'<b>Updated:</b> <code>{last_commit}</code>\n'\
+            f'<b>I am Working For:</b> <code>{currentTime}</code>\n'\
+            f'<b>Total Disk:</b> <code>{total}</code> [{disk}% In use]\n'\
+            f'<b>Used:</b> <code>{used}</code> | <b>Free:</b> <code>{free}</code>\n'\
+            f'<b>T-Up:</b> <code>{sent}</code> | <b>T-Dn:</b> <code>{recv}</code>\n'\
+            f'<b>CPU Usage:</b> <code>{cpuUsage}</code>% | <b>RAM Usage:</b> <code>{mem_p}%</code>\n'
+    if heroku := getHerokuDetails(HEROKU_API_KEY, HEROKU_APP_NAME):
+        stats += heroku
     sendMessage(stats, context.bot, update.message)
 
 def start(update, context):

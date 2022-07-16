@@ -4,7 +4,7 @@ from telegram import InlineKeyboardMarkup
 from time import sleep
 from re import split as re_split
 from bot import DOWNLOAD_DIR, dispatcher, BOT_PM, LOGGER, FSUB, FSUB_CHANNEL_ID
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_message
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url
 from bot.helper.mirror_utils.download_utils.youtube_dl_download_helper import YoutubeDLHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands

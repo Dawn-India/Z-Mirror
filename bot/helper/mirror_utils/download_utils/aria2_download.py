@@ -1,17 +1,15 @@
 from time import sleep
-
-from bot import aria2, download_dict_lock, download_dict, STOP_DUPLICATE, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, LOGGER, STORAGE_THRESHOLD
+from bot import aria2, download_dict_lock, download_dict, STOP_DUPLICATE, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, LEECH_LIMIT, LOGGER, STORAGE_THRESHOLD
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thread, get_readable_file_size
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMarkup, sendStatusMessage, sendMessage
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 
-
 @new_thread
 def __onDownloadStarted(api, gid):
     try:
-        if any([STOP_DUPLICATE, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD]):
+        if any([STOP_DUPLICATE, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, LEECH_LIMIT, STORAGE_THRESHOLD]):
             download = api.get_download(gid)
             if download.is_metadata:
                 LOGGER.info(f'onDownloadStarted: {gid} Metadata')
@@ -21,9 +19,9 @@ def __onDownloadStarted(api, gid):
                 download = api.get_download(gid)
             LOGGER.info(f'onDownloadStarted: {gid}')
             dl = getDownloadByGid(gid)
-            if not dl or dl.getListener().isLeech:
+            if not dl:
                 return
-            if STOP_DUPLICATE:
+            if STOP_DUPLICATE and not dl.getListener().isLeech:
                 LOGGER.info('Checking File/Folder if already in Drive...')
                 sname = download.name
                 if dl.getListener().isZip:
@@ -39,11 +37,11 @@ def __onDownloadStarted(api, gid):
                         dl.getListener().onDownloadError('Someone already mirrored it for you !\n\n')
                         api.remove([download], force=True, files=True)
                         return sendMarkup("Here you go:", dl.getListener().bot, dl.getListener().message, button)
-            if any([ZIP_UNZIP_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]):
+            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]):
                 sleep(1)
                 limit = None
                 size = download.total_length
-                arch = any([dl.getListener().isZip, dl.getListener().extract])
+                arch = any([dl.getListener().isZip, dl.getListener().isLeech, dl.getListener().extract])
                 if STORAGE_THRESHOLD is not None:
                     acpt = check_storage_threshold(size, arch, True)
                     # True if files allocated, if allocation disabled remove True arg
@@ -55,6 +53,9 @@ def __onDownloadStarted(api, gid):
                 if ZIP_UNZIP_LIMIT is not None and arch:
                     mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
                     limit = ZIP_UNZIP_LIMIT
+                if LEECH_LIMIT is not None and dl.getListener().isLeech:
+                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
+                    limit = LEECH_LIMIT
                 elif TORRENT_DIRECT_LIMIT is not None:
                     mssg = f'Torrent/Direct limit is {TORRENT_DIRECT_LIMIT}GB'
                     limit = TORRENT_DIRECT_LIMIT
@@ -115,7 +116,7 @@ def add_aria2c_download(link: str, path, listener, filename, auth):
         return sendMessage(error, listener.bot, listener.message)
     with download_dict_lock:
         download_dict[listener.uid] = AriaDownloadStatus(download.gid, listener)
-        LOGGER.info(f"Started: {download.gid} DIR: {download.dir} ")
+        LOGGER.info(f"Download Started with area2: {download.gid} DIR: {download.dir} ")
     listener.onDownloadStart()
     sendStatusMessage(listener.message, listener.bot)
 

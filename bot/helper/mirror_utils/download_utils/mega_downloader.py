@@ -3,14 +3,12 @@ from string import ascii_letters, digits
 from os import makedirs
 from threading import Event
 from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
-
-from bot import LOGGER, MEGA_API_KEY, download_dict_lock, download_dict, MEGA_EMAIL_ID, MEGA_PASSWORD, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD
+from bot import LOGGER, MEGA_API_KEY, download_dict_lock, download_dict, MEGA_EMAIL_ID, MEGA_PASSWORD, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, LEECH_LIMIT, STORAGE_THRESHOLD
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage
 from bot.helper.ext_utils.bot_utils import get_mega_link_type, get_readable_file_size
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
-
 
 class MegaAppListener(MegaListener):
     _NO_EVENT_ON = (MegaRequest.TYPE_LOGIN,MegaRequest.TYPE_FETCH_NODES)
@@ -117,7 +115,6 @@ class MegaAppListener(MegaListener):
         self.is_cancelled = True
         self.listener.onDownloadError("Download Canceled by user")
 
-
 class AsyncExecutor:
 
     def __init__(self):
@@ -166,9 +163,9 @@ def add_mega_download(mega_link: str, path: str, listener):
             if smsg:
                 msg1 = "Someone already mirrored it for you !\nHere you go:"
                 return sendMarkup(msg1, listener.bot, listener.message, button)
-    if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT]):
+    if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, LEECH_LIMIT, MEGA_LIMIT]):
         size = api.getSize(node)
-        arch = any([listener.isZip, listener.extract])
+        arch = any([listener.isZip, listener.isLeech, listener.extract])
         if STORAGE_THRESHOLD is not None:
             acpt = check_storage_threshold(size, arch)
             if not acpt:
@@ -179,6 +176,9 @@ def add_mega_download(mega_link: str, path: str, listener):
         if ZIP_UNZIP_LIMIT is not None and arch:
             msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
             limit = ZIP_UNZIP_LIMIT
+        if LEECH_LIMIT is not None and listener.isLeech:
+            msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
+            limit = LEECH_LIMIT
         elif MEGA_LIMIT is not None:
             msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
             limit = MEGA_LIMIT

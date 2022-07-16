@@ -62,7 +62,7 @@ def getHerokuDetails(h_api_key, h_app_name):
         quota_used = result["quota_used"]
         quota_remain = account_quota - quota_used
         stats += f"<b>Total Dyno Hours:</b> {get_readable_time(account_quota)}\n"
-        stats += f"<b>Used:</b> {get_readable_time(quota_used)} | <b>Free:</b> {get_readable_time(quota_remain)}\n"
+        stats += f"<b>Used:</b> {get_readable_time(quota_used)} | <b>Available:</b> {get_readable_time(quota_remain)}\n"
         return stats
     except Exception as error:
         LOGGER.error(error)
