@@ -4,7 +4,7 @@ from json import loads as jsnloads
 from shutil import rmtree, disk_usage
 from PIL import Image
 from magic import Magic
-from subprocess import run as srun, check_output
+from subprocess import run as srun, check_output, Popen
 from time import time
 from math import ceil
 from re import split as re_split, I
@@ -123,7 +123,7 @@ def take_ss(video_file):
 
     return des_dir
 
-def split_file(path, size, file_, dirpath, split_size, start_time=0, i=1, inLoop=False):
+def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i=1, inLoop=False):
     parts = ceil(size/TG_SPLIT_SIZE)
     if EQUAL_SPLITS and not inLoop:
         split_size = ceil(size/parts) + 1000
@@ -133,14 +133,17 @@ def split_file(path, size, file_, dirpath, split_size, start_time=0, i=1, inLoop
         while i <= parts:
             parted_name = f"{str(base_name)}.part{str(i).zfill(3)}{str(extension)}"
             out_path = ospath.join(dirpath, parted_name)
-            srun(["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", str(start_time),
+            listener.split_proc = Popen(["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", str(start_time),
                   "-i", path, "-fs", str(split_size), "-map", "0", "-map_chapters", "-1", "-c", "copy", out_path])
+            listener.split_proc.wait()
+            if listener.split_proc.returncode == -9:
+                return False
             out_size = get_path_size(out_path)
             if out_size > (TG_SPLIT_SIZE + 1000):
                 dif = out_size - (TG_SPLIT_SIZE + 1000)
                 split_size = split_size - dif + 5000000
                 osremove(out_path)
-                return split_file(path, size, file_, dirpath, split_size, start_time, i, True)
+                return split_file(path, size, file_, dirpath, split_size, listener, start_time, i, True)
             lpd = get_media_info(out_path)[0]
             if lpd <= 4:
                 osremove(out_path)
@@ -150,6 +153,7 @@ def split_file(path, size, file_, dirpath, split_size, start_time=0, i=1, inLoop
     else:
         out_path = ospath.join(dirpath, f"{file_}.")
         srun(["split", "--numeric-suffixes=1", "--suffix-length=3", f"--bytes={split_size}", path, out_path])
+    return True
 
 def get_media_info(path):
 

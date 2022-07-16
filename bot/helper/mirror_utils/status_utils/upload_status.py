@@ -1,6 +1,4 @@
 from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time, EngineStatus
-from bot import DOWNLOAD_DIR
-
 
 class UploadStatus:
     def __init__(self, obj, size, gid, listener):
@@ -9,9 +7,6 @@ class UploadStatus:
         self.__uid = listener.uid
         self.__gid = gid
         self.message = listener.message
-
-    def path(self):
-        return f"{DOWNLOAD_DIR}{self.__uid}"
 
     def processed_bytes(self):
         return self.__obj.uploaded_bytes
