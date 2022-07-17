@@ -191,7 +191,7 @@ class QbDownloader:
                 self.__listener.onDownloadComplete()
                 if self.__listener.seed and not self.__listener.isLeech and not self.__listener.extract:
                     with download_dict_lock:
-                        if self.__listener.uid not in listdownload_dict:
+                        if self.__listener.uid not in download_dict:
                             self.client.torrents_delete(torrent_hashes=self.ext_hash, delete_files=True)
                             self.client.auth_log_out()
                             self.__periodic.cancel()
@@ -227,3 +227,14 @@ class QbDownloader:
             self.client.torrents_pause(torrent_hashes=self.ext_hash)
         else:
             self.__onDownloadError('Download stopped by user!')
+
+def _get_hash_magnet(mgt: str):	
+    hash_ = re_search(r'(?<=xt=urn:btih:)[a-zA-Z0-9]+', mgt).group(0)	
+    if len(hash_) == 32:	
+        hash_ = b16encode(b32decode(str(hash_))).decode()	
+    return str(hash_)	
+def _get_hash_file(path):	
+    with open(path, "rb") as f:	
+        decodedDict = bdecode(f.read())	
+        hash_ = sha1(bencode(decodedDict[b'info'])).hexdigest()	
+    return str(hash_)
