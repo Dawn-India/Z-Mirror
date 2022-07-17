@@ -487,15 +487,6 @@ try:
 except KeyError:
     BOT_PM = False
 try:
-    HEROKU_API_KEY = getConfig('HEROKU_API_KEY')
-    HEROKU_APP_NAME = getConfig('HEROKU_APP_NAME')
-    if len(HEROKU_API_KEY) == 0 or len(HEROKU_APP_NAME) == 0:
-        raise KeyError
-except KeyError:
-    LOGGER.warning("Heroku details not entered.")
-    HEROKU_API_KEY = None
-    HEROKU_APP_NAME = None
-try:
     TOKEN_PICKLE_URL = getConfig('TOKEN_PICKLE_URL')
     if len(TOKEN_PICKLE_URL) == 0:
         raise KeyError
