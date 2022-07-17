@@ -48,6 +48,17 @@ def editMessage(text: str, message: Message, reply_markup=None):
         LOGGER.error(str(e))
         return str(e)
 
+def sendPhoto(text: str, bot, message, photo, reply_markup=None):
+    try:
+        return bot.send_photo(chat_id=message.chat_id, photo=photo, reply_to_message_id=message.message_id,
+            caption=text, reply_markup=reply_markup, parse_mode='html')
+    except RetryAfter as r:
+        LOGGER.warning(str(r))
+        sleep(r.retry_after * 1.5)
+        return sendPhoto(text, bot, message, photo, reply_markup)
+    except Exception as e:
+        LOGGER.error(str(e))
+
 def sendRss(text: str, bot):
     if rss_session is None:
         try:
@@ -77,7 +88,7 @@ async def sendRss_pyro(text: str):
         return await rss_session.send_message(RSS_CHAT_ID, text, disable_web_page_preview=True)
     except FloodWait as e:
         LOGGER.warning(str(e))
-        await asleep(e.value * 1.5)
+        await asyncio.sleep(e.value * 1.5)
         return await sendRss(text)
     except Exception as e:
         LOGGER.error(str(e))

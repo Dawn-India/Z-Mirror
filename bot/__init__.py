@@ -29,7 +29,11 @@ basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 
 LOGGER = getLogger(__name__)
 
+def getConfig(name: str):
+    return environ[name]
+
 CONFIG_FILE_URL = environ.get('CONFIG_FILE_URL')
+
 try:
     if len(CONFIG_FILE_URL) == 0:
         raise TypeError
@@ -38,6 +42,7 @@ try:
         if res.status_code == 200:
             with open('config.env', 'wb+') as f:
                 f.write(res.content)
+            log_info("Succesfully got config.env from CONFIG_FILE_URL")
         else:
             log_error(f"Failed to download config.env {res.status_code}")
     except Exception as e:
@@ -45,10 +50,16 @@ try:
 except:
     pass
 
-load_dotenv('config.env', override=True)
+try:
+    HEROKU_API_KEY = getConfig('HEROKU_API_KEY')
+    HEROKU_APP_NAME = getConfig('HEROKU_APP_NAME')
+    if len(HEROKU_API_KEY) == 0 or len(HEROKU_APP_NAME) == 0:
+        raise KeyError
+except:
+    HEROKU_APP_NAME = None
+    HEROKU_API_KEY = None
 
-def getConfig(name: str):
-    return environ[name]
+load_dotenv('config.env', override=True)
 
 try:
     NETRC_URL = getConfig('NETRC_URL')
@@ -511,15 +522,6 @@ try:
     BOT_PM = BOT_PM.lower() == 'true'
 except KeyError:
     BOT_PM = False
-try:
-    HEROKU_API_KEY = getConfig('HEROKU_API_KEY')
-    HEROKU_APP_NAME = getConfig('HEROKU_APP_NAME')
-    if len(HEROKU_API_KEY) == 0 or len(HEROKU_APP_NAME) == 0:
-        raise KeyError
-except KeyError:
-    LOGGER.warning("Heroku details not entered.")
-    HEROKU_API_KEY = None
-    HEROKU_APP_NAME = None
 try:
     TOKEN_PICKLE_URL = getConfig('TOKEN_PICKLE_URL')
     if len(TOKEN_PICKLE_URL) == 0:

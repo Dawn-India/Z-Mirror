@@ -4,7 +4,7 @@ from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram import InlineKeyboardMarkup
 from bot import AS_DOC_USERS, AS_MEDIA_USERS, dispatcher, AS_DOCUMENT, AUTO_DELETE_MESSAGE_DURATION, DB_URI
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_message, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper import button_build
@@ -29,6 +29,7 @@ def getleechinfo(from_user):
     if ospath.exists(thumbpath):
         thumbmsg = "Exists"
         buttons.sbutton("Delete Thumbnail", f"leechset {user_id} thumb")
+        buttons.sbutton("Show Thumbnail", f"leechset {user_id} showthumb")
     else:
         thumbmsg = "Not Exists"
 
@@ -85,6 +86,13 @@ def setLeechType(update, context):
             editLeechType(message, query)
         else:
             query.answer(text="Old Settings", show_alert=True)
+    elif data[2] == "showthumb":
+        path = f"Thumbnails/{user_id}.jpg"
+        if ospath.lexists(path):
+            msg = f"Thumbnail for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)"
+            delo = sendPhoto(text=msg, bot=context.bot, message=message, photo=open(path, 'rb'))
+            Thread(target=auto_delete_message, args=(context.bot, update.message, delo)).start()
+        else: query.answer(text="Send new settings command.")
     else:
         query.answer()
         try:
