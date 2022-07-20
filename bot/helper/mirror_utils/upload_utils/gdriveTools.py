@@ -188,7 +188,9 @@ class GoogleDriveHelper:
         drive_file = self.__service.files().create(supportsTeamDrives=True,
                                                    body=file_metadata, media_body=media_body)
         response = None
-        while response is None and not self.is_cancelled:
+        while response is None:
+            if self.is_cancelled:
+                break
             try:
                 self.status, response = drive_file.next_chunk()
             except HttpError as err:
@@ -593,6 +595,7 @@ class GoogleDriveHelper:
         fileName = self.__escapes(str(fileName))
         contents_count = 0
         telegraph_content = []
+        path = []
         Title = False
         if len(DRIVES_IDS) > 1:
             token_service = self.__alt_authorize()
