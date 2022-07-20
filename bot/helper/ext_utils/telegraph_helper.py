@@ -5,7 +5,7 @@ from random import SystemRandom
 from time import sleep
 from telegraph import Telegraph
 from telegraph.exceptions import RetryAfterError
-from bot import LOGGER
+from bot import LOGGER, TITLE_NAME
 
 class TelegraphHelper:
     def __init__(self, author_name=None, author_url=None):
@@ -69,10 +69,9 @@ class TelegraphHelper:
                     nxt_page += 1
             self.edit_page(
                 path = path[prev_page],
-                title = 'Z-Mirror-Bot Torrent Search',
+                title = f'{TITLE_NAME} Torrent Search',
                 content=content
             )
         return
 
-
-telegraph=TelegraphHelper('Z-Mirror-Bot', 'https://github.com/shuvam-dawn/MLTB-Custom-UI')
+telegraph=TelegraphHelper( f'{TITLE_NAME}', 'https://github.com/shuvam-dawn/MLTB-Custom-UI')

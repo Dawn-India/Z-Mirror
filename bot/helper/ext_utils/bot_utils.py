@@ -40,7 +40,7 @@ class MirrorStatus:
 class EngineStatus:
     STATUS_ARIA = "Aria2c v1.35.0"
     STATUS_GD = "Google Api v2.51.0"
-    STATUS_MEGA = "MegaSDK v3.12.0"
+    STATUS_MEGA = "Mega Api v3.12.0"
     STATUS_QB = "qBittorrent v4.4.2"
     STATUS_TG = "Pyrogram v2.0.27"
     STATUS_YT = "YT-dlp v22.5.18"
@@ -184,7 +184,7 @@ def get_readable_message():
             else:
                 msg += f"\n<b>Size: </b>{download.size()}"
                 msg += f"\n<b>Engine :</b> {download.eng()}"
-            msg += f"\n<code>/{BotCommands.CancelMirror} {download.gid()}</code>"
+            msg += f"\nTo Cancle: <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             msg += "\n"
             if STATUS_LIMIT is not None and index == STATUS_LIMIT:
                 break

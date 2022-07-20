@@ -8,7 +8,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, de
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
-from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME
+from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_gdrive_link, is_gdtot_link, new_thread, is_appdrive_link
 from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, appdrive
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
@@ -23,9 +23,9 @@ def _clone(message, bot, multi=0):
             uname = message.from_user.mention_html(message.from_user.first_name)
             user = bot.get_chat_member(FSUB_CHANNEL_ID, message.from_user.id)
             if user.status not in ['member', 'creator', 'administrator']:
-                buttons.buildbutton("Z Mirrror", f"https://t.me/{CHANNEL_USERNAME}")
+                buttons.buildbutton(f"{TITLE_NAME}", f"https://t.me/{CHANNEL_USERNAME}")
                 reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
-                return sendMarkup(f"<b>Dear {uname}️,\nYou haven't joined our Updates Channel yet.\nJoin and <u>Use Bots Without Restrictions.</u></b>", bot, message, reply_markup)
+                return sendMarkup(f"<b>Dear {uname}️,\n\nI found that you haven't joined our Updates Channel yet.\n\nJoin and Use Bots Without Restrictions.</b>", bot, message, reply_markup)
         except Exception as e:
             LOGGER.info(str(e))
 

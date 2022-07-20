@@ -523,6 +523,12 @@ try:
 except KeyError:
     BOT_PM = False
 try:
+    TITLE_NAME = getConfig('TITLE_NAME')
+    if len(TITLE_NAME) == 0:
+        TITLE_NAME = 'Z-Mirror'
+except KeyError:
+    TITLE_NAME = 'Z-Mirror'
+try:
     TOKEN_PICKLE_URL = getConfig('TOKEN_PICKLE_URL')
     if len(TOKEN_PICKLE_URL) == 0:
         raise KeyError
