@@ -22,6 +22,9 @@ from bot import LOGGER, UPTOBOX_TOKEN, CRYPT, APPDRIVE_EMAIL, APPDRIVE_PASS
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.bot_utils import is_gdtot_link, is_appdrive_link
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
+from bs4 import BeautifulSoup as b4
+import requests as r
+import re
 
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
@@ -82,12 +85,12 @@ def zippy_share(url: str) -> str:
     except IndexError:
         raise DirectDownloadLinkException("ERROR: No Zippyshare links found")
     try:
-        base_url = re_search('http.+.zippyshare.com/', url).group()
-        response = requests.rget(url).content
-        pages = BeautifulSoup(response, "lxml")
+        base_url = re.search('http.+.zippyshare.com/', url).group()
+        response = r.get(url).content
+        pages = b4(response, "lxml")
         js_script = pages.find("div", {"class": "right"})
         js_script = js_script.find_all("script")[0]
-        js_content = re_findall(r'\.href.=."/(.*?)";', str(js_script))[0]
+        js_content = re.findall(r'\.href.=."/(.*?)";', str(js_script))[0]
         js_content = str(js_content).split('"')
         a = str(js_script).split('var a = ')[1].split(';')[0]
         value = int(a) ** 3 + 3
