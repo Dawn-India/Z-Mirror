@@ -142,7 +142,7 @@ class MirrorListener:
                     self.ext_proc.wait()
                     if self.ext_proc.returncode == -9:
                         return
-                    elif self.ext_proc.returncode == 0:
+                    elif self.ext_proc.returncode != 0:
                         LOGGER.info(f"Extracted Path: {path}")
                         osremove(m_path)
                     else:
