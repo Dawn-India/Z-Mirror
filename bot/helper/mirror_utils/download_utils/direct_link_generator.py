@@ -9,7 +9,6 @@ than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtend
 for original authorship. """
 
 from requests import get as rget, head as rhead, post as rpost, Session as rsession
-import re
 from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
 from base64 import b64decode
 from urllib.parse import urlparse, unquote
@@ -83,12 +82,12 @@ def zippy_share(url: str) -> str:
     except IndexError:
         raise DirectDownloadLinkException("ERROR: No Zippyshare links found")
     try:
-        base_url = re.search('http.+.zippyshare.com/', url).group()
+        base_url = re_search('http.+.zippyshare.com/', url).group()
         response = request.get(url).content
         pages = BeautifulSoup(response, "lxml")
         js_script = pages.find("div", {"class": "right"})
         js_script = js_script.find_all("script")[0]
-        js_content = re.findall(r'\.href.=."/(.*?)";', str(js_script))[0]
+        js_content = re_findall(r'\.href.=."/(.*?)";', str(js_script))[0]
         js_content = str(js_content).split('"')
         a = str(js_script).split('var a = ')[1].split(';')[0]
         value = int(a) ** 3 + 3
