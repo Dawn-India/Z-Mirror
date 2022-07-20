@@ -124,7 +124,9 @@ class YoutubeDLHelper:
                 return self.__onDownloadError(str(e))
         if 'entries' in result:
             for v in result['entries']:
-                if 'filesize_approx' in v:
+                if not v:
+                    continue
+                elif 'filesize_approx' in v:
                     self.size += v['filesize_approx']
                 elif 'filesize' in v:
                     self.size += v['filesize']
