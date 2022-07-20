@@ -29,37 +29,10 @@ basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 
 LOGGER = getLogger(__name__)
 
+load_dotenv('config.env', override=True)
+
 def getConfig(name: str):
     return environ[name]
-
-CONFIG_FILE_URL = environ.get('CONFIG_FILE_URL')
-
-try:
-    if len(CONFIG_FILE_URL) == 0:
-        raise TypeError
-    try:
-        res = rget(CONFIG_FILE_URL)
-        if res.status_code == 200:
-            with open('config.env', 'wb+') as f:
-                f.write(res.content)
-            log_info("Succesfully got config.env from CONFIG_FILE_URL")
-        else:
-            log_error(f"Failed to download config.env {res.status_code}")
-    except Exception as e:
-        log_error(f"CONFIG_FILE_URL: {e}")
-except:
-    pass
-
-try:
-    HEROKU_API_KEY = getConfig('HEROKU_API_KEY')
-    HEROKU_APP_NAME = getConfig('HEROKU_APP_NAME')
-    if len(HEROKU_API_KEY) == 0 or len(HEROKU_APP_NAME) == 0:
-        raise KeyError
-except:
-    HEROKU_APP_NAME = None
-    HEROKU_API_KEY = None
-
-load_dotenv('config.env', override=True)
 
 try:
     NETRC_URL = getConfig('NETRC_URL')
@@ -199,8 +172,27 @@ except:
     log_error("One or more env variables missing! Exiting now")
     exit(1)
 
-LOGGER.info("Generating BOT_SESSION_STRING")
-app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
+try:
+    IS_PREMIUM_USER = False
+    USER_SESSION_STRING = getConfig('USER_SESSION_STRING')
+    if len(USER_SESSION_STRING) == 0:
+        raise KeyError
+    LOGGER.info("Generating USER_SESSION_STRING")
+    app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+    with app:
+        IS_PREMIUM_USER = app.get_me().is_premium
+except:
+    LOGGER.info("Generating BOT_SESSION_STRING")
+    app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
+
+try:
+    RSS_USER_SESSION_STRING = getConfig('RSS_USER_SESSION_STRING')
+    if len(RSS_USER_SESSION_STRING) == 0:
+        raise KeyError
+    LOGGER.info("Generating RSS_USER_SESSION_STRING")
+    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=RSS_USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+except:
+    rss_session = None
 
 def aria2c_init():
     try:
@@ -259,46 +251,15 @@ try:
 except:
     DB_URI = None
 try:
-    RSS_CHAT_ID = getConfig('RSS_CHAT_ID')
-    if len(RSS_CHAT_ID) == 0:
-        raise KeyError
-    RSS_CHAT_ID = int(RSS_CHAT_ID)
-except:
-    RSS_CHAT_ID = None
-tgBotMaxFileSize = 2097151000
-try:
     TG_SPLIT_SIZE = getConfig('TG_SPLIT_SIZE')
-    if len(TG_SPLIT_SIZE) == 0 or int(TG_SPLIT_SIZE) > tgBotMaxFileSize:
+    if len(TG_SPLIT_SIZE) == 0 or (not IS_PREMIUM_USER and TG_SPLIT_SIZE > 2097152000) or TG_SPLIT_SIZE > 4194304000:
         raise KeyError
     TG_SPLIT_SIZE = int(TG_SPLIT_SIZE)
 except:
-    TG_SPLIT_SIZE = tgBotMaxFileSize
-try:
-    USER_SESSION_STRING = getConfig('USER_SESSION_STRING')
-    if len(USER_SESSION_STRING) == 0:
-        raise KeyError
-    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
-    if not rss_session:
-        LOGGER.error("Cannot initialized User Session. Please regenerate USER_SESSION_STRING")
+    if not IS_PREMIUM_USER:
+        TG_SPLIT_SIZE = 2097152000
     else:
-        rss_session.start()
-        if (rss_session.get_me()).is_premium:
-            if not LEECH_LOG:
-                LOGGER.error("You must set LEECH_LOG for uploads. Eiting now.")
-                try: rss_session.send_message(OWNER_ID, "You must set LEECH_LOG for uploads. Bot is closing. Bye.")
-                except Exception as e: LOGGER.exception(e)
-                rss_session.stop()
-                app.stop()
-                exit(1)
-            TG_SPLIT_SIZE = 4194304000
-            LOGGER.info("Premium user detected. Upload limit is 4GB now.")
-        elif (not DB_URI) or (not RSS_CHAT_ID):
-            rss_session.stop()
-            LOGGER.info(f"Not using rss. if you want to use fill RSS_CHAT_ID and DB_URI variables.")
-except:
-    USER_SESSION_STRING = None
-    rss_session = None
-LOGGER.info(f"TG_SPLIT_SIZE: {TG_SPLIT_SIZE}")
+        TG_SPLIT_SIZE = 4194304000
 try:
     STATUS_LIMIT = getConfig('STATUS_LIMIT')
     if len(STATUS_LIMIT) == 0:
@@ -387,6 +348,13 @@ try:
     LEECH_LIMIT = float(LEECH_LIMIT)
 except:
     LEECH_LIMIT = None
+try:
+    RSS_CHAT_ID = getConfig('RSS_CHAT_ID')
+    if len(RSS_CHAT_ID) == 0:
+        raise KeyError
+    RSS_CHAT_ID = int(RSS_CHAT_ID)
+except:
+    RSS_CHAT_ID = None
 try:
     RSS_DELAY = getConfig('RSS_DELAY')
     if len(RSS_DELAY) == 0:
@@ -496,6 +464,15 @@ try:
 except KeyError:
     APPDRIVE_EMAIL = None
     APPDRIVE_PASS = None
+try:	
+    HEROKU_API_KEY = getConfig('HEROKU_API_KEY')	
+    HEROKU_APP_NAME = getConfig('HEROKU_APP_NAME')	
+    if len(HEROKU_API_KEY) == 0 or len(HEROKU_APP_NAME) == 0:	
+        raise KeyError	
+except KeyError:	
+    LOGGER.warning("Heroku details not entered.")	
+    HEROKU_API_KEY = None	
+    HEROKU_APP_NAME = None
 try:
     FSUB = getConfig('FSUB')
     FSUB = FSUB.lower() == 'true'
