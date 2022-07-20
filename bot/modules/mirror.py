@@ -43,6 +43,7 @@ class MirrorListener:
         self.message = message
         self.uid = self.message.message_id
         self.extract = extract
+        self.ext_proc = Popen
         self.isZip = isZip
         self.isQbit = isQbit
         self.isLeech = isLeech
