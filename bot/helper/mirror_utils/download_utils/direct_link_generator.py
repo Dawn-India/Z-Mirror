@@ -9,7 +9,8 @@ than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtend
 for original authorship. """
 
 from requests import get as rget, head as rhead, post as rpost, Session as rsession
-from re import re, findall as re_findall, sub as re_sub, match as re_match, search as re_search
+import re
+from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
 from base64 import b64decode
 from urllib.parse import urlparse, unquote
 from json import loads as jsnloads
