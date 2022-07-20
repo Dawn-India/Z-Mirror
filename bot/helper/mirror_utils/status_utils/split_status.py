@@ -64,7 +64,7 @@ class SplitStatus:
     def cancel_download(self):
         LOGGER.info(f'Cancelling Split: {self.__name}')
         self.__listener.split_proc.kill()
-        self.__listener.onUploadError('splitting stopped by user!')
+        self.__listener.onUploadError('Splitting stopped by user!')
 
     def eng(self):
         return EngineStatus.STATUS_SPLIT
