@@ -7,10 +7,12 @@ from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMess
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 
-def add_gd_download(link, listener, is_gdtot):
+def add_gd_download(link, listener, newname, is_gdtot):
     res, size, name, files = GoogleDriveHelper().helper(link)
     if res != "":
         return sendMessage(res, listener.bot, listener.message)
+    if newname:
+        name = newname
     if STOP_DUPLICATE and not listener.isLeech:
         LOGGER.info('Checking File/Folder if already in Drive...')
         if listener.isZip:
