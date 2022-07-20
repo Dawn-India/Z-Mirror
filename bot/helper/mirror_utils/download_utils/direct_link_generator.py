@@ -83,7 +83,7 @@ def zippy_share(url: str) -> str:
         raise DirectDownloadLinkException("ERROR: No Zippyshare links found")
     try:
         base_url = re_search('http.+.zippyshare.com/', url).group()
-        response = requests.get(url).content
+        response = requests_get(url).content
         pages = BeautifulSoup(response, "lxml")
         js_script = pages.find("div", {"class": "right"})
         js_script = js_script.find_all("script")[0]
