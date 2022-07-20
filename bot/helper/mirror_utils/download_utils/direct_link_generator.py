@@ -82,11 +82,12 @@ def zippy_share(url: str) -> str:
     except IndexError:
         raise DirectDownloadLinkException("ERROR: No Zippyshare links found")
     try:
-        base_url = re_search('http.+.zippyshare.com/', link).group()
-        response = rget(link).content
+        base_url = re.search('http.+.zippyshare.com/', url).group()
+        response = request.get(url).content
         pages = BeautifulSoup(response, "lxml")
-        js_script = pages.find("div", style="margin-left: 24px; margin-top: 20px; text-align: center; width: 303px; height: 105px;")
-        js_content = re_findall(r'\.href.=."/(.*?)";', str(js_script))[0]
+        js_script = pages.find("div", {"class": "right"})
+        js_script = js_script.find_all("script")[0]
+        js_content = re.findall(r'\.href.=."/(.*?)";', str(js_script))[0]
         js_content = str(js_content).split('"')
         a = str(js_script).split('var a = ')[1].split(';')[0]
         value = int(a) ** 3 + 3
