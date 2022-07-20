@@ -127,7 +127,7 @@ class MirrorListener:
                                     return
                                 elif self.ext_proc.returncode != 0:
                                     LOGGER.error('Unable to extract archive splits! Uploading anyway')
-                        if self.ext_proc.returncode == 0:
+                        if self.ext_proc.returncode != 0:
                             for file_ in files:
                                 if file_.endswith((".rar", ".zip", ".7z")) or \
                                     re_search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
