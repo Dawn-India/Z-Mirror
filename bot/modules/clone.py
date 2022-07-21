@@ -3,7 +3,8 @@ from string import ascii_letters, digits
 from telegram.ext import CommandHandler
 from threading import Thread
 from time import sleep
-from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME
+from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, \
+                MIRROR_LOGS, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -133,7 +134,7 @@ def _clone(message, bot, multi=0):
                     update_all_messages()
             except IndexError:
                 pass
-        cc = f'\n\n<b>Hey </b>{tag}<b> Your Task is Done</b>\n\n<b>Thanks for using <i>@Z_Mirror</i></b>'
+        cc = f'\n\n<b>Hey </b>{tag}<b> Your Task is Done</b>\n\n<b>Thanks for using <i>{TITLE_NAME}</i></b>'
         if button in ["cancelled", ""]:
             sendMessage(f"{tag} {result}", bot, message)
         else:
