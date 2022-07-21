@@ -8,7 +8,8 @@ from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, de
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
-from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME
+from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, \
+                FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_gdrive_link, is_gdtot_link, new_thread, is_appdrive_link
 from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, appdrive
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
@@ -133,7 +134,7 @@ def _clone(message, bot, multi=0):
                     update_all_messages()
             except IndexError:
                 pass
-        cc = f'\n\n<b>Hey </b>{tag}<b> Your Task is Done</b>\n\n<b>Thanks for using <i>@Z_Mirror</i></b>'
+        cc = f'\n\n<b>Hey </b>{tag}<b> Your Task is Done</b>\n\n<b>Thanks for using <i>{TITLE_NAME}</i></b>'
         if button in ["cancelled", ""]:
             sendMessage(f"{tag} {result}", bot, message)
         else:
