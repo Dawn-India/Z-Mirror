@@ -69,10 +69,14 @@ def direct_link_generator(link: str):
         return krakenfiles(link)
     elif is_gdtot_link(link):
         return gdtot(link)
+    elif is_appdrive_link(link):
+        return appdrive(link)
     elif any(x in link for x in fmed_list):
         return fembed(link)
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
+    elif 'gofile.io' in link:
+        return gofile(link)
     else:
         raise DirectDownloadLinkException(f'No Direct link function found for {link}')
 
@@ -398,6 +402,24 @@ def gdtot(url: str) -> str:
         decoded_id = b64decode(str(matches[0])).decode('utf-8')
     except:
         raise DirectDownloadLinkException("ERROR: Try in your broswer, mostly file not found or user limit exceeded!")
+    return f'https://drive.google.com/open?id={decoded_id}'
+
+def gofile(url: str) -> str:
+    try:
+        api_uri = 'https://api.gofile.io'
+        client = rsession()
+        res = client.get(f'{api_uri}/createAccount').json()
+        data = {
+            'contentId': url.split('/')[-1],
+            'token': res['data']['token'],
+            'websiteToken': 'websiteToken',
+            'cache': 'true'
+        }
+        res = client.get(f'{api_uri}/getContent', params=data).json()
+        content = list(res['data']['contents'].values())
+        return content[0]['directLink']
+    except:
+        raise DirectDownloadLinkException("ERROR: Error trying to generate Direct Link from gofile!")
     return f'https://drive.google.com/open?id={decoded_id}'
 
 account = {
