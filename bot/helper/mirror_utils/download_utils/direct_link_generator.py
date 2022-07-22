@@ -82,7 +82,7 @@ def direct_link_generator(link: str):
 
 def zippy_share(url: str) -> str:
     try:
-        link = re_findall(r'\b(https?://.*zippyshare\.com\S+)', url)[0]
+        link = re_findall(r'\bhttps?://.*zippyshare\.com\S+', url)[0]
     except IndexError:
         raise DirectDownloadLinkException("ERROR: No Zippyshare links found")
     try:
