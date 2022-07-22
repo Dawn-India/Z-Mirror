@@ -200,11 +200,12 @@ class TgUploader:
                         return
                 if len(LEECH_LOG) != 0:
                     for leechchat in self.__leech_log:
-                        self.__sent_msg = self.__app.send_document(chat_id=leechchat,document=up_path,
-                                                                 thumb=thumb,
-                                                                 caption=cap_mono,
-                                                                 disable_notification=True,
-                                                                 progress=self.__upload_progress)
+                        self.__sent_msg = self.__app.send_document(chat_id=leechchat,
+                                                                   document=up_path,
+                                                                   thumb=thumb,
+                                                                   caption=cap_mono,
+                                                                   disable_notification=True,
+                                                                   progress=self.__upload_progress)
                         if BOT_PM:
                             try:
                                 app.send_document(chat_id=self.__user_id, document=self.__sent_msg.document.file_id,

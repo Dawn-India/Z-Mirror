@@ -9,7 +9,7 @@ from time import time
 from math import ceil
 from re import split as re_split, I
 from .exceptions import NotSupportedExtractionArchive
-from bot import aria2, app, LOGGER, DOWNLOAD_DIR, get_client, TG_SPLIT_SIZE, EQUAL_SPLITS, IS_PREMIUM_USER
+from bot import aria2, app, LOGGER, DOWNLOAD_DIR, get_client, TG_SPLIT_SIZE, EQUAL_SPLITS, IS_PREMIUM_USER, STORAGE_THRESHOLD
 
 if IS_PREMIUM_USER:
     MAX_SPLIT_SIZE = 4194304000
@@ -41,7 +41,6 @@ def clean_all():
     aria2.remove_all(True)
     get_client().torrents_delete(torrent_hashes="all")
     app.stop()
-    if rss_session: rss_session.stop()
     try:
         rmtree(DOWNLOAD_DIR)
     except:
@@ -117,7 +116,7 @@ def take_ss(video_file):
     duration = duration // 2
 
     status = srun(["new-api", "-hide_banner", "-loglevel", "error", "-ss", str(duration),
-                   "-i", video_file, "-vframes", "1", des_dir])
+                   "-i", video_file, "-frames:v", "1", des_dir])
 
     if status.returncode != 0 or not ospath.lexists(des_dir):
         return None
