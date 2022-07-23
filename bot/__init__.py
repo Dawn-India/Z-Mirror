@@ -272,6 +272,9 @@ except:
         TG_SPLIT_SIZE = 2097152000
     else:
         TG_SPLIT_SIZE = 4194304000
+
+BOT_TG_SPLIT_SIZE = 2097152000
+
 try:
     STATUS_LIMIT = getConfig('STATUS_LIMIT')
     if len(STATUS_LIMIT) == 0:
