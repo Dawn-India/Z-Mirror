@@ -297,6 +297,15 @@ try:
     STATUS_LIMIT = int(STATUS_LIMIT)
 except:
     STATUS_LIMIT = None
+try:	
+    HEROKU_API_KEY = getConfig('HEROKU_API_KEY')	
+    HEROKU_APP_NAME = getConfig('HEROKU_APP_NAME')	
+    if len(HEROKU_API_KEY) == 0 or len(HEROKU_APP_NAME) == 0:	
+        raise KeyError	
+except KeyError:	
+    LOGGER.warning("Heroku details not entered.")	
+    HEROKU_API_KEY = None	
+    HEROKU_APP_NAME = None
 try:
     UPTOBOX_TOKEN = getConfig('UPTOBOX_TOKEN')
     if len(UPTOBOX_TOKEN) == 0:
