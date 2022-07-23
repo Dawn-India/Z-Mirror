@@ -133,10 +133,10 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
         while i <= parts:
             parted_name = f"{str(base_name)}.part{str(i).zfill(3)}{str(extension)}"
             out_path = ospath.join(dirpath, parted_name)
-            listener.split_proc = Popen(["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", str(start_time),
+            listener.suproc = Popen(["new-api", "-hide_banner", "-loglevel", "error", "-ss", str(start_time),
                   "-i", path, "-fs", str(split_size), "-map", "0", "-map_chapters", "-1", "-c", "copy", out_path])
-            listener.split_proc.wait()
-            if listener.split_proc.returncode == -9:
+            listener.suproc.wait()
+            if listener.suproc.returncode == -9:
                 return False
             out_size = get_path_size(out_path)
             if out_size > (TG_SPLIT_SIZE + 1000):
@@ -146,7 +146,7 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
                 return split_file(path, size, file_, dirpath, split_size, listener, start_time, i, True)
             lpd = get_media_info(out_path)[0]
             if lpd == 0:
-                LOGGER.error(f'Something went wrong while splitting mostly file is corrupted. Path: {path}')
+                LOGGER.error(f'Something went wrong while splitting, mostly file is corrupted. Path: {path}')
                 break
             elif lpd <= 4:
                 osremove(out_path)
@@ -154,8 +154,11 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
             start_time += lpd - 3
             i = i + 1
     else:
-        out_path = ospath.join(dirpath, f"{file_}.")
-        srun(["split", "--numeric-suffixes=1", "--suffix-length=3", f"--bytes={split_size}", path, out_path])
+        out_path = ospath.join(dirpath, file_ + ".")
+        listener.suproc = Popen(["split", "--numeric-suffixes=1", "--suffix-length=3", f"--bytes={split_size}", path, out_path])
+        listener.suproc.wait()
+        if listener.suproc.returncode == -9:
+            return False
     return True
 
 def get_media_info(path):
@@ -164,7 +167,7 @@ def get_media_info(path):
         result = check_output(["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format",
                                "json", "-show_format", path]).decode('utf-8')
     except Exception as e:
-        LOGGER.error(f'{e} Mostly file not Found!')
+        LOGGER.error(f'{e}. Mostly file not found!')
         return 0, None, None
 
     fields = jsnloads(result).get('format')
