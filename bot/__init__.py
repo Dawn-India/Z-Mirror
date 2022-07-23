@@ -190,21 +190,27 @@ except:
     log_error("One or more env variables missing! Exiting now")
     exit(1)
 
-app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
-LOGGER.info("Generating BOT_SESSION_STRING Using BOT_TOKEN")
-
 try:
     IS_PREMIUM_USER = False
     USER_SESSION_STRING = getConfig('USER_SESSION_STRING')
     if len(USER_SESSION_STRING) == 0:
         raise KeyError
     LOGGER.info("Generating USER_SESSION_STRING")
-    premium_session = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
-    with premium_session:
-        IS_PREMIUM_USER = premium_session.get_me().is_premium
-        LOGGER.info("Telegram Premium User, Leech limit is 4GB")
+    app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+    with app:
+        IS_PREMIUM_USER = app.get_me().is_premium
 except:
-    LOGGER.info("Not Telegram Premium User, Leech limit is 2GB")
+    LOGGER.info("Generating BOT_SESSION_STRING")
+    app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
+
+try:
+    RSS_USER_SESSION_STRING = getConfig('RSS_USER_SESSION_STRING')
+    if len(RSS_USER_SESSION_STRING) == 0:
+        raise KeyError
+    LOGGER.info("Generating RSS_USER_SESSION_STRING")
+    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=RSS_USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+except:
+    rss_session = None
 
 def aria2c_init():
     try:
@@ -360,14 +366,6 @@ try:
     LEECH_LIMIT = float(LEECH_LIMIT)
 except:
     LEECH_LIMIT = None
-try:
-    RSS_USER_SESSION_STRING = getConfig('RSS_USER_SESSION_STRING')
-    if len(RSS_USER_SESSION_STRING) == 0:
-        raise KeyError
-    LOGGER.info("Generating RSS_USER_SESSION_STRING")
-    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=RSS_USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
-except:
-    rss_session = None
 try:
     RSS_CHAT_ID = getConfig('RSS_CHAT_ID')
     if len(RSS_CHAT_ID) == 0:
