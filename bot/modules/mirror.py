@@ -44,7 +44,6 @@ class MirrorListener:
         self.message = message
         self.uid = self.message.message_id
         self.extract = extract
-        self.ext_proc = Popen
         self.isZip = isZip
         self.isQbit = isQbit
         self.isLeech = isLeech
@@ -52,6 +51,7 @@ class MirrorListener:
         self.tag = tag
         self.seed = any([seed, QB_SEED])
         self.isPrivate = self.message.chat.type in ['private', 'group']
+        self.suproc = None
         self.user_id = self.message.from_user.id
         reply_to = self.message.reply_to_message
 
@@ -85,23 +85,23 @@ class MirrorListener:
             if self.pswd is not None:
                 if self.isLeech and int(size) > TG_SPLIT_SIZE:
                     LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}.0*')
-                    self.arch_proc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
+                    self.suproc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
                 else:
                     LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
-                    self.arch_proc = Popen(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
+                    self.suproc = Popen(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
             elif self.isLeech and int(size) > TG_SPLIT_SIZE:
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}.0*')
-                self.arch_proc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", path, m_path])
+                self.suproc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", path, m_path])
             else:
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
-                self.arch_proc = Popen(["7z", "a", "-mx=0", path, m_path])
-            self.arch_proc.wait()
-            if self.arch_proc.returncode == -9:
+                self.suproc = Popen(["7z", "a", "-mx=0", path, m_path])
+            self.suproc.wait()
+            if self.suproc.returncode == -9:
                 return
-            elif self.arch_proc.returncode != 0:
+            elif self.suproc.returncode != 0:
                 LOGGER.error('An error occurred while zipping! Uploading anyway')
                 path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
-            if self.arch_proc.returncode == 0 and (not self.isQbit or not self.seed or self.isLeech):
+            if self.suproc.returncode == 0 and (not self.isQbit or not self.seed or self.isLeech):
                 try:
                     rmtree(m_path)
                 except:
@@ -120,15 +120,15 @@ class MirrorListener:
                                or (file_.endswith(".rar") and not re_search(r'\.part\d+\.rar$', file_)):
                                 m_path = ospath.join(dirpath, file_)
                                 if self.pswd is not None:
-                                    self.ext_proc = Popen(["7z", "x", f"-p{self.pswd}", m_path, f"-o{dirpath}", "-aot"])
+                                    self.suproc = Popen(["7z", "x", f"-p{self.pswd}", m_path, f"-o{dirpath}", "-aot"])
                                 else:
-                                    self.ext_proc = Popen(["7z", "x", m_path, f"-o{dirpath}", "-aot"])
-                                self.ext_proc.wait()
-                                if self.ext_proc.returncode == -9:
+                                    self.suproc = Popen(["7z", "x", m_path, f"-o{dirpath}", "-aot"])
+                                self.suproc.wait()
+                                if self.suproc.returncode == -9:
                                     return
-                                elif self.ext_proc.returncode != 0:
+                                elif self.suproc.returncode != 0:
                                     LOGGER.error('Unable to extract archive splits! Uploading anyway')
-                        if self.ext_proc.returncode == 0:
+                        if self.suproc is not None and self.suproc.returncode == 0:
                             for file_ in files:
                                 if file_.endswith((".rar", ".zip", ".7z")) or \
                                     re_search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
@@ -137,13 +137,13 @@ class MirrorListener:
                     path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
                 else:
                     if self.pswd is not None:
-                        self.ext_proc = Popen(["bash", "pextract", m_path, self.pswd])
+                        self.suproc = Popen(["bash", "pextract", m_path, self.pswd])
                     else:
-                        self.ext_proc = Popen(["bash", "extract", m_path])
-                    self.ext_proc.wait()
-                    if self.ext_proc.returncode == -9:
+                        self.suproc = Popen(["bash", "extract", m_path])
+                    self.suproc.wait()
+                    if self.suproc.returncode == -9:
                         return
-                    elif self.ext_proc.returncode == 0:
+                    elif self.suproc.returncode == 0:
                         LOGGER.info(f"Extracted Path: {path}")
                         osremove(m_path)
                     else:
