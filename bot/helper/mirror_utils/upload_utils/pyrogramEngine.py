@@ -5,7 +5,7 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 from bot import DOWNLOAD_DIR, AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, \
-                 EXTENSION_FILTER, app, LEECH_LOG, BOT_PM, TG_SPLIT_SIZE, tgBotMaxFileSize, rss_session
+                 EXTENSION_FILTER, app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_path_size
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 LOGGER = getLogger(__name__)
@@ -97,7 +97,7 @@ class TgUploader:
                         up_path = new_path
                     if len(LEECH_LOG) != 0:
                         for leechchat in self.__leech_log:
-                            if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = rss_session	
+                            if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
                             self.__sent_msg = usingclient.send_video(chat_id=leechchat,video=up_path,
                                                                   caption=cap_mono,
@@ -134,7 +134,7 @@ class TgUploader:
                     duration , artist, title = get_media_info(up_path)
                     if len(LEECH_LOG) != 0:
                         for leechchat in self.__leech_log:
-                            if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = rss_session
+                            if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
                             self.__sent_msg = usingclient.send_audio(chat_id=leechchat,audio=up_path,
                                                                   caption=cap_mono,
@@ -168,7 +168,7 @@ class TgUploader:
                 elif file_.upper().endswith(IMAGE_SUFFIXES):
                     if len(LEECH_LOG) != 0:
                         for leechchat in self.__leech_log:
-                            if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = rss_session
+                            if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
                             self.__sent_msg = usingclient.send_photo(chat_id=leechchat,
                                                                 photo=up_path,
@@ -203,7 +203,7 @@ class TgUploader:
                         return
                 if len(LEECH_LOG) != 0:
                     for leechchat in self.__leech_log:
-                        if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = rss_session	
+                        if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                         else: usingclient = self.__app
                         self.__sent_msg = usingclient.send_document(chat_id=leechchat,document=up_path,
                                                                  thumb=thumb,
