@@ -210,9 +210,9 @@ def get_readable_message():
         bmsg += f"\n<b>DN:</b> {get_readable_file_size(dlspeed_bytes)}/s<b> | UP:</b> {get_readable_file_size(upspeed_bytes)}/s"
 
         buttons = ButtonMaker()
+        buttons.sbutton("Statistics", str(THREE))
         buttons.sbutton("Refresh", str(ONE))
         buttons.sbutton("Close", str(TWO))
-        buttons.sbutton("Statistics", str(THREE))
         sbutton = InlineKeyboardMarkup(buttons.build_menu(3))
 
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
@@ -222,7 +222,7 @@ def get_readable_message():
             buttons.sbutton(f"{PAGE_NO}/{pages}", str(THREE))
             buttons.sbutton("Next", "status nex")
             button = InlineKeyboardMarkup(buttons.build_menu(3))
-            return msg + bmsg, button
+            return msg + bmsg, button, sbutton
         return msg + bmsg, sbutton
 
 def turn(data):
@@ -386,6 +386,6 @@ UP : {num_upload} | UNZIP : {num_extract}
 SPLIT : {num_split} | TOTAL : {tasks}
 """
     return stats
-dispatcher.add_handler(
-    CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)}$")
-)
+dispatcher.add_handler(CallbackQueryHandler(refresh, pattern=f"^{str(ONE)}$"))
+dispatcher.add_handler(CallbackQueryHandler(close, pattern=f"^{str(TWO)}$"))
+dispatcher.add_handler(CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)}$"))
