@@ -376,7 +376,9 @@ def bot_sys_stats():
                 num_extract += 1
        if stats.status() == MirrorStatus.STATUS_SPLITTING:
                 num_split += 1
-    stats = f"""
+    stats = "Bot Statistics"
+    stats += f"""
+
 Yo, I'm Working For: {currentTime}
 T-DN: {recv} | T-UP: {sent}
 CPU: {cpu}% | RAM: {mem}%
