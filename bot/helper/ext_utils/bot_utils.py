@@ -13,7 +13,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 import shutil
 import psutil
 from telegram.error import RetryAfter
-from telegram.ext import CallbackQueryHandler, update_all_messages, delete_all_messages
+from telegram.ext import CallbackQueryHandler
 from telegram.message import Message
 from telegram.update import Update
 from bot import *
@@ -323,13 +323,13 @@ def get_content_type(link: str) -> str:
 
 ONE, TWO, THREE = range(3)
 
-def refresh(update, context):
+def refresh(update, context, update_all_messages):
     query = update.callback_query
     query.edit_message_text(text="Refreshing Status...⏳")
     sleep(3)
     update_all_messages()
 
-def close(update, context):
+def close(update, context, delete_all_messages):
     chat_id = update.effective_chat.id
     user_id = update.callback_query.from_user.id
     bot = context.bot
