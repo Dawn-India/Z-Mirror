@@ -133,22 +133,6 @@ def update_all_messages(force=False):
         for chat_id in status_reply_dict:
             status_reply_dict[chat_id][1] = time()
 
-    msg, buttons = get_readable_message()
-    if msg is None:
-        return
-    with status_reply_dict_lock:
-        for chat_id in status_reply_dict:
-            if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
-                if buttons == "":
-                    rmsg = editMessage(msg, status_reply_dict[chat_id][0])
-                else:
-                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)
-                if rmsg == "Message to edit not found":
-                    del status_reply_dict[chat_id]
-                    return
-                status_reply_dict[chat_id][0].text = msg
-                status_reply_dict[chat_id][1] = time()
-
 def sendStatusMessage(msg, bot):
     progress, buttons = get_readable_message()
     if progress is None:
