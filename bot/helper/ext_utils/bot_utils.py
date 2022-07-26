@@ -211,9 +211,9 @@ def get_readable_message():
 
         buttons = ButtonMaker()
         buttons.sbutton("Statistics", str(THREE))
-        buttons.sbutton("Refresh", str(TWO))
-        buttons.sbutton("Close", str(TWO))
-        sbutton = InlineKeyboardMarkup(buttons.build_menu(2))
+        buttons.sbutton("Refresh", str(THREE))
+        buttons.sbutton("Close", str(THREE))
+        sbutton = InlineKeyboardMarkup(buttons.build_menu(3))
 
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"\n<b>Total Tasks:</b> {tasks}\n"
@@ -379,20 +379,16 @@ def bot_sys_stats():
     stats = "Bot Statistics"
     stats += f"""
 
-Bot Uptime: {currentTime}
+Yo, I'm Working For: {currentTime}
 T-DN: {recv} | T-UP: {sent}
 CPU: {cpu}% | RAM: {mem}%
 Disk: {total} | Free: {free}
-Used: {used} [{disk}%]
 
-DL : {num_active} | ZIP : {num_archi}
-UP : {num_upload} | UNZIP : {num_extract}
-SPLIT : {num_split} | TOTAL : {tasks}
+DL : {num_active} | ZIP : {num_archi} | SPLIT : {num_split}
+UP : {num_upload} | UNZIP : {num_extract} | TOTAL : {tasks}
 
-Torrent/Direct Limit : {TORRENT_DIRECT_LIMIT}GB
-Zip/Unzip Limit : {ZIP_UNZIP_LIMIT}GB
-Leech Limit : {LEECH_LIMIT}GB
-MEGA Limit : {MEGA_LIMIT}GB
+T/D : {TORRENT_DIRECT_LIMIT}GB | Z/U : {ZIP_UNZIP_LIMIT}GB
+Leech : {LEECH_LIMIT}GB | MEGA : {MEGA_LIMIT}GB
 
 Made with ❤️ by Dawn
 """
