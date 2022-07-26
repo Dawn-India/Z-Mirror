@@ -211,9 +211,7 @@ def get_readable_message():
 
         buttons = ButtonMaker()
         buttons.sbutton("Statistics", str(THREE))
-        buttons.sbutton("Refresh", str(TWO))
-        buttons.sbutton("Close", str(TWO))
-        sbutton = InlineKeyboardMarkup(buttons.build_menu(2))
+        sbutton = InlineKeyboardMarkup(buttons.build_menu(1))
 
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"\n<b>Total Tasks:</b> {tasks}\n"
@@ -322,32 +320,10 @@ def get_content_type(link: str) -> str:
     return content_type
 
 ONE, TWO, THREE = range(3)
-
-def refresh(update, context):
-    query = update.callback_query
-    query.edit_message_text(text="Refreshing Status...⏳")
-    sleep(3)
-    update_all_messages()
-
-def close(update, context):
-    chat_id = update.effective_chat.id
-    user_id = update.callback_query.from_user.id
-    bot = context.bot
-    query = update.callback_query
-    admins = bot.get_chat_member(chat_id, user_id).status in [
-        "creator",
-        "administrator",
-    ] or user_id in [OWNER_ID]
-    if admins:
-        delete_all_messages()
-    else:
-        query.answer(text="Sorry, only Admin can CLOSE !", show_alert=True)
-
 def pop_up_stats(update, context):
     query = update.callback_query
     stats = bot_sys_stats()
     query.answer(text=stats, show_alert=True)
-
 def bot_sys_stats():
     currentTime = get_readable_time(time() - botStartTime)
     cpu = psutil.cpu_percent()
@@ -384,15 +360,6 @@ T-DN: {recv} | T-UP: {sent}
 CPU: {cpu}% | RAM: {mem}%
 Disk: {total} | Free: {free}
 Used: {used} [{disk}%]
-
-DL : {num_active} | ZIP : {num_archi}
-UP : {num_upload} | UNZIP : {num_extract}
-SPLIT : {num_split} | TOTAL : {tasks}
-
-Torrent/Direct Limit : {TORRENT_DIRECT_LIMIT}GB
-Zip/Unzip Limit : {ZIP_UNZIP_LIMIT}GB
-Leech Limit : {LEECH_LIMIT}GB
-MEGA Limit : {MEGA_LIMIT}GB
 
 Made with ❤️ by Dawn
 """
