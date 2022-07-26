@@ -385,8 +385,6 @@ DL : {num_active} | ZIP : {num_archi} | SPLIT : {num_split}
 UP : {num_upload} | UNZIP : {num_extract} | TOTAL : {tasks}
 T/D : {TORRENT_DIRECT_LIMIT}GB | Z/U : {ZIP_UNZIP_LIMIT}GB
 Leech : {LEECH_LIMIT}GB | MEGA : {MEGA_LIMIT}GB
-
-Made with ❤️ by Dawn
 """
     return stats
 dispatcher.add_handler(
