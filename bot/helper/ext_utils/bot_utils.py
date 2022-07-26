@@ -13,7 +13,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 import shutil
 import psutil
 from telegram.error import RetryAfter
-from telegram.ext import CallbackQueryHandler, update_all_messages, delete_all_messages
+from telegram.ext import CallbackQueryHandler
 from telegram.message import Message
 from telegram.update import Update
 from bot import *
