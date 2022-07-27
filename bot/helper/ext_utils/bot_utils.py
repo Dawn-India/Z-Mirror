@@ -129,6 +129,54 @@ def get_progress_bar_string(status):
     p_str = f"⠧{p_str}⠹"
     return p_str
 
+def editMessage(text: str, message: Message, reply_markup=None):	
+    try:	
+        bot.editMessageText(text=text, message_id=message.message_id,	
+                              chat_id=message.chat.id,reply_markup=reply_markup,	
+                              parse_mode='HTMl', disable_web_page_preview=True)	
+    except RetryAfter as r:	
+        LOGGER.warning(str(r))	
+        sleep(r.retry_after * 1.5)	
+        return editMessage(text, message, reply_markup)	
+    except Exception as e:	
+        LOGGER.error(str(e))	
+        return str(e)	
+def deleteMessage(bot, message: Message):	
+    try:	
+        bot.deleteMessage(chat_id=message.chat.id,	
+                           message_id=message.message_id)	
+    except Exception as e:	
+        LOGGER.error(str(e))	
+def delete_all_messages():	
+    with status_reply_dict_lock:	
+        for data in list(status_reply_dict.values()):	
+            try:	
+                deleteMessage(bot, data[0])	
+                del status_reply_dict[data[0].chat.id]	
+            except Exception as e:	
+                LOGGER.error(str(e))	
+def update_all_messages(force=False):	
+    with status_reply_dict_lock:	
+        if not force and (not status_reply_dict or not Interval or time() - list(status_reply_dict.values())[0][1] < 3):	
+            return	
+        for chat_id in status_reply_dict:	
+            status_reply_dict[chat_id][1] = time()	
+    msg, buttons = get_readable_message()	
+    if msg is None:	
+        return	
+    with status_reply_dict_lock:	
+        for chat_id in status_reply_dict:	
+            if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:	
+                if buttons == "":	
+                    rmsg = editMessage(msg, status_reply_dict[chat_id][0])	
+                else:	
+                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)	
+                if rmsg == "Message to edit not found":	
+                    del status_reply_dict[chat_id]	
+                    return	
+                status_reply_dict[chat_id][0].text = msg	
+                status_reply_dict[chat_id][1] = time()
+
 def get_readable_message():
     with download_dict_lock:
         msg = ""
@@ -210,7 +258,9 @@ def get_readable_message():
 
         buttons = ButtonMaker()
         buttons.sbutton("Statistics", str(THREE))
-        sbutton = InlineKeyboardMarkup(buttons.build_menu(1))
+        buttons.sbutton("Refresh", str(ONE))	
+        buttons.sbutton("Close", str(TWO))	
+        sbutton = InlineKeyboardMarkup(buttons.build_menu(3))
 
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"\n<b>Total Tasks:</b> {tasks}\n"
@@ -275,6 +325,7 @@ def is_gdtot_link(url: str):
 
 def is_appdrive_link(url: str):
     url = re_match(r'https?://(?:\S*\.)?(?:appdrive|driveapp)\.in/\S+', url)
+    return bool(url)
 
 def is_mega_link(url: str):
     return "mega.nz" in url or "mega.co.nz" in url
@@ -318,38 +369,43 @@ def get_content_type(link: str) -> str:
     return content_type
 
 ONE, TWO, THREE = range(3)
+
+def refresh(update, context):
+    query = update.callback_query
+    query.edit_message_text(text="Refreshing Status...⏳")
+    sleep(5)
+    update_all_messages()
+
+def close(update, context):
+    chat_id = update.effective_chat.id
+    user_id = update.callback_query.from_user.id
+    bot = context.bot
+    query = update.callback_query
+    admins = bot.get_chat_member(chat_id, user_id).status in [
+        "creator",
+        "administrator",
+    ] or user_id in [OWNER_ID]
+    if admins:
+        delete_all_messages()
+    else:
+        query.answer(text="Only Admins can Close !", show_alert=True)
+
 def pop_up_stats(update, context):
     query = update.callback_query
     stats = bot_sys_stats()
     query.answer(text=stats, show_alert=True)
+
 def bot_sys_stats():
     currentTime = get_readable_time(time() - botStartTime)
     cpu = psutil.cpu_percent()
     mem = psutil.virtual_memory().percent
-    disk = psutil.disk_usage(DOWNLOAD_DIR).percent
-    total, used, free = shutil.disk_usage(DOWNLOAD_DIR)
+    disk = psutil.disk_usage("/").percent
+    total, used, free = shutil.disk_usage(".")
     total = get_readable_file_size(total)
     used = get_readable_file_size(used)
     free = get_readable_file_size(free)
     recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
     sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
-    num_active = 0
-    num_upload = 0
-    num_split = 0
-    num_extract = 0
-    num_archi = 0
-    tasks = len(download_dict)
-    for stats in list(download_dict.values()):
-       if stats.status() == MirrorStatus.STATUS_DOWNLOADING:
-                num_active += 1
-       if stats.status() == MirrorStatus.STATUS_UPLOADING:
-                num_upload += 1
-       if stats.status() == MirrorStatus.STATUS_ARCHIVING:
-                num_archi += 1
-       if stats.status() == MirrorStatus.STATUS_EXTRACTING:
-                num_extract += 1
-       if stats.status() == MirrorStatus.STATUS_SPLITTING:
-                num_split += 1
     stats = "Bot Statistics"
     stats += f"""
 
@@ -362,6 +418,7 @@ Used: {used} [{disk}%]
 Made with ❤️ by Dawn
 """
     return stats
-dispatcher.add_handler(
-    CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)}$")
-)
+
+dispatcher.add_handler(CallbackQueryHandler(refresh, pattern="^" + str(ONE) + "$"))
+dispatcher.add_handler(CallbackQueryHandler(close, pattern="^" + str(TWO) + "$"))
+dispatcher.add_handler(CallbackQueryHandler(pop_up_stats, pattern="^" + str(THREE) + "$"))
