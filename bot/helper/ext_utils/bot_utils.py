@@ -130,6 +130,13 @@ def get_progress_bar_string(status):
     p_str = f"⠧{p_str}⠹"
     return p_str
 
+def deleteMessage(bot, message: Message):
+    try:
+        bot.deleteMessage(chat_id=message.chat.id,
+                           message_id=message.message_id)
+    except Exception as e:
+        LOGGER.error(str(e))
+
 def delete_all_messages():
     with status_reply_dict_lock:
         for message in list(status_reply_dict.values()):
@@ -139,16 +146,28 @@ def delete_all_messages():
             except Exception as e:
                 LOGGER.error(str(e))
 
-def update_all_messages():
-    msg, buttons = get_readable_message()
+def update_all_messages(force=False):
     with status_reply_dict_lock:
-        for chat_id in list(status_reply_dict.keys()):
-            if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id].text:
+        if not force and (not status_reply_dict or not Interval or time() - list(status_reply_dict.values())[0][1] < 3):
+            return
+        for chat_id in status_reply_dict:
+            status_reply_dict[chat_id][1] = time()
+
+    msg, buttons = get_readable_message()
+    if msg is None:
+        return
+    with status_reply_dict_lock:
+        for chat_id in status_reply_dict:
+            if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
                 if buttons == "":
-                    editMessage(msg, status_reply_dict[chat_id])
+                    rmsg = editMessage(msg, status_reply_dict[chat_id][0])
                 else:
-                    editMessage(msg, status_reply_dict[chat_id], buttons)
-                status_reply_dict[chat_id].text = msg
+                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)
+                if rmsg == "Message to edit not found":
+                    del status_reply_dict[chat_id]
+                    return
+                status_reply_dict[chat_id][0].text = msg
+                status_reply_dict[chat_id][1] = time()
 
 def get_readable_message():
     with download_dict_lock:
