@@ -6,7 +6,6 @@ from pyrogram.errors import FloodWait
 from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
                 Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session, TELEGRAM_API, TELEGRAM_HASH
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
-import asyncio
 
 def sendMessage(text: str, bot, message: Message):
     try:
@@ -84,11 +83,13 @@ def sendRss(text: str, bot):
 
 
 async def sendRss_pyro(text: str):
+    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_STRING_SESSION, parse_mode=enums.ParseMode.HTML)	
+    await rss_session.start()
     try:
         return await rss_session.send_message(RSS_CHAT_ID, text, disable_web_page_preview=True)
     except FloodWait as e:
         LOGGER.warning(str(e))
-        await asyncio.sleep(e.value * 1.5)
+        await asleep(e.value * 1.5)
         return await sendRss(text)
     except Exception as e:
         LOGGER.error(str(e))

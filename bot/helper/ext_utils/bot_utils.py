@@ -336,13 +336,11 @@ def get_content_type(link: str) -> str:
 
 ONE, TWO, THREE = range(3)
 
-
 def refresh(update, context):
     query = update.callback_query
     query.edit_message_text(text="Refreshing Status...⏳")
     sleep(2)
     update_all_messages()
-
 
 def close(update, context):
     chat_id = update.effective_chat.id
@@ -358,12 +356,10 @@ def close(update, context):
     else:
         query.answer(text="You Don't Have Admin Rights!", show_alert=True)
 
-
 def pop_up_stats(update, context):
     query = update.callback_query
     stats = bot_sys_stats()
     query.answer(text=stats, show_alert=True)
-
 
 def bot_sys_stats():
     currentTime = get_readable_time(time() - botStartTime)
