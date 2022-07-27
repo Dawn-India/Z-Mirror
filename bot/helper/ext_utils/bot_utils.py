@@ -8,7 +8,6 @@ from urllib.request import urlopen
 from bot import download_dict, download_dict_lock, STATUS_LIMIT, botStartTime, DOWNLOAD_DIR
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import delete_all_messages, update_all_messages
 import shutil
 import psutil
 from psutil import virtual_memory, cpu_percent, disk_usage
