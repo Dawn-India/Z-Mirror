@@ -17,7 +17,6 @@ from telegram.ext import CallbackQueryHandler
 from telegram.message import Message
 from telegram.update import Update
 from bot import *
-from bot.helper.telegram_helper.message_utils import delete_all_messages, update_all_messages
 
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 
@@ -130,6 +129,26 @@ def get_progress_bar_string(status):
     p_str += '○' * (PROGRESS_MAX_SIZE - cFull)
     p_str = f"⠧{p_str}⠹"
     return p_str
+
+def delete_all_messages():
+    with status_reply_dict_lock:
+        for message in list(status_reply_dict.values()):
+            try:
+                deleteMessage(bot, message)
+                del status_reply_dict[message.chat.id]
+            except Exception as e:
+                LOGGER.error(str(e))
+
+def update_all_messages():
+    msg, buttons = get_readable_message()
+    with status_reply_dict_lock:
+        for chat_id in list(status_reply_dict.keys()):
+            if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id].text:
+                if buttons == "":
+                    editMessage(msg, status_reply_dict[chat_id])
+                else:
+                    editMessage(msg, status_reply_dict[chat_id], buttons)
+                status_reply_dict[chat_id].text = msg
 
 def get_readable_message():
     with download_dict_lock:
