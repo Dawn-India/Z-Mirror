@@ -17,6 +17,7 @@ from telegram.ext import CallbackQueryHandler
 from telegram.message import Message
 from telegram.update import Update
 from bot import *
+from bot.helper.telegram_helper.message_utils import delete_all_messages, update_all_messages
 
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 
