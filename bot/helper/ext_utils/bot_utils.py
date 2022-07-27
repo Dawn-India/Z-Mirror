@@ -226,16 +226,7 @@ def get_readable_message():
             buttons.sbutton("Next", "status nex")
             button = InlineKeyboardMarkup(buttons.build_menu(3))
 
-            buttons = ButtonMaker()
-            buttons.sbutton("Statistics", str(THREE))
-            sbutton = InlineKeyboardMarkup(buttons.build_menu(1))
-
-            buttons = ButtonMaker()
-            buttons.sbutton("Refresh", str(ONE))
-            buttons.sbutton("Close", str(TWO))
-            rbutton = InlineKeyboardMarkup(buttons.build_menu(2))
-
-            return msg + bmsg, button, sbutton, rbutton
+            return msg + bmsg, button
         return msg + bmsg, sbutton, rbutton
 
 def turn(data):
@@ -339,7 +330,7 @@ ONE, TWO, THREE = range(3)
 def refresh(update, context):
     query = update.callback_query
     query.edit_message_text(text="Refreshing Status...⏳")
-    sleep(2)
+    sleep(3)
     update_all_messages()
 
 def close(update, context):
@@ -372,13 +363,18 @@ def bot_sys_stats():
     free = get_readable_file_size(free)
     recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
     sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
-    stats = f"""
-BOT UPTIME 🕐 : {currentTime}
-USED : {used} || FREE : {free}
-SENT : {sent} || RECV : {recv}
+    stats = "Bot Statistics"
+    stats += f"""
+
+Bot Uptime: {currentTime}
+T-DN: {recv} | T-UP: {sent}
+CPU: {cpu}% | RAM: {mem}%
+Disk: {total} | Free: {free}
+Used: {used} [{disk}%]
+
+Made with ❤️ by Dawn
 """
     return stats
-
 
 dispatcher.add_handler(CallbackQueryHandler(refresh, pattern="^" + str(ONE) + "$"))
 dispatcher.add_handler(CallbackQueryHandler(close, pattern="^" + str(TWO) + "$"))
