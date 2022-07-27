@@ -336,11 +336,13 @@ def get_content_type(link: str) -> str:
 
 ONE, TWO, THREE = range(3)
 
+
 def refresh(update, context):
     query = update.callback_query
     query.edit_message_text(text="Refreshing Status...⏳")
     sleep(2)
     update_all_messages()
+
 
 def close(update, context):
     chat_id = update.effective_chat.id
@@ -354,58 +356,43 @@ def close(update, context):
     if admins:
         delete_all_messages()
     else:
-        query.answer(text="Only Admins can Close !", show_alert=True)
+        query.answer(text="You Don't Have Admin Rights!", show_alert=True)
+
 
 def pop_up_stats(update, context):
     query = update.callback_query
     stats = bot_sys_stats()
     query.answer(text=stats, show_alert=True)
+
+
 def bot_sys_stats():
     currentTime = get_readable_time(time() - botStartTime)
     cpu = psutil.cpu_percent()
     mem = psutil.virtual_memory().percent
-    disk = psutil.disk_usage(DOWNLOAD_DIR).percent
-    total, used, free = shutil.disk_usage(DOWNLOAD_DIR)
+    disk = psutil.disk_usage("/").percent
+    total, used, free = shutil.disk_usage(".")
     total = get_readable_file_size(total)
     used = get_readable_file_size(used)
     free = get_readable_file_size(free)
     recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
     sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
-    num_active = 0
-    num_upload = 0
-    num_split = 0
-    num_extract = 0
-    num_archi = 0
-    tasks = len(download_dict)
-    for stats in list(download_dict.values()):
-       if stats.status() == MirrorStatus.STATUS_DOWNLOADING:
-                num_active += 1
-       if stats.status() == MirrorStatus.STATUS_UPLOADING:
-                num_upload += 1
-       if stats.status() == MirrorStatus.STATUS_ARCHIVING:
-                num_archi += 1
-       if stats.status() == MirrorStatus.STATUS_EXTRACTING:
-                num_extract += 1
-       if stats.status() == MirrorStatus.STATUS_SPLITTING:
-                num_split += 1
-    stats = "Bot Statistics"
-    stats += f"""
+    stats = f"""
+BOT UPTIME 🕐 : {currentTime}
 
-Bot Uptime: {currentTime}
-T-DN: {recv} | T-UP: {sent}
-CPU: {cpu}% | RAM: {mem}%
-Disk: {total} | Free: {free}
-Used: {used} [{disk}%]
+CPU : {progress_bar(cpu)} {cpu}%
+RAM : {progress_bar(mem)} {mem}%
 
-Made with ❤️ by Dawn
+DISK : {progress_bar(disk)} {disk}%
+TOTAL : {total}
+
+USED : {used} || FREE : {free}
+SENT : {sent} || RECV : {recv}
 """
     return stats
+
+
+dispatcher.add_handler(CallbackQueryHandler(refresh, pattern="^" + str(ONE) + "$"))
+dispatcher.add_handler(CallbackQueryHandler(close, pattern="^" + str(TWO) + "$"))
 dispatcher.add_handler(
-    CallbackQueryHandler(refresh, pattern=f"^{str(ONE)}$")
-)
-dispatcher.add_handler(
-    CallbackQueryHandler(close, pattern=f"^{str(TWO)}$")
-)
-dispatcher.add_handler(
-    CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)}$")
+    CallbackQueryHandler(pop_up_stats, pattern="^" + str(THREE) + "$")
 )
