@@ -152,10 +152,10 @@ def deleteMessage(bot, message: Message):
 
 def delete_all_messages():
     with status_reply_dict_lock:
-        for message in list(status_reply_dict.values()):
+        for data in list(status_reply_dict.values()):
             try:
-                deleteMessage(bot, message)
-                del status_reply_dict[message.chat.id]
+                deleteMessage(bot, data[0])
+                del status_reply_dict[data[0].chat.id]
             except Exception as e:
                 LOGGER.error(str(e))
 
@@ -379,7 +379,7 @@ ONE, TWO, THREE = range(3)
 def refresh(update, context):
     query = update.callback_query
     query.edit_message_text(text="Refreshing Status...⏳")
-    sleep(3)
+    sleep(5)
     update_all_messages()
 
 def close(update, context):
