@@ -211,12 +211,9 @@ def get_readable_message():
 
         buttons = ButtonMaker()
         buttons.sbutton("Statistics", str(THREE))
-        sbutton = InlineKeyboardMarkup(buttons.build_menu(1))
-
-        buttons = ButtonMaker()
         buttons.sbutton("Refresh", str(ONE))
         buttons.sbutton("Close", str(TWO))
-        rbutton = InlineKeyboardMarkup(buttons.build_menu(2))
+        sbutton = InlineKeyboardMarkup(buttons.build_menu(3))
 
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"\n<b>Total Tasks:</b> {tasks}\n"
@@ -227,7 +224,7 @@ def get_readable_message():
             button = InlineKeyboardMarkup(buttons.build_menu(3))
 
             return msg + bmsg, button
-        return msg + bmsg, sbutton, rbutton
+        return msg + bmsg, sbutton
 
 def turn(data):
     try:
