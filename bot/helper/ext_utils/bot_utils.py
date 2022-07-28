@@ -129,52 +129,66 @@ def get_progress_bar_string(status):
     p_str = f"⠧{p_str}⠹"
     return p_str
 
-def editMessage(text: str, message: Message, reply_markup=None):	
-    try:	
-        bot.editMessageText(text=text, message_id=message.message_id,	
-                              chat_id=message.chat.id,reply_markup=reply_markup,	
-                              parse_mode='HTMl', disable_web_page_preview=True)	
-    except RetryAfter as r:	
-        LOGGER.warning(str(r))	
-        sleep(r.retry_after * 1.5)	
-        return editMessage(text, message, reply_markup)	
-    except Exception as e:	
-        LOGGER.error(str(e))	
-        return str(e)	
-def deleteMessage(bot, message: Message):	
-    try:	
-        bot.deleteMessage(chat_id=message.chat.id,	
-                           message_id=message.message_id)	
-    except Exception as e:	
-        LOGGER.error(str(e))	
-def delete_all_messages():	
-    with status_reply_dict_lock:	
-        for data in list(status_reply_dict.values()):	
-            try:	
-                deleteMessage(bot, data[0])	
-                del status_reply_dict[data[0].chat.id]	
-            except Exception as e:	
-                LOGGER.error(str(e))	
-def update_all_messages(force=False):	
-    with status_reply_dict_lock:	
-        if not force and (not status_reply_dict or not Interval or time() - list(status_reply_dict.values())[0][1] < 3):	
-            return	
-        for chat_id in status_reply_dict:	
-            status_reply_dict[chat_id][1] = time()	
-    msg, buttons = get_readable_message()	
-    if msg is None:	
-        return	
-    with status_reply_dict_lock:	
-        for chat_id in status_reply_dict:	
-            if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:	
-                if buttons == "":	
-                    rmsg = editMessage(msg, status_reply_dict[chat_id][0])	
-                else:	
-                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)	
-                if rmsg == "Message to edit not found":	
-                    del status_reply_dict[chat_id]	
-                    return	
-                status_reply_dict[chat_id][0].text = msg	
+def auto_delete_message(bot, cmd_message: Message, bot_message: Message):
+    if AUTO_DELETE_MESSAGE_DURATION != -1:
+        sleep(AUTO_DELETE_MESSAGE_DURATION)
+        try:
+            # Skip if None is passed meaning we don't want to delete bot xor cmd message
+            deleteMessage(bot, cmd_message)
+            deleteMessage(bot, bot_message)
+        except AttributeError:
+            pass
+
+def editMessage(text: str, message: Message, reply_markup=None):
+    try:
+        bot.editMessageText(text=text, message_id=message.message_id,
+                              chat_id=message.chat.id,reply_markup=reply_markup,
+                              parse_mode='HTMl', disable_web_page_preview=True)
+    except RetryAfter as r:
+        LOGGER.warning(str(r))
+        sleep(r.retry_after * 1.5)
+        return editMessage(text, message, reply_markup)
+    except Exception as e:
+        LOGGER.error(str(e))
+        return str(e)
+
+def deleteMessage(bot, message: Message):
+    try:
+        bot.deleteMessage(chat_id=message.chat.id,
+                           message_id=message.message_id)
+    except Exception as e:
+        LOGGER.error(str(e))
+
+def delete_all_messages():
+    with status_reply_dict_lock:
+        for data in list(status_reply_dict.values()):
+            try:
+                deleteMessage(bot, data[0])
+                del status_reply_dict[data[0].chat.id]
+            except Exception as e:
+                LOGGER.error(str(e))
+
+def update_all_messages(force=False):
+    with status_reply_dict_lock:
+        if not force and (not status_reply_dict or not Interval or time() - list(status_reply_dict.values())[0][1] < 3):
+            return
+        for chat_id in status_reply_dict:
+            status_reply_dict[chat_id][1] = time()
+
+    msg, buttons = get_readable_message()
+    if msg is None:
+        return
+    with status_reply_dict_lock:
+        for chat_id in status_reply_dict:
+            if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
+                if buttons == "":
+                    rmsg = editMessage(msg, status_reply_dict[chat_id][0])
+                else:
+                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)
+                if rmsg == "Message to edit not found":
+                    del status_reply_dict[chat_id]
+                    return
+                status_reply_dict[chat_id][0].text = msg
                 status_reply_dict[chat_id][1] = time()
 
 def get_readable_message():
@@ -257,10 +271,10 @@ def get_readable_message():
         bmsg += f"\n<b>DN:</b> {get_readable_file_size(dlspeed_bytes)}/s<b> | UP:</b> {get_readable_file_size(upspeed_bytes)}/s"
 
         buttons = ButtonMaker()
+        buttons.sbutton("Refresh", str(ONE))
+        buttons.sbutton("Close", str(TWO))
         buttons.sbutton("Statistics", str(THREE))
-        buttons.sbutton("Refresh", str(ONE))	
-        buttons.sbutton("Close", str(TWO))	
-        sbutton = InlineKeyboardMarkup(buttons.build_menu(3))
+        sbutton = InlineKeyboardMarkup(buttons.build_menu(2))
 
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"\n<b>Total Tasks:</b> {tasks}\n"
@@ -268,6 +282,8 @@ def get_readable_message():
             buttons.sbutton("Prev", "status pre")
             buttons.sbutton(f"{PAGE_NO}/{pages}", str(THREE))
             buttons.sbutton("Next", "status nex")
+            buttons.sbutton("Refresh", str(ONE))
+            buttons.sbutton("Close", str(TWO))
             button = InlineKeyboardMarkup(buttons.build_menu(3))
             return msg + bmsg, button
         return msg + bmsg, sbutton
@@ -388,7 +404,7 @@ def close(update, context):
     if admins:
         delete_all_messages()
     else:
-        query.answer(text="Only Admins can Close !", show_alert=True)
+        query.answer(text="Sorry, only Admins can close !", show_alert=True)
 
 def pop_up_stats(update, context):
     query = update.callback_query

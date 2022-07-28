@@ -1,8 +1,7 @@
 from threading import Thread
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler, CallbackQueryHandler
-
-from bot import LOGGER, dispatcher
+from bot import LOGGER, dispatcher, OWNER_ID
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -28,7 +27,7 @@ def select_type(update, context):
     key = msg.reply_to_message.text.split(" ", maxsplit=1)[1]
     data = query.data
     data = data.split()
-    if user_id != int(data[1]):
+    if OWNER_ID != user_id and user_id != int(data[1]):
         return query.answer(text="Not Yours, STFU!", show_alert=True)
     elif data[2] == 'cancel':
         query.answer()

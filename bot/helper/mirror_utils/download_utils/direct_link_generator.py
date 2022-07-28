@@ -80,22 +80,19 @@ def direct_link_generator(link: str):
         raise DirectDownloadLinkException(f'No Direct link function found for {link}')
 
 def zippy_share(url: str) -> str:
+    base_url = re_search('http.+.zippyshare.com', url).group()
+    response = rget(url)
+    pages = BeautifulSoup(response.text, "html.parser")
+    js_script = str(pages.find("div", style="margin-left: 24px; margin-top: 20px; text-align: center; width: 303px; height: 105px;"))
     try:
-        link = re_findall(r'\b(https?://.*zippyshare\.com\S+)', url)[0]
-    except IndexError:
-        raise DirectDownloadLinkException("ERROR: No Zippyshare links found")
-    try:
-        base_url = re_search('http.+.zippyshare.com/', link).group()
-        response = rget(link).content
-        pages = BeautifulSoup(response, "lxml")
-        js_script = pages.find("div", style="margin-left: 24px; margin-top: 20px; text-align: center; width: 303px; height: 105px;")
-        js_content = re_findall(r'\.href.=."/(.*?)";', str(js_script))[0]
-        js_content = str(js_content).split('"')
-        a = str(js_script).split('var a = ')[1].split(';')[0]
-        value = int(a) ** 3 + 3
-        return base_url + js_content[0] + str(value) + js_content[2]
-    except IndexError:
-        raise DirectDownloadLinkException("ERROR: Can't find download button")
+        mtk = eval(re_findall(r"\+\((.*?).\+", js_script)[0] + " + 10 + 5/5")
+        uri1 = re_findall(r".href.=.\"/(.*?)/\"", js_script)[0]
+        uri2 = re_findall(r"\)\+\"/(.*?)\"", js_script)[0]
+    except Exception as err:
+        LOGGER.error(err)
+        raise DirectDownloadLinkException("ERROR: Can't Generate direct link")
+    dl_url = f"{base_url}/{uri1}/{int(mtk)}/{uri2}"
+    return dl_url
 
 def yandex_disk(url: str) -> str:
     """ Yandex.Disk direct link generator

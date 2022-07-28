@@ -1,9 +1,9 @@
 from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
-from telegram import InlineKeyboardMarkup
-from time import sleep
+from telegram import InlineKeyboardMarkup, ChatPermissions
+from time import time, sleep
 from re import split as re_split
-from bot import DOWNLOAD_DIR, dispatcher, BOT_PM, LOGGER, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME
+from bot import DOWNLOAD_DIR, dispatcher, BOT_PM, LOGGER, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME, CHAT_ID
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_message
 from bot.helper.telegram_helper import button_build
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url
@@ -61,6 +61,11 @@ def _watch(bot, message, isZip=False, isLeech=False, multi=0):
     else:
         link = ''
     
+    try:
+        bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
+    except Exception as e:
+        print(f'[MuteUser] Error: {type(e)} {e}')
+    
     name = mssg.split('|', maxsplit=1)
     if len(name) > 1:
         if 'args: ' in name[0] or 'pswd: ' in name[0]:
@@ -101,16 +106,17 @@ def _watch(bot, message, isZip=False, isLeech=False, multi=0):
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
 
     if not is_url(link):
-        help_msg = "<b>Send link along with command line:</b>"
-        help_msg += "\n<code>/command</code> {link} |newname pswd: mypassword [zip] args: x:y|x1:y1"
-        help_msg += "\n\n<b>By replying to link:</b>"
-        help_msg += "\n<code>/command</code> |newname pswd: mypassword [zip] args: x:y|x1:y1"
-        help_msg += "\n\n<b>Args Example:</b> args: playliststart:^10|match_filter:season_number=18|matchtitle:S1"
-        help_msg += "\n\n<b>NOTE:</b> Add `^` before integer, some values must be integer and some string."
-        help_msg += " Like playlist_items:10 works with string so no need to add `^` before the number"
-        help_msg += " but playlistend works only with integer so you must add `^` before the number like example above."
-        help_msg += "\n\nCheck all arguments from this <a href='https://github.com/yt-dlp/yt-dlp/blob/a3125791c7a5cdf2c8c025b99788bf686edd1a8a/yt_dlp/YoutubeDL.py#L194'>FILE</a>."
-        return sendMessage(help_msg, bot, message)
+        try:
+            uname = message.from_user.mention_html(message.from_user.first_name)
+            user = bot.get_chat_member(CHAT_ID, message.from_user.id)
+            if user.status not in ['creator', 'administrator']:
+                bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
+                return sendMessage(f"Dear {uname}️,\n\n<b>You are MUTED until you learn how to use me.\n\nWatch others or read </b>/{BotCommands.HelpCommand}", bot, message)
+            else:
+                return sendMessage(f"OMG, {uname} You are a <b>Admin.</b>\n\nStill don't know how to use me!\n\nPlease read /{BotCommands.HelpCommand}", bot, message)
+        except Exception as e:
+            print(f'[MuteUser] Error: {type(e)} {e}')
+        return
 
     listener = MirrorListener(bot, message, isZip, isLeech=isLeech, pswd=pswd, tag=tag)
     buttons = button_build.ButtonMaker()
