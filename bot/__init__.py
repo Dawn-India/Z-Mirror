@@ -490,12 +490,18 @@ except KeyError:
     log_info("CHANNEL_ID not provided! Using default id of @Z_Mirror")
     FSUB_CHANNEL_ID = -1001232292892
 try:
+    AUTO_MUTE = getConfig('AUTO_MUTE')
+    AUTO_MUTE = AUTO_MUTE.lower() == 'true'
+except:
+    AUTO_MUTE = False
+    LOGGER.info("Auto MUTE is disabled")
+try:
     CHAT_ID = getConfig("CHAT_ID")
     if len(CHAT_ID) == 0:
         raise KeyError
     CHAT_ID = int(CHAT_ID)
 except KeyError:
-    log_info("CHAT_ID not provided! Using default id of @Z_Mirror")
+    log_info("CHAT_ID not provided! AUTO_MUTE won't work properly.")
     CHAT_ID = -1001246392945
 try:
     BOT_PM = getConfig('BOT_PM')

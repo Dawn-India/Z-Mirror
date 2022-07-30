@@ -9,7 +9,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
 from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, \
-                FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME, CHAT_ID
+                FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME, CHAT_ID, AUTO_MUTE
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_gdrive_link, is_gdtot_link, new_thread, is_appdrive_link
 from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, appdrive
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
@@ -51,10 +51,11 @@ def _clone(message, bot, multi=0):
     reply_to = message.reply_to_message
     link = ''
 
-    try:
-        bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
-    except Exception as e:
-        print(f'[MuteUser] Error: {type(e)} {e}')
+    if AUTO_MUTE:
+        try:
+            bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
+        except Exception as e:
+            print(f'[MuteUser] Error: {type(e)} {e}')
 
     if len(args) > 1:
         link = args[1].strip()
@@ -150,16 +151,19 @@ def _clone(message, bot, multi=0):
         if (is_gdtot or is_appdrive):
             gd.deletefile(link)
     else:
-        try:
-            uname = message.from_user.mention_html(message.from_user.first_name)
-            user = bot.get_chat_member(CHAT_ID, message.from_user.id)
-            if user.status not in ['creator', 'administrator']:
-                bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
-                return sendMessage(f"Dear {uname}️,\n\n<b>You are MUTED until you learn how to use me.\n\nWatch others or read </b>/{BotCommands.HelpCommand}", bot, message)
-            else:
-                return sendMessage(f"OMG, {uname} You are a <b>Admin.</b>\n\nStill don't know how to use me!\n\nPlease read /{BotCommands.HelpCommand}", bot, message)
-        except Exception as e:
-            print(f'[MuteUser] Error: {type(e)} {e}')
+        if AUTO_MUTE:
+            try:
+                uname = message.from_user.mention_html(message.from_user.first_name)
+                user = bot.get_chat_member(CHAT_ID, message.from_user.id)
+                if user.status not in ['creator', 'administrator']:
+                    bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
+                    return sendMessage(f"Dear {uname}️,\n\n<b>You are MUTED until you learn how to use me.\n\nWatch others or read </b>/{BotCommands.HelpCommand}", bot, message)
+                else:
+                    return sendMessage(f"OMG, {uname} You are a <b>Admin.</b>\n\nStill don't know how to use me!\n\nPlease read /{BotCommands.HelpCommand}", bot, message)
+            except Exception as e:
+                print(f'[MuteUser] Error: {type(e)} {e}')
+        else:
+            return sendMessage(f"Please enter a valid command.\nRead /{BotCommands.HelpCommand} and try again.", bot, message)
 
 @new_thread
 def cloneNode(update, context):

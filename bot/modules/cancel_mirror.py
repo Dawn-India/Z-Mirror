@@ -2,7 +2,7 @@ from telegram import InlineKeyboardMarkup, ChatPermissions
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from time import time, sleep
 from threading import Thread
-from bot import download_dict, dispatcher, download_dict_lock, SUDO_USERS, OWNER_ID, AUTO_DELETE_MESSAGE_DURATION, CHAT_ID
+from bot import download_dict, dispatcher, download_dict_lock, SUDO_USERS, OWNER_ID, AUTO_DELETE_MESSAGE_DURATION, CHAT_ID, AUTO_MUTE
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, auto_delete_message
@@ -26,17 +26,18 @@ def cancel_mirror(update, context):
         if not dl:
             return sendMessage("This is not an active task!", context.bot, update.message)
     elif len(context.args) == 0:
-        try:
-            uname = update.message.from_user.mention_html(update.message.from_user.first_name)
-            user = context.bot.get_chat_member(CHAT_ID, update.message.from_user.id)
-            if user.status not in ['creator', 'administrator']:
-                context.bot.restrict_chat_member(chat_id=update.message.chat.id, user_id=update.message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
-                return sendMessage(f"Dear {uname}️,\n\n<b>You are MUTED until you learn how to use me.\n\nWatch others or read </b>/{BotCommands.HelpCommand}", context.bot, update.message)
-            else:
-                return sendMessage(f"OMG, {uname} You are a <b>Admin.</b>\n\nStill don't know how to use me!\n\nPlease read /{BotCommands.HelpCommand}", context.bot, update.message)
-        except Exception as e:
-            print(f'[MuteUser] Error: {type(e)} {e}')
-        return
+        if AUTO_MUTE:
+            try:
+                uname = update.message.from_user.mention_html(update.message.from_user.first_name)
+                user = context.bot.get_chat_member(CHAT_ID, update.message.from_user.id)
+                if user.status not in ['creator', 'administrator']:
+                    context.bot.restrict_chat_member(chat_id=update.message.chat.id, user_id=update.message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
+                    return sendMessage(f"Dear {uname}️,\n\n<b>You are MUTED until you learn how to use me.\n\nWatch others or read </b>/{BotCommands.HelpCommand}", context.bot, update.message)
+                else:
+                    return sendMessage(f"OMG, {uname} You are a <b>Admin.</b>\n\nStill don't know how to use me!\n\nPlease read /{BotCommands.HelpCommand}", context.bot, update.message)
+            except Exception as e:
+                print(f'[MuteUser] Error: {type(e)} {e}')
+        return sendMessage(f"Please enter a valid command.\nRead /{BotCommands.HelpCommand} and try again.", bot, message)
 
     if OWNER_ID != user_id and dl.message.from_user.id != user_id and user_id not in SUDO_USERS:
         return sendMessage("This task is not for you!", context.bot, update.message)
