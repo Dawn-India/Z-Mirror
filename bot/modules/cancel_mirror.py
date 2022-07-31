@@ -6,7 +6,7 @@ from bot import download_dict, dispatcher, download_dict_lock, SUDO_USERS, OWNER
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, auto_delete_message
-from bot.helper.ext_utils.bot_utils import getDownloadByGid, getAllDownload
+from bot.helper.ext_utils.bot_utils import getDownloadByGid, getAllDownload, MirrorStatus
 from bot.helper.telegram_helper import button_build
 
 def cancel_mirror(update, context):
@@ -46,25 +46,22 @@ def cancel_mirror(update, context):
 
 def cancel_all(status):
     gid = ''
-    while True:
-        dl = getAllDownload(status)
-        if dl:
-            if dl.gid() != gid:
-                gid = dl.gid()
-                dl.download().cancel_download()
-                sleep(1)
-        else:
-            break
+    while dl := getAllDownload(status):
+        if dl.gid() != gid:
+            gid = dl.gid()
+            dl.download().cancel_download()
+            sleep(1)
 
 def cancell_all_buttons(update, context):
     buttons = button_build.ButtonMaker()
-    buttons.sbutton("Downloading", "canall down")
-    buttons.sbutton("Uploading", "canall up")
-    buttons.sbutton("Seeding", "canall seed")
-    buttons.sbutton("Cloning", "canall clone")
-    buttons.sbutton("Extracting", "canall extract")
-    buttons.sbutton("Archiving", "canall archive")
-    buttons.sbutton("Splitting", "canall split")
+    buttons.sbutton("Downloading", f"canall {MirrorStatus.STATUS_DOWNLOADING}")
+    buttons.sbutton("Uploading", f"canall {MirrorStatus.STATUS_UPLOADING}")
+    buttons.sbutton("Seeding", f"canall {MirrorStatus.STATUS_SEEDING}")
+    buttons.sbutton("Cloning", f"canall {MirrorStatus.STATUS_CLONING}")
+    buttons.sbutton("Extracting", f"canall {MirrorStatus.STATUS_EXTRACTING}")
+    buttons.sbutton("Archiving", f"canall {MirrorStatus.STATUS_ARCHIVING}")
+    buttons.sbutton("Queued", f"canall {MirrorStatus.STATUS_WAITING}")
+    buttons.sbutton("Paused", f"canall {MirrorStatus.STATUS_PAUSED}")
     buttons.sbutton("All", "canall all")
     if AUTO_DELETE_MESSAGE_DURATION == -1:
         buttons.sbutton("Close", "canall close")
@@ -79,10 +76,9 @@ def cancel_all_update(update, context):
     data = data.split()
     if CustomFilters._owner_query(user_id):
         query.answer()
-        if data[1] == 'close':
-            query.message.delete()
-            return
         query.message.delete()
+        if data[1] == 'close':
+            return
         cancel_all(data[1])
     else:
         query.answer(text="This is not yours, STFU !", show_alert=True)
