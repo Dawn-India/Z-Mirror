@@ -56,7 +56,7 @@ def clean_unwanted(path: str):
     LOGGER.info(f"Cleaning unwanted files/folders: {path}")
     for dirpath, subdir, files in walk(path, topdown=False):
         for filee in files:
-            if filee.endswith(".!qB") or filee.endswith('.parts') and filee.startswith('.'):
+            if filee.endswith((".!qB", ".aria2")) or filee.endswith('.parts') and filee.startswith('.'):
                 osremove(ospath.join(dirpath, filee))
         for folder in subdir:
             if folder == ".unwanted":
@@ -125,27 +125,68 @@ def take_ss(video_file):
 
 def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i=1, inLoop=False, noMap=False):
     parts = ceil(size/TG_SPLIT_SIZE)
-    duration = get_media_info(path)[0]
     if EQUAL_SPLITS and not inLoop:
         split_size = ceil(size/parts) + 1000
     if file_.upper().endswith(VIDEO_SUFFIXES):
+        duration = get_media_info(path)[0]
         base_name, extension = ospath.splitext(file_)
         split_size = split_size - 5000000
         while i <= parts:
             parted_name = f"{str(base_name)}.part{str(i).zfill(3)}{str(extension)}"
             out_path = ospath.join(dirpath, parted_name)
-            if not noMap:
-                listener.suproc = Popen(["new-api", "-hide_banner", "-loglevel", "error", "-ss", str(start_time),
-                 "-i", path, "-fs", str(split_size), "-map", "0", "-map_chapters", "-1", "-c", "copy", out_path])
-            else:
-                listener.suproc = Popen(["new-api", "-hide_banner", "-loglevel", "error", "-ss", str(start_time),
-                              "-i", path, "-fs", str(split_size), "-map_chapters", "-1", "-c", "copy", out_path])
+            listener.suproc = (
+                Popen(
+                    [
+                        "new-api",
+                        "-hide_banner",
+                        "-loglevel",
+                        "error",
+                        "-ss",
+                        str(start_time),
+                        "-i",
+                        path,
+                        "-fs",
+                        str(split_size),
+                        "-map_chapters",
+                        "-1",
+                        "-c",
+                        "copy",
+                        out_path,
+                    ]
+                )
+                if noMap
+                else Popen(
+                    [
+                        "new-api",
+                        "-hide_banner",
+                        "-loglevel",
+                        "error",
+                        "-ss",
+                        str(start_time),
+                        "-i",
+                        path,
+                        "-fs",
+                        str(split_size),
+                        "-map",
+                        "0",
+                        "-map_chapters",
+                        "-1",
+                        "-c",
+                        "copy",
+                        out_path,
+                    ]
+                )
+            )
+
             listener.suproc.wait()
             if listener.suproc.returncode == -9:
                 return False
             elif listener.suproc.returncode != 0 and not noMap:
                 LOGGER.warning(f'Retrying without map, -map 0 not working in all situations. Path: {path}')
-                osremove(out_path)
+                try:
+                    osremove(out_path)
+                except:
+                    pass
                 return split_file(path, size, file_, dirpath, split_size, listener, start_time, i, True, True)
             out_size = get_path_size(out_path)
             if out_size > (TG_SPLIT_SIZE + 1000):
@@ -166,7 +207,7 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
             start_time += lpd - 3
             i = i + 1
     else:
-        out_path = ospath.join(dirpath, file_ + ".")
+        out_path = ospath.join(dirpath, f"{file_}.")
         listener.suproc = Popen(["split", "--numeric-suffixes=1", "--suffix-length=3", f"--bytes={split_size}", path, out_path])
         listener.suproc.wait()
         if listener.suproc.returncode == -9:
@@ -189,8 +230,7 @@ def get_media_info(path):
 
     duration = round(float(fields.get('duration', 0)))
 
-    fields = fields.get('tags')
-    if fields:
+    if fields := fields.get('tags'):
         artist = fields.get('artist')
         if artist is None:
             artist = fields.get('ARTIST')
