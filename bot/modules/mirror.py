@@ -39,7 +39,7 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
 class MirrorListener:
-    def __init__(self, bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, tag=None, select=False, seed=False):
+    def __init__(self, bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, tag=None, seed=False):
         self.bot = bot
         self.message = message
         self.uid = self.message.message_id
@@ -50,7 +50,6 @@ class MirrorListener:
         self.pswd = pswd
         self.tag = tag
         self.seed = any([seed, QB_SEED])
-        self.select = select
         self.isPrivate = self.message.chat.type in ['private', 'group']
         self.suproc = None
         self.user_id = self.message.from_user.id
@@ -332,7 +331,7 @@ class MirrorListener:
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
 
-def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, select=False, seed=False):
+def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, multi=0, qbsd=False):
     buttons = ButtonMaker()
 
     if FSUB:
@@ -366,6 +365,7 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     name_args = mesg[0].split('|', maxsplit=1)
+    qbsel = False
     index = 1
     is_gdtot = False
 
@@ -378,10 +378,10 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
     if len(message_args) > 1:
         args = mesg[0].split(maxsplit=3)
         if "s" in [x.strip() for x in args]:
-            select = True
+            qbsel = True
             index += 1
         if "d" in [x.strip() for x in args]:
-            seed = True
+            qbsd = True
             index += 1
         message_args = mesg[0].split(maxsplit=index)
         if len(message_args) > index:
@@ -479,7 +479,7 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
                 if str(e).startswith('ERROR:'):
                     return sendMessage(str(e), bot, message)
 
-    listener = MirrorListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed)
+    listener = MirrorListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, qbsd)
 
     if is_gdrive_link(link):
         if not isZip and not extract and not isLeech:
@@ -505,7 +505,7 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
         else:
             sendMessage('MEGA is not allowed on this bot.', bot, message)
     elif isQbit:
-        Thread(target=QbDownloader(listener).add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', select)).start()
+        Thread(target=QbDownloader(listener).add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', qbsel)).start()
     else:
         if len(mesg) > 1:
             try:
@@ -520,7 +520,7 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
             auth = "Basic " + b64encode(auth.encode()).decode('ascii')
         else:
             auth = ''
-        Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, auth, select)).start()
+        Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, auth)).start()
 
     if multi > 1:
         sleep(4)
@@ -532,7 +532,7 @@ def _mirror(bot, message, isZip=False, extract=False, isQbit=False, isLeech=Fals
         nextmsg.from_user.id = message.from_user.id
         multi -= 1
         sleep(4)
-        Thread(target=_mirror, args=(bot, nextmsg, isZip, extract, isQbit, isLeech, pswd, multi, select, seed)).start()
+        Thread(target=_mirror, args=(bot, nextmsg, isZip, extract, isQbit, isLeech, pswd, multi)).start()
 
 def mirror(update, context):
     _mirror(context.bot, update.message)

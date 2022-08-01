@@ -56,7 +56,7 @@ def clean_unwanted(path: str):
     LOGGER.info(f"Cleaning unwanted files/folders: {path}")
     for dirpath, subdir, files in walk(path, topdown=False):
         for filee in files:
-            if filee.endswith((".!qB", ".aria2")) or filee.endswith('.parts') and filee.startswith('.'):
+            if filee.endswith(".!qB") or filee.endswith('.parts') and filee.startswith('.'):
                 osremove(ospath.join(dirpath, filee))
         for folder in subdir:
             if folder == ".unwanted":
@@ -125,10 +125,10 @@ def take_ss(video_file):
 
 def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i=1, inLoop=False, noMap=False):
     parts = ceil(size/TG_SPLIT_SIZE)
+    duration = get_media_info(path)[0]
     if EQUAL_SPLITS and not inLoop:
         split_size = ceil(size/parts) + 1000
     if file_.upper().endswith(VIDEO_SUFFIXES):
-        duration = get_media_info(path)[0]
         base_name, extension = ospath.splitext(file_)
         split_size = split_size - 5000000
         while i <= parts:
@@ -145,10 +145,7 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
                 return False
             elif listener.suproc.returncode != 0 and not noMap:
                 LOGGER.warning(f'Retrying without map, -map 0 not working in all situations. Path: {path}')
-                try:
-                    osremove(out_path)
-                except:
-                    pass
+                osremove(out_path)
                 return split_file(path, size, file_, dirpath, split_size, listener, start_time, i, True, True)
             out_size = get_path_size(out_path)
             if out_size > (TG_SPLIT_SIZE + 1000):

@@ -1,4 +1,4 @@
-from bot import aria2, DOWNLOAD_DIR, LOGGER
+from bot import aria2, LOGGER
 from bot.helper.ext_utils.bot_utils import MirrorStatus, EngineStatus
 
 def get_download(gid):
@@ -14,9 +14,6 @@ class AriaDownloadStatus:
         self.__download = get_download(gid)
         self.__listener = listener
         self.message = listener.message
-
-    def path(self):
-        return f'{DOWNLOAD_DIR}{self.__listener.uid}'
 
     def __update(self):
         self.__download = get_download(self.__gid)
@@ -58,8 +55,6 @@ class AriaDownloadStatus:
         download = self.__download
         if download.is_waiting:
             return MirrorStatus.STATUS_WAITING
-        elif download.is_paused:
-            return MirrorStatus.STATUS_PAUSED
         else:
             return MirrorStatus.STATUS_DOWNLOADING
 
@@ -69,7 +64,7 @@ class AriaDownloadStatus:
     def download(self):
         return self
 
-    def listener(self):
+    def getListener(self):
         return self.__listener
 
     def gid(self):
