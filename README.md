@@ -1,4 +1,9 @@
 # Features:
+- File rename with Mirror/Leech/Clone/Torrent/Mega
+- Auto Mute users on wrong command
+- Dyno Sleep
+- Area2/Qbit Torrent Seed with sepcific retio and time
+- Select Files before and after start download
 - Telegram Premium 4GB Leech
 - Heroku Dyno Status
 - Leech Size Limit
@@ -132,6 +137,9 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `UPSTREAM_REPO`: Your github repository link, if your repo is private add `https://username:{githubtoken}@github.com/{username}/{reponame}` format. Get token from [Github settings](https://github.com/settings/tokens). So you can update your bot from filled repository on each restart. **NOTE**: Any change in docker or requirements you need to deploy/build again with updated repo to take effect. DON'T delete .gitignore file. For more information read [THIS](https://github.com/Dawn-India/Z-Mirror/tree/master#upstream-repo-recommended).
 - `UPSTREAM_BRANCH`: Upstream branch for update. Default is `master`.
 
+### Auto Mute
+- `AUTO_MUTE`: Set it True if you want to use Auto Mute. (`False` by default)
+- `CHAT_ID`: Id of the group where you want to use AUTO_MUTE. (Mandatory if AUTO_MUTE is `True`)
 ### Force SUB
 - `FSUB`: Force BOT users to subscribe a specific channel in order to use the bot. Set it `True` if you want to use FSUB. Default is `False`.
 - `CHANNEL_USERNAME`: Add the channel username for force sub. (Example: If the channel link is `https://t.me/z_mirror` then write `z_mirror`)
