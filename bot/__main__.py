@@ -16,7 +16,7 @@ from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendLogFile, auto_delete_message
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
-from .modules import authorize, list, cancel_mirror, mirror_status, mirror, clone, watch, shell, eval, delete, count, leech_settings, search, rss, qbselect
+from .modules import authorize, list, cancel_mirror, mirror_status, mirror, clone, watch, shell, eval, delete, count, leech_settings, search, rss, bt_select
 from threading import Thread
 
 def stats(update, context):
@@ -90,7 +90,7 @@ help_string_telegraph = f'''<br>
 <br><br>
 <b>/{BotCommands.UnzipMirrorCommand}</b> [download_url][magnet_link]: Start mirroring and upload the file/folder extracted from any archive extension
 <br><br>
-<b>/{BotCommands.QbMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start Mirroring using qBittorrent, Use `<b>/{BotCommands.QbMirrorCommand} s</b>` to select files before downloading and use `<b>/{BotCommands.QbMirrorCommand} d</b>` to seed specific torrent and those two args works with all qb commands
+<b>/{BotCommands.QbMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start Mirroring using qBittorrent. Send <b>/{BotCommands.QbMirrorCommand}</b> for more help
 <br><br>
 <b>/{BotCommands.QbZipMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start mirroring using qBittorrent and upload the file/folder compressed with zip extension
 <br><br>

@@ -1,13 +1,4 @@
-# Copyright (C) 2019 The Raphielscape Company LLC.
-#
-# Licensed under the Raphielscape Public License, Version 1.c (the "License");
-# you may not use this file except in compliance with the License.
-#
-""" Helper Module containing various sites direct links generators. This module is copied and modified as per need
-from https://github.com/AvinashReddy3108/PaperplaneExtended . I hereby take no credit of the following code other
-than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtended/commits/master/userbot/modules/direct_links.py
-for original authorship. """
-
+from time import sleep
 from requests import get as rget, head as rhead, post as rpost, Session as rsession
 from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
 from base64 import b64decode
@@ -127,7 +118,21 @@ def uptobox(url: str) -> str:
 
             req = rget(file_link)
             result = req.json()
-            dl_url = result['data']['dlLink']
+            if result['message'].lower() == 'success':
+                dl_url = result['data']['dlLink']
+            elif result['message'].lower() == 'waiting needed':
+                waiting_time = result["data"]["waiting"] + 1
+                waiting_token = result["data"]["waitingToken"]
+                sleep(waiting_time)
+                req2 = rget(f"{file_link}&waitingToken={waiting_token}")
+                result2 = req2.json()
+                dl_url = result2['data']['dlLink']
+            elif result['message'].lower() == 'you need to wait before requesting a new download link':
+                cooldown = divmod(result['data']['waiting'], 60)
+                raise DirectDownloadLinkException(f"ERROR: Uptobox is being limited please wait {cooldown[0]} min {cooldown[1]} sec.")
+            else:
+                LOGGER.info(f"UPTOBOX_ERROR: {result}")
+                raise DirectDownloadLinkException(f"ERROR: {result['message']}")
     return dl_url
 
 def mediafire(url: str) -> str:

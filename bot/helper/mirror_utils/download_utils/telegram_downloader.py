@@ -1,7 +1,6 @@
 from logging import getLogger, WARNING
 from time import time
 from threading import RLock, Lock
-
 from bot import LOGGER, download_dict, download_dict_lock, STOP_DUPLICATE, STORAGE_THRESHOLD, app
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from ..status_utils.telegram_download_status import TelegramDownloadStatus
@@ -12,7 +11,6 @@ from bot.helper.ext_utils.fs_utils import check_storage_threshold
 global_lock = Lock()
 GLOBAL_GID = set()
 getLogger("pyrogram").setLevel(WARNING)
-
 
 class TelegramDownloadHelper:
 
