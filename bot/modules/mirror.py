@@ -117,7 +117,7 @@ class MirrorListener:
                     for dirpath, subdir, files in walk(m_path, topdown=False):
                         for file_ in files:
                             if file_.endswith((".zip", ".7z")) or re_search(r'\.part0*1\.rar$|\.7z\.0*1$|\.zip\.0*1$', file_) \
-                               or (file_.endswith(".rar") and not re_search(r'\.part\d+\.rar$', file_)):
+                                   or (file_.endswith(".rar") and not re_search(r'\.part\d+\.rar$', file_)):
                                 m_path = ospath.join(dirpath, file_)
                                 if self.pswd is not None:
                                     self.suproc = Popen(["7z", "x", f"-p{self.pswd}", m_path, f"-o{dirpath}", "-aot"])
@@ -131,7 +131,7 @@ class MirrorListener:
                         if self.suproc is not None and self.suproc.returncode == 0:
                             for file_ in files:
                                 if file_.endswith((".rar", ".zip", ".7z")) or \
-                                    re_search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
+                                        re_search(r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$', file_):
                                     del_path = ospath.join(dirpath, file_)
                                     osremove(del_path)
                     path = f'{DOWNLOAD_DIR}{self.uid}/{name}'
