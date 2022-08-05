@@ -429,8 +429,6 @@ def bot_sys_stats():
     recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
     sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
     cpuUsage = cpu_percent(interval=1)
-#---Thanks for deleting my name ❤️ Appreciate it---#
-#---Remove this line too, who cares---#
     return f"""
 {TITLE_NAME} BOT SYSTEM STATS
 
@@ -444,6 +442,9 @@ T-DL: {recv} | T-UL: {sent}
 
 Made with ❤️ by Dawn
 """
+
+#---Thanks for deleting my name ❤️ Appreciate it---#
+#---Remove this line too, who cares---#
 
 dispatcher.add_handler(CallbackQueryHandler(refresh, pattern=f"^{str(ONE)}$"))
 dispatcher.add_handler(CallbackQueryHandler(close, pattern=f"^{str(TWO)}$"))
