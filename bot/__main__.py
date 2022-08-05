@@ -20,9 +20,22 @@ from .helper.telegram_helper.button_build import ButtonMaker
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror, clone, watch, shell, eval, delete, count, leech_settings, search, rss, bt_select, sleep
 from threading import Thread
 
+def progress_bar(percentage):
+    p_used = '⬢'
+    p_total = '⬡'
+    if isinstance(percentage, str):
+        return 'NaN'
+    try:
+        percentage=int(percentage)
+    except:
+        percentage = 0
+    return ''.join(
+        p_used if i <= percentage // 10 else p_total for i in range(1, 11)
+    )
+
 def stats(update, context):
     if ospath.exists('.git'):
-        last_commit = check_output(["git log -1 --date=short --pretty=format:'%cr <b>On</b> %cd'"], shell=True).decode()
+        last_commit = check_output(["git log -1 --date=short --pretty=format:'%cr \n<b>Version: </b> %cd'"], shell=True).decode()
     else:
         last_commit = 'No UPSTREAM_REPO'
     currentTime = get_readable_time(time() - botStartTime)
@@ -36,12 +49,14 @@ def stats(update, context):
     memory = virtual_memory()
     mem_p = memory.percent
     stats = f'<b><i><u>{TITLE_NAME} Bot Statistics</u></i></b>\n\n'\
-            f'<b>Updated:</b> <code>{last_commit}</code>\n'\
-            f'<b>I am Working For:</b> <code>{currentTime}</code>\n'\
+            f'<b>CPU</b>:  {progress_bar(cpuUsage)} {cpuUsage}%\n' \
+            f'<b>RAM</b>: {progress_bar(mem_p)} {mem_p}%\n' \
+            f'<b>DISK</b>: {progress_bar(disk)} {disk}%\n\n' \
+            f'<b>Updated:</b> {last_commit}\n'\
+            f'<b>I am Working For:</b> <code>{currentTime}</code>\n\n'\
             f'<b>Total Disk:</b> <code>{total}</code> [{disk}% In use]\n'\
             f'<b>Used:</b> <code>{used}</code> | <b>Free:</b> <code>{free}</code>\n'\
-            f'<b>T-Up:</b> <code>{sent}</code> | <b>T-Dn:</b> <code>{recv}</code>\n'\
-            f'<b>CPU Usage:</b> <code>{cpuUsage}</code>% | <b>RAM Usage:</b> <code>{mem_p}%</code>\n'
+            f'<b>T-UL:</b> <code>{sent}</code> | <b>T-DL:</b> <code>{recv}</code>\n'
     if heroku := getHerokuDetails(HEROKU_API_KEY, HEROKU_APP_NAME):
         stats += heroku
     reply_message = sendMessage(stats, context.bot, update.message)
@@ -200,9 +215,9 @@ def main():
                 else:
                     msg = 'Bot Restarted!'
                 for tag, links in data.items():
-                     msg += f"\n\n{tag}: "
+                     msg += f"\nIncomplete Tasks List:\n\n{tag}: "
                      for index, link in enumerate(links, start=1):
-                         msg += f" <a href='{link}'>{index}</a> |"
+                         msg += f" <a href='{link}'>{index}</a> \n"
                          if len(msg.encode()) > 4000:
                              if 'Restarted successfully!' in msg and cid == chat_id:
                                  bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTMl', disable_web_page_preview=True)

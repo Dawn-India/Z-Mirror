@@ -48,11 +48,7 @@ class EngineStatus:
     STATUS_SPLIT = "FFmpeg v2.9.1"
     STATUS_ZIP = "p7zip v16.02"
 
-PROGRESS_MAX_SIZE = 100 // 9
-PROGRESS_INCOMPLETE = ['◌', '◌', '◎', '◎', '◎', '◍', '◍', '◍']
-
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-
 
 class setInterval:
     def __init__(self, interval, action):
@@ -123,19 +119,28 @@ def get_progress_bar_string(status):
     p = 0 if total == 0 else round(completed * 100 / total)
     p = min(max(p, 0), 100)
     cFull = p // 8
-    cPart = p % 8 - 1
-    p_str = '◉' * cFull
-    if cPart >= 0:
-        p_str += PROGRESS_INCOMPLETE[cPart]
-    p_str += '○' * (PROGRESS_MAX_SIZE - cFull)
-    p_str = f"⠧{p_str}⠹"
+    p_str = '⬢' * cFull
+    p_str += '⬡' * (12 - cFull)
+    p_str = f"〘{p_str}〙"
     return p_str
+
+def progress_bar(percentage):
+    p_used = '⬢'
+    p_total = '⬡'
+    if isinstance(percentage, str):
+        return 'NaN'
+    try:
+        percentage=int(percentage)
+    except:
+        percentage = 0
+    return ''.join(
+        p_used if i <= percentage // 10 else p_total for i in range(1, 11)
+    )
 
 def auto_delete_message(bot, cmd_message: Message, bot_message: Message):
     if AUTO_DELETE_MESSAGE_DURATION != -1:
         sleep(AUTO_DELETE_MESSAGE_DURATION)
         try:
-            # Skip if None is passed meaning we don't want to delete bot xor cmd message
             deleteMessage(bot, cmd_message)
             deleteMessage(bot, bot_message)
         except AttributeError:
@@ -195,7 +200,7 @@ def update_all_messages(force=False):
 
 def get_readable_message():
     with download_dict_lock:
-        msg = ""
+        msg = f"Powered By <b>{TITLE_NAME}</b>"
         if STATUS_LIMIT is not None:
             tasks = len(download_dict)
             global pages
@@ -416,30 +421,30 @@ def pop_up_stats(update, context):
 
 def bot_sys_stats():
     currentTime = get_readable_time(time() - botStartTime)
-    cpu = psutil.cpu_percent()
-    mem = psutil.virtual_memory().percent
-    disk = psutil.disk_usage("/").percent
-    total, used, free = shutil.disk_usage(".")
-    total = get_readable_file_size(total)
-    used = get_readable_file_size(used)
-    free = get_readable_file_size(free)
+    total, used, free, disk = disk_usage('/')
+    disk_t = get_readable_file_size(total)
+    disk_f = get_readable_file_size(free)
+    memory = virtual_memory()
+    mem_p = memory.percent
     recv = get_readable_file_size(psutil.net_io_counters().bytes_recv)
     sent = get_readable_file_size(psutil.net_io_counters().bytes_sent)
-    stats = "Bot Statistics"
-    stats += f"""
+    cpuUsage = cpu_percent(interval=1)
+#---Thanks for deleting my name ❤️ Appreciate it---#
+#---Remove this line too, who cares---#
+    return f"""
+{TITLE_NAME} BOT SYSTEM STATS
 
-Bot Uptime: {currentTime}
-T-DN: {recv} | T-UP: {sent}
-CPU: {cpu}% | RAM: {mem}%
-Disk: {total} | Free: {free}
-Used: {used} [{disk}%]
+CPU:  {progress_bar(cpuUsage)} {cpuUsage}%
+RAM: {progress_bar(mem_p)} {mem_p}%
+DISK: {progress_bar(disk)} {disk}%
+T: {disk_t}GB | F: {disk_f}GB
+
+Working For: {currentTime}
+T-DL: {recv} | T-UL: {sent}
 
 Made with ❤️ by Dawn
 """
-    return stats
 
 dispatcher.add_handler(CallbackQueryHandler(refresh, pattern=f"^{str(ONE)}$"))
 dispatcher.add_handler(CallbackQueryHandler(close, pattern=f"^{str(TWO)}$"))
-dispatcher.add_handler(
-    CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)}$")
-)
+dispatcher.add_handler(CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)}$"))
