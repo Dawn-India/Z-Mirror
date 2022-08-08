@@ -27,11 +27,9 @@ class SplitStatus:
             return 0
 
     def progress(self):
-        return '0'
         return f'{round(self.progress_raw(), 2)}%'
 
     def speed(self):
-        return '0'
         return f'{get_readable_file_size(self.speed_raw())}/s'
 
     def name(self):
@@ -44,7 +42,6 @@ class SplitStatus:
         return get_readable_file_size(self.__size)
 
     def eta(self):
-        return '0s'
         try:
             seconds = (self.size_raw() - self.processed_bytes()) / self.speed_raw()
             return f'{get_readable_time(seconds)}'
@@ -55,7 +52,6 @@ class SplitStatus:
         return MirrorStatus.STATUS_SPLITTING
 
     def processed_bytes(self):
-        return 0
         return get_path_size(f"{DOWNLOAD_DIR}{self.__uid}") - self.__size
 
     def download(self):
