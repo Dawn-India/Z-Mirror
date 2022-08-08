@@ -267,35 +267,35 @@ def get_readable_message():
                 globals()['COUNT'] -= STATUS_LIMIT
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
-            msg += f"\n<b>File Name:</b> <code>{escape(str(download.name()))}</code>"
-            msg += f"\n\n<b>Status:</b> <i>{download.status()}</i> <b>Using:</b> <code>{download.eng()}</code>"
+            msg += f"\n\n<b>File Name:</b> <code>{escape(str(download.name()))}</code>"
+            msg += f"\n\n<b>Status:</b> <code>{download.status()}</code> <b>Using:</b> <code>{download.eng()}</code>"
             if download.status() not in [MirrorStatus.STATUS_SEEDING]:
                 msg += f"\n{get_progress_bar_string(download)} ↣ {download.progress()}"
                 if download.status() in [MirrorStatus.STATUS_DOWNLOADING,
                                          MirrorStatus.STATUS_WAITING,
                                          MirrorStatus.STATUS_PAUSED]:
-                    msg += f"\n\n<b>Downloaded:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()} at: {download.speed()}"
+                    msg += f"\n\n<b>Downloaded:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code> at: <code>{download.speed()}</code>"
                 elif download.status() == MirrorStatus.STATUS_UPLOADING:
-                    msg += f"\n\n<b>Uploaded:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()} at: {download.speed()}"
+                    msg += f"\n\n<b>Uploaded:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code> at: <code>{download.speed()}</code>"
                 elif download.status() == MirrorStatus.STATUS_CLONING:
-                    msg += f"\n\n<b>Cloned:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()} at: {download.speed()}"
+                    msg += f"\n\n<b>Cloned:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code> at: <code>{download.speed()}</code>"
                 elif download.status() == MirrorStatus.STATUS_ARCHIVING:
-                    msg += f"\n\n<b>Archived:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()} at: {download.speed()}"
+                    msg += f"\n\n<b>Archived:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code> at: <code>{download.speed()}</code>"
                 elif download.status() == MirrorStatus.STATUS_EXTRACTING:
-                    msg += f"\n\n<b>Extracted:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()} at: {download.speed()}"
+                    msg += f"\n\n<b>Extracted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code> at: <code>{download.speed()}</code>"
                 elif download.status() == MirrorStatus.STATUS_SPLITTING:
-                    msg += f"\n\n<b>Splitted:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()} at: {download.speed()}"
-                msg += f"\n<b>ETA:</b> {download.eta()} <b>Elapsed : </b>{get_readable_time(time() - download.message.date.timestamp())}"
-                msg += f'\n\n<b>Task By :</b> <a href="https://t.me/c/{str(download.message.chat.id)[4:]}/{download.message.message_id}">{download.message.from_user.first_name}</a>'
+                    msg += f"\n\n<b>Splitted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code> at: <code>{download.speed()}</code>"
+                msg += f"\n<b>ETA:</b> <code>{download.eta()}</code> <b>Elapsed:</b> <code>{get_readable_time(time() - download.message.date.timestamp())}</code>"
+                msg += f'\n\n<b>Task By:</b> <a href="https://t.me/c/{str(download.message.chat.id)[4:]}/{download.message.message_id}">{download.message.from_user.first_name}</a>'
                 try:
-                    msg += f"\n<b>Seeders:</b> {download.aria_download().num_seeders}" \
-                           f" | <b>Peers:</b> {download.aria_download().connections}"
+                    msg += f"\n<b>Seeders:</b> <code>{download.aria_download().num_seeders}</code>" \
+                           f" | <b>Peers:</b> <code>{download.aria_download().connections}</code>"
                     msg += f"\n<b>To Select:</b> <code>/{BotCommands.BtSelectCommand} {download.gid()}</code>"
                 except:
                     pass
                 try:
-                    msg += f"\n<b>Seeders:</b> {download.torrent_info().num_seeds}" \
-                           f" | <b>Leechers:</b> {download.torrent_info().num_leechs}"
+                    msg += f"\n<b>Seeders:</b> <code>{download.torrent_info().num_seeds}</code>" \
+                           f" | <b>Leechers:</b> <code>{download.torrent_info().num_leechs}</code>"
                     msg += f"\n<b>To Select:</b> <code>/{BotCommands.BtSelectCommand} {download.gid()}</code>"
                 except:
                     pass
@@ -317,8 +317,8 @@ def get_readable_message():
         if len(msg) == 0:
             return None, None
         bmsg = f"\n<b>___________________________________</b>"
-        bmsg += f"\n<b>Disk:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
-        bmsg += f"<b> | UPTM:</b> {get_readable_time(time() - botStartTime)}"
+        bmsg += f"\n<b>Disk:</b> <code>{get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}</code>"
+        bmsg += f"<b> | UPTM:</b> <code>{get_readable_time(time() - botStartTime)}</code>"
         dlspeed_bytes = 0
         upspeed_bytes = 0
         for download in list(download_dict.values()):
@@ -333,7 +333,7 @@ def get_readable_message():
                     upspeed_bytes += float(spd.split('K')[0]) * 1024
                 elif 'MB/s' in spd:
                     upspeed_bytes += float(spd.split('M')[0]) * 1048576
-        bmsg += f"\n<b>DL:</b> {get_readable_file_size(dlspeed_bytes)}/s<b> | UL:</b> {get_readable_file_size(upspeed_bytes)}/s"
+        bmsg += f"\n<b>DL:</b> <code>{get_readable_file_size(dlspeed_bytes)}/s</code><b> | UL:</b> <code>{get_readable_file_size(upspeed_bytes)}/s</code>"
 
         buttons = ButtonMaker()
         buttons.sbutton("Refresh", str(ONE))
