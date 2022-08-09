@@ -1,4 +1,4 @@
-name: "Z-Mirror : Initialize"
+name: "Z-Mirror: Deploy to Actions"
 
 on:
   push:
