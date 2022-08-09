@@ -334,7 +334,7 @@ sudo docker-compose start
 
 ------
 
-### Deploying on Github Actions
+## Deploying on Github Actions
 
 **Required Variables(Add in secrets):**
 
