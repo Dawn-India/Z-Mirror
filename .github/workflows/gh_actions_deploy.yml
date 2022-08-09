@@ -31,7 +31,7 @@ jobs:
          timeout-minutes: 350
          continue-on-error: true
          run: |
-           cd telerepo
+           cd z-mirror
            docker build . -t z-mirror
            docker run --env CONFIG_FILE_URL=${{ secrets.CONFIG_FILE_URL }} z-mirror
        - name: "Re-Run Z-Mirror Server"
