@@ -26,7 +26,7 @@ jobs:
        - name: "Clone Repository"
          continue-on-error: true
          run: |
-           git clone https://${{ secrets.GIT_NAME }}:${{ secrets.GIT_TOKEN }}@${{ secrets.BOT_REPO }} telerepo
+           git clone https://${{ secrets.GIT_NAME }}:${{ secrets.GIT_TOKEN }}@${{ secrets.BOT_REPO }} z-mirror
        - name: "Running Z-Mirror Server"
          timeout-minutes: 350
          continue-on-error: true
