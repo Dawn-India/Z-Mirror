@@ -344,6 +344,8 @@ sudo docker-compose start
 - `BOT_REPO` : Put your Forked or this Repo link after removing **_https://_** from Beginning of the URL.
 - `CONFIG_FILE_URL` : Gist URL contains All Required Vars for Z-Mirror, Fill it and Remove Commit ID.
 
+**NOTE**: **GitHub Free** accounts has **2000** minutes of action runtime and **GitHub Pro** accounts has **3000** minutes of action runtime.
+
 ------
 
 # Extras
