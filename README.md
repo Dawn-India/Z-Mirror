@@ -334,6 +334,18 @@ sudo docker-compose start
 
 ------
 
+### Deploying on Github Actions
+
+**Required Variables(Add in secrets):**
+
+- `GIT_NAME` : Put your Github Username.
+- `GIT_EMAIL` : Put your Github Email.
+- `GIT_TOKEN` : Put your `Personal Access Github Token` and Give All Permission, it will use your account to Run the Loop Server . _How to Generate:_ [Click Here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-token)
+- `BOT_REPO` : Put your Forked Repo, Removing **https://** from Beginning of the URL.
+- `CONFIG_FILE_URL` : Gist URL contains All Required Vars for Z-Mirror, Fill it and Remove Commit ID.
+
+------
+
 # Extras
 
 ## Bot commands to be set in [@BotFather](https://t.me/BotFather)
