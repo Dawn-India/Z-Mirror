@@ -112,7 +112,7 @@ def take_ss(video_file):
         duration = 3
     duration = duration // 2
 
-    status = srun(["new-api", "-hide_banner", "-loglevel", "error", "-ss", str(duration),
+    status = srun(["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", str(duration),
                    "-i", video_file, "-frames:v", "1", des_dir])
 
     if status.returncode != 0 or not ospath.lexists(des_dir):
