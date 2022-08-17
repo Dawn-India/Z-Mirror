@@ -70,11 +70,10 @@ def clean_unwanted(path: str):
     LOGGER.info(f"Cleaning unwanted files/folders: {path}")
     for dirpath, subdir, files in walk(path, topdown=False):
         for filee in files:
-            if filee.endswith((".!qB", ".aria2")) or filee.endswith('.parts') and filee.startswith('.'):
+            if filee.endswith(".!qB") or filee.endswith('.parts') and filee.startswith('.'):
                 osremove(ospath.join(dirpath, filee))
-        for folder in subdir:
-            if folder == ".unwanted":
-                rmtree(ospath.join(dirpath, folder))
+        if dirpath.endswith((".unwanted", "splited_files_mltb")):
+            rmtree(dirpath)
     for dirpath, subdir, files in walk(path, topdown=False):
         if not listdir(dirpath):
             rmdir(dirpath)
@@ -116,12 +115,13 @@ def get_mime_type(file_path):
     mime_type = mime_type or "text/plain"
     return mime_type
 
-def take_ss(video_file):
+def take_ss(video_file, duration):
     des_dir = 'Thumbnails'
     if not ospath.exists(des_dir):
         mkdir(des_dir)
     des_dir = ospath.join(des_dir, f"{time()}.jpg")
-    duration = get_media_info(video_file)[0]
+    if duration is None:
+        duration = get_media_info(video_file)[0]
     if duration == 0:
         duration = 3
     duration = duration // 2
@@ -138,6 +138,10 @@ def take_ss(video_file):
     return des_dir
 
 def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i=1, inLoop=False, noMap=False):
+    if listener.seed and not listener.newDir:
+        dirpath = f"{dirpath}/splited_files_mltb"
+        if not ospath.exists(dirpath):
+            mkdir(dirpath)
     parts = ceil(size/TG_SPLIT_SIZE)
     if EQUAL_SPLITS and not inLoop:
         split_size = ceil(size/parts) + 1000
