@@ -137,7 +137,7 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
             listener.suproc = (
                 Popen(
                     [
-                        "new-api",
+                        "ffmpeg",
                         "-hide_banner",
                         "-loglevel",
                         "error",
@@ -157,7 +157,7 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
                 if noMap
                 else Popen(
                     [
-                        "new-api",
+                        "ffmpeg",
                         "-hide_banner",
                         "-loglevel",
                         "error",
