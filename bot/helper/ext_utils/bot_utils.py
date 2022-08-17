@@ -3,15 +3,15 @@ from threading import Thread, Event
 from time import time
 from math import ceil
 from html import escape
-from psutil import virtual_memory, cpu_percent, disk_usage
 from requests import head as rhead
 from urllib.request import urlopen
-from telegram import InlineKeyboardMarkup
 from bot import download_dict, download_dict_lock, STATUS_LIMIT, botStartTime, DOWNLOAD_DIR, WEB_PINCODE, BASE_URL
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 import shutil
 import psutil
+from psutil import virtual_memory, cpu_percent, disk_usage
+from telegram import InlineKeyboardMarkup
 from telegram.error import RetryAfter
 from telegram.ext import CallbackQueryHandler
 from telegram.message import Message
@@ -34,7 +34,7 @@ class MirrorStatus:
     STATUS_ARCHIVING = "Archiving"
     STATUS_EXTRACTING = "Extracting"
     STATUS_SPLITTING = "Splitting"
-    STATUS_CHECKING = "CheckingUp."
+    STATUS_CHECKING = "CheckingUp"
     STATUS_SEEDING = "Seeding"
 
 class EngineStatus:
@@ -96,11 +96,7 @@ def getAllDownload(req_status: str):
     return None
 
 def bt_selection_buttons(id_: str):
-    if len(id_) > 20:
-        gid = id_[:12]
-    else:
-        gid = id_
-
+    gid = id_[:12] if len(id_) > 20 else id_
     pincode = ""
     for n in id_:
         if n.isdigit():
@@ -241,15 +237,12 @@ def bot_sys_stats():
     cpuUsage = cpu_percent(interval=1)
     return f"""
 BOT SYSTEM STATS
-
 CPU:  {progress_bar(cpuUsage)} {cpuUsage}%
 RAM: {progress_bar(mem_p)} {mem_p}%
 DISK: {progress_bar(disk)} {disk}%
 T: {disk_t}GB | F: {disk_f}GB
-
 Working For: {currentTime}
 T-DL: {recv} | T-UL: {sent}
-
 Made with ❤️ by Dawn
 """
 
@@ -354,6 +347,7 @@ def get_readable_message():
             buttons.sbutton("Refresh", str(ONE))
             buttons.sbutton("Close", str(TWO))
             button = InlineKeyboardMarkup(buttons.build_menu(3))
+
             return msg + bmsg, button
         return msg + bmsg, sbutton
 
@@ -452,4 +446,3 @@ def get_content_type(link: str) -> str:
         except:
             content_type = None
     return content_type
-
