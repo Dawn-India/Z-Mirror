@@ -18,6 +18,20 @@ ARCH_EXT = [".tar.bz2", ".tar.gz", ".bz2", ".gz", ".tar.xz", ".tar", ".tbz2", ".
                 ".cpio", ".cramfs", ".deb", ".dmg", ".fat", ".hfs", ".lzh", ".lzma", ".mbr",
                 ".msi", ".mslz", ".nsis", ".ntfs", ".rpm", ".squashfs", ".udf", ".vhd", ".xar"]
 
+def clean_target(path: str):
+    if ospath.exists(path):
+        LOGGER.info(f"Cleaning Target: {path}")
+        if ospath.isdir(path):
+            try:
+                rmtree(path)
+            except:
+                pass
+        elif ospath.isfile(path):
+            try:
+                osremove(path)
+            except:
+                pass
+
 def clean_download(path: str):
     if ospath.exists(path):
         LOGGER.info(f"Cleaning Download: {path}")
