@@ -4,15 +4,14 @@ from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus,
 from bot.helper.ext_utils.fs_utils import get_path_size
 
 class ExtractStatus:
-    def __init__(self, name, size, gid, listener, message):
+    def __init__(self, name, size, gid, listener):
         self.__name = name
-        self.__gid = gid
         self.__size = size
+        self.__gid = gid
         self.__listener = listener
         self.__uid = listener.uid
         self.__start_time = time()
         self.message = listener.message
-        self.message = message
 
     def gid(self):
         return self.__gid
@@ -52,7 +51,10 @@ class ExtractStatus:
         return MirrorStatus.STATUS_EXTRACTING
 
     def processed_bytes(self):
-        return get_path_size(f"{DOWNLOAD_DIR}{self.__uid}") - self.__size
+        if self.__listener.newDir:
+            return get_path_size(f"{DOWNLOAD_DIR}{self.__uid}10000")
+        else:
+            return get_path_size(f"{DOWNLOAD_DIR}{self.__uid}") - self.__size
 
     def download(self):
         return self

@@ -4,10 +4,11 @@ from os import environ
 
 DOWNLOAD_DIR = environ.get('DOWNLOAD_DIR')
 if not DOWNLOAD_DIR.endswith("/"):
-    DOWNLOAD_DIR = f'{DOWNLOAD_DIR}/'
+    DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
+
 
 class TorNode(NodeMixin):
-    def __init__(self, name, is_folder=False, is_file=False, parent=None, progress=None, size=None, priority=None, file_id=None):
+    def __init__(self, name, is_folder=False, is_file=False, parent=None, size=None, priority=None, file_id=None):
         super().__init__()
         self.name = name
         self.is_folder = is_folder
@@ -15,8 +16,6 @@ class TorNode(NodeMixin):
 
         if parent is not None:
             self.parent = parent
-        if progress is not None:
-            self.progress = progress
         if size is not None:
             self.size = size
         if priority is not None:
@@ -29,9 +28,8 @@ def qb_get_folders(path):
     return path.split("/")
 
 def get_folders(path):
-    fs = re_findall(f'{DOWNLOAD_DIR}[0-9]+/(.+)', path)[0]
+    fs = re_findall(DOWNLOAD_DIR + r'[0-9]+/(.+)', path)[0]
     return fs.split('/')
-
 
 def make_tree(res, aria2=False):
     parent = TorNode("Torrent")
@@ -41,15 +39,11 @@ def make_tree(res, aria2=False):
             if len(folders) > 1:
                 previous_node = parent
                 for j in range(len(folders)-1):
-                    current_node = next(
-                        (
-                            k
-                            for k in previous_node.children
-                            if k.name == folders[j]
-                        ),
-                        None,
-                    )
-
+                    current_node = None
+                    for k in previous_node.children:
+                        if k.name == folders[j]:
+                            current_node = k
+                            break
                     if current_node is None:
                         previous_node = TorNode(folders[j], parent=previous_node, is_folder=True)
                     else:
@@ -66,15 +60,11 @@ def make_tree(res, aria2=False):
             if len(folders) > 1:
                 previous_node = parent
                 for j in range(len(folders)-1):
-                    current_node = next(
-                        (
-                            k
-                            for k in previous_node.children
-                            if k.name == folders[j]
-                        ),
-                        None,
-                    )
-
+                    current_node = None
+                    for k in previous_node.children:
+                        if k.name == folders[j]:
+                            current_node = k
+                            break
                     if current_node is None:
                         previous_node = TorNode(folders[j], parent=previous_node, is_folder=True)
                     else:
@@ -100,7 +90,7 @@ def create_list(par, msg):
             msg[0] += "<li>"
             if i.name != ".unwanted":
                 msg[0] += f'<input type="checkbox" name="foldernode_{msg[1]}"> <label for="{i.name}">{i.name}</label>'
-            create_list(i,msg)
+            create_list(i, msg)
             msg[0] += "</li>"
             msg[1] += 1
         else:

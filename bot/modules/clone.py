@@ -4,19 +4,20 @@ from telegram.ext import CommandHandler
 from threading import Thread
 from time import time, sleep
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendFile, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_message
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
-from bot import bot, dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, \
-                FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME, CHAT_ID, AUTO_MUTE
+from bot import dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, \
+                FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME, CHAT_ID, AUTO_MUTE, GRAPH
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_gdrive_link, is_gdtot_link, new_thread, is_appdrive_link
 from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, appdrive
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from telegram import InlineKeyboardMarkup, ParseMode, ChatPermissions
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-def _clone(message, bot, multi=0):
+def _clone(message, bot):
+
     buttons = ButtonMaker()
 
     if FSUB:
@@ -47,16 +48,16 @@ def _clone(message, bot, multi=0):
             Thread(target=auto_delete_message, args=(bot, message, message)).start()
             return
 
-    args = message.text.split()
-    reply_to = message.reply_to_message
-    link = ''
-
     if AUTO_MUTE:
         try:
             bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
         except Exception as e:
             print(f'[MuteUser] Error: {type(e)} {e}')
 
+    args = message.text.split()
+    reply_to = message.reply_to_message
+    link = ''
+    multi=1
     if len(args) > 1:
         link = args[1].strip()
         if link.strip().isdigit():
@@ -84,7 +85,7 @@ def _clone(message, bot, multi=0):
         except DirectDownloadLinkException as e:
             deleteMessage(bot, msg)
             return sendMessage(str(e), bot, message)
-    if is_appdrive:
+    if is_appdrive_link(link):
         msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
         try:
             apdict = appdrive(link)
@@ -101,10 +102,16 @@ def _clone(message, bot, multi=0):
             return sendMessage(res, bot, message)
         if STOP_DUPLICATE:
             LOGGER.info('Checking File/Folder if already in Drive...')
-            smsg, button = gd.drive_list(name, True, True)
-            if smsg:
-                msg3 = "Someone already mirrored it for you !\nHere you go:"
-                return sendMarkup(msg3, bot, message, button)
+            if GRAPH:
+                smsg, button = gd.drive_list(name, True, True)
+                if smsg:
+                    msg3 = "Someone already mirrored it for you !\nHere you go:"
+                    return sendMarkup(msg3, bot, message, button)
+            cap, f_name = gd.drive_list(name, True, True)
+            if cap:
+                cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
+                sendFile(bot, message, f_name, cap)
+                return
         if CLONE_LIMIT is not None:
             LOGGER.info('Checking File/Folder Size...')
             if size > CLONE_LIMIT * 1024**3:
@@ -113,11 +120,10 @@ def _clone(message, bot, multi=0):
         if multi > 1:
             sleep(4)
             nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
-            nextmsg = sendMessage(args[0], bot, nextmsg)
+            nextmsg = sendMessage(message.text.replace(str(multi), str(multi - 1), 1), bot, nextmsg)
             nextmsg.from_user.id = message.from_user.id
-            multi -= 1
             sleep(4)
-            Thread(target=_clone, args=(nextmsg, bot, multi)).start()
+            Thread(target=_clone, args=(nextmsg, bot)).start()
         if files <= 20:
             msg = sendMessage(f"Cloning: <code>{link}</code>", bot, message)
             result, button = gd.clone(link)

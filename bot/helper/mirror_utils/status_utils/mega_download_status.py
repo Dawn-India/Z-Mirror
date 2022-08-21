@@ -1,6 +1,5 @@
 from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time, EngineStatus
 
-
 class MegaDownloadStatus:
     def __init__(self, obj, listener):
         self.__obj = obj
@@ -9,6 +8,7 @@ class MegaDownloadStatus:
 
     def gid(self):
         return self.__obj.gid
+
     def processed_bytes(self):
         return self.__obj.downloaded_bytes
 

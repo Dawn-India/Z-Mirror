@@ -15,7 +15,8 @@ def cancel_mirror(update, context):
         gid = context.args[0]
         dl = getDownloadByGid(gid)
         if not dl:
-            return sendMessage(f"GID: <code>{gid}</code> Not Found.", context.bot, update.message)
+            sendMessage(f"GID: <code>{gid}</code> Not Found.", context.bot, update.message)
+            return
     elif update.message.reply_to_message:
         mirror_message = update.message.reply_to_message
         with download_dict_lock:
@@ -24,7 +25,8 @@ def cancel_mirror(update, context):
             else:
                 dl = None
         if not dl:
-            return sendMessage("This is not an active task!", context.bot, update.message)
+            sendMessage("This is not an active task!", context.bot, update.message)
+            return
     elif len(context.args) == 0:
         if AUTO_MUTE:
             try:
@@ -36,10 +38,14 @@ def cancel_mirror(update, context):
                 return sendMessage(f"Dear {uname}️,\n\n<b>You are MUTED until you learn how to use me.\n\nWatch others or read </b>/{BotCommands.HelpCommand}", context.bot, update.message)
             except Exception as e:
                 print(f'[MuteUser] Error: {type(e)} {e}')
-        return sendMessage(f"Please enter a valid command.\nRead /{BotCommands.HelpCommand} and try again.", bot, message)
+        msg = f"Reply to an active <code>/{BotCommands.MirrorCommand}</code> message which \
+                was used to start the download or send <code>/{BotCommands.CancelMirror} GID</code> to cancel it!"
+        sendMessage(msg, context.bot, update.message)
+        return
 
     if OWNER_ID != user_id and dl.message.from_user.id != user_id and user_id not in SUDO_USERS:
-        return sendMessage("This is not your Task, STFU !", context.bot, update.message)
+        sendMessage("This task is not for you!", context.bot, update.message)
+        return
 
     dl.download().cancel_download()
 
@@ -52,6 +58,11 @@ def cancel_all(status):
             sleep(1)
 
 def cancell_all_buttons(update, context):
+    with download_dict_lock:
+        count = len(download_dict)
+    if count == 0:
+        sendMessage("No active tasks!", context.bot, update.message)
+        return
     buttons = button_build.ButtonMaker()
     buttons.sbutton("Downloading", f"canall {MirrorStatus.STATUS_DOWNLOADING}")
     buttons.sbutton("Uploading", f"canall {MirrorStatus.STATUS_UPLOADING}")
@@ -64,7 +75,7 @@ def cancell_all_buttons(update, context):
     buttons.sbutton("All", "canall all")
     if AUTO_DELETE_MESSAGE_DURATION == -1:
         buttons.sbutton("Close", "canall close")
-    button = InlineKeyboardMarkup(buttons.build_menu(2))
+    button = buttons.build_menu(2)
     can_msg = sendMarkup('Choose tasks to cancel.', context.bot, update.message, button)
     Thread(target=auto_delete_message, args=(context.bot, update.message, can_msg)).start()
 
@@ -80,7 +91,9 @@ def cancel_all_update(update, context):
             return
         cancel_all(data[1])
     else:
-        query.answer(text="This is not yours, STFU !", show_alert=True)
+        query.answer(text="You don't have permission to use these buttons!", show_alert=True)
+
+
 
 cancel_mirror_handler = CommandHandler(BotCommands.CancelMirror, cancel_mirror,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)

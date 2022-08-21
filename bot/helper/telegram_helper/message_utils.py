@@ -3,6 +3,7 @@ from telegram import InlineKeyboardMarkup
 from telegram.message import Message
 from telegram.error import RetryAfter
 from pyrogram.errors import FloodWait
+from os import remove
 from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
                 Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session, TELEGRAM_API, TELEGRAM_HASH
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
@@ -11,7 +12,7 @@ def sendMessage(text: str, bot, message: Message):
     try:
         return bot.sendMessage(message.chat_id,
                             reply_to_message_id=message.message_id,
-                            text=text, allow_sending_without_reply=True, parse_mode='HTMl', disable_web_page_preview=True)
+                            text=text, allow_sending_without_reply=True, parse_mode='HTML', disable_web_page_preview=True)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         sleep(r.retry_after * 1.5)
@@ -25,7 +26,7 @@ def sendMarkup(text: str, bot, message: Message, reply_markup: InlineKeyboardMar
         return bot.sendMessage(message.chat_id,
                             reply_to_message_id=message.message_id,
                             text=text, reply_markup=reply_markup, allow_sending_without_reply=True,
-                            parse_mode='HTMl', disable_web_page_preview=True)
+                            parse_mode='HTML', disable_web_page_preview=True)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         sleep(r.retry_after * 1.5)
@@ -38,7 +39,7 @@ def editMessage(text: str, message: Message, reply_markup=None):
     try:
         bot.editMessageText(text=text, message_id=message.message_id,
                               chat_id=message.chat.id,reply_markup=reply_markup,
-                              parse_mode='HTMl', disable_web_page_preview=True)
+                              parse_mode='HTML', disable_web_page_preview=True)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         sleep(r.retry_after * 1.5)
@@ -61,7 +62,7 @@ def sendPhoto(text: str, bot, message, photo, reply_markup=None):
 def sendRss(text: str, bot):
     if rss_session is None:
         try:
-            return bot.sendMessage(RSS_CHAT_ID, text, parse_mode='HTMl', disable_web_page_preview=True)
+            return bot.sendMessage(RSS_CHAT_ID, text, parse_mode='HTML', disable_web_page_preview=True)
         except RetryAfter as r:
             LOGGER.warning(str(r))
             sleep(r.retry_after * 1.5)
@@ -80,7 +81,6 @@ def sendRss(text: str, bot):
         except Exception as e:
             LOGGER.error(str(e))
             return
-
 
 async def sendRss_pyro(text: str):
     rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_STRING_SESSION, parse_mode=enums.ParseMode.HTML)	
@@ -107,6 +107,21 @@ def sendLogFile(bot, message: Message):
         bot.sendDocument(document=f, filename=f.name,
                           reply_to_message_id=message.message_id,
                           chat_id=message.chat_id)
+
+def sendFile(bot, message: Message, name: str, caption=""):
+    try:
+        with open(name, 'rb') as f:
+            bot.sendDocument(document=f, filename=f.name, reply_to_message_id=message.message_id,
+                             caption=caption, parse_mode='HTML',chat_id=message.chat_id)
+        remove(name)
+        return
+    except RetryAfter as r:
+        LOGGER.warning(str(r))
+        sleep(r.retry_after * 1.5)
+        return sendFile(bot, message, name, caption)
+    except Exception as e:
+        LOGGER.error(str(e))
+        return
 
 def auto_delete_message(bot, cmd_message: Message, bot_message: Message):
     if AUTO_DELETE_MESSAGE_DURATION != -1:
