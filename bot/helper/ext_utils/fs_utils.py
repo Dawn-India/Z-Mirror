@@ -1,6 +1,6 @@
 from os import remove as osremove, path as ospath, mkdir, walk, listdir, rmdir, makedirs
 from sys import exit as sysexit
-from json import loads as jsnloads
+from json import loads as jsonloads
 from shutil import rmtree, disk_usage
 from PIL import Image
 from magic import Magic
@@ -101,9 +101,10 @@ def check_storage_threshold(size: int, arch=False, alloc=False):
     return True
 
 def get_base_name(orig_path: str):
-    if ext := [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]:
+    ext = [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]
+    if len(ext) > 0:
         ext = ext[0]
-        return re_split(f'{ext}$', orig_path, maxsplit=1, flags=I)[0]
+        return re_split(ext + '$', orig_path, maxsplit=1, flags=I)[0]
     else:
         raise NotSupportedExtractionArchive('File format not supported for extraction')
 
@@ -211,14 +212,15 @@ def get_media_info(path):
         LOGGER.error(f'{e}. Mostly file not found!')
         return 0, None, None
 
-    fields = jsnloads(result).get('format')
+    fields = jsonloads(result).get('format')
     if fields is None:
         LOGGER.error(f"get_media_info: {result}")
         return 0, None, None
 
     duration = round(float(fields.get('duration', 0)))
 
-    if fields := fields.get('tags'):
+    fields = fields.get('tags')
+    if fields:
         artist = fields.get('artist')
         if artist is None:
             artist = fields.get('ARTIST')
@@ -247,7 +249,7 @@ def get_media_streams(path):
         LOGGER.error(f'{e}. Mostly file not found!')
         return is_video, is_audio
 
-    fields = jsnloads(result).get('streams')
+    fields = jsonloads(result).get('streams')
     if fields is None:
         LOGGER.error(f"get_media_streams: {result}")
         return is_video, is_audio
