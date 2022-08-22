@@ -133,7 +133,7 @@ class MegaDownloader:
                     sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
                     return
         if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, LEECH_LIMIT, MEGA_LIMIT]):
-            arch = any([self.__listener.isZip, self.__listener.isLeech, self.__listener.extract])
+            arch = any([self.__listener.isZip, self.__listener.extract])
             if STORAGE_THRESHOLD is not None:
                 acpt = check_storage_threshold(file_size, arch)
                 if not acpt:
@@ -141,7 +141,7 @@ class MegaDownloader:
                     msg += f'\nYour File/Folder size is {get_readable_file_size(file_size)}'
                     return sendMessage(msg, self.__listener.bot, self.__listener.message)
             limit = None
-            if LEECH_LIMIT is not None and arch:
+            if LEECH_LIMIT is not None and self.__listener.isLeech:
                 msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
                 limit = LEECH_LIMIT
             elif ZIP_UNZIP_LIMIT is not None and arch:

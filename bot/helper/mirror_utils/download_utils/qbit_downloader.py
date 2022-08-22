@@ -120,7 +120,7 @@ class QbDownloader:
                     self.__stopDup_check = True
                 if not self.__sizeChecked:
                     size = tor_info.size
-                    arch = any([self.__listener.isZip, self.__listener.isLeech, self.__listener.extract])
+                    arch = any([self.__listener.isZip, self.__listener.extract])
                     if STORAGE_THRESHOLD is not None:
                         acpt = check_storage_threshold(size, arch)
                         if not acpt:
@@ -129,7 +129,7 @@ class QbDownloader:
                             self.__onDownloadError(msg)
                             return
                     limit = None
-                    if LEECH_LIMIT is not None and arch:
+                    if LEECH_LIMIT is not None and self.__listener.isLeech:
                         mssg = f'Leech limit is {LEECH_LIMIT}GB'
                         limit = LEECH_LIMIT
                     elif ZIP_UNZIP_LIMIT is not None and arch:
