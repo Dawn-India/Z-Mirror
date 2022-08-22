@@ -11,6 +11,7 @@ from bot import Interval, INDEX_URL, VIEW_LINK, aria2, DOWNLOAD_DIR, download_di
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
 from bot.helper.ext_utils.shortenurl import short_url
+from bot.helper.ext_utils.bot_utils import get_readable_time
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
 from bot.helper.mirror_utils.status_utils.zip_status import ZipStatus
 from bot.helper.mirror_utils.status_utils.split_status import SplitStatus
