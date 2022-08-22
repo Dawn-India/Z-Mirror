@@ -1,7 +1,7 @@
 from os import remove as osremove, path as ospath, mkdir, walk, listdir, rmdir, makedirs
 from sys import exit as sysexit
 from json import loads as jsnloads
-from shutil import rmtree
+from shutil import rmtree, disk_usage
 from PIL import Image
 from magic import Magic
 from subprocess import run as srun, check_output, Popen
