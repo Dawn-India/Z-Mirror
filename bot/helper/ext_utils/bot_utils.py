@@ -1,6 +1,6 @@
 from re import match as re_match, findall as re_findall
 from threading import Thread, Event
-from time import time
+from time import sleep, time
 from math import ceil
 from html import escape
 from requests import head as rhead
@@ -216,7 +216,7 @@ BOT SYSTEM STATS
 CPU:  {progress_bar(cpuUsage)} {cpuUsage}%
 RAM: {progress_bar(mem_p)} {mem_p}%
 DISK: {progress_bar(disk)} {disk}%
-T: {disk_t}GB | F: {disk_f}GB
+T: {disk_t} | F: {disk_f}
 
 Working For: {currentTime}
 T-DL: {recv} | T-UL: {sent}
