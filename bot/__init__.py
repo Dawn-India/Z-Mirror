@@ -179,7 +179,7 @@ try:
     USER_SESSION_STRING = getConfig('USER_SESSION_STRING')
     if len(USER_SESSION_STRING) == 0:
         raise KeyError
-    log_info("Creating USER_SESSION Using USER_SESSION_STRING")
+    log_info("Generating USER_SESSION Using USER_SESSION_STRING")
     user_session = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
     with user_session:
         IS_PREMIUM_USER = user_session.me.is_premium

@@ -41,6 +41,7 @@ class _BotCommands:
         self.ShellCommand = f'shell{CMD_INDEX}'
         self.EvalCommand = f'eval{CMD_INDEX}'
         self.ExecCommand = f'exec{CMD_INDEX}'
+        self.ExecHelpCommand = f'exechelp{CMD_INDEX}'
         self.ClearLocalsCommand = f'clearlocals{CMD_INDEX}'
         self.LeechSetCommand = f'leechset{CMD_INDEX}'
         self.SetThumbCommand = f'setthumb{CMD_INDEX}'
