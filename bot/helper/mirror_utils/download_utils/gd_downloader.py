@@ -34,7 +34,7 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_appdrive):
                 sendFile(listener.bot, listener.message, f_name, cap)
                 return
     if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT]):
-        arch = any([listener.extract, listener.isZip, listener.isLeech])
+        arch = any([listener.isZip, listener.isLeech, listener.extract])
         limit = None
         if STORAGE_THRESHOLD is not None:
             acpt = check_storage_threshold(size, arch)
@@ -45,7 +45,7 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_appdrive):
         if ZIP_UNZIP_LIMIT is not None and arch:
             mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
             limit = ZIP_UNZIP_LIMIT
-        if LEECH_LIMIT is not None and listener.isLeech:
+        elif LEECH_LIMIT is not None and arch:
             mssg = f'Leech limit is {LEECH_LIMIT}GB'
             limit = LEECH_LIMIT
         elif TORRENT_DIRECT_LIMIT is not None:
