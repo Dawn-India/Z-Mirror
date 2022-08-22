@@ -4,7 +4,7 @@ from time import sleep, time
 from os import path as ospath, remove as osremove, listdir, walk
 from subprocess import Popen
 from html import escape
-from bot import Interval, INDEX_URL, VIEW_LINK, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, \
+from bot import bot, Interval, INDEX_URL, VIEW_LINK, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, \
                 LEECH_SPLIT_SIZE, LOGGER, DB_URI, INCOMPLETE_TASK_NOTIFIER, MAX_SPLIT_SIZE, \
                 BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, BUTTON_SIX_NAME, BUTTON_SIX_URL, \
                 LEECH_LOG, MIRROR_LOGS, TITLE_NAME, BOT_PM
