@@ -3,7 +3,7 @@ from re import match as re_match, split as re_split
 from time import sleep
 from threading import Thread
 from telegram.ext import CommandHandler
-from bot import dispatcher, DOWNLOAD_DIR, LOGGER, MEGA_KEY, FSUB, CHANNEL_USERNAME, BOT_PM, FSUB_CHANNEL_ID, TITLE_NAME
+from bot import *
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, is_gdtot_link, is_appdrive_link, get_content_type
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
