@@ -31,7 +31,7 @@ def __onDownloadStarted(api, gid):
             sleep(1)
             if dl := getDownloadByGid(gid):
                 listener = dl.listener()
-                if listener.isLeech or listener.select:
+                if listener.select:
                     return
                 download = api.get_download(gid)
                 if not download.is_torrent:
