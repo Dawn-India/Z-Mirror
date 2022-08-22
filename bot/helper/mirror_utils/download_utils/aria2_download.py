@@ -37,6 +37,7 @@ def __onDownloadStarted(api, gid):
                 if not download.is_torrent:
                     sleep(3)
                     download = download.live
+            if STOP_DUPLICATE and not dl.listener().isLeech:
                 LOGGER.info('Checking File/Folder if already in Drive...')
                 sname = download.name
                 if listener.isZip:
