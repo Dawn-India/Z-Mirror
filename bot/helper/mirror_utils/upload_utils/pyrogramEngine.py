@@ -112,7 +112,6 @@ class TgUploader:
                             else: client = self.__app
                             self.__sent_msg = client.send_video(chat_id=leechchat,
                                                                 video=up_path,
-                                                                quote=True,
                                                                 caption=cap_mono,
                                                                 duration=duration,
                                                                 width=width,
@@ -134,7 +133,6 @@ class TgUploader:
                         else: client = self.__app
                         self.__sent_msg = client.send_video(chat_id=self.__Chat_id,
                                                             video=up_path,
-                                                            quote=True,
                                                             caption=cap_mono,
                                                             duration=duration,
                                                             width=width,
@@ -160,7 +158,6 @@ class TgUploader:
                             else: client = self.__app
                             self.__sent_msg = client.send_audio(chat_id=leechchat,
                                                                 audio=up_path,
-                                                                quote=True,
                                                                 caption=cap_mono,
                                                                 duration=duration,
                                                                 performer=artist,
