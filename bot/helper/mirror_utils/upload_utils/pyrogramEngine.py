@@ -5,7 +5,7 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 
-from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, LEECH_LOG, app
+from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, DUMP_CHAT, app
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
@@ -58,7 +58,7 @@ class TgUploader:
                     self.__upload_file(up_path, file_, dirpath)
                     if self.__is_cancelled:
                         return
-                    if (not self.__listener.isPrivate or LEECH_LOG is not None) and not self.__is_corrupted:
+                    if (not self.__listener.isPrivate or DUMP_CHAT is not None) and not self.__is_corrupted:
                         self.__msgs_dict[self.__sent_msg.link] = file_
                     self._last_uploaded = 0
                     sleep(1)
@@ -184,12 +184,12 @@ class TgUploader:
             self.__thumb = None
 
     def __msg_to_reply(self):
-        if LEECH_LOG is not None:
+        if DUMP_CHAT is not None:
             if self.__listener.isPrivate:
                 msg = self.__listener.message.text
             else:
                 msg = self.__listener.message.link
-            self.__sent_msg = app.send_message(LEECH_LOG, msg)
+            self.__sent_msg = app.send_message(DUMP_CHAT, msg)
         else:
             self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
 
