@@ -8,7 +8,8 @@ from urllib.request import urlopen
 from bot import download_dict, download_dict_lock, STATUS_LIMIT, botStartTime, DOWNLOAD_DIR, WEB_PINCODE, BASE_URL, dispatcher, TITLE_NAME
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from psutil import psutil, virtual_memory, cpu_percent, disk_usage
+import psutil
+from psutil import  virtual_memory, cpu_percent, disk_usage
 from telegram import InlineKeyboardMarkup
 from telegram.error import RetryAfter
 from telegram.ext import CallbackQueryHandler
