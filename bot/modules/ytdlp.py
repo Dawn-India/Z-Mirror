@@ -103,12 +103,16 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
         help_msg = """
 <b>Send link along with command line:</b>
 <code>/command</code> {link} |newname pswd: mypassword [zip] args: x:y|x1:y1
+
 <b>By replying to link:</b>
 <code>/command</code> |newname pswd: mypassword [zip] args: x:y|x1:y1
+
 <b>Args Example:</b> args: playliststart:^10|matchtitle:S13|writesubtitles:true|live_from_start:true|postprocessor_args:{"ffmpeg": ["-threads", "4"]}|wait_for_video:(5, 100)
+
 <b>Args Note:</b> Add `^` before integer, some values must be integer and some string.
 Like playlist_items:10 works with string, so no need to add `^` before the number but playlistend works only with integer so you must add `^` before the number like example above.
 You can add tuple and dict also. Use double quotes inside dict. Also you can add format manually, whatever what quality button you have pressed.
+
 Check all arguments from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L178'>FILE</a>.
         """
         return sendMessage(help_msg, bot, message)

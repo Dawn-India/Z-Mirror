@@ -5,11 +5,13 @@ from yt_dlp import YoutubeDL, DownloadError
 from threading import RLock
 from time import time
 from re import search as re_search
+from json import loads as jsonloads
+
 from bot import download_dict_lock, download_dict, STORAGE_THRESHOLD
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
-from bot.helper.telegram_helper.message_utils import sendStatusMessage
-from ..status_utils.youtube_dl_download_status import YoutubeDLDownloadStatus
 from bot.helper.ext_utils.fs_utils import check_storage_threshold
+from bot.helper.telegram_helper.message_utils import sendStatusMessage
+from ..status_utils.yt_dlp_download_status import YtDlpDownloadStatus
 
 LOGGER = getLogger(__name__)
 
@@ -42,11 +44,12 @@ class YoutubeDLHelper:
     def __init__(self, listener):
         self.name = ""
         self.is_playlist = False
-        self.size = 0
-        self.progress = 0
-        self.downloaded_bytes = 0
         self._last_downloaded = 0
+        self.__size = 0
+        self.__progress = 0
+        self.__downloaded_bytes = 0
         self.__download_speed = 0
+        self.__eta = '-'
         self.__start_time = time()
         self.__listener = listener
         self.__gid = ""
@@ -56,18 +59,39 @@ class YoutubeDLHelper:
         self.opts = {'progress_hooks': [self.__onDownloadProgress],
                      'logger': MyLogger(self),
                      'usenetrc': True,
-                     'prefer_ffmpeg': True,
                      'cookiefile': 'cookies.txt',
                      'allow_multiple_video_streams': True,
                      'allow_multiple_audio_streams': True,
                      'trim_file_name': 200,
                      'noprogress': True,
+                     'allow_playlist_files': True,
+                     'overwrites': True,
                      'ffmpeg_location': '/bin/opera'}
 
     @property
     def download_speed(self):
         with self.__resource_lock:
             return self.__download_speed
+
+    @property
+    def downloaded_bytes(self):
+        with self.__resource_lock:
+            return self.__downloaded_bytes
+
+    @property
+    def size(self):
+        with self.__resource_lock:
+            return self.__size
+
+    @property
+    def progress(self):
+        with self.__resource_lock:
+            return self.__progress
+
+    @property
+    def eta(self):
+        with self.__resource_lock:
+            return self.__eta
 
     def __onDownloadProgress(self, d):
         self.__downloading = True
@@ -83,21 +107,22 @@ class YoutubeDLHelper:
                     downloadedBytes = d['downloaded_bytes']
                     chunk_size = downloadedBytes - self._last_downloaded
                     self._last_downloaded = downloadedBytes
-                    self.downloaded_bytes += chunk_size
+                    self.__downloaded_bytes += chunk_size
                 else:
                     if d.get('total_bytes'):
-                        self.size = d['total_bytes']
+                        self.__size = d['total_bytes']
                     elif d.get('total_bytes_estimate'):
-                        self.size = d['total_bytes_estimate']
-                    self.downloaded_bytes = d['downloaded_bytes']
+                        self.__size = d['total_bytes_estimate']
+                    self.__downloaded_bytes = d['downloaded_bytes']
+                    self.__eta = d.get('eta', '-')
                 try:
-                    self.progress = (self.downloaded_bytes / self.size) * 100
-                except ZeroDivisionError:
+                    self.__progress = (self.__downloaded_bytes / self.__size) * 100
+                except:
                     pass
 
     def __onDownloadStart(self):
         with download_dict_lock:
-            download_dict[self.__listener.uid] = YoutubeDLDownloadStatus(self, self.__listener, self.__gid)
+            download_dict[self.__listener.uid] = YtDlpDownloadStatus(self, self.__listener, self.__gid)
         self.__listener.onDownloadStart()
         sendStatusMessage(self.__listener.message, self.__listener.bot)
 
@@ -113,6 +138,8 @@ class YoutubeDLHelper:
             self.__set_args(args)
         if get_info:
             self.opts['playlist_items'] = '0'
+        if link.startswith(('rtmp', 'mms', 'rstp')):
+            self.opts['external_downloader'] = 'ffmpeg'
         with YoutubeDL(self.opts) as ydl:
             try:
                 result = ydl.extract_info(link, download=False)
@@ -130,9 +157,9 @@ class YoutubeDLHelper:
                 if not v:
                     continue
                 elif 'filesize_approx' in v:
-                    self.size += v['filesize_approx']
+                    self.__size += v['filesize_approx']
                 elif 'filesize' in v:
-                    self.size += v['filesize']
+                    self.__size += v['filesize']
             if name == "":
                 self.name = realName.split(f" [{result['id'].replace('*', '_')}]")[0]
             else:
@@ -201,11 +228,18 @@ class YoutubeDLHelper:
     def __set_args(self, args):
         args = args.split('|')
         for arg in args:
-            xy = arg.split(':')
-            if xy[1].startswith('^'):
-                xy[1] = int(xy[1].split('^')[1])
-            elif xy[1].lower() == 'true':
-                xy[1] = True
-            elif xy[1].lower() == 'false':
-                xy[1] = False
-            self.opts[xy[0]] = xy[1]
+            xy = arg.split(':', 1)
+            karg = xy[0].strip()
+            varg = xy[1].strip()
+            if varg.startswith('^'):
+                varg = int(varg.split('^')[1])
+            elif varg.lower() == 'true':
+                varg = True
+            elif varg.lower() == 'false':
+                varg = False
+            elif varg.startswith('(') and varg.endswith(')'):
+                varg = varg.replace('(', '').replace(')', '')
+                varg = tuple(map(int, varg.split(',')))
+            elif varg.startswith('{') and varg.endswith('}'):
+                varg = jsonloads(varg)
+            self.opts[karg] = varg

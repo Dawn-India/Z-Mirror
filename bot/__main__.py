@@ -85,7 +85,7 @@ def restart(update, context):
         Interval.clear()
     alive.kill()
     clean_all()
-    srun(["pkill", "-9", "-f", "gunicorn|chrome|firefox|megasdkrest"])
+    srun(["pkill", "-9", "-f", "gunicorn|chrome|firefox|opera|megasdkrest"])
     srun(["python3", "update.py"])
     with open(".restartmsg", "w") as f:
         f.truncate(0)

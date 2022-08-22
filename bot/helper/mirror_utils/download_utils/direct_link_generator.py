@@ -12,7 +12,7 @@ from requests import get as rget, head as rhead, post as rpost, Session as rsess
 from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
 from math import pow as math_pow, floor as math_floor
 from urllib.parse import urlparse, unquote
-from json import loads as jsnloads
+from json import loads as jsonloads
 from lk21 import Bypass
 from cfscrape import create_scraper
 from bs4 import BeautifulSoup
@@ -370,7 +370,7 @@ def solidfiles(url: str) -> str:
     }
     pageSource = rget(url, headers = headers).text
     mainOptions = str(re_search(r'viewerOptions\'\,\ (.*?)\)\;', pageSource).group(1))
-    return jsnloads(mainOptions)["downloadUrl"]
+    return jsonloads(mainOptions)["downloadUrl"]
 
 def krakenfiles(page_link: str) -> str:
     """ krakenfiles direct link generator
