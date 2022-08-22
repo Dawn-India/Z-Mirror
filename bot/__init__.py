@@ -185,7 +185,7 @@ try:
         IS_PREMIUM_USER = user_session.me.is_premium
         if IS_PREMIUM_USER:
             log_info('Premium User with 4GB LEECH support..!')
-        log_info('Normal User with 2GB LEECH support..!')
+        else: log_info('Normal User with 2GB LEECH support..!')
 except:
     log_info("USER_SESSION_STRING Not provided..!")
     USER_SESSION_STRING = None
