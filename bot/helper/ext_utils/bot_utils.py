@@ -8,7 +8,7 @@ from urllib.request import urlopen
 from bot import download_dict, download_dict_lock, STATUS_LIMIT, botStartTime, DOWNLOAD_DIR, WEB_PINCODE, BASE_URL, dispatcher, TITLE_NAME
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from psutil import virtual_memory, cpu_percent, disk_usage
+from psutil import psutil, virtual_memory, cpu_percent, disk_usage
 from telegram import InlineKeyboardMarkup
 from telegram.error import RetryAfter
 from telegram.ext import CallbackQueryHandler
@@ -274,7 +274,7 @@ def get_readable_message():
                 msg += f"\n<b>Ratio: </b>{download.ratio()}"
                 msg += f" | <b>Time: </b>{download.seeding_time()}"
             else:
-                msg += f"\n<b>Size:</b>n{download.size()}"
+                msg += f"\n<b>Size:</b>{download.size()}"
                 msg += f"\n<b>Engine:</b> {download.eng()}"
             msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             msg += f"\n"
