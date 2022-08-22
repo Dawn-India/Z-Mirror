@@ -41,6 +41,7 @@ class MirrorLeechListener:
         self.select = select
         self.isPrivate = message.chat.type in ['private', 'group']
         self.suproc = None
+        self.user_id = self.message.from_user.id
 
     def clean(self):
         try:
