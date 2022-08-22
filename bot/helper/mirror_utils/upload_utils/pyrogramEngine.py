@@ -39,6 +39,8 @@ class TgUploader:
         self.__user_session = user_session
         self.__user_id = listener.message.from_user.id
         self.isPrivate = listener.message.chat.type in ['private', 'group']
+        self.__Chat_id = self.__listener.message.chat.id
+        self.__sent_msg = None
 
     def upload(self, o_files):
         for dirpath, subdir, files in sorted(walk(self.__path)):
@@ -200,7 +202,6 @@ class TgUploader:
                             else: client = self.__app
                             self.__sent_msg = client.send_photo(chat_id=leechchat,
                                                                   photo=up_path,
-                                                                  quote=True,
                                                                   caption=cap_mono,
                                                                   disable_notification=True,
                                                                   progress=self.__upload_progress)
@@ -243,7 +244,6 @@ class TgUploader:
                         else: client = self.__app
                         self.__sent_msg = client.send_document(chat_id=leechchat,
                                                                    document=up_path,
-                                                                   quote=True,
                                                                    thumb=thumb,
                                                                    caption=cap_mono,
                                                                    disable_notification=True,
@@ -258,7 +258,6 @@ class TgUploader:
                     else: client = self.__app
                     self.__sent_msg = client.send_document(chat_id=self.__Chat_id,
                                                             document=up_path,
-                                                            quote=True,
                                                             thumb=thumb,
                                                             caption=cap_mono,
                                                             disable_notification=True,
