@@ -103,7 +103,7 @@ def ping(update, context):
 def log(update, context):
     sendLogFile(context.bot, update.message)
 
-help_string_telegraph = f'''<br>
+help_string_telegraph = f'''
 /{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Start mirroring to Google Drive.
 
 /{BotCommands.ZipMirrorCommand[0]} or /{BotCommands.ZipMirrorCommand[1]}: Start mirroring and upload the file/folder compressed with zip extension.
