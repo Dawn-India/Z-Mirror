@@ -103,7 +103,9 @@ def ping(update, context):
 def log(update, context):
     sendLogFile(context.bot, update.message)
 
-help_string_telegraph = f'''
+help_string = f'''
+NOTE: Try each command without any perfix to see more detalis.
+
 /{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Start mirroring to Google Drive.
 
 /{BotCommands.ZipMirrorCommand[0]} or /{BotCommands.ZipMirrorCommand[1]}: Start mirroring and upload the file/folder compressed with zip extension.
@@ -197,20 +199,8 @@ help_string_telegraph = f'''
 /{BotCommands.ClearLocalsCommand}: Clear {BotCommands.EvalCommand} or {BotCommands.ExecCommand} locals (Only Owner).
 '''
 
-help = telegraph.create_page(
-        title= f'{TITLE_NAME} Help',
-        content=help_string_telegraph,
-    )["path"]
-
-help_string = f'''
-All available commands with detalis.
-'''
-
 def bot_help(update, context):
-    button = ButtonMaker()
-    button.buildbutton("OPEN", f"https://graph.org/{help}")
-    reply_markup = InlineKeyboardMarkup(button.build_menu(1))
-    sendMarkup(help_string, context.bot, update.message, reply_markup)
+    sendMessage(help_string, context.bot, update.message)
 
 def main():
     start_cleanup()
