@@ -17,7 +17,7 @@ from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
-from telegram import ParseMode
+from telegram import ParseMode, InlineKeyboardMarkup
 
 class MirrorLeechListener:
     def __init__(self, bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, tag=None, select=False, seed=False):
@@ -257,19 +257,18 @@ class MirrorLeechListener:
                         share_urls = f'{INDEX_URL}/{url_path}?a=view'
                         buttons.buildbutton("🌐 View Link", share_urls)
             sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
-        buttons = ButtonMaker()
         if MIRROR_LOGS:	
             try:	
                 for chatid in MIRROR_LOGS:	
                     bot.sendMessage(chat_id=chatid, text=msg,	
-                                    reply_markup=buttons.build_menu(2),	
+                                    reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
                                     parse_mode=ParseMode.HTML)	
             except Exception as e:	
                 LOGGER.warning(e)	
         if BOT_PM and self.message.chat.type != 'private':	
             try:	
                 bot.sendMessage(chat_id=self.user_id, text=msg,	
-                                reply_markup=buttons.build_menu(2),	
+                                reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
                                 parse_mode=ParseMode.HTML)	
             except Exception as e:	
                 LOGGER.warning(e)	
