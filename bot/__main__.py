@@ -16,8 +16,8 @@ from .helper.telegram_helper.button_build import ButtonMaker
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, delete, count, leech_settings, search, rss, bt_select, sleep
 
 def progress_bar(percentage):
-    p_used = '⬢'
-    p_total = '⬡'
+    p_used = '🏀'
+    p_total = '🏐'
     if isinstance(percentage, str):
         return 'NaN'
     try:
@@ -56,10 +56,9 @@ def stats(update, context):
 
 def start(update, context):
     buttons = ButtonMaker()
-    buttons.buildbutton("Report Group", "https://t.me/Mltb_chat_unofficial")
-    buttons.buildbutton("Repo", "https://github.com/Dawn-India/Z-Mirror")
-    buttons.buildbutton("Mirror Group", "https://t.me/z_mirror")
-    buttons.buildbutton("Owner", "https://t.me/z_mirror")
+    buttons.buildbutton("⚔️Join Channl⚔️", "https://t.me/stmirror1")
+    buttons.buildbutton("🧑‍💻Mirror Group", "https://t.me/stmirrorleechbot")
+    buttons.buildbutton("🔰Master", "https://t.me/STThamizhan")
     reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''
