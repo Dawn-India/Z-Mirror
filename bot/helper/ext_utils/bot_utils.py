@@ -11,7 +11,6 @@ from bot import *
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from telegram.ext import CallbackQueryHandler
-from telegram import InlineKeyboardMarkup
 
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 
@@ -256,7 +255,7 @@ def get_readable_message():
             buttons.sbutton("Next", "status nex")
             button = buttons.build_menu(3)
             return msg + bmsg, button
-        return msg + bmsg + button
+        return msg + bmsg, button
 
 def turn(data):
     try:
