@@ -255,7 +255,7 @@ def get_readable_message():
             buttons.sbutton("Next", "status nex")
             button = buttons.build_menu(3)
             return msg + bmsg, button
-        return msg + bmsg + button, ""
+        return msg + bmsg + button
 
 def turn(data):
     try:
