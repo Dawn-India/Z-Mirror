@@ -257,6 +257,7 @@ class MirrorLeechListener:
                         share_urls = f'{INDEX_URL}/{url_path}?a=view'
                         buttons.buildbutton("🌐 View Link", share_urls)
             sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
+        buttons = ButtonMaker()
         if MIRROR_LOGS:	
             try:	
                 for chatid in MIRROR_LOGS:	
