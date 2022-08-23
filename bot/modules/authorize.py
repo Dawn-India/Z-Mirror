@@ -5,7 +5,6 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManger
 
-
 def authorize(update, context):
     user_id = ""
     reply_message = update.message.reply_to_message

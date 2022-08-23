@@ -4,9 +4,7 @@ from telegram.message import Message
 from telegram.error import RetryAfter
 from pyrogram.errors import FloodWait
 from os import remove
-
-from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
-                Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session
+from bot import *
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 
