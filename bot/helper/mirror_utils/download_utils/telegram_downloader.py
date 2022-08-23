@@ -1,16 +1,16 @@
 from logging import getLogger, WARNING
 from time import time
 from threading import RLock, Lock
-from bot import LOGGER, download_dict, download_dict_lock, STOP_DUPLICATE, STORAGE_THRESHOLD, app
-from bot.helper.ext_utils.bot_utils import get_readable_file_size
+
+from bot import LOGGER, download_dict, download_dict_lock, STOP_DUPLICATE, app
 from ..status_utils.telegram_download_status import TelegramDownloadStatus
-from bot.helper.telegram_helper.message_utils import sendMarkup, sendStatusMessage
+from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendFile
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.fs_utils import check_storage_threshold
 
 global_lock = Lock()
 GLOBAL_GID = set()
 getLogger("pyrogram").setLevel(WARNING)
+
 
 class TelegramDownloadHelper:
 
@@ -79,8 +79,7 @@ class TelegramDownloadHelper:
 
     def add_download(self, message, path, filename):
         _dmsg = app.get_messages(message.chat.id, reply_to_message_ids=message.message_id)
-        media_array = [_dmsg.document, _dmsg.video, _dmsg.audio]
-        media = next((i for i in media_array if i is not None), None)
+        media = _dmsg.document or _dmsg.video or _dmsg.audio or None
         if media is not None:
             with global_lock:
                 # For avoiding locking the thread lock for long time unnecessarily
@@ -95,17 +94,11 @@ class TelegramDownloadHelper:
                 size = media.file_size
                 if STOP_DUPLICATE and not self.__listener.isLeech:
                     LOGGER.info('Checking File/Folder if already in Drive...')
-                    smsg, button = GoogleDriveHelper().drive_list(name, True, True)
-                    if smsg:
-                        msg = "Someone already mirrored it for you.\nHere you go:"
-                        return sendMarkup(msg, self.__listener.bot, self.__listener.message, button)
-                if STORAGE_THRESHOLD is not None:
-                    arch = any([self.__listener.isZip, self.__listener.extract])
-                    acpt = check_storage_threshold(size, arch)
-                    if not acpt:
-                        msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                        msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-                        return sendMessage(msg, self.__listener.bot, self.__listener.message)
+                    cap, f_name = GoogleDriveHelper().drive_list(name, True, True)
+                    if cap:
+                        cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
+                        sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
+                        return
                 self.__onDownloadStart(name, size, media.file_unique_id)
                 LOGGER.info(f'Downloading Telegram file with id: {media.file_unique_id}')
                 self.__download(_dmsg, path)

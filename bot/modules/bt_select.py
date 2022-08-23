@@ -1,4 +1,5 @@
 from telegram.ext import CommandHandler, CallbackQueryHandler
+from os import remove, path as ospath
 
 from bot import aria2, BASE_URL, download_dict, dispatcher, download_dict_lock, SUDO_USERS, OWNER_ID
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -46,7 +47,6 @@ def select(update, context):
             id_ = dl.download().ext_hash
             client = dl.client()
             client.torrents_pause(torrent_hashes=id_)
-            dl.download().select = True
         else:
             id_ = dl.gid()
             aria2.client.force_pause(id_)
@@ -67,7 +67,9 @@ def get_confirm(update, context):
     if not dl:
         query.answer(text="This task has been cancelled!", show_alert=True)
         query.message.delete()
-    elif user_id != dl.listener().message.from_user.id:
+        return
+    listener = dl.listener()
+    if user_id != listener.message.from_user.id:
         query.answer(text="This task is not for you!", show_alert=True)
     elif data[1] == "pin":
         query.answer(text=data[3], show_alert=True)
@@ -75,10 +77,30 @@ def get_confirm(update, context):
         query.answer()
         id_ = data[3]
         if len(id_) > 20:
-            dl.client().torrents_resume(torrent_hashes=id_)
+            client = dl.client()
+            tor_info = client.torrents_info(torrent_hash=id_)[0]
+            path = tor_info.content_path.rsplit('/', 1)[0]
+            res = client.torrents_files(torrent_hash=id_)
+            for f in res:
+                if f.priority == 0:
+                    f_paths = [f"{path}/{f.name}", f"{path}/{f.name}.!qB"]
+                    for f_path in f_paths:
+                       if ospath.exists(f_path):
+                           try:
+                               remove(f_path)
+                           except:
+                               pass
+            client.torrents_resume(torrent_hashes=id_)
         else:
+            res = aria2.client.get_files(id_)
+            for f in res:
+                if f['selected'] == 'false' and ospath.exists(f['path']):
+                    try:
+                        remove(f['path'])
+                    except:
+                        pass
             aria2.client.unpause(id_)
-        sendStatusMessage(dl.listener().message, dl.listener().bot)
+        sendStatusMessage(listener.message, listener.bot)
         query.message.delete()
 
 

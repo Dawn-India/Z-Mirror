@@ -1,5 +1,5 @@
 from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time, EngineStatus
+from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time
 
 def get_download(client, hash_):
     try:
@@ -32,7 +32,7 @@ class QbDownloadStatus:
         Gets total size of the mirror file/folder
         :return: total size of mirror
         """
-        return self.__info.size if self.__obj.select else self.__info.total_size
+        return self.__info.size
 
     def processed_bytes(self):
         return self.__info.downloaded
@@ -58,8 +58,6 @@ class QbDownloadStatus:
         download = self.__info.state
         if download in ["queuedDL", "queuedUP"]:
             return MirrorStatus.STATUS_WAITING
-        elif download in ["metaDL", "checkingResumeData"]:
-            return f"{MirrorStatus.STATUS_DOWNLOADING} (Metadata)"
         elif download in ["pausedDL", "pausedUP"]:
             return MirrorStatus.STATUS_PAUSED
         elif download in ["checkingUP", "checkingDL"]:
@@ -69,8 +67,23 @@ class QbDownloadStatus:
         else:
             return MirrorStatus.STATUS_DOWNLOADING
 
-    def torrent_info(self):
-        return self.__info
+    def seeders_num(self):
+        return self.__info.num_seeds
+
+    def leechers_num(self):
+        return self.__info.num_leechs
+
+    def uploaded_bytes(self):
+        return f"{get_readable_file_size(self.__info.uploaded)}"
+
+    def upload_speed(self):
+        return f"{get_readable_file_size(self.__info.upspeed)}/s"
+
+    def ratio(self):
+        return f"{round(self.__info.ratio, 3)}"
+
+    def seeding_time(self):
+        return f"{get_readable_time(self.__info.seeding_time)}"
 
     def download(self):
         return self.__obj
@@ -83,6 +96,3 @@ class QbDownloadStatus:
 
     def listener(self):
         return self.__listener
-
-    def eng(self):
-        return EngineStatus.STATUS_QB
