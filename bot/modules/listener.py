@@ -36,7 +36,6 @@ class MirrorLeechListener:
         self.select = select
         self.isPrivate = message.chat.type in ['private', 'group']
         self.suproc = None
-        self.user_id = self.message.from_user.id
 
     def clean(self):
         try:
@@ -168,7 +167,7 @@ class MirrorLeechListener:
                             if not checked:
                                 checked = True
                                 with download_dict_lock:
-                                    download_dict[self.uid] = SplitStatus(up_name, size, gid, self)
+                                    download_dict[self.uid] = SplitStatus(up_name, size, gid, self, self.message)
                                 LOGGER.info(f"Splitting: {up_name}")
                             res = split_file(f_path, f_size, file_, dirpath, LEECH_SPLIT_SIZE, self)
                             if not res:
