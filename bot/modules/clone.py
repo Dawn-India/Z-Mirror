@@ -9,7 +9,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage,
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
-from bot import dispatcher, LOGGER, STOP_DUPLICATE, download_dict, download_dict_lock, Interval
+from bot import dispatcher, LOGGER, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_thread
 
 
@@ -83,6 +83,19 @@ def _clone(message, bot):
         else:
             sendMarkup(result + cc, bot, message, button)
             LOGGER.info(f'Cloning Done: {name}')
+        if MIRROR_LOGS:	
+            try:	
+                for chatid in MIRROR_LOGS:	
+                    bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button, parse_mode=ParseMode.HTML)	
+            except Exception as e:	
+                LOGGER.warning(e)	
+        if BOT_PM and message.chat.type != 'private':	
+            try:	
+                bot.sendMessage(message.from_user.id, text=result, reply_markup=button,	
+                                parse_mode=ParseMode.HTML)	
+            except Exception as e:	
+                LOGGER.warning(e)	
+                return
     else:
         sendMessage("Send Gdrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
