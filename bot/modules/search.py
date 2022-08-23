@@ -3,7 +3,6 @@ from threading import Thread
 from html import escape
 from urllib.parse import quote
 from telegram.ext import CommandHandler, CallbackQueryHandler
-
 from bot import dispatcher, LOGGER, SEARCH_API_LINK, SEARCH_PLUGINS, get_client, SEARCH_LIMIT
 from bot.helper.telegram_helper.message_utils import editMessage, sendMessage, sendMarkup, deleteMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters

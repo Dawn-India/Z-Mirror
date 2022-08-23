@@ -4,8 +4,7 @@ from time import sleep
 from os import path as ospath, remove as osremove, listdir, walk
 from subprocess import Popen
 from html import escape
-from bot import Interval, INDEX_URL, VIEW_LINK, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, \
-                LEECH_SPLIT_SIZE, LOGGER, DB_URI, INCOMPLETE_TASK_NOTIFIER, MAX_SPLIT_SIZE, BOT_PM, MIRROR_LOGS
+from bot import *
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
