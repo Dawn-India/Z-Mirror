@@ -6,7 +6,7 @@ from subprocess import Popen
 from html import escape
 
 from bot import Interval, INDEX_URL, VIEW_LINK, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, \
-                LEECH_SPLIT_SIZE, LOGGER, DB_URI, INCOMPLETE_TASK_NOTIFIER, MAX_SPLIT_SIZE
+                LEECH_SPLIT_SIZE, LOGGER, DB_URI, INCOMPLETE_TASK_NOTIFIER, MAX_SPLIT_SIZE, BOT_PM, MIRROR_LOGS
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
@@ -258,6 +258,22 @@ class MirrorLeechListener:
                         share_urls = f'{INDEX_URL}/{url_path}?a=view'
                         buttons.buildbutton("🌐 View Link", share_urls)
             sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
+            if MIRROR_LOGS:	
+                try:	
+                    for chatid in MIRROR_LOGS:	
+                        bot.sendMessage(chat_id=chatid, text=msg,	
+                                        reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
+                                        parse_mode=ParseMode.HTML)	
+                except Exception as e:	
+                    LOGGER.warning(e)	
+            if BOT_PM and self.message.chat.type != 'private':	
+                try:	
+                    bot.sendMessage(chat_id=self.user_id, text=msg,	
+                                    reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
+                                    parse_mode=ParseMode.HTML)	
+                except Exception as e:	
+                    LOGGER.warning(e)	
+                    return
             if self.seed:
                 if self.isZip:
                     clean_target(f"{self.dir}/{name}")
