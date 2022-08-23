@@ -1,11 +1,12 @@
 from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time, EngineStatus
+from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time
 
 def get_download(client, uid):
     try:
         return client.torrents_info(tag=uid)[0]
     except Exception as e:
         LOGGER.error(f'{e}: while getting torrent info')
+
 
 class QbDownloadStatus:
 
@@ -95,6 +96,3 @@ class QbDownloadStatus:
 
     def listener(self):
         return self.__listener
-
-    def eng(self):
-        return EngineStatus.STATUS_QB

@@ -4,14 +4,16 @@ from time import time, sleep
 from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
-from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, app, user_session, LEECH_LOG, BOT_PM, DOWNLOAD_DIR
-from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_path_size, get_media_streams, clean_unwanted
+
+from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, DUMP_CHAT, app
+from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
 
 IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
+
 
 class TgUploader:
 
@@ -31,14 +33,8 @@ class TgUploader:
         self.__resource_lock = RLock()
         self.__is_corrupted = False
         self.__size = size
+        self.__msg_to_reply()
         self.__user_settings()
-        self.__leech_log = LEECH_LOG.copy()
-        self.__app = app
-        self.__user_session = user_session
-        self.__user_id = listener.message.from_user.id
-        self.isPrivate = listener.message.chat.type in ['private', 'group']
-        self.__Chat_id = self.__listener.message.chat.id
-        self.__sent_msg = None
 
     def upload(self, o_files):
         for dirpath, subdir, files in sorted(walk(self.__path)):
@@ -62,7 +58,7 @@ class TgUploader:
                     self.__upload_file(up_path, file_, dirpath)
                     if self.__is_cancelled:
                         return
-                    if not self.__listener.isPrivate and not self.__is_corrupted:
+                    if (not self.__listener.isPrivate or DUMP_CHAT is not None) and not self.__is_corrupted:
                         self.__msgs_dict[self.__sent_msg.link] = file_
                     self._last_uploaded = 0
                     sleep(1)
@@ -89,7 +85,6 @@ class TgUploader:
         try:
             is_video, is_audio = get_media_streams(up_path)
             if not self.__as_doc:
-                
                 if is_video:
                     duration = get_media_info(up_path)[0]
                     if thumb is None:
@@ -98,181 +93,59 @@ class TgUploader:
                             if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
                                 osremove(thumb)
                             return
-                    
                     if thumb is not None:
                         with Image.open(thumb) as img:
                             width, height = img.size
                     else:
                         width = 480
                         height = 320
-                    
                     if not file_.upper().endswith(("MKV", "MP4")):
                         file_ = f"{ospath.splitext(file_)[0]}.mp4"
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                    
-                    if len(LEECH_LOG) != 0:
-                        for leechchat in self.__leech_log:
-                            
-                            if ospath.getsize(up_path) > 2097152000: client = self.__user_session
-                            else: client = self.__app
-                            self.__sent_msg = client.send_video(chat_id=leechchat,
-                                                                video=up_path,
-                                                                caption=cap_mono,
-                                                                duration=duration,
-                                                                width=width,
-                                                                height=height,
-                                                                thumb=thumb,
-                                                                supports_streaming=True,
-                                                                disable_notification=True,
-                                                                progress=self.__upload_progress)
-                            
-                            if not self.isPrivate and BOT_PM:
-                                try:
-                                    app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
-                                except Exception as err:
-                                        LOGGER.error(f"Failed To Send Video in PM:\n{err}")
-                    
-                    elif len(LEECH_LOG) == 0:
-                        
-                        if ospath.getsize(up_path) > 2097152000: client = self.__user_session
-                        else: client = self.__app
-                        self.__sent_msg = client.send_video(chat_id=self.__Chat_id,
-                                                            video=up_path,
-                                                            caption=cap_mono,
-                                                            duration=duration,
-                                                            width=width,
-                                                            height=height,
-                                                            thumb=thumb,
-                                                            supports_streaming=True,
-                                                            disable_notification=True,
-                                                            progress=self.__upload_progress)
-                        
-                        if not self.isPrivate and BOT_PM:
-                            try:
-                                app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
-                            except Exception as err:
-                                    LOGGER.error(f"Failed To Send Video in PM:\n{err}")
-
+                    self.__sent_msg = self.__sent_msg.reply_video(video=up_path,
+                                                                  quote=True,
+                                                                  caption=cap_mono,
+                                                                  duration=duration,
+                                                                  width=width,
+                                                                  height=height,
+                                                                  thumb=thumb,
+                                                                  supports_streaming=True,
+                                                                  disable_notification=True,
+                                                                  progress=self.__upload_progress)
                 elif is_audio:
                     duration , artist, title = get_media_info(up_path)
-                    
-                    if len(LEECH_LOG) != 0:
-                        for leechchat in self.__leech_log:
-
-                            if ospath.getsize(up_path) > 2097152000: client = self.__user_session
-                            else: client = self.__app
-                            self.__sent_msg = client.send_audio(chat_id=leechchat,
-                                                                audio=up_path,
-                                                                caption=cap_mono,
-                                                                duration=duration,
-                                                                performer=artist,
-                                                                title=title,
-                                                                thumb=thumb,
-                                                                disable_notification=True,
-                                                                progress=self.__upload_progress)
-                            
-                            if BOT_PM:
-                                try:
-                                    app.send_audio(chat_id=self.__user_id, audio=self.__sent_msg.audio.file_id,
-                                                   caption=cap_mono)
-                                except Exception as err:
-                                    LOGGER.error(f"Failed To Send Audio in PM:\n{err}")
-                    
-                    else:
-                        self.__sent_msg = self.__sent_msg.reply_audio(audio=up_path,
-                                                                      quote=True,
-                                                                      caption=cap_mono,
-                                                                      duration=duration,
-                                                                      performer=artist,
-                                                                      title=title,
-                                                                      thumb=thumb,
-                                                                      disable_notification=True,
-                                                                      progress=self.__upload_progress)
-                        
-                        if not self.isPrivate and BOT_PM:
-                            try:
-                                app.send_audio(chat_id=self.__user_id, audio=self.__sent_msg.audio.file_id,
-                                               caption=cap_mono)
-                            except Exception as err:
-                                LOGGER.error(f"Failed To Send Audio in PM:\n{err}")
-                
+                    self.__sent_msg = self.__sent_msg.reply_audio(audio=up_path,
+                                                                  quote=True,
+                                                                  caption=cap_mono,
+                                                                  duration=duration,
+                                                                  performer=artist,
+                                                                  title=title,
+                                                                  thumb=thumb,
+                                                                  disable_notification=True,
+                                                                  progress=self.__upload_progress)
                 elif file_.upper().endswith(IMAGE_SUFFIXES):
-                    
-                    if len(LEECH_LOG) != 0:
-                        for leechchat in self.__leech_log:
-                            
-                            if ospath.getsize(up_path) > 2097152000: client = self.__user_session
-                            else: client = self.__app
-                            self.__sent_msg = client.send_photo(chat_id=leechchat,
-                                                                  photo=up_path,
+                    self.__sent_msg = self.__sent_msg.reply_photo(photo=up_path,
+                                                                  quote=True,
                                                                   caption=cap_mono,
                                                                   disable_notification=True,
                                                                   progress=self.__upload_progress)
-                            if BOT_PM:
-                                try:
-                                    app.send_photo(chat_id=self.__user_id, photo=self.__sent_msg.photo.file_id,
-                                                   caption=cap_mono)
-                                except Exception as err:
-                                    LOGGER.error(f"Failed To Send Image in PM:\n{err}")
-                    else:
-                        self.__sent_msg = self.__sent_msg.reply_photo(photo=up_path,
-                                                                      quote=True,
-                                                                      caption=cap_mono,
-                                                                      disable_notification=True,
-                                                                      progress=self.__upload_progress)
-                        if not self.isPrivate and BOT_PM:
-                            try:
-                                app.send_photo(chat_id=self.__user_id, photo=self.__sent_msg.photo.file_id,
-                                               caption=cap_mono)
-                            except Exception as err:
-                                LOGGER.error(f"Failed To Send Image in PM:\n{err}")
                 else:
                     notMedia = True
-            
             if self.__as_doc or notMedia:
-                
                 if is_video and thumb is None:
                     thumb = take_ss(up_path, None)
-                    
                     if self.__is_cancelled:
-                        
                         if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
                             osremove(thumb)
                         return
-                
-                if len(LEECH_LOG) != 0:
-                    for leechchat in self.__leech_log:
-                            
-                        if ospath.getsize(up_path) > 2097152000: client = self.__user_session
-                        else: client = self.__app
-                        self.__sent_msg = client.send_document(chat_id=leechchat,
-                                                                   document=up_path,
-                                                                   thumb=thumb,
-                                                                   caption=cap_mono,
-                                                                   disable_notification=True,
-                                                                   progress=self.__upload_progress)
-                        if not self.isPrivate and BOT_PM:
-                            try:
-                                app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
-                            except Exception as err:
-                                LOGGER.error(f"Failed To Send Document in PM:\n{err}")
-                elif len(LEECH_LOG) == 0:
-                    if ospath.getsize(up_path) > 2097152000: client = self.__user_session
-                    else: client = self.__app
-                    self.__sent_msg = client.send_document(chat_id=self.__Chat_id,
-                                                            document=up_path,
-                                                            thumb=thumb,
-                                                            caption=cap_mono,
-                                                            disable_notification=True,
-                                                            progress=self.__upload_progress)
-
-                    if not self.isPrivate and BOT_PM:
-                        try:
-                            app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
-                        except Exception as err:
-                            LOGGER.error(f"Failed To Send Document in PM:\n{err}")
+                self.__sent_msg = self.__sent_msg.reply_document(document=up_path,
+                                                                 quote=True,
+                                                                 thumb=thumb,
+                                                                 caption=cap_mono,
+                                                                 disable_notification=True,
+                                                                 progress=self.__upload_progress)
         except FloodWait as f:
             LOGGER.warning(str(f))
             sleep(f.value)
@@ -310,6 +183,16 @@ class TgUploader:
         if not ospath.lexists(self.__thumb):
             self.__thumb = None
 
+    def __msg_to_reply(self):
+        if DUMP_CHAT is not None:
+            if self.__listener.isPrivate:
+                msg = self.__listener.message.text
+            else:
+                msg = self.__listener.message.link
+            self.__sent_msg = app.send_message(DUMP_CHAT, msg)
+        else:
+            self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
+
     @property
     def speed(self):
         with self.__resource_lock:
@@ -321,4 +204,4 @@ class TgUploader:
     def cancel_download(self):
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
-        self.__listener.onUploadError('Your upload has been stopped!')
+        self.__listener.onUploadError('your upload has been stopped!')

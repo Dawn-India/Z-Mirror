@@ -2,58 +2,18 @@ from random import SystemRandom
 from string import ascii_letters, digits
 from telegram.ext import CommandHandler
 from threading import Thread
-from time import time, sleep
+from time import sleep
+
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendFile, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, sendFile, sendMarkup
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
-from bot import dispatcher, LOGGER, CLONE_LIMIT, STOP_DUPLICATE, download_dict, download_dict_lock, Interval, BOT_PM, MIRROR_LOGS, FSUB, \
-                FSUB_CHANNEL_ID, CHANNEL_USERNAME, TITLE_NAME, CHAT_ID, AUTO_MUTE, GRAPH
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_gdrive_link, is_gdtot_link, new_thread, is_appdrive_link
-from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, appdrive
-from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from telegram import InlineKeyboardMarkup, ParseMode, ChatPermissions
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot import dispatcher, LOGGER, STOP_DUPLICATE, download_dict, download_dict_lock, Interval
+from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_thread
+
 
 def _clone(message, bot):
-
-    buttons = ButtonMaker()
-
-    if FSUB:
-        try:
-            uname = message.from_user.mention_html(message.from_user.first_name)
-            user = bot.get_chat_member(FSUB_CHANNEL_ID, message.from_user.id)
-            if user.status not in ['member', 'creator', 'administrator']:
-                buttons.buildbutton(f"{TITLE_NAME}", f"https://t.me/{CHANNEL_USERNAME}")
-                reply_markup = InlineKeyboardMarkup(buttons.build_menu(1))
-                return sendMarkup(f"<b>Dear {uname}️,\n\nI found that you haven't joined our Updates Channel yet.\n\nJoin and Use Bots Without Restrictions.</b>", bot, message, reply_markup)
-        except Exception as e:
-            LOGGER.info(str(e))
-
-    if BOT_PM:
-        try:
-            msg1 = f'Added your Requested link to Download\n'
-            send = bot.sendMessage(message.from_user.id, text=msg1)
-            send.delete()
-        except Exception as e:
-            LOGGER.warning(e)
-            bot_d = bot.get_me()
-            b_uname = bot_d.username
-            uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-            botstart = f"http://t.me/{b_uname}"
-            buttons.buildbutton("Click Here to Start Me", f"{botstart}")
-            startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\nFrom now on i will give link and leeched files in PM and log channel only"
-            message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
-            Thread(target=auto_delete_message, args=(bot, message, message)).start()
-            return
-
-    if AUTO_MUTE:
-        try:
-            bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
-        except Exception as e:
-            print(f'[MuteUser] Error: {type(e)} {e}')
-
     args = message.text.split()
     reply_to = message.reply_to_message
     link = ''
@@ -74,27 +34,6 @@ def _clone(message, bot):
             tag = f"@{reply_to.from_user.username}"
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
-    is_gdtot = is_gdtot_link(link)
-    is_appdrive = is_appdrive_link(link)
-    if is_gdtot:
-        try:
-            msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
-            link = gdtot(link)
-            LOGGER.info(f"Processing GdToT: {link}")
-            deleteMessage(bot, msg)
-        except DirectDownloadLinkException as e:
-            deleteMessage(bot, msg)
-            return sendMessage(str(e), bot, message)
-    if is_appdrive_link(link):
-        msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
-        try:
-            apdict = appdrive(link)
-            link = apdict.get('gdrive_link')
-            LOGGER.info(f"Processing AppDrive: {link}")
-            deleteMessage(bot, msg)
-        except DirectDownloadLinkException as e:
-            deleteMessage(bot, msg)
-            return sendMessage(str(e), bot, message)
     if is_gdrive_link(link):
         gd = GoogleDriveHelper()
         res, size, name, files = gd.helper(link)
@@ -102,21 +41,11 @@ def _clone(message, bot):
             return sendMessage(res, bot, message)
         if STOP_DUPLICATE:
             LOGGER.info('Checking File/Folder if already in Drive...')
-            if GRAPH:
-                smsg, button = gd.drive_list(name, True, True)
-                if smsg:
-                    msg3 = "Someone already mirrored it for you !\nHere you go:"
-                    return sendMarkup(msg3, bot, message, button)
             cap, f_name = gd.drive_list(name, True, True)
             if cap:
                 cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                 sendFile(bot, message, f_name, cap)
                 return
-        if CLONE_LIMIT is not None:
-            LOGGER.info('Checking File/Folder Size...')
-            if size > CLONE_LIMIT * 1024**3:
-                msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
-                return sendMessage(msg2, bot, message)
         if multi > 1:
             sleep(4)
             nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
@@ -148,43 +77,14 @@ def _clone(message, bot):
                     update_all_messages()
             except IndexError:
                 pass
-        cc = f'\n\n<b>Hey </b>{tag}<b> Your Task is Done</b>\n\n<b>Thanks for using <i>{TITLE_NAME}</i></b>'
+        cc = f'\n\n<b>cc: </b>{tag}'
         if button in ["cancelled", ""]:
             sendMessage(f"{tag} {result}", bot, message)
         else:
             sendMarkup(result + cc, bot, message, button)
             LOGGER.info(f'Cloning Done: {name}')
-        if is_gdtot:
-            gd.deletefile(link)
-        elif is_appdrive:
-            if apdict.get('link_type') == 'login':
-                LOGGER.info(f"Deleting: {link}")
-                gd.deletefile(link)
-        if MIRROR_LOGS:	
-            try:	
-                for chatid in MIRROR_LOGS:	
-                    bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button, parse_mode=ParseMode.HTML)	
-            except Exception as e:	
-                LOGGER.warning(e)	
-        if BOT_PM and message.chat.type != 'private':	
-            try:	
-                bot.sendMessage(message.from_user.id, text=result, reply_markup=button,	
-                                parse_mode=ParseMode.HTML)	
-            except Exception as e:	
-                LOGGER.warning(e)	
-                return
-    elif AUTO_MUTE:
-        try:
-            uname = message.from_user.mention_html(message.from_user.first_name)
-            user = bot.get_chat_member(CHAT_ID, message.from_user.id)
-            if user.status in ['creator', 'administrator']:
-                return sendMessage(f"OMG, {uname} You are a <b>Admin.</b>\n\nStill don't know how to use me!\n\nPlease read /{BotCommands.HelpCommand}", bot, message)
-            bot.restrict_chat_member(chat_id=message.chat.id, user_id=message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
-            return sendMessage(f"Dear {uname}️,\n\n<b>You are MUTED until you learn how to use me.\n\nWatch others or read </b>/{BotCommands.HelpCommand}", bot, message)
-        except Exception as e:
-            print(f'[MuteUser] Error: {type(e)} {e}')
     else:
-        return sendMessage(f"Please enter a valid command.\nRead /{BotCommands.HelpCommand} and try again.", bot, message)
+        sendMessage("Send Gdrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
 @new_thread
 def cloneNode(update, context):

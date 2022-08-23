@@ -1,12 +1,14 @@
 from threading import Lock
 from pathlib import Path
-from bot import LOGGER, download_dict, download_dict_lock, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, LEECH_LIMIT, STORAGE_THRESHOLD, GRAPH
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval
+
+from bot import LOGGER, download_dict, download_dict_lock, STOP_DUPLICATE
+from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendFile
+from bot.helper.ext_utils.bot_utils import setInterval
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
+from bot.helper.ext_utils.fs_utils import get_base_name
 from ..status_utils.mega_download_status import MegaDownloadStatus
 from megasdkrestclient import MegaSdkRestClient, constants
+
 
 class MegaDownloader:
     POLLING_INTERVAL = 3
@@ -65,15 +67,8 @@ class MegaDownloader:
 
     def __onInterval(self):
         dlInfo = self.__mega_client.getDownloadInfo(self.gid)
-        if (
-            dlInfo['state']
-            in [
-                constants.State.TYPE_STATE_COMPLETED,
-                constants.State.TYPE_STATE_CANCELED,
-                constants.State.TYPE_STATE_FAILED,
-            ]
-            and self.__periodic is not None
-        ):
+        if dlInfo['state'] in [constants.State.TYPE_STATE_COMPLETED, constants.State.TYPE_STATE_CANCELED, 
+            constants.State.TYPE_STATE_FAILED] and self.__periodic is not None:
             self.__periodic.cancel()
         if dlInfo['state'] == constants.State.TYPE_STATE_COMPLETED:
             self.__onDownloadComplete()
@@ -122,38 +117,11 @@ class MegaDownloader:
                 except:
                     mname = None
             if mname is not None:
-                if GRAPH:
-                    smsg, button = GoogleDriveHelper().drive_list(mname, True)
-                    if smsg:
-                        msg1 = "Someone already mirrored it for you !\nHere you go:"
-                        return sendMarkup(msg1, self.__listener.bot, self.__listener.message, button)
                 cap, f_name = GoogleDriveHelper().drive_list(mname, True)
                 if cap:
                     cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                     sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
                     return
-        if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, LEECH_LIMIT, MEGA_LIMIT]):
-            arch = any([self.__listener.isZip, self.__listener.extract])
-            if STORAGE_THRESHOLD is not None:
-                acpt = check_storage_threshold(file_size, arch)
-                if not acpt:
-                    msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                    msg += f'\nYour File/Folder size is {get_readable_file_size(file_size)}'
-                    return sendMessage(msg, self.__listener.bot, self.__listener.message)
-            limit = None
-            if LEECH_LIMIT is not None and self.__listener.isLeech:
-                msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-                limit = LEECH_LIMIT
-            elif ZIP_UNZIP_LIMIT is not None and arch:
-                msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-                limit = ZIP_UNZIP_LIMIT
-            elif MEGA_LIMIT is not None:
-                msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-                limit = MEGA_LIMIT
-            if limit is not None:
-                LOGGER.info('Checking File/Folder Size...')
-                if file_size > limit * 1024**3:
-                    return sendMessage(msg3, self.__listener.bot, self.__listener.message)
         self.__onDownloadStart(file_name, file_size, gid)
         LOGGER.info(f'Mega download started with gid: {gid}')
 

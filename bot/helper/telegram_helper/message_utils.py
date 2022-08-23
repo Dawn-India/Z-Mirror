@@ -4,9 +4,11 @@ from telegram.message import Message
 from telegram.error import RetryAfter
 from pyrogram.errors import FloodWait
 from os import remove
+
 from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
-                Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session, TELEGRAM_API, TELEGRAM_HASH
+                Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
+
 
 def sendMessage(text: str, bot, message: Message):
     try:
@@ -48,17 +50,6 @@ def editMessage(text: str, message: Message, reply_markup=None):
         LOGGER.error(str(e))
         return str(e)
 
-def sendPhoto(text: str, bot, message, photo, reply_markup=None):
-    try:
-        return bot.send_photo(chat_id=message.chat_id, photo=photo, reply_to_message_id=message.message_id,
-            caption=text, reply_markup=reply_markup, parse_mode='html')
-    except RetryAfter as r:
-        LOGGER.warning(str(r))
-        sleep(r.retry_after * 1.5)
-        return sendPhoto(text, bot, message, photo, reply_markup)
-    except Exception as e:
-        LOGGER.error(str(e))
-
 def sendRss(text: str, bot):
     if rss_session is None:
         try:
@@ -81,19 +72,6 @@ def sendRss(text: str, bot):
         except Exception as e:
             LOGGER.error(str(e))
             return
-
-async def sendRss_pyro(text: str):
-    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_STRING_SESSION, parse_mode=enums.ParseMode.HTML)	
-    await rss_session.start()
-    try:
-        return await rss_session.send_message(RSS_CHAT_ID, text, disable_web_page_preview=True)
-    except FloodWait as e:
-        LOGGER.warning(str(e))
-        await asleep(e.value * 1.5)
-        return await sendRss(text)
-    except Exception as e:
-        LOGGER.error(str(e))
-        return
 
 def deleteMessage(bot, message: Message):
     try:

@@ -1,7 +1,9 @@
 from time import time
+
 from bot import DOWNLOAD_DIR, LOGGER
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus, get_readable_time, EngineStatus
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus, get_readable_time
 from bot.helper.ext_utils.fs_utils import get_path_size
+
 
 class ExtractStatus:
     def __init__(self, name, size, gid, listener):
@@ -63,7 +65,4 @@ class ExtractStatus:
         LOGGER.info(f'Cancelling Extract: {self.__name}')
         if self.__listener.suproc is not None:
             self.__listener.suproc.kill()
-        self.__listener.onUploadError('Extracting stopped by user!')
-
-    def eng(self):
-        return EngineStatus.STATUS_EXT
+        self.__listener.onUploadError('extracting stopped by user!')

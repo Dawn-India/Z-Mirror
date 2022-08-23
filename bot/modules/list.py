@@ -1,6 +1,7 @@
 from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
-from bot import LOGGER, dispatcher, OWNER_ID, GRAPH
+
+from bot import LOGGER, dispatcher
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, sendFile, deleteMessage
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -26,25 +27,19 @@ def select_type(update, context):
     key = msg.reply_to_message.text.split(" ", maxsplit=1)[1]
     data = query.data
     data = data.split()
-    if OWNER_ID != user_id and user_id != int(data[1]):
+    if user_id != int(data[1]):
         return query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == 'cancel':
         query.answer()
-        return editMessage("List has been canceled!", msg)
+        return editMessage("list has been canceled!", msg)
     query.answer()
     item_type = data[2]
     editMessage(f"<b>Searching for <i>{key}</i></b>", msg)
     Thread(target=_list_drive, args=(context.bot, key, msg, item_type)).start()
 
 def _list_drive(bot, key, bmsg, item_type):
-    LOGGER.info(f"Listing: {key}")
+    LOGGER.info(f"listing: {key}")
     gdrive = GoogleDriveHelper()
-    if GRAPH:
-        msg, button = gdrive.drive_list(key, isRecursive=True, itemType=item_type)
-        if button:
-            editMessage(msg, bmsg, button)
-        else:
-            editMessage(f'No result found for <i>{key}</i>', bmsg)
     cap, f_name = gdrive.drive_list(key, isRecursive=True, itemType=item_type)
     if cap:
         deleteMessage(bot, bmsg)

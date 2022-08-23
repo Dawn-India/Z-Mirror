@@ -1,13 +1,15 @@
-from telegram import InlineKeyboardMarkup, ChatPermissions
 from telegram.ext import CommandHandler, CallbackQueryHandler
-from time import time, sleep
+from time import sleep
 from threading import Thread
-from bot import download_dict, dispatcher, download_dict_lock, SUDO_USERS, OWNER_ID, AUTO_DELETE_MESSAGE_DURATION, CHAT_ID, AUTO_MUTE
+
+from bot import download_dict, dispatcher, download_dict_lock, SUDO_USERS, OWNER_ID, AUTO_DELETE_MESSAGE_DURATION
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, auto_delete_message
-from bot.helper.ext_utils.bot_utils import getDownloadByGid, getAllDownload, MirrorStatus
+from bot.helper.ext_utils.bot_utils import getDownloadByGid, getAllDownload
+from bot.helper.ext_utils.bot_utils import MirrorStatus
 from bot.helper.telegram_helper import button_build
+
 
 def cancel_mirror(update, context):
     user_id = update.message.from_user.id
@@ -28,18 +30,8 @@ def cancel_mirror(update, context):
             sendMessage("This is not an active task!", context.bot, update.message)
             return
     elif len(context.args) == 0:
-        if AUTO_MUTE:
-            try:
-                uname = update.message.from_user.mention_html(update.message.from_user.first_name)
-                user = context.bot.get_chat_member(CHAT_ID, update.message.from_user.id)
-                if user.status in ['creator', 'administrator']:
-                    return sendMessage(f"OMG, {uname} You are a <b>Admin.</b>\n\nStill don't know how to use me!\n\nPlease read /{BotCommands.HelpCommand}", context.bot, update.message)
-                context.bot.restrict_chat_member(chat_id=update.message.chat.id, user_id=update.message.from_user.id, until_date=int(time()) + 30, permissions=ChatPermissions(can_send_messages=False))
-                return sendMessage(f"Dear {uname}️,\n\n<b>You are MUTED until you learn how to use me.\n\nWatch others or read </b>/{BotCommands.HelpCommand}", context.bot, update.message)
-            except Exception as e:
-                print(f'[MuteUser] Error: {type(e)} {e}')
-        msg = f"Reply to an active <code>/{BotCommands.MirrorCommand}</code> message which \
-                was used to start the download or send <code>/{BotCommands.CancelMirror} GID</code> to cancel it!"
+        msg = f"Reply to an active Command message which was used to start the download" \
+              f" or send <code>/{BotCommands.CancelMirror} GID</code> to cancel it!"
         sendMessage(msg, context.bot, update.message)
         return
 

@@ -7,9 +7,7 @@ from time import time
 from re import search as re_search
 from json import loads as jsonloads
 
-from bot import download_dict_lock, download_dict, STORAGE_THRESHOLD
-from bot.helper.ext_utils.bot_utils import get_readable_file_size
-from bot.helper.ext_utils.fs_utils import check_storage_threshold
+from bot import download_dict_lock, download_dict
 from bot.helper.telegram_helper.message_utils import sendStatusMessage
 from ..status_utils.yt_dlp_download_status import YtDlpDownloadStatus
 
@@ -203,12 +201,6 @@ class YoutubeDLHelper:
         self.extractMetaData(link, name, args)
         if self.__is_cancelled:
             return
-        if STORAGE_THRESHOLD is not None:	
-            acpt = check_storage_threshold(self.size, self.__listener.isZip)	
-            if not acpt:	
-                msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'	
-                msg += f'\nYour File/Folder size is {get_readable_file_size(self.size)}'	
-                return self.__onDownloadError(msg)
         if self.is_playlist:
             self.opts['outtmpl'] = f"{path}/{self.name}/%(title)s.%(ext)s"
         elif args is None:
