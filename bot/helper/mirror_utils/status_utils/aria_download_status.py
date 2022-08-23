@@ -1,14 +1,12 @@
 from time import time
-
 from bot import aria2, LOGGER
-from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_time
+from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_time, EngineStatus
 
 def get_download(gid):
     try:
         return aria2.get_download(gid)
     except Exception as e:
         LOGGER.error(f'{e}: while getting torrent info')
-
 
 class AriaDownloadStatus:
 
@@ -110,3 +108,6 @@ class AriaDownloadStatus:
             LOGGER.info(f"Cancelling Download: {self.name()}")
             self.__listener.onDownloadError('Download stopped by user!')
         aria2.remove([self.__download], force=True, files=True)
+
+    def eng(self):
+        return EngineStatus.STATUS_ARIA
