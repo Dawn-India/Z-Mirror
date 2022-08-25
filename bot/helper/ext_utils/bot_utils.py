@@ -3,6 +3,7 @@ from threading import Thread, Event
 from time import time
 from math import ceil
 from html import escape
+import psutil
 from psutil import *
 from requests import head as rhead
 from urllib.request import urlopen
