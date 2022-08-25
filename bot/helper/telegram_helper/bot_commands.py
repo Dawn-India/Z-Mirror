@@ -49,5 +49,7 @@ class _BotCommands:
         self.RssSubCommand = (f'rsssub{CMD_INDEX}', f'rs{CMD_INDEX}')
         self.RssUnSubCommand = (f'rssunsub{CMD_INDEX}', f'rus{CMD_INDEX}')
         self.RssSettingsCommand = (f'rssset{CMD_INDEX}', f'rst{CMD_INDEX}')
+        self.AddleechlogCommand = (f'addleechlog{CMD_INDEX}')
+        self.RmleechlogCommand = (f'rmleechlog{CMD_INDEX}')
 
 BotCommands = _BotCommands()
