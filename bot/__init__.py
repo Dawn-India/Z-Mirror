@@ -472,12 +472,12 @@ try:
 except:
     LEECH_LIMIT = None
 try:
-    LEECH_LOG = getConfig('LEECH_LOG')
-    if len(LEECH_LOG) == 0:
+    DUMP_CHAT = getConfig('DUMP_CHAT')
+    if len(DUMP_CHAT) == 0:
         raise KeyError
-    LEECH_LOG = int(LEECH_LOG)
+    DUMP_CHAT = int(DUMP_CHAT)
 except:
-    LEECH_LOG = None
+    DUMP_CHAT = None
 DRIVES_NAMES.append("Main")
 DRIVES_IDS.append(parent_id)
 if ospath.exists('drive_folder'):

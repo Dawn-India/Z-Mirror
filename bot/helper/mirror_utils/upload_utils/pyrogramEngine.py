@@ -60,7 +60,7 @@ class TgUploader:
                     self.__upload_file(up_path, file_, dirpath)
                     if self.__is_cancelled:
                         return
-                    if (not self.__listener.isPrivate or LEECH_LOG is not None) and not self.__is_corrupted:
+                    if (not self.__listener.isPrivate or DUMP_CHAT is not None) and not self.__is_corrupted:
                         self.__msgs_dict[self.__sent_msg.link] = file_
                     self._last_uploaded = 0
                     sleep(1)
@@ -213,12 +213,12 @@ class TgUploader:
             self.__thumb = None
 
     def __msg_to_reply(self):
-        if LEECH_LOG is not None:
+        if DUMP_CHAT is not None:
             if self.__listener.isPrivate:
                 msg = self.__listener.message.text
             else:
                 msg = self.__listener.message.link
-            self.__sent_msg = app.send_message(LEECH_LOG, msg)
+            self.__sent_msg = app.send_message(DUMP_CHAT, msg)
         else:
             self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
 
