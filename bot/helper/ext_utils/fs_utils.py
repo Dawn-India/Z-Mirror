@@ -257,3 +257,5 @@ def get_media_streams(path):
     else:
         is_audio = True
 
+    return is_video, is_audio
+

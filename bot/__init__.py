@@ -108,7 +108,6 @@ SUDO_USERS = set()
 AS_DOC_USERS = set()
 AS_MEDIA_USERS = set()
 EXTENSION_FILTER = set(['.aria2'])
-MIRROR_LOGS = set()
 
 try:
     BOT_TOKEN = getConfig('BOT_TOKEN')
@@ -138,13 +137,6 @@ try:
     for _id in aid:
         SUDO_USERS.add(int(_id.strip()))
 except:
-    pass
-try:	
-    aid = getConfig('MIRROR_LOGS')	
-    aid = aid.split(' ')	
-    for _id in aid:	
-        MIRROR_LOGS.add(int(_id))
-except:	
     pass
 try:
     fx = getConfig('EXTENSION_FILTER')
@@ -233,11 +225,6 @@ try:
     DUMP_CHAT = int(DUMP_CHAT)
 except:
     DUMP_CHAT = None
-try:	
-    BOT_PM = getConfig('BOT_PM')	
-    BOT_PM = BOT_PM.lower() == 'true'	
-except KeyError:	
-    BOT_PM = False
 try:
     STATUS_LIMIT = getConfig('STATUS_LIMIT')
     if len(STATUS_LIMIT) == 0:
