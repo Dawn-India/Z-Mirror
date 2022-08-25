@@ -67,7 +67,11 @@ def get_confirm(update, context):
         query.answer(text="This task has been cancelled!", show_alert=True)
         query.message.delete()
         return
-    listener = dl.listener()
+    if hasattr(dl, 'listener'):
+        listener = dl.listener()
+    else:
+        query.answer(text="Not in download state anymore! Keep this message to resume the seed if seed enabled!", show_alert=True)
+        return
     if user_id != listener.message.from_user.id:
         query.answer(text="This task is not for you!", show_alert=True)
     elif data[1] == "pin":
