@@ -471,7 +471,13 @@ try:
     LEECH_LIMIT = float(LEECH_LIMIT)
 except:
     LEECH_LIMIT = None
-
+try:
+    LEECH_LOG = getConfig('LEECH_LOG')
+    if len(LEECH_LOG) == 0:
+        raise KeyError
+    LEECH_LOG = int(LEECH_LOG)
+except:
+    LEECH_LOG = None
 DRIVES_NAMES.append("Main")
 DRIVES_IDS.append(parent_id)
 if ospath.exists('drive_folder'):
