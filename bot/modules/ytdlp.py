@@ -2,23 +2,41 @@ from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from time import sleep
 from re import split as re_split
-from bot import DOWNLOAD_DIR, dispatcher
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage
+
+from bot import bot, DOWNLOAD_DIR, dispatcher, BOT_PM, LOGGER
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_message, auto_delete_upload_message
 from bot.helper.telegram_helper import button_build
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from .listener import MirrorLeechListener
-
+from bot.helper.telegram_helper.button_build import ButtonMaker
 listener_dict = {}
-
 def _ytdl(bot, message, isZip=False, isLeech=False):
     mssg = message.text
     user_id = message.from_user.id
     msg_id = message.message_id
     multi=1
-
+    buttons = ButtonMaker()
+    if BOT_PM and message.chat.type != 'private':
+        try:
+            msg1 = f'Added your Requested link to Download\n'
+            send = bot.sendMessage(user_id, text=msg1)
+            send.delete()
+        except Exception as e:
+            LOGGER.warning(e)
+            bot_d = bot.get_me()
+            b_uname = bot_d.username
+            uname = message.from_user.mention_html(message.from_user.first_name)
+            botstart = f"http://t.me/{b_uname}"
+            buttons.buildbutton("Click Here to Start Me", f"{botstart}")
+            startwarn = f"<b>Dear {uname}, Start me in PM to use me.</b>"
+            mesg = sendMarkup(startwarn, bot, message, buttons.build_menu(2))
+            sleep(15)
+            mesg.delete()
+            message.delete()
+            return
     link = mssg.split()
     if len(link) > 1:
         link = link[1].strip()
@@ -84,7 +102,7 @@ Like playlist_items:10 works with string, so no need to add `^` before the numbe
 You can add tuple and dict also. Use double quotes inside dict. Also you can add format manually, whatever what quality button you have pressed.
 
 Check all arguments from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L178'>FILE</a>.
-        """
+                    """
         return sendMessage(help_msg, bot, message)
 
     listener = MirrorLeechListener(bot, message, isZip, isLeech=isLeech, pswd=pswd, tag=tag)
@@ -159,6 +177,7 @@ Check all arguments from this <a href='https://github.com/yt-dlp/yt-dlp/blob/mas
         bmsg = sendMarkup('Choose Video Quality:', bot, message, YTBUTTONS)
 
     Thread(target=_auto_cancel, args=(bmsg, msg_id)).start()
+    Thread(target=auto_delete_upload_message, args=(bot, message, bmsg)).start()
     if multi > 1:
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})

@@ -109,6 +109,18 @@ def auto_delete_message(bot, cmd_message: Message, bot_message: Message):
         except AttributeError:
             pass
 
+def auto_delete_upload_message(bot, cmd_message: Message, bot_message: Message):
+    if cmd_message.chat.type == 'private':
+        pass
+    elif AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
+        sleep(AUTO_DELETE_UPLOAD_MESSAGE_DURATION)
+        try:
+            # Skip if None is passed meaning we don't want to delete bot or cmd message
+            deleteMessage(bot, cmd_message)
+            deleteMessage(bot, bot_message)
+        except AttributeError:
+            pass
+
 def delete_all_messages():
     with status_reply_dict_lock:
         for data in list(status_reply_dict.values()):

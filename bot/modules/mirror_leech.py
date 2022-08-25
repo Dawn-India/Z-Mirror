@@ -16,11 +16,34 @@ from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, auto_delete_message
+from bot.helper.telegram_helper.button_build import ButtonMaker
 from .listener import MirrorLeechListener
 
-
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
+    buttons = ButtonMaker()
+    if BOT_PM and message.chat.type != 'private':
+        try:
+            msg1 = f'Added your Requested link to Download\n'
+            send = bot.sendMessage(message.from_user.id, text=msg1)
+            send.delete()
+        except Exception as e:
+            LOGGER.warning(e)
+            bot_d = bot.get_me()
+            b_uname = bot_d.username
+            uname = message.from_user.mention_html(message.from_user.first_name)
+            botstart = f"http://t.me/{b_uname}"
+            buttons.buildbutton("Click Here to Start Me", f"{botstart}")
+            startwarn = f"<b>Dear {uname}, Start me in PM to use me.</b>"
+            mesg = sendMarkup(startwarn, bot, message, buttons.build_menu(2))
+            sleep(15)
+            mesg.delete()
+            message.delete()
+            return
+    if message.chat.type == 'private' and len(LEECH_LOG) == 0 and isLeech and MAX_SPLIT_SIZE == 4194304000:
+        text = f"Leech Log is Empty you Can't use bot in PM."
+        sendMessage(text, bot, message)
+        return
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     name_args = mesg[0].split('|', maxsplit=1)

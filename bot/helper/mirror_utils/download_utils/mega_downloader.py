@@ -3,14 +3,12 @@ from string import ascii_letters, digits
 from os import makedirs
 from threading import Event
 from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
-
-from bot import LOGGER, MEGA_API_KEY, download_dict_lock, download_dict, MEGA_EMAIL_ID, MEGA_PASSWORD, STOP_DUPLICATE
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendFile
-from bot.helper.ext_utils.bot_utils import get_mega_link_type
+from bot import *
+from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendFile, sendMarkup
+from bot.helper.ext_utils.bot_utils import get_mega_link_type, get_readable_file_size
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.fs_utils import get_base_name
-
+from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 
 class MegaAppListener(MegaListener):
     _NO_EVENT_ON = (MegaRequest.TYPE_LOGIN,MegaRequest.TYPE_FETCH_NODES)
@@ -163,14 +161,39 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             except:
                 mname = None
         if mname is not None:
-            cap, f_name = GoogleDriveHelper().drive_list(mname, True)
-            if cap:
-                cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
-                sendFile(listener.bot, listener.message, f_name, cap)
+            if HTML:
+                cap, f_name = GoogleDriveHelper().drive_list(mname, True)
+                if cap:
+                    cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
+                    sendFile(listener.bot, listener.message, f_name, cap)
+            smsg, button = GoogleDriveHelper().drive_list(mname, True)
+            if smsg:
+                msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
+                sendMarkup(msg1, listener.bot, listener.message, button)
                 api.removeListener(mega_listener)
                 if folder_api is not None:
                     folder_api.removeListener(mega_listener)
                 return
+    if any([STORAGE_THRESHOLD, MEGA_LIMIT, LEECH_LIMIT]):
+        size = api.getSize(node)
+        arch = any([listener.isZip, listener.isLeech, listener.extract])
+        if STORAGE_THRESHOLD is not None:
+            acpt = check_storage_threshold(size, arch)
+            if not acpt:
+                msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+                return sendMessage(msg, listener.bot, listener.message)
+        limit = None
+        if LEECH_LIMIT is not None and listener.isLeech:
+            mssg = f'Leech limit is {LEECH_LIMIT}GB'
+            limit = LEECH_LIMIT
+        if MEGA_LIMIT is not None:
+            msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
+            limit = MEGA_LIMIT
+        if limit is not None:
+            LOGGER.info('Checking File/Folder Size...')
+            if size > limit * 1024**3:
+                return sendMessage(msg3, listener.bot, listener.message)
     with download_dict_lock:
         download_dict[listener.uid] = MegaDownloadStatus(mega_listener, listener)
     listener.onDownloadStart()

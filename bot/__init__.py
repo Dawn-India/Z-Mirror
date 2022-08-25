@@ -108,22 +108,22 @@ SUDO_USERS = set()
 AS_DOC_USERS = set()
 AS_MEDIA_USERS = set()
 EXTENSION_FILTER = set(['.aria2'])
-
+LEECH_LOG = set()
+MIRROR_LOGS = set()
 try:
-    BOT_TOKEN = getConfig('BOT_TOKEN')
-    parent_id = getConfig('GDRIVE_FOLDER_ID')
-    DOWNLOAD_DIR = getConfig('DOWNLOAD_DIR')
-    if not DOWNLOAD_DIR.endswith("/"):
-        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
-    DOWNLOAD_STATUS_UPDATE_INTERVAL = int(getConfig('DOWNLOAD_STATUS_UPDATE_INTERVAL'))
-    OWNER_ID = int(getConfig('OWNER_ID'))
-    AUTO_DELETE_MESSAGE_DURATION = int(getConfig('AUTO_DELETE_MESSAGE_DURATION'))
-    TELEGRAM_API = getConfig('TELEGRAM_API')
-    TELEGRAM_HASH = getConfig('TELEGRAM_HASH')
+    aid = getConfig('MIRROR_LOGS')
+    aid = aid.split(' ')
+    for _id in aid:
+        MIRROR_LOGS.add(int(_id))
 except:
-    log_error("One or more env variables missing! Exiting now")
-    exit(1)
-
+    pass
+try:
+    aid = getConfig('LEECH_LOG')
+    aid = aid.split(' ')
+    for _id in aid:
+        LEECH_LOG.add(int(_id))
+except:
+    pass
 try:
     aid = getConfig('AUTHORIZED_CHATS')
     aid = aid.split()
@@ -146,19 +146,41 @@ try:
             EXTENSION_FILTER.add(x.strip().lower())
 except:
     pass
+try:
+    BOT_TOKEN = getConfig('BOT_TOKEN')
+    parent_id = getConfig('GDRIVE_FOLDER_ID')
+    DOWNLOAD_DIR = getConfig('DOWNLOAD_DIR')
+    if not DOWNLOAD_DIR.endswith("/"):
+        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
+    DOWNLOAD_STATUS_UPDATE_INTERVAL = int(getConfig('DOWNLOAD_STATUS_UPDATE_INTERVAL'))
+    OWNER_ID = int(getConfig('OWNER_ID'))
+    AUTO_DELETE_MESSAGE_DURATION = int(getConfig('AUTO_DELETE_MESSAGE_DURATION'))
+    TELEGRAM_API = getConfig('TELEGRAM_API')
+    TELEGRAM_HASH = getConfig('TELEGRAM_HASH')
+except:
+    log_error("One or more env variables missing! Exiting now")
+    exit(1)
 
+log_info("Creating client using BOT_TOKEN")
+app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
 try:
     IS_PREMIUM_USER = False
     USER_SESSION_STRING = getConfig('USER_SESSION_STRING')
     if len(USER_SESSION_STRING) == 0:
         raise KeyError
-    log_info("Creating client from USER_SESSION_STRING")
-    app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
-    with app:
-        IS_PREMIUM_USER = app.me.is_premium
+    log_info("Creating client using USER_SESSION_STRING")
+    app_session = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+    with app_session:
+        user = app_session.get_me()
+        if user.is_premium:
+            IS_PREMIUM_USER = True
+            log_info("User is Premium")
+        else:
+            IS_PREMIUM_USER = False
+            log_info("User is Not Premium")
 except:
-    log_info("Creating client from BOT_TOKEN")
-    app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
+    USER_SESSION_STRING = None
+    app_session = None
 
 try:
     RSS_USER_SESSION_STRING = getConfig('RSS_USER_SESSION_STRING')
@@ -215,16 +237,7 @@ try:
     LEECH_SPLIT_SIZE = int(LEECH_SPLIT_SIZE)
 except:
     LEECH_SPLIT_SIZE = 4194304000 if IS_PREMIUM_USER else 2097152000
-
 MAX_SPLIT_SIZE = 4194304000 if IS_PREMIUM_USER else 2097152000
-
-try:
-    DUMP_CHAT = getConfig('DUMP_CHAT')
-    if len(DUMP_CHAT) == 0:
-        raise KeyError
-    DUMP_CHAT = int(DUMP_CHAT)
-except:
-    DUMP_CHAT = None
 try:
     STATUS_LIMIT = getConfig('STATUS_LIMIT')
     if len(STATUS_LIMIT) == 0:
@@ -415,6 +428,50 @@ try:
 except:
     pass
 
+try:
+    MEGA_LIMIT = getConfig('MEGA_LIMIT')
+    if len(MEGA_LIMIT) == 0:
+        raise KeyError
+    MEGA_LIMIT = float(MEGA_LIMIT)
+except:
+    MEGA_LIMIT = None
+
+try:
+    TORRENT_DIRECT_LIMIT = getConfig('TORRENT_DIRECT_LIMIT')
+    if len(TORRENT_DIRECT_LIMIT) == 0:
+        raise KeyError
+    TORRENT_DIRECT_LIMIT = float(TORRENT_DIRECT_LIMIT)
+except:
+    TORRENT_DIRECT_LIMIT = None
+try:
+    CLONE_LIMIT = getConfig('CLONE_LIMIT')
+    if len(CLONE_LIMIT) == 0:
+        raise KeyError
+    CLONE_LIMIT = float(CLONE_LIMIT)
+except:
+    CLONE_LIMIT = None
+try:
+    STORAGE_THRESHOLD = getConfig('STORAGE_THRESHOLD')
+    if len(STORAGE_THRESHOLD) == 0:
+        raise KeyError
+    STORAGE_THRESHOLD = float(STORAGE_THRESHOLD)
+except:
+    STORAGE_THRESHOLD = None
+try:
+    ZIP_UNZIP_LIMIT = getConfig('ZIP_UNZIP_LIMIT')
+    if len(ZIP_UNZIP_LIMIT) == 0:
+        raise KeyError
+    ZIP_UNZIP_LIMIT = float(ZIP_UNZIP_LIMIT)
+except:
+    ZIP_UNZIP_LIMIT = None
+try:
+    LEECH_LIMIT = getConfig('LEECH_LIMIT')
+    if len(LEECH_LIMIT) == 0:
+        raise KeyError
+    LEECH_LIMIT = float(LEECH_LIMIT)
+except:
+    LEECH_LIMIT = None
+
 DRIVES_NAMES.append("Main")
 DRIVES_IDS.append(parent_id)
 if ospath.exists('drive_folder'):
@@ -438,6 +495,57 @@ try:
     SEARCH_PLUGINS = jsonloads(SEARCH_PLUGINS)
 except:
     SEARCH_PLUGINS = None
+try:
+    APPDRIVE_EMAIL = getConfig('APPDRIVE_EMAIL')
+    APPDRIVE_PASS = getConfig('APPDRIVE_PASS')
+    if len(APPDRIVE_EMAIL) == 0 or len(APPDRIVE_PASS) == 0:
+        raise KeyError
+except KeyError:
+    APPDRIVE_EMAIL = None
+    APPDRIVE_PASS = None
+try:
+    CRYPT = getConfig('CRYPT')
+    if len(CRYPT) == 0:
+        raise KeyError
+except:
+    CRYPT = None
+try:
+    SOURCE_LINK = getConfig('SOURCE_LINK')
+    SOURCE_LINK = SOURCE_LINK.lower() == 'true'
+except KeyError:
+    SOURCE_LINK = False
+try:
+    TITLE_NAME = getConfig('TITLE_NAME')
+    if len(TITLE_NAME) == 0:
+        TITLE_NAME = 'Z-Mirror'
+except KeyError:
+    log_info('TITLE_NAME not entered; using Z-Mirror')
+    TITLE_NAME = 'Z-Mirror'
+try:
+    AUTO_DELETE_UPLOAD_MESSAGE_DURATION = int(getConfig('AUTO_DELETE_UPLOAD_MESSAGE_DURATION'))
+except KeyError:
+    AUTO_DELETE_UPLOAD_MESSAGE_DURATION = -1
+    LOGGER.warning("AUTO_DELETE_UPLOAD_MESSAGE_DURATION var missing!")
+    pass
+try:
+    FORCE_BOT_PM = getConfig('FORCE_BOT_PM')
+    FORCE_BOT_PM = FORCE_BOT_PM.lower() == 'true'
+except KeyError:
+    FORCE_BOT_PM = False
+try:
+    BOT_PM = getConfig('BOT_PM')
+    BOT_PM = BOT_PM.lower() == 'true'
+    if FORCE_BOT_PM == True:
+        BOT_PM = True
+except KeyError:
+    BOT_PM = False
+try:
+    HTML = getConfig('HTML')
+    HTML = HTML.lower() == 'true'
+    if FORCE_BOT_PM == True:
+        HTML = True
+except KeyError:
+    HTML = False
 
 updater = tgUpdater(token=BOT_TOKEN, request_kwargs={'read_timeout': 20, 'connect_timeout': 15})
 bot = updater.bot

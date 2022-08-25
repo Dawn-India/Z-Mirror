@@ -3,15 +3,12 @@ from base64 import b16encode, b32decode
 from bencoding import bencode, bdecode
 from time import sleep, time
 from re import search as re_search
-from os import remove
-
-from bot import download_dict, download_dict_lock, BASE_URL, get_client, STOP_DUPLICATE, TORRENT_TIMEOUT, LOGGER
+from bot import *
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, sendStatusMessage, update_all_messages, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_time, setInterval, bt_selection_buttons
-from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name
-
+from bot.helper.ext_utils.bot_utils import get_readable_time, setInterval, bt_selection_buttons, get_readable_file_size
+from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, check_storage_threshold
 
 class QbDownloader:
     POLLING_INTERVAL = 3
@@ -29,6 +26,7 @@ class QbDownloader:
         self.__stopDup_check = False
         self.__select = False
         self.__periodic = None
+        self.__sizeChecked = False
 
     def add_qb_torrent(self, link, path, select, ratio, seed_time):
         self.__path = path
@@ -55,7 +53,7 @@ class QbDownloader:
                         if len(tor_info) > 0:
                             break
                         elif time() - self.__stalled_time >= 30:
-                            msg = "Not a torrent. If it's a torrent then report!"
+                            msg = "Not a torrent. If it's a torrent then report..!"
                             self.client.torrents_delete(torrent_hashes=self.ext_hash, delete_files=True)
                             sendMessage(msg, self.__listener.bot, self.__listener.message)
                             if not link.startswith('magnet:'):
@@ -125,12 +123,43 @@ class QbDownloader:
                         except:
                             qbname = None
                     if qbname is not None:
-                        cap, f_name = GoogleDriveHelper().drive_list(qbname, True)
-                        if cap:
+                        if HTML:
+                            cap, f_name = GoogleDriveHelper().drive_list(qbname, True)
+                            if cap:
+                                self.__onDownloadError("File/Folder is already available in Drive.")
+                                cap = f"Here are the search results:\n\n{cap}"
+                                sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
+                        qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
+                        if qbmsg:
                             self.__onDownloadError("File/Folder is already available in Drive.")
-                            cap = f"Here are the search results:\n\n{cap}"
-                            sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
+                            sendMarkup("Here are the search results:", self.__listener.bot, self.__listener.message,button)
                     self.__stopDup_check = True
+                if not self.__sizeChecked:
+                    size = tor_info.size
+                    arch = any([self.__listener.isZip, self.__listener.isLeech, self.__listener.extract])
+                    if STORAGE_THRESHOLD is not None:
+                        acpt = check_storage_threshold(size, arch)
+                        if not acpt:
+                            msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                            msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+                            self.__onDownloadError(msg)
+                            return
+                    limit = None
+                    if LEECH_LIMIT is not None and self.__listener.isLeech:
+                        mssg = f'Leech limit is {LEECH_LIMIT}GB'
+                        limit = LEECH_LIMIT
+                    if ZIP_UNZIP_LIMIT is not None and arch:
+                        mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
+                        limit = ZIP_UNZIP_LIMIT
+                    elif TORRENT_DIRECT_LIMIT is not None:
+                        mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
+                        limit = TORRENT_DIRECT_LIMIT
+                    if limit is not None:
+                        LOGGER.info('Checking File/Folder Size...')
+                        if size > limit * 1024**3:
+                            fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
+                            self.__onDownloadError(fmsg)
+                    self.__sizeChecked = True
             elif tor_info.state == "stalledDL":
                 if not self.__rechecked and 0.99989999999999999 < tor_info.progress < 1:
                     msg = f"Force recheck - Name: {self.__name} Hash: "
