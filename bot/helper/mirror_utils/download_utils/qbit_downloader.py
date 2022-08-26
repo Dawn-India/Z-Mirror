@@ -3,6 +3,7 @@ from base64 import b16encode, b32decode
 from bencoding import bencode, bdecode
 from time import sleep, time
 from re import search as re_search
+from os import remove
 from bot import *
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
