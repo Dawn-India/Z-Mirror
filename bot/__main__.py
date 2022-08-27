@@ -253,5 +253,8 @@ def main():
 
 app.start()
 main()
-
+if USER_SESSION_STRING:
+    app_session.run()
+else:
+    pass
 main_loop.run_forever()
