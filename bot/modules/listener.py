@@ -220,7 +220,11 @@ class MirrorLeechListener:
         reply_to = self.message.reply_to_message
         if self.message.chat.type != 'private' and AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
             if reply_to is not None:
-                reply_to.delete()
+                try:
+                    reply_to.delete()
+                except Exception as e:
+                    LOGGER.warning(e)
+                pass
         msg = f"<b>Name: </b><code>{escape(name)}</code>\n\n<b>Size: </b>{size}"
         if BOT_PM and FORCE_BOT_PM:
             botpm = f"<b>\n\nHey {self.tag}!, I have sent your links in PM.</b>\n"
