@@ -25,6 +25,7 @@ def _clone(message, bot):
                 buttons.buildbutton(f"{TITLE_NAME}", f"https://t.me/{CHANNEL_USERNAME}")
                 reply_markup = f"<b>Dear</b> {uname}️,\n\n<b>Please join {TITLE_NAME} to use me.</b>\n\nDo your tasks again after join."
                 mesg = sendMarkup(reply_markup, bot, message, (buttons.build_menu(1)))
+                sleep(15)
                 mesg.delete()
                 message.delete()
                 return
