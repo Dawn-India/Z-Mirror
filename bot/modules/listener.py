@@ -229,7 +229,11 @@ class MirrorLeechListener:
             botstart = f"http://t.me/{b_uname}"
             buttons.buildbutton("View links in PM", f"{botstart}")
             sendMarkup(msg + botpm, self.bot, self.message, buttons.build_menu(2))
-            self.message.delete()
+            try:
+                self.message.delete()
+            except Exception as e:
+                    LOGGER.warning(e)
+            pass
             reply_to = self.message.reply_to_message
             if reply_to is not None and AUTO_DELETE_UPLOAD_MESSAGE_DURATION == -1:
                 reply_to.delete()
@@ -398,7 +402,11 @@ class MirrorLeechListener:
     def onDownloadError(self, error):
         reply_to = self.message.reply_to_message
         if reply_to is not None:
-            reply_to.delete()
+            try:
+                reply_to.delete()
+            except Exception as e:
+                    LOGGER.warning(e)
+            pass
         else:
             pass
         error = error.replace('<', ' ').replace('>', ' ')
