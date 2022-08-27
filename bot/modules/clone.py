@@ -16,10 +16,26 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def _clone(message, bot):
     buttons = ButtonMaker()
+    uname = message.from_user.mention_html(message.from_user.first_name)
+
+    if FSUB:
+        try:
+            user = bot.get_chat_member(FSUB_CHANNEL_ID, message.from_user.id)
+            if user.status == "left":
+                buttons.buildbutton(f"{TITLE_NAME}", f"https://t.me/{CHANNEL_USERNAME}")
+                reply_markup = f"<b>Dear</b> {uname}️,\n\n<b>Please join {TITLE_NAME} to use me.</b>\n\nDo your tasks again after join."
+                mesg = sendMarkup(reply_markup, bot, message, (buttons.build_menu(1)))
+                mesg.delete()
+                message.delete()
+                return
+        except Exception as e:
+            LOGGER.info(str(e))
+
     if AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
         reply_to = message.reply_to_message
         if reply_to is not None:
             reply_to.delete()
+
     if BOT_PM and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
@@ -29,7 +45,6 @@ def _clone(message, bot):
             LOGGER.warning(e)
             bot_d = bot.get_me()
             b_uname = bot_d.username
-            uname = message.from_user.mention_html(message.from_user.first_name)
             botstart = f"http://t.me/{b_uname}"
             buttons.buildbutton("Click Here to Start Me", f"{botstart}")
             startwarn = f"<b>Dear {uname}, Start me in PM to use me.</b>"

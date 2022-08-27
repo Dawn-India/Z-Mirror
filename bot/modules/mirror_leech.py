@@ -22,6 +22,21 @@ from .listener import MirrorLeechListener
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
     buttons = ButtonMaker()
+    uname = message.from_user.mention_html(message.from_user.first_name)
+
+    if FSUB:
+        try:
+            user = bot.get_chat_member(FSUB_CHANNEL_ID, message.from_user.id)
+            if user.status == "left":
+                buttons.buildbutton(f"{TITLE_NAME}", f"https://t.me/{CHANNEL_USERNAME}")
+                reply_markup = f"<b>Dear</b> {uname}️,\n\n<b>Please join {TITLE_NAME} to use me.</b>\n\nDo your tasks again after join."
+                mesg = sendMarkup(reply_markup, bot, message, (buttons.build_menu(1)))
+                mesg.delete()
+                message.delete()
+                return
+        except Exception as e:
+            LOGGER.info(str(e))
+
     if BOT_PM and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
@@ -31,10 +46,9 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             LOGGER.warning(e)
             bot_d = bot.get_me()
             b_uname = bot_d.username
-            uname = message.from_user.mention_html(message.from_user.first_name)
             botstart = f"http://t.me/{b_uname}"
-            buttons.buildbutton("Click Here to Start Me", f"{botstart}")
-            startwarn = f"<b>Dear {uname}, Start me in PM to use me.</b>"
+            buttons.buildbutton("Come in PM", f"{botstart}")
+            startwarn = f"<b>Dear {uname}, \n\nPlease come into my PM\n\nand drop a nice message for me.</b>\n\nThen do your tasks again."
             mesg = sendMarkup(startwarn, bot, message, buttons.build_menu(2))
             sleep(15)
             mesg.delete()
