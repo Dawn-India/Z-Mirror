@@ -180,7 +180,7 @@ def get_readable_message():
                 globals()['COUNT'] -= STATUS_LIMIT
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
-            msg += f"\n\n<b>File Name:</b> <code>{escape(str(download.name()))}</code>"
+            msg += f'\n\n<b>File Name:</b> <code><a href="https://t.me/c/{str(download.message.chat.id)[4:]}/{download.message.message_id}">{escape(str(download.name()))}</a></code>'
             msg += f"\n\n<b>Status:</b> <code>{download.status()}</code> <b>Using:</b> <code>{download.eng()}</code>"
             if download.status() not in [MirrorStatus.STATUS_SEEDING]:
                 msg += f"\n{get_progress_bar_string(download)} ↣ {download.progress()}"
@@ -199,7 +199,7 @@ def get_readable_message():
                 elif download.status() == MirrorStatus.STATUS_SPLITTING:
                     msg += f"\n<b>Splitted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
                 msg += f"\n<b>ETA:</b> <code>{download.eta()}</code> <b>Elapsed:</b> <code>{get_readable_time(time() - download.message.date.timestamp())}</code>"
-                msg += f'\n<b>Speed:</b> <code>{download.speed()}</code> <b>Task By:</b> <a href="https://t.me/c/{str(download.message.chat.id)[4:]}/{download.message.message_id}">{download.message.from_user.first_name}</a>'
+                msg += f'\n<b>Speed:</b> <code>{download.speed()}</code> <b>Task By:</b> {message.from_user.mention_html(message.from_user.first_name)}'
                 if hasattr(download, 'seeders_num'):
                     try:
                         msg += f"\n<b>Seeders:</b> {download.seeders_num()} | <b>Leechers:</b> {download.leechers_num()}"
