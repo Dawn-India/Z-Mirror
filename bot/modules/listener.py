@@ -169,7 +169,7 @@ class MirrorLeechListener:
                             if not checked:
                                 checked = True
                                 with download_dict_lock:
-                                    download_dict[self.uid] = SplitStatus(up_name, size, gid, self, self.message)
+                                    download_dict[self.uid] = SplitStatus(up_name, size, gid, self)
                                 LOGGER.info(f"Splitting: {up_name}")
                             res = split_file(f_path, f_size, file_, dirpath, LEECH_SPLIT_SIZE, self)
                             if not res:
