@@ -69,7 +69,7 @@ def clean_unwanted(path: str):
         for filee in files:
             if filee.endswith(".!qB") or filee.endswith('.parts') and filee.startswith('.'):
                 osremove(ospath.join(dirpath, filee))
-        if dirpath.endswith((".unwanted", "splited_files_mltb")):
+        if dirpath.endswith((".unwanted", "splited_files_z")):
             rmtree(dirpath)
     for dirpath, subdir, files in walk(path, topdown=False):
         if not listdir(dirpath):
@@ -123,7 +123,7 @@ def take_ss(video_file, duration):
 
 def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i=1, inLoop=False, noMap=False):
     if listener.seed and not listener.newDir:
-        dirpath = f"{dirpath}/splited_files_mltb"
+        dirpath = f"{dirpath}/splited_files_z"
         if not ospath.exists(dirpath):
             mkdir(dirpath)
     parts = ceil(size/LEECH_SPLIT_SIZE)

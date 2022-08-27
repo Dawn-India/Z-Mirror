@@ -188,7 +188,7 @@ class TgUploader:
         if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
             osremove(thumb)
         if not self.__is_cancelled and \
-                   (not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_mltb")):
+                   (not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_z")):
             try:
                 osremove(up_path)
             except:

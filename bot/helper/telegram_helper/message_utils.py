@@ -7,7 +7,6 @@ from os import remove
 from bot import *
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
-
 def sendMessage(text: str, bot, message: Message):
     try:
         return bot.sendMessage(message.chat_id,

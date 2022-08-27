@@ -9,7 +9,6 @@ from bot.helper.ext_utils.bot_utils import getDownloadByGid, getAllDownload
 from bot.helper.ext_utils.bot_utils import MirrorStatus
 from bot.helper.telegram_helper import button_build
 
-
 def cancel_mirror(update, context):
     user_id = update.message.from_user.id
     if len(context.args) == 1:
