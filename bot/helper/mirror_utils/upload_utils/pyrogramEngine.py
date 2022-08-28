@@ -53,9 +53,8 @@ class TgUploader:
                     except Exception as e:
                         if self.__is_cancelled:
                             return
-                        else:
-                            LOGGER.error(e)
-                            continue
+                        LOGGER.error(e)
+                        continue
                     self.__upload_file(up_path, file_, dirpath)
                     if self.__is_cancelled:
                         return
@@ -73,10 +72,7 @@ class TgUploader:
 
     def __upload_file(self, up_path, file_, dirpath):
         fsize = ospath.getsize(up_path)
-        if fsize > 2097152000:
-            client = app_session
-        else:
-            client = app
+        client = app_session if fsize > 2097152000 else app
         if LEECH_LOG:
             set = LEECH_LOG.copy()
             setstr = str(set)[1:-1]
@@ -188,7 +184,7 @@ class TgUploader:
         if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
             osremove(thumb)
         if not self.__is_cancelled and \
-                   (not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_z")):
+                       (not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_z")):
             try:
                 osremove(up_path)
             except:

@@ -25,8 +25,11 @@ def select(update, context):
             sendMessage("This is not an active task!", context.bot, update.message)
             return
     elif len(context.args) == 0:
-        msg = "Reply to an active /cmd which was used to start the qb-download or add gid along with cmd\n\n"
-        msg += "This command mainly for selection incase you decided to select files from already added torrent. "
+        msg = (
+            "Reply to an active /cmd which was used to start the qb-download or add gid along with cmd\n\n"
+            + "This command mainly for selection incase you decided to select files from already added torrent. "
+        )
+
         msg += "But you can always use /cmd with arg `s` to select files before download start."
         sendMessage(msg, context.bot, update.message)
         return

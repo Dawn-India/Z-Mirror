@@ -79,4 +79,3 @@ try:
 except Exception as err:
     LOGGER.warning(f"Can't Create Telegraph Account: {err}")
     telegraph = None
-    pass
