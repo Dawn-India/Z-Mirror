@@ -1,6 +1,6 @@
 from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
-from bot import LOGGER, dispatcher
+from bot import *
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, sendFile, deleteMessage
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -39,10 +39,14 @@ def select_type(update, context):
 def _list_drive(bot, key, bmsg, item_type):
     LOGGER.info(f"listing: {key}")
     gdrive = GoogleDriveHelper()
-    cap, f_name = gdrive.drive_list(key, isRecursive=True, itemType=item_type)
-    if cap:
-        deleteMessage(bot, bmsg)
-        sendFile(bot, bmsg.reply_to_message, f_name, cap)
+    if HTML:
+        cap, f_name = gdrive.drive_list(key, isRecursive=True, itemType=item_type)
+        if cap:
+            deleteMessage(bot, bmsg)
+            sendFile(bot, bmsg.reply_to_message, f_name, cap)
+    msg, button = gdrive.drive_list(key, isRecursive=True, itemType=item_type)
+    if button:
+        editMessage(msg, bmsg, button)
     else:
         editMessage(f'No result found for <i>{key}</i>', bmsg)
 

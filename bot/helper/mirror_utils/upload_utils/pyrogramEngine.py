@@ -4,8 +4,7 @@ from time import time, sleep
 from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
-
-from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, EXTENSION_FILTER, DUMP_CHAT, app
+from bot import *
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
@@ -13,7 +12,6 @@ LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
 
 IMAGE_SUFFIXES = ("JPG", "JPX", "PNG", "CR2", "TIF", "BMP", "JXR", "PSD", "ICO", "HEIC", "JPEG")
-
 
 class TgUploader:
 
@@ -32,9 +30,12 @@ class TgUploader:
         self.__corrupted = 0
         self.__resource_lock = RLock()
         self.__is_corrupted = False
+        self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
         self.__size = size
-        self.__msg_to_reply()
         self.__user_settings()
+        self.isPrivate = listener.message.chat.type in ['private', 'group']
+        self.__app = app
+        self.__user_id = listener.message.from_user.id
 
     def upload(self, o_files):
         for dirpath, subdir, files in sorted(walk(self.__path)):
@@ -58,7 +59,7 @@ class TgUploader:
                     self.__upload_file(up_path, file_, dirpath)
                     if self.__is_cancelled:
                         return
-                    if (not self.__listener.isPrivate or DUMP_CHAT is not None) and not self.__is_corrupted:
+                    if not self.__listener.isPrivate and not self.__is_corrupted:
                         self.__msgs_dict[self.__sent_msg.link] = file_
                     self._last_uploaded = 0
                     sleep(1)
@@ -71,14 +72,25 @@ class TgUploader:
         self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
 
     def __upload_file(self, up_path, file_, dirpath):
+        fsize = ospath.getsize(up_path)
+        if fsize > 2097152000:
+            client = app_session
+        else:
+            client = app
+        if LEECH_LOG:
+            set = LEECH_LOG.copy()
+            setstr = str(set)[1:-1]
+            LEECH_DUMP = int(setstr)
+            leechchat = LEECH_DUMP
+        else: leechchat = self.__listener.message.chat.id
         if CUSTOM_FILENAME is not None:
-            cap_mono = f"{CUSTOM_FILENAME} <code>{file_}</code>"
+            cap_mono = f"{CUSTOM_FILENAME} <b>{file_}</b>"
             file_ = f"{CUSTOM_FILENAME} {file_}"
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
             up_path = new_path
         else:
-            cap_mono = f"<code>{file_}</code>"
+            cap_mono = f"<b>{file_}</b>"
         notMedia = False
         thumb = self.__thumb
         self.__is_corrupted = False
@@ -104,8 +116,7 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                    self.__sent_msg = self.__sent_msg.reply_video(video=up_path,
-                                                                  quote=True,
+                    self.__sent_msg = client.send_video(chat_id=leechchat, video=up_path,
                                                                   caption=cap_mono,
                                                                   duration=duration,
                                                                   width=width,
@@ -114,10 +125,14 @@ class TgUploader:
                                                                   supports_streaming=True,
                                                                   disable_notification=True,
                                                                   progress=self.__upload_progress)
+                    if not self.isPrivate and BOT_PM:
+                        try:
+                            app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                        except Exception as err:
+                                LOGGER.error(f"Failed To Send Video in PM:\n{err}")
                 elif is_audio:
                     duration , artist, title = get_media_info(up_path)
-                    self.__sent_msg = self.__sent_msg.reply_audio(audio=up_path,
-                                                                  quote=True,
+                    self.__sent_msg = client.send_audio(chat_id=leechchat, audio=up_path,
                                                                   caption=cap_mono,
                                                                   duration=duration,
                                                                   performer=artist,
@@ -125,12 +140,21 @@ class TgUploader:
                                                                   thumb=thumb,
                                                                   disable_notification=True,
                                                                   progress=self.__upload_progress)
+                    if not self.isPrivate and BOT_PM:
+                        try:
+                            app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                        except Exception as err:
+                                LOGGER.error(f"Failed To Send Audio in PM:\n{err}")
                 elif file_.upper().endswith(IMAGE_SUFFIXES):
-                    self.__sent_msg = self.__sent_msg.reply_photo(photo=up_path,
-                                                                  quote=True,
+                    self.__sent_msg = self.__app.send_photo(chat_id=leechchat, photo=up_path,
                                                                   caption=cap_mono,
                                                                   disable_notification=True,
                                                                   progress=self.__upload_progress)
+                    if not self.isPrivate and BOT_PM:
+                        try:
+                            app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                        except Exception as err:
+                                LOGGER.error(f"Failed To Send Image in PM:\n{err}")
                 else:
                     notMedia = True
             if self.__as_doc or notMedia:
@@ -140,17 +164,21 @@ class TgUploader:
                         if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
                             osremove(thumb)
                         return
-                self.__sent_msg = self.__sent_msg.reply_document(document=up_path,
-                                                                 quote=True,
+                self.__sent_msg = client.send_document(chat_id=leechchat, document=up_path,
                                                                  thumb=thumb,
                                                                  caption=cap_mono,
                                                                  disable_notification=True,
                                                                  progress=self.__upload_progress)
+                if not self.isPrivate and BOT_PM:
+                    try:
+                        app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                    except Exception as err:
+                        LOGGER.error(f"Failed To Send Document in PM:\n{err}")
         except FloodWait as f:
             LOGGER.warning(str(f))
             sleep(f.value)
         except RPCError as e:
-            LOGGER.error(f"RPCError: {e} Path: {up_path}")
+            LOGGER.error(f"RPCError: Make Sure Leech Log chat id is correct and BOT have admin privileges in Leech log channel/group {e} Path: {up_path}")
             self.__corrupted += 1
             self.__is_corrupted = True
         except Exception as err:
@@ -160,7 +188,7 @@ class TgUploader:
         if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
             osremove(thumb)
         if not self.__is_cancelled and \
-                   (not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_mltb")):
+                   (not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_z")):
             try:
                 osremove(up_path)
             except:
@@ -182,16 +210,6 @@ class TgUploader:
             self.__as_doc = False
         if not ospath.lexists(self.__thumb):
             self.__thumb = None
-
-    def __msg_to_reply(self):
-        if DUMP_CHAT is not None:
-            if self.__listener.isPrivate:
-                msg = self.__listener.message.text
-            else:
-                msg = self.__listener.message.link
-            self.__sent_msg = app.send_message(DUMP_CHAT, msg)
-        else:
-            self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
 
     @property
     def speed(self):

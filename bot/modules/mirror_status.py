@@ -8,7 +8,6 @@ from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 
-
 def mirror_status(update, context):
     with download_dict_lock:
         count = len(download_dict)
@@ -47,7 +46,6 @@ def status_pages(update, context):
         update_all_messages(True)
     else:
         query.message.delete()
-
 
 mirror_status_handler = CommandHandler(BotCommands.StatusCommand, mirror_status,
                                        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)

@@ -2,7 +2,12 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 
 # Features:
 
-In each single file there is a major change from base code, it's almost totaly different. Here some of features and fixes that I remember.
+### SuperGroup Features
+- Mirror logs
+- Leech logs
+- Source link
+- Bot PM
+- Auto delete all links and msgs to prevent copyright
 ### qBittorrent
 - Qbittorrent support
 - Select files from Torrent before and while downloading
@@ -31,6 +36,7 @@ In each single file there is a major change from base code, it's almost totaly d
 - List result in html file instead of telegraph or telegram message to avoid limits by @junedkh
 - Random Service Account at startup
 ### Status
+- Split Status
 - Clone Status
 - Extract Status
 - Archive Status
@@ -49,7 +55,7 @@ In each single file there is a major change from base code, it's almost totaly d
 ### Database
 - SQL Database support
 - Save leech settings including thumbnails in database
-- Save sudo and authorized users
+- Save sudo, authorized users and logs channel
 - Incomplete task notifier to get incomplete task messages after restart
 ### Torrents Search
 - Torrent search support
@@ -73,8 +79,6 @@ In each single file there is a major change from base code, it's almost totaly d
 - View Link button. Extra button to open index link in broswer instead of direct download for file
 - Almost all repository functions have been improved and many other details can't mention all of them
 - Many bugs have been fixed
-
-## From Base and other Repositories
 - Mirror direct download links, Torrent, Mega.nz and Telegram files to Google Drive
 - Copy files from someone's Drive to your Drive
 - Download/Upload progress, Speeds and ETAs
@@ -143,6 +147,7 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `DOWNLOAD_DIR`: The path to the local folder where the downloads should be downloaded to. `Str`
 - `DOWNLOAD_STATUS_UPDATE_INTERVAL`: Time in seconds after which the progress/status message will be updated. Recommended `10` seconds at least. `Int`
 - `AUTO_DELETE_MESSAGE_DURATION`: Interval of time (in seconds), after which the bot deletes it's message and command message which is expected to be viewed instantly. **NOTE**: Set to `-1` to disable auto message deletion. `Int`
+- `AUTO_DELETE_UPLOAD_MESSAGE_DURATION`: Interval of time (in seconds), after which the bot deletes all upload msg and links.  **NOTE**: Set to `-1` to disable auto message deletion. `Int`
 - `TELEGRAM_API`: This is to authenticate your Telegram account for downloading Telegram files. You can get this from https://my.telegram.org. `Int`
 - `TELEGRAM_HASH`: This is to authenticate your Telegram account for downloading Telegram files. You can get this from https://my.telegram.org. `Str`
 
@@ -167,12 +172,24 @@ Fill up rest of the fields. Meaning of each field is discussed below:
   - **NOTE**: Any change in docker or requirements you need to deploy/build again with updated repo to take effect. DON'T delete .gitignore file. For more information read [THIS](https://github.com/anasty17/mirror-leech-telegram-bot/tree/master#upstream-repo-recommended).
 - `UPSTREAM_BRANCH`: Upstream branch for update. Default is `vps`. `Str`
 
+### Telegraph ui
+- `HTML`: Set it `True` if you want to use `HTML` format instade of `TELEGRAPH` page. Default is `False`.
+- `TITLE_NAME`: Title name for Telegraph pages and Bot UI.
+### Force SUB
+- `FSUB`: Force users to subscribe a specific channel in order to use the bot. Set it `True` if you want to use FSUB. Default is `False`.
+- `CHANNEL_USERNAME`: Add the channel username for force sub. (Example: If the channel link is `https://t.me/z_mirror` then write `z_mirror`)
+- `FSUB_CHANNEL_ID`: Add channel id for `FSUB`. (Ex: `-1001232292892`). ( **Note** Don't add "" )
+
+### Mirror
+- `MIRROR_LOGS`: Channel/Chat ID where bot will send all mirrored links. `str`. **NOTE**: Only available for supergroup/channel. Add `-100` before channel/Group id. In short don't add bot id or your id!
+- `BOT_PM`: Set `True` if you want bot to send all links and files in user's PM. Default is `False`. `Bool`
+- `FORCE_BOT_PM`: Set it `True` if you want bot to send all mirrored links and leeched files only in PM and `LEECH_LOG`.
 ### Leech
 - `LEECH_SPLIT_SIZE`: Size of split in bytes. Default is `2GB`. Default is `4GB` if your account is premium. `Str`
 - `AS_DOCUMENT`: Default type of Telegram file upload. Default is `False` mean as media. `Bool`
 - `EQUAL_SPLITS`: Split files larger than **LEECH_SPLIT_SIZE** into equal parts size (Not working with zip cmd). Default is `False`. `Bool`
 - `CUSTOM_FILENAME`: Add custom word to leeched file name. `Str`
-- `DUMP_CHAT`: Chat ID. Upload files to specific chat. `str`. **NOTE**: Only available for supergroup/channel. Add `-100` before channel/Group id. In short don't add bot id or your id!
+- `LEECH_LOG`: Channel/Chat ID. Upload files to specific chat. `str`. **NOTE**: Only available for supergroup/channel. Add `-100` before channel/Group id. In short don't add bot id or your id!
 - `USER_SESSION_STRING`: To download/upload from your telegram account. If you own premium account. To generate session string use this command `python3 generate_string_session.py` after mounting repo folder for sure. `Str`. **NOTE**: You can't use bot with private message. Use it with supergroup or channel.
 
 ### qBittorrent/Aria2c
@@ -201,9 +218,24 @@ Fill up rest of the fields. Meaning of each field is discussed below:
 - `MEGA_API_KEY`: Mega.nz API key to mirror mega.nz links. Get it from [Mega SDK Page](https://mega.nz/sdk). `Str`
 - `MEGA_EMAIL_ID`: E-Mail ID used to sign up on mega.nz for using premium account. `Str`
 - `MEGA_PASSWORD`: Password for mega.nz account. `Str`
+### GDTOT
+- `CRYPT`: Cookie for gdtot google drive link generator. Follow these [steps](https://github.com/Dawn-India/Z-Mirror/tree/master#gdtot-cookies).
+
+### AppDrive
+- `APPDRIVE_EMAIL` = Fill your AppDrive Email address.
+- `APPDRIVE_PASS` = AppDrive Password for login.
+
+### Size Limits
+- `TORRENT_DIRECT_LIMIT`: To limit the Torrent/Direct mirror size. Don't add unit. Default unit is `GB`.
+- `ZIP_UNZIP_LIMIT`: To limit the size of zip and unzip commands. Don't add unit. Default unit is `GB`.
+- `CLONE_LIMIT`: To limit the size of Google Drive folder/file which you can clone. Don't add unit. Default unit is `GB`.
+- `MEGA_LIMIT`: To limit the size of Mega download. Don't add unit. Default unit is `GB`.
+- `LEECH_LIMIT`: To limit the size of Leech download. Don't add unit. Default unit is `GB`.
+- `STORAGE_THRESHOLD`: To leave specific storage free and any download will lead to leave free storage less than this value will be cancelled. Don't add unit. Default unit is `GB`.
 
 ### Buttons
 - `VIEW_LINK`: View Link button to open file Index Link in browser instead of direct download link, you can figure out if it's compatible with your Index code or not, open any video from you Index and check if its URL ends with `?a=view`. Compatible with [BhadooIndex](https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index) Code. Default is `False`. `Bool`
+- `SOURCE_LINK`: -  set it `True` if you want to get Source Link of Mirrored/Cloned file,  Default is `False`.
 
 ### Torrent Search
 - `SEARCH_API_LINK`: Search api app link. Get your api from deploying this [repository](https://github.com/Ryuk-me/Torrent-Api-py). `Str`
@@ -306,6 +338,10 @@ sudo docker-compose start
 
 ------
 
+## Deploying on Github Actions
+- Coming soon
+
+------
 ## Deploying on Heroku
 <p><a href="https://github.com/Dawn-India/Z-Mirror/tree/heroku"> <img src="https://img.shields.io/badge/Deploy%20Guide-blueviolet?style=for-the-badge&logo=heroku" width="170""/></a></p>
 
@@ -472,7 +508,7 @@ python3 add_to_team_drive.py -d SharedTeamDriveSrcID
 **2. Using Heroku PostgreSQL**
 <p><a href="https://dev.to/prisma/how-to-setup-a-free-postgresql-database-on-heroku-1dc1"> <img src="https://img.shields.io/badge/See%20Dev.to-black?style=for-the-badge&logo=dev.to" width="160""/></a></p>
 
-**3. Using ElephantSQL**
+**3. Using ElephantSQL** (Recommended)
 - Go to [elephantsql](https://elephantsql.com) and create account
 - Hit `Create New Instance`
 - Follow the further instructions in the screen
@@ -514,5 +550,36 @@ Using Aria2c you can also use built in feature from bot with or without username
 machine example.workers.dev password index_password
 ```
 Where host is the name of extractor (eg. instagram, Twitch). Multiple accounts of different hosts can be added each separated by a new line.
+
+-----
+
+## Gdtot Cookies
+To Clone or Leech gdtot link follow these steps:
+
+1. Login/Register to [gdtot](https://new.gdtot.top).
+2. Copy this script and paste it in browser address bar.
+   - **Note**: After pasting it check at the beginning of the script in broswer address bar if `javascript:` exists or not, if not so write it as shown below.
+   ```javascript
+   javascript:(function () {
+    const input = document.createElement('input');
+    COOKIE = JSON.parse(JSON.stringify({cookie : document.cookie}));
+    input.value = COOKIE['cookie'].split('crypt=')[1];
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    var result = document.execCommand('copy');
+    document.body.removeChild(input);
+     if(result)
+       alert('Crypt copied to clipboard');
+     else
+       prompt('Failed to copy Crypt. Manually copy below Crypt\n\n', input.value);
+   })();
+   ```
+   - After pressing enter your browser will prompt a alert.
+3. Now you'll get Crypt value in your clipboard
+   ```
+   NGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxWdSVT0%3D
+   ```
+4. From this you have to paste value for **CRYPT** in config.env file.
 
 -----
