@@ -107,10 +107,7 @@ class MirrorLeechListener:
                         for file_ in files:
                             if re_search(r'\.part0*1\.rar$|\.7z\.0*1$|\.zip\.0*1$|\.zip$|\.7z$|^.(?!.*\.part\d+\.rar)(?=.*\.rar$)', file_):
                                 f_path = ospath.join(dirpath, file_)
-                                if self.seed:
-                                    t_path = dirpath.replace(self.dir, self.newDir)
-                                else:
-                                    t_path = dirpath
+                                t_path = dirpath.replace(self.dir, self.newDir) if self.seed else dirpath
                                 if self.pswd is not None:
                                     self.suproc = Popen(["7z", "x", f"-p{self.pswd}", f_path, f"-o{t_path}", "-aot"])
                                 else:
@@ -179,17 +176,16 @@ class MirrorLeechListener:
                             if res == "errored":
                                 if f_size <= MAX_SPLIT_SIZE:
                                     continue
-                                else:
-                                    try:
-                                        osremove(f_path)
-                                    except:
-                                        return
+                                try:
+                                    osremove(f_path)
+                                except:
+                                    return
                             elif not self.seed or self.newDir:
                                 try:
                                     osremove(f_path)
                                 except:
                                     return
-                            elif self.seed and res != "errored":
+                            else:
                                 m_size.append(f_size)
                                 o_files.append(file_)
 
