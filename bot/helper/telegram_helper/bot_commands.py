@@ -13,7 +13,7 @@ class _BotCommands:
         self.YtdlCommand = (f'ytdl{CMD_INDEX}', f'y{CMD_INDEX}')
         self.YtdlZipCommand = (f'ytdlzip{CMD_INDEX}', f'yz{CMD_INDEX}')
         self.LeechCommand = (f'leech{CMD_INDEX}', f'l{CMD_INDEX}')
-        self.UnzipLeechCommand = (f'unzipleech{CMD_INDEX}', f'uzl{CMD_INDEX}')
+        self.UnzipLeechCommand = (f'unzipleech{CMD_INDEX}', f'ul{CMD_INDEX}')
         self.ZipLeechCommand = (f'zipleech{CMD_INDEX}', f'zl{CMD_INDEX}')
         self.QbLeechCommand = (f'qbleech{CMD_INDEX}', f'qbl{CMD_INDEX}')
         self.QbUnzipLeechCommand = (f'qbunzipleech{CMD_INDEX}', f'qbul{CMD_INDEX}')
