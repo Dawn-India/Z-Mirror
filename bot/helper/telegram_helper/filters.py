@@ -2,7 +2,6 @@ from telegram.ext import MessageFilter
 from telegram import Message
 from bot import AUTHORIZED_CHATS, SUDO_USERS, OWNER_ID
 
-
 class CustomFilters:
     class __OwnerFilter(MessageFilter):
         def filter(self, message: Message):
