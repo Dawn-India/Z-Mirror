@@ -18,6 +18,7 @@ from bot import *
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval
 from bot.helper.ext_utils.fs_utils import get_mime_type
 from bot.helper.ext_utils.html_helper import hmtl_content
+from bot.helper.ext_utils.shortenurl import short_url
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
 LOGGER = getLogger(__name__)
@@ -373,16 +374,19 @@ class GoogleDriveHelper:
                 msg += f'\n<b>SubFolders: </b>{self.__total_folders}'
                 msg += f'\n<b>Files: </b>{self.__total_files}'
                 buttons = ButtonMaker()
+                durl = short_url(durl)
                 buttons.buildbutton("☁️ Drive Link", durl)
                 if INDEX_URL is not None:
                     url_path = rquote(f'{meta.get("name")}', safe='')
                     url = f'{INDEX_URL}/{url_path}/'
+                    url = short_url(url)
                     buttons.buildbutton("⚡ Index Link", url)
             else:
                 file = self.__copyFile(meta.get('id'), parent_id)
                 msg += f'<b>Name: </b><code>{file.get("name")}</code>'
                 durl = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))
                 buttons = ButtonMaker()
+                durl = short_url(durl)
                 buttons.buildbutton("☁️ Drive Link", durl)
                 if mime_type is None:
                     mime_type = 'File'
@@ -391,9 +395,11 @@ class GoogleDriveHelper:
                 if INDEX_URL is not None:
                     url_path = rquote(f'{file.get("name")}', safe='')
                     url = f'{INDEX_URL}/{url_path}'
+                    url = short_url(url)
                     buttons.buildbutton("⚡ Index Link", url)
                     if VIEW_LINK:
                         urlv = f'{INDEX_URL}/{url_path}?a=view'
+                        urlv = short_url(urlv)
                         buttons.buildbutton("🌐 View Link", urlv)
                     if SOURCE_LINK is True:
                         buttons.buildbutton(f"🔗 Source Link", link)
@@ -666,33 +672,50 @@ class GoogleDriveHelper:
                 mime_type = file.get('mimeType')
                 if mime_type == "application/vnd.google-apps.folder":
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
-                    msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>"
-                    msg += f"<b><a href={furl}>Drive Link</a></b>"
+                    furl = short_url(furl)
+                    msg += '<span class="container start rfontsize">' \
+                          f"<div>📁 {file.get('name')} (folder)</div>" \
+                           '<div class="dlinks">' \
+                          f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'
                     if INDEX_URLS[index] is not None:
                         if isRecur:
                             url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, parent_id)])
                         else:
                             url_path = rquote(f'{file.get("name")}', safe='')
                         url = f'{INDEX_URLS[index]}/{url_path}/'
-                        msg += f' <b>| <a href="{url}">Index Link</a></b>'
+                        url = short_url(url)
+                        msg += '<span> | </span>' \
+                              f'<span> <a class="forhover" href="{url}">Index Link</a></span>'
                 elif mime_type == 'application/vnd.google-apps.shortcut':
-                    msg += f"⁍<a href='https://drive.google.com/drive/folders/{file.get('id')}'>{file.get('name')}" \
-                        f"</a> (shortcut)"
+                    furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
+                    furl = short_url(furl)
+                    msg += '<span class="container start rfontsize">' \
+                          f"<div>📁 {file.get('name')} (shortcut)</div>" \
+                           '<div class="dlinks">' \
+                          f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'\
+                           '</div></span>'                   
                 else:
                     furl = f"https://drive.google.com/uc?id={file.get('id')}&export=download"
-                    msg += f"📄 <code>{file.get('name')}<br>({get_readable_file_size(int(file.get('size', 0)))})</code><br>"
-                    msg += f"<b><a href={furl}>Drive Link</a></b>"
+                    furl = short_url(furl)
+                    msg += '<span class="container start rfontsize">' \
+                          f"<div>📄 {file.get('name')} ({get_readable_file_size(int(file.get('size', 0)))})</div>" \
+                           '<div class="dlinks">' \
+                          f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'
                     if INDEX_URLS[index] is not None:
                         if isRecur:
                             url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, parent_id))
                         else:
                             url_path = rquote(f'{file.get("name")}')
                         url = f'{INDEX_URLS[index]}/{url_path}'
-                        msg += f' <b>| <a href="{url}">Index Link</a></b>'
+                        url = short_url(url)
+                        msg += '<span> | </span>' \
+                              f'<span> <a class="forhover" href="{url}">Index Link</a></span>'
                         if VIEW_LINK:
-                            urls = f'{INDEX_URLS[index]}/{url_path}?a=view'
-                            msg += f' <b>| <a href="{urls}">View Link</a></b>'
-                msg += '<br><br>'
+                            urlv = f'{INDEX_URLS[index]}/{url_path}?a=view'
+                            urlv = short_url(urlv)
+                            msg += '<span> | </span>' \
+                                  f'<span> <a class="forhover" href="{urlv}">View Link</a></span>'
+                msg += '</div></span>'
                 contents_count += 1
                 if len(msg.encode('utf-8')) > 39000:
                     telegraph_content.append(msg)
