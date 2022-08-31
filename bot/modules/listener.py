@@ -317,8 +317,8 @@ class MirrorLeechListener:
                 msg += f'\n<b>SubFolders: </b>{folders}'
                 msg += f'\n<b>Files: </b>{files}'
             buttons = ButtonMaker()
-            link = short_url(link)
             msg += f'\n\n<b>cc: </b>{self.tag}'
+            link = short_url(link)
             buttons.buildbutton("☁️ Drive Link", link)
             LOGGER.info(f'Done Uploading {name}')
             if INDEX_URL is not None:
