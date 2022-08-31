@@ -220,16 +220,15 @@ class MirrorLeechListener:
         mesg = self.message.text.split('\n')
         message_args = mesg[0].split(' ', maxsplit=1)
         reply_to = self.message.reply_to_message
-        if self.message.chat.type != 'private' and AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
-            if reply_to is not None:
-                try:
-                    reply_to.delete()
-                except Exception as e:
-                    LOGGER.warning(e)
+        if self.message.chat.type != 'private' and AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1 and reply_to is not None:
+            try:
+                reply_to.delete()
+            except Exception as e:
+                LOGGER.warning(e)
                 pass
         msg = f"<b>Name: </b><code>{escape(name)}</code>\n\n<b>Size: </b>{size}"
-        if BOT_PM and FORCE_BOT_PM:
-            botpm = f"<b>\n\nHey {self.tag}!, I have sent your links in PM.</b>\n"
+        if BOT_PM and FORCE_BOT_PM and not self.isPrivate:
+            botpm = f"<b>\n\nHey {self.tag}!, I have sent your stuff in PM.</b>\n"
             buttons = ButtonMaker()
             b_uname = bot.get_me().username
             botstart = f"http://t.me/{b_uname}"
@@ -251,7 +250,7 @@ class MirrorLeechListener:
                     source_link = message_args[1]
                     if is_magnet(source_link):
                         link = telegraph.create_page(
-                        title=f'{TITLE_NAME}',
+                        title=f'{TITLE_NAME} Source Link',
                         content=source_link,
                     )["path"]
                         buttons.buildbutton(f"🔗 Source Link", f"https://graph.org/{link}")
@@ -267,7 +266,7 @@ class MirrorLeechListener:
                             source_link = reply_text.strip()
                             if is_magnet(source_link):
                                 link = telegraph.create_page(
-                                    title=f'{TITLE_NAME}',
+                                    title=f'{TITLE_NAME} Source Link',
                                     content=source_link,
                                 )["path"]
                                 buttons.buildbutton(f"🔗 Source Link", f"https://graph.org/{link}")
@@ -300,7 +299,7 @@ class MirrorLeechListener:
                     if FORCE_BOT_PM is False:
                         upldmsg = sendMarkup(msg + fmsg, self.bot, self.message, buttons.build_menu(1))
                         Thread(target=auto_delete_upload_message, args=(self.bot, self.message, upldmsg)).start()
-                if LEECH_LOG:
+                if LEECH_LOG and FORCE_BOT_PM:
                     try:
                         for chatid in LEECH_LOG:
                             bot.sendMessage(chat_id=chatid, text=msg + fmsg,
@@ -341,7 +340,7 @@ class MirrorLeechListener:
                             mesg = message_args[1]
                             if is_magnet(mesg):
                                 link = telegraph.create_page(
-                                    title=f'{TITLE_NAME}',
+                                    title=f'{TITLE_NAME} Source Link',
                                     content=mesg,
                                 )["path"]
                                 buttons.buildbutton(f"🔗 Source Link", f"https://graph.org/{link}")
@@ -363,7 +362,7 @@ class MirrorLeechListener:
                                 source_link = reply_text.strip()
                                 if is_magnet(source_link):
                                     link = telegraph.create_page(
-                                        title=f'{TITLE_NAME}',
+                                        title=f'{TITLE_NAME} Source Link',
                                         content=source_link,
                                     )["path"]
                                     buttons.buildbutton(f"🔗 Source Link", f"https://graph.org/{link}")
@@ -372,7 +371,7 @@ class MirrorLeechListener:
                         except Exception as e:
                             LOGGER.warning(e)
                             pass
-            if FORCE_BOT_PM is False:
+            if FORCE_BOT_PM is False or self.message.chat.type == 'private':
                 upldmsg = sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(self.bot, self.message, upldmsg)).start()
             if MIRROR_LOGS:
@@ -411,13 +410,13 @@ class MirrorLeechListener:
 
     def onDownloadError(self, error):
         reply_to = self.message.reply_to_message
-        if reply_to is not None:
-            try:
+        try:
+            if AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1 and reply_to is not None:
                 reply_to.delete()
-            except Exception as e:
-                    LOGGER.warning(e)
-            pass
-        else:
+            else:
+                pass
+        except Exception as e:
+            LOGGER.warning(e)
             pass
         error = error.replace('<', ' ').replace('>', ' ')
         clean_download(self.dir)
