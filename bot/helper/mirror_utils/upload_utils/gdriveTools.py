@@ -674,8 +674,8 @@ class GoogleDriveHelper:
                 if mime_type == "application/vnd.google-apps.folder":
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
                     furl = short_url(furl)
-                    msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>" /
-                           f"<b><a href={furl}>Drive Link</a></b>"
+                    msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>"
+                    msg += f"<b><a href={furl}>Drive Link</a></b>"
                     if INDEX_URLS[index] is not None:
                         if isRecur:
                             url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, parent_id)])
