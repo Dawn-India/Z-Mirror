@@ -8,6 +8,7 @@ from html import escape
 from bot import *
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
+from bot.helper.ext_utils.shortenurl import short_url
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
 from bot.helper.mirror_utils.status_utils.zip_status import ZipStatus
 from bot.helper.mirror_utils.status_utils.split_status import SplitStatus
@@ -317,6 +318,7 @@ class MirrorLeechListener:
                 msg += f'\n<b>SubFolders: </b>{folders}'
                 msg += f'\n<b>Files: </b>{files}'
             buttons = ButtonMaker()
+            link = short_url(link)
             msg += f'\n\n<b>cc: </b>{self.tag}'
             buttons.buildbutton("☁️ Drive Link", link)
             LOGGER.info(f'Done Uploading {name}')
@@ -325,11 +327,14 @@ class MirrorLeechListener:
                 share_url = f'{INDEX_URL}/{url_path}'
                 if typ == "Folder":
                     share_url += '/'
+                    share_url = short_url(share_url)
                     buttons.buildbutton("⚡ Index Link", share_url)
                 else:
+                    share_url = short_url(share_url)
                     buttons.buildbutton("⚡ Index Link", share_url)
                     if VIEW_LINK:
                         share_urls = f'{INDEX_URL}/{url_path}?a=view'
+                        share_urls = short_url(share_urls)
                         buttons.buildbutton("🌐 View Link", share_urls)
                     if SOURCE_LINK is True:
                         try:
