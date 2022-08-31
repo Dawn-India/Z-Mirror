@@ -674,10 +674,9 @@ class GoogleDriveHelper:
                 if mime_type == "application/vnd.google-apps.folder":
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
                     furl = short_url(furl)
-                    msg += '<span class="container start rfontsize">' \
-                          f"<div>📁 {file.get('name')} (folder)</div>" \
+                    msg += f"<div>📁 {file.get('name')} (folder)</div>" \
                            '<div class="dlinks">' \
-                          f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'
+                          f'<a class="forhover" href="{furl}">Drive Link</a>'
                     if INDEX_URLS[index] is not None:
                         if isRecur:
                             url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, parent_id)])
@@ -690,18 +689,16 @@ class GoogleDriveHelper:
                 elif mime_type == 'application/vnd.google-apps.shortcut':
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
                     furl = short_url(furl)
-                    msg += '<span class="container start rfontsize">' \
-                          f"<div>📁 {file.get('name')} (shortcut)</div>" \
+                    msg += f"<div>📁 {file.get('name')} (shortcut)</div>" \
                            '<div class="dlinks">' \
-                          f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'\
-                           '</div></span>'                   
+                          f'<a class="forhover" href="{furl}">Drive Link</a></span>'\
+                           '</div>'                   
                 else:
                     furl = f"https://drive.google.com/uc?id={file.get('id')}&export=download"
                     furl = short_url(furl)
-                    msg += '<span class="container start rfontsize">' \
-                          f"<div>📄 {file.get('name')} ({get_readable_file_size(int(file.get('size', 0)))})</div>" \
+                    msg += f"<div>📄 {file.get('name')} ({get_readable_file_size(int(file.get('size', 0)))})</div>" \
                            '<div class="dlinks">' \
-                          f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'
+                          f'<a class="forhover" href="{furl}">Drive Link</a>'
                     if INDEX_URLS[index] is not None:
                         if isRecur:
                             url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, parent_id))
@@ -709,14 +706,12 @@ class GoogleDriveHelper:
                             url_path = rquote(f'{file.get("name")}')
                         url = f'{INDEX_URLS[index]}/{url_path}'
                         url = short_url(url)
-                        msg += '<span> | </span>' \
-                              f'<span> <a class="forhover" href="{url}">Index Link</a></span>'
+                        msg += f'<a class="forhover" href="{url}">Index Link</a>'
                         if VIEW_LINK:
                             urlv = f'{INDEX_URLS[index]}/{url_path}?a=view'
                             urlv = short_url(urlv)
-                            msg += '<span> | </span>' \
-                                  f'<span> <a class="forhover" href="{urlv}">View Link</a></span>'
-                msg += '</div></span>'
+                            msg += f'<a class="forhover" href="{urlv}">View Link</a>'
+                msg += '</div>'
                 contents_count += 1
                 if len(msg.encode('utf-8')) > 39000:
                     telegraph_content.append(msg)
