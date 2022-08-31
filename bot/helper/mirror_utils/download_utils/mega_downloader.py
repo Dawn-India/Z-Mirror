@@ -174,9 +174,9 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                 if folder_api is not None:
                     folder_api.removeListener(mega_listener)
                 return
-    if any([STORAGE_THRESHOLD, MEGA_LIMIT, LEECH_LIMIT]):
+    if any([STORAGE_THRESHOLD, MEGA_LIMIT, ZIP_UNZIP_LIMIT, LEECH_LIMIT]):
         size = api.getSize(node)
-        arch = any([listener.isZip, listener.isLeech, listener.extract])
+        arch = any([listener.isZip, listener.extract])
         if STORAGE_THRESHOLD is not None:
             acpt = check_storage_threshold(size, arch)
             if not acpt:
@@ -187,6 +187,9 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
         if LEECH_LIMIT is not None and listener.isLeech:
             mssg = f'Leech limit is {LEECH_LIMIT}GB'
             limit = LEECH_LIMIT
+        if ZIP_UNZIP_LIMIT is not None and arch:
+                msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
+                limit = ZIP_UNZIP_LIMIT
         if MEGA_LIMIT is not None:
             msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
             limit = MEGA_LIMIT
