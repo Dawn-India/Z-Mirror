@@ -231,6 +231,7 @@ def get_readable_message():
                 if hasattr(download, 'seeders_num'):
                     try:
                         msg += f"\n<b>├ Seeders:</b> {download.seeders_num()} | <b>Leechers:</b> {download.leechers_num()}"
+                        msg += f"\n<b>├ Select Files:</b> <code>/{BotCommands.BtSelectCommand} {download.gid()}</code>"
                     except:
                         pass
             elif download.status() == MirrorStatus.STATUS_SEEDING:
@@ -239,7 +240,6 @@ def get_readable_message():
                 msg += f" | <b>├ Uploaded: </b>{download.uploaded_bytes()}"
                 msg += f"\n<b>├ Ratio: </b>{download.ratio()}"
                 msg += f" | <b>├ Time: </b>{download.seeding_time()}"
-            msg += f"\n<b>├ Select Files:</b> <code>/{BotCommands.BtSelectCommand} {download.gid()}</code>"
             msg += f"\n<b>├ To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             msg += f"\n"
             if STATUS_LIMIT is not None and index == STATUS_LIMIT:
