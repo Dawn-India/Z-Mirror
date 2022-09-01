@@ -590,3 +590,20 @@ To Clone or Leech gdtot link follow these steps:
 4. From this you have to paste value for **CRYPT** in config.env file.
 
 -----
+
+## Useful commands
+1. For speedtest type:
+```
+/shell speedtest
+```
+
+2. Recheck and Reannounce all torrents:
+> For vps and downloading almost dead torrents run this script to recheck and reannounce all torrents. (This incase down speed is zero or too slow):
+```
+/eval import qbittorrentapi as qba
+client = qba.Client(host="localhost", port=8090)
+client.torrents_recheck(torrent_hashes='all')
+client.torrents_reannounce(torrent_hashes='all')
+```
+
+----
