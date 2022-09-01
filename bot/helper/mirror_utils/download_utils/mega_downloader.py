@@ -184,12 +184,16 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                 msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
                 return sendMessage(msg, listener.bot, listener.message)
         limit = None
-        if LEECH_LIMIT is not None and listener.isLeech:
-            mssg = f'Leech limit is {LEECH_LIMIT}GB'
-            limit = LEECH_LIMIT
         if ZIP_UNZIP_LIMIT is not None and arch:
                 msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
                 limit = ZIP_UNZIP_LIMIT
+        if LEECH_LIMIT is not None and self.__listener.isLeech:
+                if MEGA_LIMIT < LEECH_LIMIT:
+                    msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
+                    limit = MEGA_LIMIT
+                    return sendMessage(msg3, self.__listener.bot, self.__listener.message)
+                msg3 = f'Leech limit is {LEECH_LIMIT}GB'
+                limit = LEECH_LIMIT
         if MEGA_LIMIT is not None:
             msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
             limit = MEGA_LIMIT
