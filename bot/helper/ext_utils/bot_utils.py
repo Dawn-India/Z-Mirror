@@ -117,7 +117,7 @@ def get_progress_bar_string(status):
     cFull = p // 8
     p_str = '⬢' * cFull
     p_str += '⬡' * (12 - cFull)
-    p_str = f"[{p_str}]"
+    p_str = f"⠧{p_str}⠹"
     return p_str
 
 def progress_bar(percentage):
@@ -161,17 +161,42 @@ T: {disk_t} | F: {disk_f}
 Working For: {currentTime}
 T-DL: {recv} | T-UL: {sent}
 
-Made with ❤️ by Dawn
 """
-
-#---Thanks for deleting my name ❤️ Appreciate it---#
-#----------Remove this line too, who cares----------#
 
 dispatcher.add_handler(CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)}$"))
 
 def get_readable_message():
     with download_dict_lock:
-        msg = ""
+        num_active = 0
+        num_misc = 0
+        num_upload = 0
+        num_seeding = 0
+        num_clone = 0
+        num_archive = 0
+        num_extract = 0
+        num_split = 0
+        for stats in list(download_dict.values()):
+            if stats.status() == MirrorStatus.STATUS_DOWNLOADING:
+               num_active += 1
+            if stats.status() == MirrorStatus.STATUS_UPLOADING:
+               num_upload += 1
+            if stats.status() == MirrorStatus.STATUS_SEEDING:
+               num_seeding += 1
+            if stats.status() == MirrorStatus.STATUS_WAITING:
+               num_misc += 1
+            if stats.status() == MirrorStatus.STATUS_CLONING:
+               num_clone += 1
+            if stats.status() == MirrorStatus.STATUS_ARCHIVING:
+               num_archive += 1
+            if stats.status() == MirrorStatus.STATUS_EXTRACTING:
+               num_extract += 1
+            if stats.status() == MirrorStatus.STATUS_SPLITTING:
+               num_split += 1  
+            if stats.status() == MirrorStatus.STATUS_PAUSED:
+               num_misc += 1  
+        msg = f"<b>▁ ▂ ▄ 𝐌𝐢𝐫𝐫𝐨𝐫𝐢𝐧𝐠 𝐈𝐧 𝐏𝐫𝐨𝐠𝐫𝐞𝐬𝐬 ▄ ▂ ▁</b>\n\n"
+        msg +=f"<b> 📥 : {num_active}  || 📤 : {num_upload}  || 🌱 : {num_seeding}  || ♻️ : {num_clone}</b>\n"
+        msg +=f"<b> ✂️ : {num_split}  || 🔐 : {num_archive}  || 📂 : {num_extract}  || 💤 : {num_misc}</b>\n"
         if STATUS_LIMIT is not None:
             tasks = len(download_dict)
             global pages
@@ -242,7 +267,7 @@ def get_readable_message():
         bmsg += f"\n<b>FREE:</b> <code>{get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}</code><b> | UPTM:</b> <code>{get_readable_time(time() - botStartTime)}</code>"
         bmsg += f"\n<b>DL:</b> <code>{get_readable_file_size(dl_speed)}/s</code><b> | UL:</b> <code>{get_readable_file_size(up_speed)}/s</code>"
         buttons = ButtonMaker()
-        buttons.sbutton("Bot SYS Statistics", str(THREE))
+        buttons.sbutton("Statistics", str(THREE))
         button = buttons.build_menu(1)
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"\n<b>Total Tasks:</b> {tasks}\n"
