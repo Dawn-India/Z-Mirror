@@ -66,6 +66,7 @@ srun("./aria.sh", shell=True)
 sleep(0.5)
 
 Interval = []
+QbInterval = []
 DRIVES_NAMES = []
 DRIVES_IDS = []
 INDEX_URLS = []
@@ -86,7 +87,7 @@ aria2 = ariaAPI(
 )
 
 def get_client():
-    return qbClient(host="localhost", port=8090)
+    return qbClient(host="localhost", port=8090, VERIFY_WEBUI_CERTIFICATE=False, REQUESTS_ARGS={'timeout': (30, 60)})
 
 DOWNLOAD_DIR = None
 BOT_TOKEN = None

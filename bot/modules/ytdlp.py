@@ -132,9 +132,9 @@ Check all arguments from this <a href='https://github.com/yt-dlp/yt-dlp/blob/mas
         return sendMessage(tag + " " + msg, bot, message)
     if 'entries' in result:
         for i in ['144', '240', '360', '480', '720', '1080', '1440', '2160']:
-            video_format = f"bv*[height<=?{i}][ext=mp4]+ba/b[height<=?{i}]"
+            video_format = f"bv*[height<={i}][ext=mp4]+ba[ext=m4a]/b[height<={i}]"
             buttons.sbutton(f"{i}-mp4", f"qu {msg_id} {video_format} t")
-            video_format = f"bv*[height<=?{i}][ext=webm]+ba/b[height<=?{i}]"
+            video_format = f"bv*[height<={i}][ext=webm]+ba/b[height<={i}]"
             buttons.sbutton(f"{i}-webm", f"qu {msg_id} {video_format} t")
         buttons.sbutton("MP3", f"qu {msg_id} mp3 t")
         buttons.sbutton("Best Videos", f"qu {msg_id} {best_video} t")
@@ -164,7 +164,10 @@ Check all arguments from this <a href='https://github.com/yt-dlp/yt-dlp/blob/mas
                         ext = frmt['ext']
                         fps = frmt['fps'] if frmt.get('fps') else ''
                         b_name = f"{height}p{fps}-{ext}"
-                        v_format = f"bv*[format_id={format_id}]+ba/b[height={height}]"
+                        if ext == 'mp4':
+                            v_format = f"bv*[format_id={format_id}]+ba[ext=m4a]/b[height={height}]"
+                        else:
+                            v_format = f"bv*[format_id={format_id}]+ba/b[height={height}]"
                     elif frmt.get('video_ext') == 'none' and frmt.get('acodec') != 'none':
                         b_name = f"{frmt['acodec']}-{frmt['ext']}"
                         v_format = f"ba[format_id={format_id}]"
@@ -172,17 +175,17 @@ Check all arguments from this <a href='https://github.com/yt-dlp/yt-dlp/blob/mas
                         continue
 
                     if b_name in formats_dict:
-                        formats_dict[b_name][frmt['tbr']] = [size, v_format]
+                        formats_dict[b_name][str(frmt['tbr'])] = [size, v_format]
                     else:
                         subformat = {}
-                        subformat[frmt['tbr']] = [size, v_format]
+                        subformat[str(frmt['tbr'])] = [size, v_format]
                         formats_dict[b_name] = subformat
 
             for b_name, d_dict in formats_dict.items():
                 if len(d_dict) == 1:
-                    d_data = list(d_dict.values())[0]
-                    buttonName = f"{b_name} ({get_readable_file_size(d_data[0])})"
-                    buttons.sbutton(buttonName, f"qu {msg_id} {d_data[1]}")
+                    tbr, v_list = list(d_dict.items())[0]
+                    buttonName = f"{b_name} ({get_readable_file_size(v_list[0])})"
+                    buttons.sbutton(buttonName, f"qu {msg_id} {b_name}|{tbr}")
                 else:
                     buttons.sbutton(b_name, f"qu {msg_id} dict {b_name}")
         buttons.sbutton("MP3", f"qu {msg_id} mp3")
@@ -210,7 +213,7 @@ def _qual_subbuttons(task_id, b_name, msg):
     formats_dict = task_info[6]
     for tbr, d_data in formats_dict[b_name].items():
         buttonName = f"{tbr}K ({get_readable_file_size(d_data[0])})"
-        buttons.sbutton(buttonName, f"qu {task_id} {d_data[1]}")
+        buttons.sbutton(buttonName, f"qu {task_id} {b_name}|{tbr}")
     buttons.sbutton("Back", f"qu {task_id} back")
     buttons.sbutton("Cancel", f"qu {task_id} cancel")
     SUBBUTTONS = buttons.build_menu(2)
@@ -276,6 +279,9 @@ def select_format(update, context):
             playlist = True
         else:
             playlist = False
+        if '|' in qual:
+            b_name, tbr = qual.split('|')
+            qual = task_info[6][b_name][tbr][1]
         ydl = YoutubeDLHelper(listener)
         Thread(target=ydl.add_download, args=(link, f'{DOWNLOAD_DIR}{task_id}', name, qual, playlist, opt)).start()
         query.message.delete()

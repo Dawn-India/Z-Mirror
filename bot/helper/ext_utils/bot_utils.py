@@ -18,6 +18,7 @@ URL_REGEX = r"(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+"
 
 COUNT = 0
 PAGE_NO = 1
+PAGES = 0
 
 class MirrorStatus:
     STATUS_UPLOADING = "Uploading"
@@ -174,9 +175,8 @@ def get_readable_message():
         msg = ""
         if STATUS_LIMIT is not None:
             tasks = len(download_dict)
-            global pages
-            pages = ceil(tasks/STATUS_LIMIT)
-            if PAGE_NO > pages and pages != 0:
+            globals()['PAGES'] = ceil(tasks/STATUS_LIMIT)
+            if PAGE_NO > PAGES and PAGES != 0:
                 globals()['COUNT'] -= STATUS_LIMIT
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
@@ -249,7 +249,7 @@ def get_readable_message():
             msg += f"\n<b>Total Tasks:</b> {tasks}\n"
             buttons = ButtonMaker()
             buttons.sbutton("Previous", "status pre")
-            buttons.sbutton(f"{PAGE_NO}/{pages}", str(THREE))
+            buttons.sbutton(f"{PAGE_NO}/{PAGES}", str(THREE))
             buttons.sbutton("Next", "status nex")
             button = buttons.build_menu(3)
             return msg + bmsg, button
@@ -257,10 +257,10 @@ def get_readable_message():
 
 def turn(data):
     try:
+        global COUNT, PAGE_NO
         with download_dict_lock:
-            global COUNT, PAGE_NO
             if data[1] == "nex":
-                if PAGE_NO == pages:
+                if PAGE_NO == PAGES:
                     COUNT = 0
                     PAGE_NO = 1
                 else:
@@ -268,8 +268,8 @@ def turn(data):
                     PAGE_NO += 1
             elif data[1] == "pre":
                 if PAGE_NO == 1:
-                    COUNT = STATUS_LIMIT * (pages - 1)
-                    PAGE_NO = pages
+                    COUNT = STATUS_LIMIT * (PAGES - 1)
+                    PAGE_NO = PAGES
                 else:
                     COUNT -= STATUS_LIMIT
                     PAGE_NO -= 1

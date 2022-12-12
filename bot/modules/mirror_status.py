@@ -4,7 +4,7 @@ from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from bot import *
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, auto_delete_message, sendStatusMessage, update_all_messages
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, turn, setInterval
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, turn, setInterval, new_thread
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 
@@ -20,11 +20,9 @@ def mirror_status(update, context):
         reply_message = sendMessage(message, context.bot, update.message)
         Thread(target=auto_delete_message, args=(context.bot, update.message, reply_message)).start()
     else:
-        index = update.effective_chat.id
+        sendStatusMessage(update.message, context.bot)
+        deleteMessage(context.bot, update.message)
         with status_reply_dict_lock:
-            if index in status_reply_dict:
-                deleteMessage(context.bot, status_reply_dict[index][0])
-                del status_reply_dict[index]
             try:
                 if Interval:
                     Interval[0].cancel()
@@ -33,18 +31,18 @@ def mirror_status(update, context):
                 pass
             finally:
                 Interval.append(setInterval(DOWNLOAD_STATUS_UPDATE_INTERVAL, update_all_messages))
-        sendStatusMessage(update.message, context.bot)
-        deleteMessage(context.bot, update.message)
 
+@new_thread
 def status_pages(update, context):
     query = update.callback_query
+    query.answer()
     data = query.data
     data = data.split()
-    query.answer()
-    done = turn(data)
-    if done:
+    if data[1] == "ref":
         update_all_messages(True)
-    else:
+        return
+    done = turn(data)
+    if not done:
         query.message.delete()
 
 mirror_status_handler = CommandHandler(BotCommands.StatusCommand, mirror_status,
