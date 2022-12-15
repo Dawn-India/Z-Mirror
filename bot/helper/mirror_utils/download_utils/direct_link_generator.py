@@ -19,9 +19,11 @@ from bs4 import BeautifulSoup
 from base64 import standard_b64encode, b64decode
 from time import sleep
 from lxml import etree
+
+from playwright.sync_api import Playwright, sync_playwright, expect
 from bot import LOGGER, UPTOBOX_TOKEN, APPDRIVE_EMAIL, APPDRIVE_PASS, CRYPT
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from bot.helper.ext_utils.bot_utils import is_appdrive_link, is_gdtot_link
+from bot.helper.ext_utils.bot_utils import is_appdrive_link, is_gdtot_link, is_filepress_link
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
 
@@ -70,6 +72,8 @@ def direct_link_generator(link: str):
         return appdrive(link)
     elif is_gdtot_link(link):
         return gdtot(link)
+    elif is_filepress_link(link):
+        return filepress(link)
     elif any(x in link for x in fmed_list):
         return fembed(link)
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
@@ -475,3 +479,36 @@ def gdtot(url: str) -> str:
     except:
         raise DirectDownloadLinkException("ERROR: Try in your broswer, mostly file not found or user limit exceeded!")
     return f'https://drive.google.com/open?id={decoded_id}'
+
+def prun(playwright: Playwright, link:str) -> str:
+    browser = playwright.chromium.launch()
+    context = browser.new_context()
+
+    page = context.new_page()
+    page.goto(link)
+
+    firstbtn = page.locator("xpath=//div[text()='Direct Download']/parent::button")
+    expect(firstbtn).to_be_visible()
+    firstbtn.click()
+    sleep(10)
+
+    secondBtn = page.get_by_role("button", name="Download Now")
+    expect(secondBtn).to_be_visible()
+    with page.expect_navigation():
+        secondBtn.click()
+
+    Flink = page.url
+
+    context.close()
+    browser.close()
+
+    if 'drive.google.com' in Flink:
+        return Flink
+    else:
+        raise DirectDownloadLinkException("Unable To Get Google Drive Link!")
+
+
+def filepress(link:str) -> str:
+    with sync_playwright() as playwright:
+        flink = prun(playwright, link)
+        return flink
