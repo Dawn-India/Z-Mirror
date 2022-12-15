@@ -4,6 +4,7 @@ asyncio
 beautifulsoup4
 bencoding
 cfscrape
+cloudscraper
 feedparser
 flask
 google-api-python-client
@@ -27,3 +28,4 @@ tenacity
 tgCrypto
 xattr
 yt-dlp
+playwright
