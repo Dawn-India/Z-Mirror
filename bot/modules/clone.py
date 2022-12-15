@@ -190,10 +190,7 @@ def _clone(message, bot):
         if is_gdtot:
             LOGGER.info(f"Deleting: {link}")
             gd.deletefile(link)
-        if is_filepress:
-            LOGGER.info(f"Deleting: {link}")
-            gd.deletefile(link)
-        elif is_appdrive:
+        if is_filepress or is_appdrive:
             LOGGER.info(f"Deleting: {link}")
             gd.deletefile(link)
         if MIRROR_LOGS:
