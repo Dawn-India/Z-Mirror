@@ -62,6 +62,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     name_args = mesg[0].split('|', maxsplit=1)
+    is_filepress = False
     index = 1
     ratio = None
     seed_time = None
@@ -192,6 +193,7 @@ Number should be always before |newname or pswd:
         content_type = get_content_type(link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
             try:
+                is_filepress = is_filepress_link(link)
                 link = direct_link_generator(link)
                 LOGGER.info(f"Generated link: {link}")
             except DirectDownloadLinkException as e:
@@ -233,7 +235,7 @@ Number should be always before |newname or pswd:
             gmsg += f"Use /{BotCommands.UnzipMirrorCommand[0]} to extracts Google Drive archive folder/file"
             sendMessage(gmsg, bot, message)
         else:
-            Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name)).start()
+            Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, is_filepress)).start()
     elif is_mega_link(link):
         Thread(target=add_mega_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}/', listener, name)).start()
     elif isQbit and (is_magnet(link) or ospath.exists(link)):
