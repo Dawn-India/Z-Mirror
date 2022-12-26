@@ -9,8 +9,8 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
 from bot import *
-from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_thread, is_appdrive_link, is_gdtot_link, get_readable_file_size
-from bot.helper.mirror_utils.download_utils.direct_link_generator import appdrive, gdtot
+from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_thread, is_appdrive_link, is_gdtot_link, is_filepress_link, get_readable_file_size
+from bot.helper.mirror_utils.download_utils.direct_link_generator import appdrive, gdtot, filepress
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
@@ -76,6 +76,7 @@ def _clone(message, bot):
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
     is_appdrive = is_appdrive_link(link)
     is_gdtot = is_gdtot_link(link)
+    is_filepress = is_filepress_link(link)
     if is_appdrive:
         msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
         try:
@@ -88,6 +89,14 @@ def _clone(message, bot):
         try:
             msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
             link = gdtot(link)
+            deleteMessage(bot, msg)
+        except DirectDownloadLinkException as e:
+            deleteMessage(bot, msg)
+            return sendMessage(str(e), bot, message)
+    if is_filepress:
+        try:
+            msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
+            link = filepress(link)
             deleteMessage(bot, msg)
         except DirectDownloadLinkException as e:
             deleteMessage(bot, msg)
@@ -181,7 +190,7 @@ def _clone(message, bot):
         if is_gdtot:
             LOGGER.info(f"Deleting: {link}")
             gd.deletefile(link)
-        elif is_appdrive:
+        if is_filepress or is_appdrive:
             LOGGER.info(f"Deleting: {link}")
             gd.deletefile(link)
         if MIRROR_LOGS:
