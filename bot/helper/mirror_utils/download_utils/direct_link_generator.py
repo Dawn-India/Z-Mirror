@@ -19,9 +19,11 @@ from bs4 import BeautifulSoup
 from base64 import standard_b64encode, b64decode
 from time import sleep
 from lxml import etree
+
+from playwright.sync_api import Playwright, sync_playwright, expect
 from bot import LOGGER, UPTOBOX_TOKEN, APPDRIVE_EMAIL, APPDRIVE_PASS, CRYPT
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from bot.helper.ext_utils.bot_utils import is_appdrive_link, is_gdtot_link
+from bot.helper.ext_utils.bot_utils import is_appdrive_link, is_gdtot_link, is_filepress_link
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
 
@@ -29,7 +31,7 @@ fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.co
 def direct_link_generator(link: str):
     """ direct links generator """
     if 'youtube.com' in link or 'youtu.be' in link:
-        raise DirectDownloadLinkException(f"ERROR: Use ytdl cmds for Youtube links")
+        raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
     elif 'yadi.sk' in link or 'disk.yandex.com' in link:
         return yandex_disk(link)
     elif 'mediafire.com' in link:
@@ -70,6 +72,8 @@ def direct_link_generator(link: str):
         return appdrive(link)
     elif is_gdtot_link(link):
         return gdtot(link)
+    elif is_filepress_link(link):
+        return filepress(link)
     elif any(x in link for x in fmed_list):
         return fembed(link)
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
@@ -260,8 +264,7 @@ def racaty(url: str) -> str:
     ids = soup.find("input", {"name": "id"})["value"]
     rapost = scraper.post(url, data = {"op": op, "id": ids})
     rsoup = BeautifulSoup(rapost.text, "lxml")
-    dl_url = rsoup.find("a", {"id": "uniqueExpirylink"})["href"].replace(" ", "%20")
-    return dl_url
+    return rsoup.find("a", {"id": "uniqueExpirylink"})["href"].replace(" ", "%20")
 
 def fichier(link: str) -> str:
     """ 1Fichier direct link generator
@@ -297,11 +300,12 @@ def fichier(link: str) -> str:
     elif len(soup.find_all("div", {"class": "ct_warn"})) == 3:
         str_2 = soup.find_all("div", {"class": "ct_warn"})[-1]
         if "you must wait" in str(str_2).lower():
-            numbers = [int(word) for word in str(str_2).split() if word.isdigit()]
-            if not numbers:
-                raise DirectDownloadLinkException("ERROR: 1fichier is on a limit. Please wait a few minutes/hour.")
-            else:
+            if numbers := [
+                int(word) for word in str(str_2).split() if word.isdigit()
+            ]:
                 raise DirectDownloadLinkException(f"ERROR: 1fichier is on a limit. Please wait {numbers[0]} minute.")
+            else:
+                raise DirectDownloadLinkException("ERROR: 1fichier is on a limit. Please wait a few minutes/hour.")
         elif "protect access" in str(str_2).lower():
           raise DirectDownloadLinkException(f"ERROR: This link requires a password!\n\n<b>This link requires a password!</b>\n- Insert sign <b>::</b> after the link and write the password after the sign.\n\n<b>Example:</b> https://1fichier.com/?smmtd8twfpm66awbqz04::love you\n\n* No spaces between the signs <b>::</b>\n* For the password, you can use a space!")
         else:
@@ -311,11 +315,12 @@ def fichier(link: str) -> str:
         str_1 = soup.find_all("div", {"class": "ct_warn"})[-2]
         str_3 = soup.find_all("div", {"class": "ct_warn"})[-1]
         if "you must wait" in str(str_1).lower():
-            numbers = [int(word) for word in str(str_1).split() if word.isdigit()]
-            if not numbers:
-                raise DirectDownloadLinkException("ERROR: 1fichier is on a limit. Please wait a few minutes/hour.")
-            else:
+            if numbers := [
+                int(word) for word in str(str_1).split() if word.isdigit()
+            ]:
                 raise DirectDownloadLinkException(f"ERROR: 1fichier is on a limit. Please wait {numbers[0]} minute.")
+            else:
+                raise DirectDownloadLinkException("ERROR: 1fichier is on a limit. Please wait a few minutes/hour.")
         elif "bad password" in str(str_3).lower():
           raise DirectDownloadLinkException("ERROR: The password you entered is wrong!")
         else:
@@ -451,8 +456,7 @@ def appdrive(url: str) -> str:
         drive_link = etree.HTML(res.content).xpath("//a[contains(@class,'btn')]/@href")[0]
         info_parsed['gdrive_link'] = drive_link
     if not info_parsed['error']:
-        link = info_parsed.get('gdrive_link')
-        return link
+        return info_parsed.get('gdrive_link')
     else:
         raise DirectDownloadLinkException(f"{info_parsed['error_message']}")
 
@@ -475,3 +479,35 @@ def gdtot(url: str) -> str:
     except:
         raise DirectDownloadLinkException("ERROR: Try in your broswer, mostly file not found or user limit exceeded!")
     return f'https://drive.google.com/open?id={decoded_id}'
+
+def prun(playwright: Playwright, link:str) -> str:
+    browser = playwright.chromium.launch()
+    context = browser.new_context()
+
+    page = context.new_page()
+    page.goto(link)
+
+    firstbtn = page.locator("xpath=//div[text()='Direct Download']/parent::button")
+    expect(firstbtn).to_be_visible()
+    firstbtn.click()
+    sleep(10)
+
+    secondBtn = page.get_by_role("button", name="Download Now")
+    expect(secondBtn).to_be_visible()
+    with page.expect_navigation():
+        secondBtn.click()
+
+    Flink = page.url
+
+    context.close()
+    browser.close()
+
+    if 'drive.google.com' in Flink:
+        return Flink
+    else:
+        raise DirectDownloadLinkException("Unable To Get Google Drive Link!")
+
+
+def filepress(link:str) -> str:
+    with sync_playwright() as playwright:
+        return prun(playwright, link)
