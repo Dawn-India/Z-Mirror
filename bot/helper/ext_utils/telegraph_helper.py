@@ -1,5 +1,3 @@
-# Implement By - @VarnaX-279
-
 from string import ascii_letters
 from random import SystemRandom
 from time import sleep
@@ -9,7 +7,7 @@ from bot import *
 
 class TelegraphHelper:
     def __init__(self, author_name=None, author_url=None):
-        self.telegraph = Telegraph()
+        self.telegraph = Telegraph(domain='graph.org')
         self.short_name = ''.join(SystemRandom().choices(ascii_letters, k=8))
         self.access_token = None
         self.author_name = author_name
@@ -50,7 +48,7 @@ class TelegraphHelper:
         except RetryAfterError as st:
             LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
             sleep(st.retry_after)
-        return self.edit_page(path, title, content)
+            return self.edit_page(path, title, content)
 
     def edit_telegraph(self, path, telegraph_content):
         nxt_page = 1
@@ -69,13 +67,13 @@ class TelegraphHelper:
                     nxt_page += 1
             self.edit_page(
                 path = path[prev_page],
-                title = f'{TITLE_NAME} Torrent Search',
+                title = 'Z Torrent Search',
                 content=content
             )
         return
 
 try:
-    telegraph=TelegraphHelper(f'{TITLE_NAME}', 'https://github.com/Dawn-India/Z-Mirror')
+    telegraph=TelegraphHelper('Z', 'https://github.com/Dawn-India/Z-Mirror')
 except Exception as err:
     LOGGER.warning(f"Can't Create Telegraph Account: {err}")
     telegraph = None

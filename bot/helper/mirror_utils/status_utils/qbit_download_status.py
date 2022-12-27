@@ -6,9 +6,11 @@ def get_download(client, hash_):
     try:
         return client.torrents_info(torrent_hashes=hash_)[0]
     except Exception as e:
-        LOGGER.error(f'{e}: while getting torrent info')
+        LOGGER.error(f'{e}: Qbittorrent, Error while getting torrent info')
         client = get_client()
         return get_download(client, hash_)
+
+
 class QbDownloadStatus:
 
     def __init__(self, listener, hash_, seeding=False):
@@ -59,7 +61,7 @@ class QbDownloadStatus:
         self.__update()
         download = self.__info.state
         if download in ["queuedDL", "queuedUP"]:
-            return MirrorStatus.STATUS_WAITING
+            return MirrorStatus.STATUS_QUEUEDL
         elif download in ["pausedDL", "pausedUP"]:
             return MirrorStatus.STATUS_PAUSED
         elif download in ["checkingUP", "checkingDL"]:

@@ -6,7 +6,9 @@ def get_download(gid):
     try:
         return aria2.get_download(gid)
     except Exception as e:
-        LOGGER.error(f'{e}: while getting torrent info')
+        LOGGER.error(f'{e}: Aria2c, Error while getting torrent info')
+        return get_download(gid)
+
 
 class AriaDownloadStatus:
 
@@ -20,7 +22,9 @@ class AriaDownloadStatus:
 
     def __update(self):
         self.__download = self.__download.live
-        if self.__download.followed_by_ids:
+        if self.__download is None:
+            self.__download = get_download(self.__gid)
+        elif self.__download.followed_by_ids:
             self.__gid = self.__download.followed_by_ids[0]
             self.__download = get_download(self.__gid)
 
@@ -58,7 +62,7 @@ class AriaDownloadStatus:
         self.__update()
         download = self.__download
         if download.is_waiting:
-            return MirrorStatus.STATUS_WAITING
+            return MirrorStatus.STATUS_QUEUEDL
         elif download.is_paused:
             return MirrorStatus.STATUS_PAUSED
         elif download.seeder and self.seeding:
@@ -97,19 +101,19 @@ class AriaDownloadStatus:
 
     def cancel_download(self):
         self.__update()
-        if self.__download.seeder:
+        if self.__download.seeder and self.seeding:
             LOGGER.info(f"Cancelling Seed: {self.name()}")
             self.__listener.onUploadError(f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}")
             aria2.remove([self.__download], force=True, files=True)
-        elif len(self.__download.followed_by_ids) != 0:
+        elif downloads := self.__download.followed_by:
             LOGGER.info(f"Cancelling Download: {self.name()}")
-            downloads = aria2.get_downloads(self.__download.followed_by_ids)
-            self.__listener.onDownloadError('Download stopped by user!')
+            self.__listener.onDownloadError('Download cancelled by user!')
+            downloads.append(self.__download)
             aria2.remove(downloads, force=True, files=True)
         else:
             LOGGER.info(f"Cancelling Download: {self.name()}")
             self.__listener.onDownloadError('Download stopped by user!')
-        aria2.remove([self.__download], force=True, files=True)
+            aria2.remove([self.__download], force=True, files=True)
 
     def eng(self):
         return EngineStatus.STATUS_ARIA

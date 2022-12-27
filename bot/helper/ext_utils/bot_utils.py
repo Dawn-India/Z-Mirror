@@ -55,8 +55,8 @@ class setInterval:
     def __setInterval(self):
         nextTime = time() + self.interval
         while not self.stopEvent.wait(nextTime - time()):
-            nextTime += self.interval
             self.action()
+            nextTime = time() + self.interval
 
     def cancel(self):
         self.stopEvent.set()
@@ -98,7 +98,8 @@ def bt_selection_buttons(id_: str):
             break
 
     buttons = ButtonMaker()
-    if WEB_PINCODE:
+    BASE_URL = config_dict['BASE_URL']
+    if config_dict['WEB_PINCODE']:
         buttons.buildbutton("Select Files", f"{BASE_URL}/app/files/{id_}")
         buttons.sbutton("Pincode", f"btsel pin {gid} {pincode}")
     else:
@@ -114,7 +115,8 @@ def get_progress_bar_string(status):
     cFull = p // 8
     p_str = '⬢' * cFull
     p_str += '⬡' * (12 - cFull)
-    return f"[{p_str}]"
+    p_str = f"[{p_str}]"
+    return p_str
 
 def progress_bar(percentage):
     p_used = '⬢'
@@ -168,7 +170,7 @@ dispatcher.add_handler(CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)
 def get_readable_message():
     with download_dict_lock:
         msg = ""
-        if STATUS_LIMIT is not None:
+        if STATUS_LIMIT := config_dict['STATUS_LIMIT']:
             tasks = len(download_dict)
             globals()['PAGES'] = ceil(tasks/STATUS_LIMIT)
             if PAGE_NO > PAGES and PAGES != 0:
@@ -209,7 +211,7 @@ def get_readable_message():
                 msg += f" | <b>Time: </b>{download.seeding_time()}"
             msg += f"\n<b>To Cancel:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             msg += f"\n"
-            if STATUS_LIMIT is not None and index == STATUS_LIMIT:
+            if index == STATUS_LIMIT:
                 break
         if len(msg) == 0:
             return None, None
@@ -240,7 +242,7 @@ def get_readable_message():
         buttons = ButtonMaker()
         buttons.sbutton("Bot SYS Statistics", str(THREE))
         button = buttons.build_menu(1)
-        if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
+        if STATUS_LIMIT and tasks > STATUS_LIMIT:
             msg += f"\n<b>Total Tasks:</b> {tasks}\n"
             buttons = ButtonMaker()
             buttons.sbutton("Previous", "status pre")
@@ -251,6 +253,7 @@ def get_readable_message():
         return msg + bmsg, button
 
 def turn(data):
+    STATUS_LIMIT = config_dict['STATUS_LIMIT']
     try:
         global COUNT, PAGE_NO
         with download_dict_lock:
@@ -297,12 +300,20 @@ def is_url(url: str):
 def is_gdrive_link(url: str):
     return "drive.google.com" in url
 
+def is_mega_link(url: str):
+    return "mega.nz" in url or "mega.co.nz" in url
+
 def is_filepress_link(url: str):
     url = re_match(r'https?://(filepress|filebee)\.\S+', url)
     return bool(url)
 
-def is_mega_link(url: str):
-    return "mega.nz" in url or "mega.co.nz" in url
+def is_appdrive_link(url: str):
+    url = re_match(r'https?://(?:\S*\.)?(?:appdrive|driveapp)\.\S+', url)
+    return bool(url)
+
+def is_gdtot_link(url: str):
+    url = re_match(r'https?://.+\.gdtot\.\S+', url)
+    return bool(url)
 
 def get_mega_link_type(url: str):
     if "folder" in url:
@@ -316,12 +327,7 @@ def get_mega_link_type(url: str):
 def is_magnet(url: str):
     magnet = re_findall(MAGNET_REGEX, url)
     return bool(magnet)
-def is_appdrive_link(url: str):
-    url = re_match(r'https?://(?:\S*\.)?(?:appdrive|driveapp)\.\S+', url)
-    return bool(url)
-def is_gdtot_link(url: str):
-    url = re_match(r'https?://.+\.gdtot\.\S+', url)
-    return bool(url)
+
 def new_thread(fn):
     """To use as decorator to make a function call threaded.
     Needs import
@@ -346,3 +352,9 @@ def get_content_type(link: str) -> str:
         except:
             content_type = None
     return content_type
+
+def update_user_ldata(id_, key, value):
+    if id_ in user_data:
+        user_data[id_][key] = value
+    else:
+        user_data[id_] = {key: value}

@@ -1,7 +1,6 @@
 from os import remove as osremove, path as ospath, mkdir, walk, listdir, rmdir, makedirs
 from sys import exit as sysexit
-from json import loads as jsonloads
-from shutil import rmtree, disk_usage
+from shutil import rmtree
 from PIL import Image
 from magic import Magic
 from subprocess import run as srun, check_output, Popen
@@ -39,6 +38,7 @@ def clean_download(path: str):
             pass
 
 def start_cleanup():
+    get_client().torrents_delete(torrent_hashes="all")
     try:
         rmtree(DOWNLOAD_DIR)
     except:
@@ -87,7 +87,7 @@ def get_path_size(path: str):
 
 def get_base_name(orig_path: str):
     ext = [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]
-    if len(ext) > 0:
+    if ext:
         ext = ext[0]
         return re_split(ext + '$', orig_path, maxsplit=1, flags=I)[0]
     else:
@@ -126,8 +126,11 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
         dirpath = f"{dirpath}/splited_files_z"
         if not ospath.exists(dirpath):
             mkdir(dirpath)
-    parts = ceil(size/LEECH_SPLIT_SIZE)
-    if EQUAL_SPLITS and not inLoop:
+    user_id = listener.message.from_user.id
+    user_dict = user_data.get(user_id, False)
+    leech_split_size = (user_dict and user_dict.get('split_size')) or config_dict['LEECH_SPLIT_SIZE']
+    parts = ceil(size/leech_split_size)
+    if ((user_dict and user_dict.get('equal_splits')) or config_dict['EQUAL_SPLITS']) and not inLoop:
         split_size = ceil(size/parts) + 1000
     if get_media_streams(path)[0]:
         duration = get_media_info(path)[0]
@@ -205,7 +208,7 @@ def get_media_info(path):
         LOGGER.error(f'{e}. Mostly file not found!')
         return 0, None, None
 
-    fields = jsonloads(result).get('format')
+    fields = eval(result).get('format')
     if fields is None:
         LOGGER.error(f"get_media_info: {result}")
         return 0, None, None
@@ -246,7 +249,7 @@ def get_media_streams(path):
         LOGGER.error(f'{e}. Mostly file not found!')
         return is_video, is_audio
 
-    fields = jsonloads(result).get('streams')
+    fields = eval(result).get('streams')
     if fields is None:
         LOGGER.error(f"get_media_streams: {result}")
         return is_video, is_audio
@@ -259,16 +262,3 @@ def get_media_streams(path):
 
     return is_video, is_audio
 
-def check_storage_threshold(size: int, arch=False, alloc=False):
-    if not alloc:
-        if not arch:
-            if disk_usage(DOWNLOAD_DIR).free - size < STORAGE_THRESHOLD * 1024**3:
-                return False
-        elif disk_usage(DOWNLOAD_DIR).free - (size * 2) < STORAGE_THRESHOLD * 1024**3:
-            return False
-    elif not arch:
-        if disk_usage(DOWNLOAD_DIR).free < STORAGE_THRESHOLD * 1024**3:
-            return False
-    elif disk_usage(DOWNLOAD_DIR).free - size < STORAGE_THRESHOLD * 1024**3:
-        return False
-    return True
