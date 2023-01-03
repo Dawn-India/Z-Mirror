@@ -19,7 +19,7 @@ class _BotCommands:
         self.QbZipLeechCommand = (f'qbzipleech{CMD_INDEX}', f'qzl{CMD_INDEX}')
         self.YtdlLeechCommand = (f'ytdlleech{CMD_INDEX}', f'yl{CMD_INDEX}')
         self.YtdlZipLeechCommand = (f'ytdlzipleech{CMD_INDEX}', f'yzl{CMD_INDEX}')
-        self.CloneCommand = f'clone{CMD_INDEX}'
+        self.CloneCommand = (f'clone{CMD_INDEX}', f'c{CMD_INDEX}')
         self.CountCommand = f'count{CMD_INDEX}'
         self.DeleteCommand = f'del{CMD_INDEX}'
         self.CancelMirror = f'cancel{CMD_INDEX}'
@@ -44,6 +44,7 @@ class _BotCommands:
         self.LeechSetCommand = f'leechset{CMD_INDEX}'
         self.SetThumbCommand = f'setthumb{CMD_INDEX}'
         self.BtSelectCommand = f'btsel{CMD_INDEX}'
+        self.SpeedCommand = (f'speedtest{CMD_INDEX}'), f'st{CMD_INDEX}'
         self.RssListCommand = (f'rsslist{CMD_INDEX}', f'rl{CMD_INDEX}')
         self.RssGetCommand = (f'rssget{CMD_INDEX}', f'rg{CMD_INDEX}')
         self.RssSubCommand = (f'rsssub{CMD_INDEX}', f'rs{CMD_INDEX}')
