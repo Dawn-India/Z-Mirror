@@ -1,7 +1,6 @@
 from time import time
-
 from bot import DOWNLOAD_DIR, LOGGER
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus, get_readable_time, EngineStatus
+from bot.helper.ext_utils.bot_utils import (MirrorStatus, get_readable_file_size, get_readable_time)
 from bot.helper.ext_utils.fs_utils import get_path_size
 
 class ZipStatus:
@@ -13,6 +12,8 @@ class ZipStatus:
         self.__uid = listener.uid
         self.__start_time = time()
         self.message = listener.message
+        self.source = self.__source()
+        self.engine = "p7zip"
 
     def gid(self):
         return self.__gid
@@ -62,9 +63,15 @@ class ZipStatus:
 
     def cancel_download(self):
         LOGGER.info(f'Cancelling Archive: {self.__name}')
-        if self.__listener.suproc is not None:
+        if self.__listener.suproc:
             self.__listener.suproc.kill()
-        self.__listener.onUploadError('archiving stopped by user!')
+        self.__listener.onUploadError('Archiving stopped by user!')
 
-    def eng(self):
-        return EngineStatus.STATUS_ZIP
+    def __source(self):
+        reply_to = self.message.reply_to_message
+        return reply_to.from_user.username or reply_to.from_user.id if reply_to and \
+            not reply_to.from_user.is_bot else self.message.from_user.username \
+                or self.message.from_user.id
+
+    def mode(self):
+        return self.__listener.mode

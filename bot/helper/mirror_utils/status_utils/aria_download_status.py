@@ -1,6 +1,6 @@
 from time import time
 from bot import aria2, LOGGER
-from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_time, EngineStatus
+from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_time
 
 def get_download(gid):
     try:
@@ -9,6 +9,7 @@ def get_download(gid):
         LOGGER.error(f'{e}: Aria2c, Error while getting torrent info')
         return get_download(gid)
 
+engine_ = f"Aria2c v{aria2.client.get_version()['version']}"
 
 class AriaDownloadStatus:
 
@@ -19,6 +20,8 @@ class AriaDownloadStatus:
         self.start_time = 0
         self.seeding = seeding
         self.message = listener.message
+        self.source = self.__source()
+        self.engine = engine_
 
     def __update(self):
         self.__download = self.__download.live
@@ -50,6 +53,7 @@ class AriaDownloadStatus:
         return self.__download.download_speed_string()
 
     def name(self):
+        self.__update()
         return self.__download.name
 
     def size(self):
@@ -59,7 +63,6 @@ class AriaDownloadStatus:
         return self.__download.eta_string()
 
     def status(self):
-        self.__update()
         download = self.__download
         if download.is_waiting:
             return MirrorStatus.STATUS_QUEUEDL
@@ -80,7 +83,6 @@ class AriaDownloadStatus:
         return self.__download.upload_length_string()
 
     def upload_speed(self):
-        self.__update()
         return self.__download.upload_speed_string()
 
     def ratio(self):
@@ -115,5 +117,11 @@ class AriaDownloadStatus:
             self.__listener.onDownloadError('Download stopped by user!')
             aria2.remove([self.__download], force=True, files=True)
 
-    def eng(self):
-        return EngineStatus.STATUS_ARIA
+    def __source(self):
+        reply_to = self.message.reply_to_message
+        return reply_to.from_user.username or reply_to.from_user.id if reply_to and \
+            not reply_to.from_user.is_bot else self.message.from_user.username \
+                or self.message.from_user.id
+
+    def mode(self):
+        return self.__listener.mode

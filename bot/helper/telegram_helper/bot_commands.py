@@ -1,6 +1,5 @@
 from bot import CMD_SUFFIX
 
-
 class _BotCommands:
     def __init__(self):
         self.StartCommand = f'start{CMD_SUFFIX}'
@@ -27,14 +26,14 @@ class _BotCommands:
         self.CancelAllCommand = f'cancelall{CMD_SUFFIX}'
         self.ListCommand = f'list{CMD_SUFFIX}'
         self.SearchCommand = f'search{CMD_SUFFIX}'
-        self.StatusCommand = f'status{CMD_SUFFIX}'
+        self.StatusCommand = (f'status{CMD_SUFFIX}', f's{CMD_SUFFIX}')
         self.UsersCommand = f'users{CMD_SUFFIX}'
         self.AuthorizeCommand = f'authorize{CMD_SUFFIX}'
         self.UnAuthorizeCommand = f'unauthorize{CMD_SUFFIX}'
         self.AddSudoCommand = f'addsudo{CMD_SUFFIX}'
         self.RmSudoCommand = f'rmsudo{CMD_SUFFIX}'
-        self.PingCommand = f'ping{CMD_SUFFIX}'
-        self.RestartCommand = f'restart{CMD_SUFFIX}'
+        self.PingCommand = ('ping','p')
+        self.RestartCommand = (f'restart{CMD_SUFFIX}', 'restartall')
         self.StatsCommand = f'stats{CMD_SUFFIX}'
         self.HelpCommand = f'help{CMD_SUFFIX}'
         self.LogCommand = f'log{CMD_SUFFIX}'
@@ -45,10 +44,12 @@ class _BotCommands:
         self.BotSetCommand = f'bsetting{CMD_SUFFIX}'
         self.UserSetCommand = f'usetting{CMD_SUFFIX}'
         self.BtSelectCommand = f'btsel{CMD_SUFFIX}'
+        self.CategorySelect = f'catsel{CMD_SUFFIX}'
         self.RssListCommand = (f'rsslist{CMD_SUFFIX}', f'rl{CMD_SUFFIX}')
         self.RssGetCommand = (f'rssget{CMD_SUFFIX}', f'rg{CMD_SUFFIX}')
         self.RssSubCommand = (f'rsssub{CMD_SUFFIX}', f'rs{CMD_SUFFIX}')
         self.RssUnSubCommand = (f'rssunsub{CMD_SUFFIX}', f'rus{CMD_SUFFIX}')
         self.RssSettingsCommand = (f'rssset{CMD_SUFFIX}', f'rst{CMD_SUFFIX}')
+        self.RmdbCommand = f'rmdb{CMD_SUFFIX}'
 
 BotCommands = _BotCommands()

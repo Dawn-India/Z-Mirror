@@ -1,13 +1,12 @@
-from os import path as ospath, getcwd, chdir
-from traceback import format_exc
 from textwrap import indent
+from traceback import format_exc
 from io import StringIO, BytesIO
-from telegram.ext import CommandHandler
+from bot import LOGGER, dispatcher
 from contextlib import redirect_stdout
-
+from telegram.ext import CommandHandler
+from os import path as ospath, getcwd, chdir
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot import LOGGER, dispatcher
 
 namespaces = {}
 
@@ -21,7 +20,6 @@ def namespace_of(chat, update, bot):
             'effective_chat': update.effective_chat,
             'update': update
         }
-
     return namespaces[chat]
 
 def log_input(update):
@@ -109,7 +107,6 @@ def clear(update, context):
     if update.message.chat_id in namespaces:
         del namespaces[update.message.chat_id]
     send("Cleared locals.", bot, update)
-
 
 eval_handler = CommandHandler(BotCommands.EvalCommand, evaluate, filters=CustomFilters.owner_filter)
 exec_handler = CommandHandler(BotCommands.ExecCommand, execute, filters=CustomFilters.owner_filter)

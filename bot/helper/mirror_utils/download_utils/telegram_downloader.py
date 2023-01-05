@@ -1,10 +1,12 @@
 from logging import getLogger, WARNING
 from time import time
 from threading import RLock, Lock
-from bot import *
-from ..status_utils.telegram_download_status import TelegramDownloadStatus
+from bot import (LOGGER, app, config_dict, download_dict, download_dict_lock, non_queued_dl, non_queued_up, queue_dict_lock, queued_dl)
+from bot.helper.mirror_utils.status_utils.telegram_download_status import TelegramDownloadStatus
+from bot.helper.ext_utils.bot_utils import get_readable_file_size
+from bot.helper.ext_utils.fs_utils import check_storage_threshold
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMessage
+from bot.helper.telegram_helper.message_utils import (sendMessage, sendStatusMessage)
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 
 global_lock = Lock()
@@ -81,7 +83,7 @@ class TelegramDownloadHelper:
         except Exception as e:
             LOGGER.error(str(e))
             return self.__onDownloadError(str(e))
-        if download is not None:
+        if download:
             self.__onDownloadComplete()
         elif not self.__is_cancelled:
             self.__onDownloadError('Internal error occurred')
@@ -89,7 +91,7 @@ class TelegramDownloadHelper:
     def add_download(self, message, path, filename, from_queue=False):
         _dmsg = app.get_messages(message.chat.id, reply_to_message_ids=message.message_id)
         media = _dmsg.document or _dmsg.video or _dmsg.audio or None
-        if media is not None:
+        if media:
             with global_lock:
                 # For avoiding locking the thread lock for long time unnecessarily
                 download = media.file_unique_id not in GLOBAL_GID
@@ -107,8 +109,16 @@ class TelegramDownloadHelper:
                     smsg, button = GoogleDriveHelper().drive_list(name, True, True)
                     if smsg:
                         msg = "File/Folder is already available in Drive.\nHere are the search results:"
-                        sendMessage(msg, self.__listener.bot, self.__listener.message, button)
-                        return
+                        return sendMessage(msg, self.__listener.bot, self.__listener.message, button)
+                if STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']:
+                    limit = STORAGE_THRESHOLD * 1024**3
+                    arch = any([self.__listener.isZip, self.__listener.extract])
+                    acpt = check_storage_threshold(size, limit, arch)
+                    if not acpt:
+                        msg = f'You must leave {get_readable_file_size(limit)} free storage.'
+                        msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+                        return sendMessage(msg, self.__listener.bot, self.__listener.message)
+                self.__listener.selectCategory()
                 all_limit = config_dict['QUEUE_ALL']
                 dl_limit = config_dict['QUEUE_DOWNLOAD']
                 if all_limit or dl_limit:

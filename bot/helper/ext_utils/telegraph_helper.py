@@ -72,6 +72,13 @@ class TelegraphHelper:
             )
         return
 
+    def revoke_access_token(self):
+        LOGGER.info('Revoking telegraph access token...')
+        try:
+            return self.telegraph.revoke_access_token()
+        except Exception as e:
+            LOGGER.error(f'Failed Revoking telegraph access token due to : {e}')
+
 try:
     telegraph=TelegraphHelper('Z', 'https://github.com/Dawn-India/Z-Mirror')
 except Exception as err:

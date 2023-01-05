@@ -1,20 +1,20 @@
 from signal import signal, SIGINT
-from os import path as ospath, remove as osremove, execl as osexecl
-from subprocess import run as srun, check_output
-from psutil import disk_usage, cpu_percent, swap_memory, cpu_count, virtual_memory, net_io_counters, boot_time
+from os import path, remove, execl
+from subprocess import run ,check_output
+from psutil import (cpu_percent, disk_usage, net_io_counters, virtual_memory)
 from time import time
 from sys import executable
 from telegram.ext import CommandHandler
-from bot import *
-from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
-from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
-from .helper.ext_utils.db_handler import DbManger
-from .helper.telegram_helper.bot_commands import BotCommands
-from .helper.telegram_helper.message_utils import sendMessage, editMessage, sendLogFile
-from .helper.telegram_helper.filters import CustomFilters
-from .helper.telegram_helper.button_build import ButtonMaker
-from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, \
-                     shell, eval, delete, count, users_settings, search, rss, bt_select, bot_settings
+from bot import (DATABASE_URL, IGNORE_PENDING_REQUESTS, INCOMPLETE_TASK_NOTIFIER, LOGGER, STOP_DUPLICATE_TASKS,
+                 Interval, QbInterval, app, bot, botStartTime, config_dict, dispatcher, main_loop, updater)
+from bot.helper.ext_utils.fs_utils import (start_cleanup, clean_all, exit_clean_up)
+from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, get_readable_time, set_commands)
+from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import (editMessage, sendLogFile, sendMessage)
+from bot.modules import (authorize, bot_settings, bt_select, cancel_mirror, category_select, clone, count, delete, drive_list,
+                         eval, mirror_leech, mirror_status, rmdb, rss, save_message, search, shell, users_settings, ytdlp, anonymous)
 
 def progress_bar(percentage):
     p_used = '⬢'
@@ -30,7 +30,7 @@ def progress_bar(percentage):
     )
 
 def stats(update, context):
-    if ospath.exists('.git'):
+    if path.exists('.git'):
         last_commit = check_output(["git log -1 --date=short --pretty=format:'%cr \n<b>Version: </b> %cd'"], shell=True).decode()
     else:
         last_commit = 'No UPSTREAM_REPO'
@@ -56,18 +56,15 @@ def stats(update, context):
     sendMessage(stats, context.bot, update.message)
 
 def start(update, context):
-    buttons = ButtonMaker()
-    buttons.buildbutton("Repo", "https://github.com/Dawn-India/Z-Mirror")
-    buttons.buildbutton("Owner", "https://t.me/z_mirror")
-    reply_markup = buttons.build_menu(1)
-    if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
-        start_string = f'''
-Welcome | Z BOT is ready for you
-Type /{BotCommands.HelpCommand} to get a list of available commands
-'''
-        sendMessage(start_string, context.bot, update.message, reply_markup)
+    if config_dict['ENABLE_DM']:
+        start_string = 'Welcome | Z BOT is ready for you.\n' \
+                       'Thanks for starting me in DM.\n' \
+                       'Now I can send all of your files and links here.\n'
     else:
-        sendMessage('Not an Authorized user, deploy your own mirror-leech bot', context.bot, update.message, reply_markup)
+        start_string = 'Hey, Welcome dear. \n' \
+                       'I can Mirror all your links To Google Drive! \n' \
+                       'Created With Love by @Z_Mirror . \n'
+    sendMessage(start_string, context.bot, update.message)
 
 def restart(update, context):
     restart_message = sendMessage("Restarting...", context.bot, update.message)
@@ -78,18 +75,20 @@ def restart(update, context):
         QbInterval[0].cancel()
         QbInterval.clear()
     clean_all()
-    srun(["pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg"])
-    srun(["python3", "update.py"])
+    run(["pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg"])
+    run(["python3", "update.py"])
     with open(".restartmsg", "w") as f:
         f.truncate(0)
         f.write(f"{restart_message.chat.id}\n{restart_message.message_id}\n")
-    osexecl(executable, executable, "-m", "bot")
+    execl(executable, executable, "-m", "bot")
+
 
 def ping(update, context):
     start_time = int(round(time() * 1000))
     reply = sendMessage("Starting Ping", context.bot, update.message)
     end_time = int(round(time() * 1000))
     editMessage(f'{end_time - start_time} ms', reply)
+
 
 def log(update, context):
     sendLogFile(context.bot, update.message)
@@ -115,22 +114,24 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.CloneCommand} [drive_url]: Copy file/folder to Google Drive.
 /{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
 /{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
-/{BotCommands.UserSetCommand} [query]: Users settings.
-/{BotCommands.BotSetCommand} [query]: Bot settings.
+/{BotCommands.UserSetCommand} : Users settings.
+/{BotCommands.BotSetCommand} : Bot settings.
 /{BotCommands.BtSelectCommand}: Select files from torrents by gid or reply.
+/{BotCommands.CategorySelect}: Change upload category for Google Drive.
 /{BotCommands.CancelMirror}: Cancel task by gid or reply.
-/{BotCommands.CancelAllCommand} [query]: Cancel all [status] tasks.
+/{BotCommands.CancelAllCommand} : Cancel all tasks which added by you.
 /{BotCommands.ListCommand} [query]: Search in Google Drive(s).
 /{BotCommands.SearchCommand} [query]: Search for torrents with API.
-/{BotCommands.StatusCommand}: Shows a status of all the downloads.
+/{BotCommands.StatusCommand[0]} or /{BotCommands.StatusCommand[1]}: Shows a status of all the downloads.
 /{BotCommands.StatsCommand}: Show stats of the machine where the bot is hosted in.
-/{BotCommands.PingCommand}: Check how long it takes to Ping the Bot (Only Owner & Sudo).
+/{BotCommands.PingCommand[0]} or /{BotCommands.PingCommand[1]}: Check how long it takes to Ping the Bot (Only Owner & Sudo).
 /{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
 /{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).
 /{BotCommands.UsersCommand}: show users settings (Only Owner & Sudo).
 /{BotCommands.AddSudoCommand}: Add sudo user (Only Owner).
 /{BotCommands.RmSudoCommand}: Remove sudo users (Only Owner).
-/{BotCommands.RestartCommand}: Restart and update the bot (Only Owner & Sudo).
+/{BotCommands.RestartCommand[0]}: Restart and update the bot (Only Owner & Sudo).
+/{BotCommands.RestartCommand[1]}: Restart all bots and update the bot (Only Owner & Sudo).
 /{BotCommands.LogCommand}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo).
 /{BotCommands.ShellCommand}: Run shell commands (Only Owner).
 /{BotCommands.EvalCommand}: Run Python Code Line | Lines (Only Owner).
@@ -141,17 +142,21 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.RssSubCommand[0]} or /{BotCommands.RssSubCommand[1]}: Subscribe new rss feed (Only Owner & Sudo).
 /{BotCommands.RssUnSubCommand[0]} or /{BotCommands.RssUnSubCommand[1]}: Unubscribe rss feed by title (Only Owner & Sudo).
 /{BotCommands.RssSettingsCommand[0]} or /{BotCommands.RssSettingsCommand[1]} [query]: Rss Settings (Only Owner & Sudo).
+/{BotCommands.RmdbCommand}: Remove task from the database.
 '''
 
 def bot_help(update, context):
     sendMessage(help_string, context.bot, update.message)
 
 def main():
+    set_commands(bot)
     start_cleanup()
+    if DATABASE_URL and STOP_DUPLICATE_TASKS:
+        DbManger().clear_download_links()
     if INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
-        if notifier_dict := DbManger().get_incomplete_tasks():
+        if notifier_dict:= DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
-                if ospath.isfile(".restartmsg"):
+                if path.isfile(".restartmsg"):
                     with open(".restartmsg") as f:
                         chat_id, msg_id = map(int, f)
                     msg = 'Restarted Successfully!'
@@ -164,10 +169,11 @@ def main():
                         if len(msg.encode()) > 4000:
                             if 'Restarted Successfully!' in msg and cid == chat_id:
                                 try:
-                                    bot.editMessageText(msg, chat_id, msg_id)
+                                    bot.editMessageText('Restarted Successfully!', chat_id, msg_id)
+                                    bot.sendMessage(chat_id, msg, reply_to_message_id=msg_id)
                                 except:
                                     pass
-                                osremove(".restartmsg")
+                                remove(".restartmsg")
                             else:
                                 try:
                                     bot.sendMessage(cid, msg)
@@ -176,24 +182,24 @@ def main():
                             msg = ''
                 if 'Restarted Successfully!' in msg and cid == chat_id:
                     try:
-                        bot.editMessageText(msg, chat_id, msg_id)
+                        bot.editMessageText('Restarted Successfully!', chat_id, msg_id)
+                        bot.sendMessage(chat_id, msg, reply_to_message_id=msg_id)
                     except:
                         pass
-                    osremove(".restartmsg")
+                    remove(".restartmsg")
                 else:
                     try:
                         bot.sendMessage(cid, msg)
                     except Exception as e:
                         LOGGER.error(e)
-
-    if ospath.isfile(".restartmsg"):
+    if path.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
         try:
             bot.edit_message_text("Restarted Successfully!", chat_id, msg_id)
         except:
             pass
-        osremove(".restartmsg")
+        remove(".restartmsg")
 
     start_handler = CommandHandler(BotCommands.StartCommand, start)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
@@ -220,5 +226,4 @@ def main():
 
 app.start()
 main()
-
 main_loop.run_forever()

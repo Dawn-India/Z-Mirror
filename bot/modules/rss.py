@@ -1,14 +1,13 @@
-from feedparser import parse as feedparse
 from time import sleep
-from telegram.ext import CommandHandler, CallbackQueryHandler
 from threading import Lock, Thread
-
-from bot import dispatcher, job_queue, rss_dict, LOGGER, DATABASE_URL, config_dict, RSS_DELAY, RSS_CHAT_ID
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, auto_delete_message, sendRss
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
+from feedparser import parse as feedparse
 from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.telegram_helper.filters import CustomFilters
+from telegram.ext import CallbackQueryHandler, CommandHandler
+from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot import (DATABASE_URL, LOGGER, RSS_CHAT_ID, RSS_DELAY, config_dict, dispatcher, job_queue, rss_dict)
+from bot.helper.telegram_helper.message_utils import (auto_delete_message, editMessage, sendMessage, sendRss)
 
 rss_dict_lock = Lock()
 
@@ -57,7 +56,6 @@ def rss_sub(update, context):
         feed_link = args[2].strip()
         f_lists = []
         filters = None
-
         if len(args) == 4:
             filters = args[3].lstrip().lower()
             if filters.startswith('f: '):

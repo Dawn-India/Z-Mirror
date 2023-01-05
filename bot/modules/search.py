@@ -1,21 +1,19 @@
-from requests import get as rget
-from threading import Thread
 from html import escape
+from threading import Thread
 from urllib.parse import quote
-from telegram.ext import CommandHandler, CallbackQueryHandler
-
-from bot import dispatcher, LOGGER, config_dict, get_client
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
-from bot.helper.ext_utils.telegraph_helper import telegraph
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
+from requests import get as rget
+from telegram.ext import CallbackQueryHandler, CommandHandler
+from bot import LOGGER, config_dict, dispatcher, get_client
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
+from bot.helper.ext_utils.telegraph_helper import telegraph
+from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import (anno_checker, editMessage, sendMessage)
 
 PLUGINS = []
 SITES = None
 TELEGRAPH_LIMIT = 300
-
 
 def initiate_search_tools():
     qbclient = get_client()
@@ -45,31 +43,36 @@ def initiate_search_tools():
             SITES = None
 
 def torser(update, context):
-    user_id = update.message.from_user.id
+    message = update.message
+    if message.from_user.id in [1087968824, 136817688]:
+        message.from_user.id = anno_checker(message)
+        if not message.from_user.id:
+            return
+    user_id = message.from_user.id
     buttons = ButtonMaker()
     SEARCH_PLUGINS = config_dict['SEARCH_PLUGINS']
     if SITES is None and not SEARCH_PLUGINS:
-        sendMessage("No API link or search PLUGINS added for this function", context.bot, update.message)
+        sendMessage("No API link or search PLUGINS added for this function", context.bot, message)
     elif len(context.args) == 0 and SITES is None:
-        sendMessage("Send a search key along with command", context.bot, update.message)
+        sendMessage("Send a search key along with command", context.bot, message)
     elif len(context.args) == 0:
         buttons.sbutton('Trending', f"torser {user_id} apitrend")
         buttons.sbutton('Recent', f"torser {user_id} apirecent")
         buttons.sbutton("Cancel", f"torser {user_id} cancel")
         button = buttons.build_menu(2)
-        sendMessage("Send a search key along with command", context.bot, update.message, button)
+        sendMessage("Send a search key along with command", context.bot, message, button)
     elif SITES is not None and SEARCH_PLUGINS:
         buttons.sbutton('Api', f"torser {user_id} apisearch")
         buttons.sbutton('Plugins', f"torser {user_id} plugin")
         buttons.sbutton("Cancel", f"torser {user_id} cancel")
         button = buttons.build_menu(2)
-        sendMessage('Choose tool to search:', context.bot, update.message, button)
+        sendMessage('Choose tool to search:', context.bot, message, button)
     elif SITES is not None:
         button = __api_buttons(user_id, "apisearch")
-        sendMessage('Choose site to search | API:', context.bot, update.message, button)
+        sendMessage('Choose site to search | API:', context.bot, message, button)
     else:
         button = __plugin_buttons(user_id)
-        sendMessage('Choose site to search | Plugins:', context.bot, update.message, button)
+        sendMessage('Choose site to search | Plugins:', context.bot, message, button)
 
 def torserbut(update, context):
     query = update.callback_query
@@ -193,7 +196,7 @@ def __getResult(search_results, key, message, method):
                         if 'torrent' in subres.keys():
                             msg += f"<a href='{subres['torrent']}'>Direct Link</a><br>"
                         elif 'magnet' in subres.keys():
-                            msg += f"<b>Share Magnet to</b> "
+                            msg += "<b>Share Magnet to</b> "
                             msg += f"<a href='http://t.me/share/url?url={subres['magnet']}'>Telegram</a><br>"
                     msg += '<br>'
                 else:
@@ -205,7 +208,7 @@ def __getResult(search_results, key, message, method):
                     if 'torrent' in result.keys():
                         msg += f"<a href='{result['torrent']}'>Direct Link</a><br><br>"
                     elif 'magnet' in result.keys():
-                        msg += f"<b>Share Magnet to</b> "
+                        msg += "<b>Share Magnet to</b> "
                         msg += f"<a href='http://t.me/share/url?url={quote(result['magnet'])}'>Telegram</a><br><br>"
                     else:
                         msg += '<br>'
@@ -232,7 +235,7 @@ def __getResult(search_results, key, message, method):
         telegraph_content.append(msg)
 
     editMessage(f"<b>Creating</b> {len(telegraph_content)} <b>Telegraph pages.</b>", message)
-    path = [telegraph.create_page(title='Mirror-leech-bot Torrent Search',
+    path = [telegraph.create_page(title='Z Torrent Search',
                                   content=content)["path"] for content in telegraph_content]
     if len(path) > 1:
         editMessage(f"<b>Editing</b> {len(telegraph_content)} <b>Telegraph pages.</b>", message)

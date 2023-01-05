@@ -1,16 +1,18 @@
-from telegram.ext import CommandHandler, CallbackQueryHandler, MessageHandler, Filters
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters, MessageHandler)
 from functools import partial
 from time import time, sleep
-from os import remove, rename, path as ospath, environ
-from subprocess import run as srun, Popen
+from os import remove, rename, path, environ
+from subprocess import run, Popen
 from dotenv import load_dotenv
-
-from bot import config_dict, dispatcher, user_data, DATABASE_URL, MAX_SPLIT_SIZE, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, IS_PREMIUM_USER, download_dict, qbit_options, get_client, LOGGER
-from bot.helper.telegram_helper.message_utils import sendMessage, sendFile, editMessage, update_all_messages
+from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_IDS, CATEGORY_INDEXS, IS_PREMIUM_USER, dispatcher, LOGGER,
+                 CATEGORY_NAMES, DATABASE_URL, DRIVES_IDS, DRIVES_NAMES, GLOBAL_EXTENSION_FILTER, INDEX_URLS,
+                 MAX_SPLIT_SIZE, SHORTENER_APIS, SHORTENERES, Interval, aria2, aria2_options, aria2c_global,
+                 download_dict, get_client, qbit_options, status_reply_dict_lock, user_data, config_dict)
+from bot.helper.telegram_helper.message_utils import (editMessage, sendFile, sendMessage, update_all_messages)
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.bot_utils import new_thread, setInterval
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread, set_commands, setInterval)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.queued_starter import start_from_queued
 from bot.modules.search import initiate_search_tools
@@ -22,7 +24,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'DOWNLOAD_DIR': '/usr/src/app/downloads/',
                   'LEECH_SPLIT_SIZE': MAX_SPLIT_SIZE,
                   'RSS_DELAY': 900,
-                  'STATUS_UPDATE_INTERVAL': 10,
+                  'DOWNLOAD_STATUS_UPDATE_INTERVAL': 10,
                   'SEARCH_LIMIT': 0,
                   'UPSTREAM_BRANCH': 'master'}
 
@@ -125,17 +127,17 @@ def load_config():
     else:
         LEECH_SPLIT_SIZE = int(LEECH_SPLIT_SIZE)
 
-    STATUS_UPDATE_INTERVAL = environ.get('STATUS_UPDATE_INTERVAL', '')
-    if len(STATUS_UPDATE_INTERVAL) == 0:
-        STATUS_UPDATE_INTERVAL = 10
+    DOWNLOAD_STATUS_UPDATE_INTERVAL = environ.get('DOWNLOAD_STATUS_UPDATE_INTERVAL', '')
+    if len(DOWNLOAD_STATUS_UPDATE_INTERVAL) == 0:
+        DOWNLOAD_STATUS_UPDATE_INTERVAL = 10
     else:
-        STATUS_UPDATE_INTERVAL = int(STATUS_UPDATE_INTERVAL)
+        DOWNLOAD_STATUS_UPDATE_INTERVAL = int(DOWNLOAD_STATUS_UPDATE_INTERVAL)
     if len(download_dict) != 0:
         with status_reply_dict_lock:
             if Interval:
                 Interval[0].cancel()
                 Interval.clear()
-                Interval.append(setInterval(STATUS_UPDATE_INTERVAL, update_all_messages))
+                Interval.append(setInterval(DOWNLOAD_STATUS_UPDATE_INTERVAL, update_all_messages))
 
     AUTO_DELETE_MESSAGE_DURATION = environ.get('AUTO_DELETE_MESSAGE_DURATION', '')
     if len(AUTO_DELETE_MESSAGE_DURATION) == 0:
@@ -153,8 +155,14 @@ def load_config():
     DUMP_CHAT = environ.get('DUMP_CHAT', '')
     DUMP_CHAT = '' if len(DUMP_CHAT) == 0 else int(DUMP_CHAT)
 
+    LOG_CHAT = environ.get('LOG_CHAT', '')
+    LOG_CHAT = '' if len(LOG_CHAT) == 0 else int(LOG_CHAT)
+
     STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
     STATUS_LIMIT = '' if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
+
+    USER_MAX_TASKS = environ.get('USER_MAX_TASKS', '')
+    USER_MAX_TASKS = '' if len(USER_MAX_TASKS) == 0 else int(USER_MAX_TASKS)
 
     RSS_CHAT_ID = environ.get('RSS_CHAT_ID', '')
     RSS_CHAT_ID = '' if len(RSS_CHAT_ID) == 0 else int(RSS_CHAT_ID)
@@ -204,6 +212,7 @@ def load_config():
 
     INCOMPLETE_TASK_NOTIFIER = environ.get('INCOMPLETE_TASK_NOTIFIER', '')
     INCOMPLETE_TASK_NOTIFIER = INCOMPLETE_TASK_NOTIFIER.lower() == 'true'
+
     if not INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
         DbManger().trunc_table('tasks')
 
@@ -228,6 +237,9 @@ def load_config():
     EQUAL_SPLITS = environ.get('EQUAL_SPLITS', '')
     EQUAL_SPLITS = EQUAL_SPLITS.lower() == 'true'
 
+    MEDIA_GROUP = environ.get('MEDIA_GROUP', '')
+    MEDIA_GROUP = MEDIA_GROUP.lower() == 'true'
+
     IGNORE_PENDING_REQUESTS = environ.get('IGNORE_PENDING_REQUESTS', '')
     IGNORE_PENDING_REQUESTS = IGNORE_PENDING_REQUESTS.lower() == 'true'
 
@@ -236,9 +248,9 @@ def load_config():
     BASE_URL = environ.get('BASE_URL', '').rstrip("/")
     if len(BASE_URL) == 0:
         BASE_URL = ''
-        srun(["pkill", "-9", "-f", "gunicorn"])
+        run(["pkill", "-9", "-f", "gunicorn"])
     else:
-        srun(["pkill", "-9", "-f", "gunicorn"])
+        run(["pkill", "-9", "-f", "gunicorn"])
         Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}", shell=True)
 
     UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
@@ -249,8 +261,67 @@ def load_config():
     if len(UPSTREAM_BRANCH) == 0:
         UPSTREAM_BRANCH = 'master'
 
-    DRIVES_IDS.clear()
+    STORAGE_THRESHOLD = environ.get('STORAGE_THRESHOLD', '')
+    STORAGE_THRESHOLD = '' if len(STORAGE_THRESHOLD) == 0 else float(STORAGE_THRESHOLD)
+
+    TORRENT_LIMIT = environ.get('TORRENT_LIMIT', '')
+    TORRENT_LIMIT = '' if len(TORRENT_LIMIT) == 0 else float(TORRENT_LIMIT)
+
+    DIRECT_LIMIT = environ.get('DIRECT_LIMIT', '')
+    DIRECT_LIMIT = '' if len(DIRECT_LIMIT) == 0 else float(DIRECT_LIMIT)
+
+    YTDLP_LIMIT = environ.get('YTDLP_LIMIT', '')
+    YTDLP_LIMIT = '' if len(YTDLP_LIMIT) == 0 else float(YTDLP_LIMIT)
+
+    GDRIVE_LIMIT = environ.get('GDRIVE_LIMIT', '')
+    GDRIVE_LIMIT = '' if len(GDRIVE_LIMIT) == 0 else float(GDRIVE_LIMIT)
+
+    CLONE_LIMIT = environ.get('CLONE_LIMIT', '')
+    CLONE_LIMIT = '' if len(CLONE_LIMIT) == 0 else float(CLONE_LIMIT)
+
+    MEGA_LIMIT = environ.get('MEGA_LIMIT', '')
+    MEGA_LIMIT = '' if len(MEGA_LIMIT) == 0 else float(MEGA_LIMIT)
+
+    LEECH_LIMIT = environ.get('LEECH_LIMIT', '')
+    LEECH_LIMIT = '' if len(LEECH_LIMIT) == 0 else float(LEECH_LIMIT)
+
+    MAX_PLAYLIST = environ.get('MAX_PLAYLIST', '')
+    MAX_PLAYLIST = '' if len(MAX_PLAYLIST) == 0 else int(MAX_PLAYLIST)
+
+
+    ENABLE_CHAT_RESTRICT = environ.get('ENABLE_CHAT_RESTRICT', '')
+    ENABLE_CHAT_RESTRICT = ENABLE_CHAT_RESTRICT.lower() == 'true'
+
+    ENABLE_MESSAGE_FILTER = environ.get('ENABLE_MESSAGE_FILTER', '')
+    ENABLE_MESSAGE_FILTER = ENABLE_MESSAGE_FILTER.lower() == 'true'
+
+    STOP_DUPLICATE_TASKS = environ.get('STOP_DUPLICATE_TASKS', '')
+    STOP_DUPLICATE_TASKS = STOP_DUPLICATE_TASKS.lower() == 'true'
+
+    if not STOP_DUPLICATE_TASKS and DATABASE_URL:
+        DbManger().clear_download_links()
+
+    DISABLE_DRIVE_LINK = environ.get('DISABLE_DRIVE_LINK', '')
+    DISABLE_DRIVE_LINK = DISABLE_DRIVE_LINK.lower() == 'true'
+
+    DISABLE_LEECH = environ.get('DISABLE_LEECH', '')
+    DISABLE_LEECH = DISABLE_LEECH.lower() == 'true'
+
+    SET_COMMANDS = environ.get('SET_COMMANDS', '')
+    SET_COMMANDS = SET_COMMANDS.lower() == 'true'
+
+    ENABLE_DM = environ.get('ENABLE_DM', '')
+    ENABLE_DM = ENABLE_DM.lower() == 'true'
+
+    DELETE_LINKS = environ.get('DELETE_LINKS', '')
+    DELETE_LINKS = DELETE_LINKS.lower() == 'true'
+
+    FSUB_IDS = environ.get('FSUB_IDS', '')
+    if len(FSUB_IDS) == 0:
+        FSUB_IDS = ''
+
     DRIVES_NAMES.clear()
+    DRIVES_IDS.clear()
     INDEX_URLS.clear()
 
     if GDRIVE_ID:
@@ -258,7 +329,7 @@ def load_config():
         DRIVES_IDS.append(GDRIVE_ID)
         INDEX_URLS.append(INDEX_URL)
 
-    if ospath.exists('list_drives.txt'):
+    if path.exists('list_drives.txt'):
         with open('list_drives.txt', 'r+') as f:
             lines = f.readlines()
             for line in lines:
@@ -270,8 +341,30 @@ def load_config():
                 else:
                     INDEX_URLS.append('')
 
+    CATEGORY_NAMES.clear()
+    CATEGORY_IDS.clear()
+    CATEGORY_INDEXS.clear()
+
+    if GDRIVE_ID:
+        CATEGORY_NAMES.append("Root")
+        CATEGORY_IDS.append(GDRIVE_ID)
+        CATEGORY_INDEXS.append(INDEX_URL)
+
+    if path.exists('categories.txt'):
+        with open('categories.txt', 'r+') as f:
+            lines = f.readlines()
+            for line in lines:
+                temp = line.strip().split()
+                CATEGORY_IDS.append(temp[1])
+                CATEGORY_NAMES.append(temp[0].replace("_", " "))
+                if len(temp) > 2:
+                    CATEGORY_INDEXS.append(temp[2])
+                else:
+                    CATEGORY_INDEXS.append('')
+
     config_dict.update({'AS_DOCUMENT': AS_DOCUMENT,
                         'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
+                        'FSUB_IDS': FSUB_IDS,
                         'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
                         'BASE_URL': BASE_URL,
                         'BOT_TOKEN': BOT_TOKEN,
@@ -279,6 +372,7 @@ def load_config():
                         'DATABASE_URL': DATABASE_URL,
                         'DOWNLOAD_DIR': DOWNLOAD_DIR,
                         'DUMP_CHAT': DUMP_CHAT,
+                        'LOG_CHAT': LOG_CHAT,
                         'EQUAL_SPLITS': EQUAL_SPLITS,
                         'EXTENSION_FILTER': EXTENSION_FILTER,
                         'GDRIVE_ID': GDRIVE_ID,
@@ -288,6 +382,7 @@ def load_config():
                         'IS_TEAM_DRIVE': IS_TEAM_DRIVE,
                         'LEECH_FILENAME_PREFIX': LEECH_FILENAME_PREFIX,
                         'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
+                        'MEDIA_GROUP': MEDIA_GROUP,
                         'MEGA_API_KEY': MEGA_API_KEY,
                         'MEGA_EMAIL_ID': MEGA_EMAIL_ID,
                         'MEGA_PASSWORD': MEGA_PASSWORD,
@@ -304,7 +399,8 @@ def load_config():
                         'SEARCH_PLUGINS': SEARCH_PLUGINS,
                         'SERVER_PORT': SERVER_PORT,
                         'STATUS_LIMIT': STATUS_LIMIT,
-                        'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
+                        'USER_MAX_TASKS': USER_MAX_TASKS,
+                        'DOWNLOAD_STATUS_UPDATE_INTERVAL': DOWNLOAD_STATUS_UPDATE_INTERVAL,
                         'STOP_DUPLICATE': STOP_DUPLICATE,
                         'SUDO_USERS': SUDO_USERS,
                         'TELEGRAM_API': TELEGRAM_API,
@@ -317,7 +413,24 @@ def load_config():
                         'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
                         'VIEW_LINK': VIEW_LINK,
                         'WEB_PINCODE': WEB_PINCODE,
-                        'YT_DLP_QUALITY': YT_DLP_QUALITY})
+                        'YT_DLP_QUALITY': YT_DLP_QUALITY,
+                        'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
+                        'TORRENT_LIMIT': TORRENT_LIMIT,
+                        'DIRECT_LIMIT': DIRECT_LIMIT,
+                        'YTDLP_LIMIT': YTDLP_LIMIT,
+                        'GDRIVE_LIMIT': GDRIVE_LIMIT,
+                        'CLONE_LIMIT': CLONE_LIMIT,
+                        'MEGA_LIMIT': MEGA_LIMIT,
+                        'LEECH_LIMIT': LEECH_LIMIT,
+                        'MAX_PLAYLIST': MAX_PLAYLIST,
+                        'ENABLE_CHAT_RESTRICT': ENABLE_CHAT_RESTRICT,
+                        'ENABLE_MESSAGE_FILTER': ENABLE_MESSAGE_FILTER,
+                        'STOP_DUPLICATE_TASKS': STOP_DUPLICATE_TASKS,
+                        'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
+                        'SET_COMMANDS': SET_COMMANDS,
+                        'DISABLE_LEECH': DISABLE_LEECH,
+                        'ENABLE_DM': ENABLE_DM,
+                        'DELETE_LINKS': DELETE_LINKS})
 
     if DATABASE_URL:
         DbManger().update_config(config_dict)
@@ -348,8 +461,8 @@ def get_buttons(key=None, edit_type=None):
     elif key == 'private':
         buttons.sbutton('Back', "botset back")
         buttons.sbutton('Close', "botset close")
-        msg = 'Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, cookies.txt, terabox.txt or .netrc.' \
-              '\nTo delete private file send the name of the file only as text message.\nTimeout: 60 sec'
+        msg = f'Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, categories.txt, shortnners.txt, buttons.txt, cookies.txt, terabox.txt or .netrc.\nTimeout: 60 sec' \
+            '\nTo delete private file send the name of the file only as text message.\nTimeout: 60 sec'
     elif key == 'aria':
         for k in list(aria2_options.keys())[START:10+START]:
             buttons.sbutton(k, f"botset editaria {k}")
@@ -412,10 +525,12 @@ def edit_variable(update, context, omsg, key):
         value = False
         if key == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
             DbManger().trunc_table('tasks')
+        elif key == 'STOP_DUPLICATE_TASKS' and DATABASE_URL:
+            DbManger().clear_download_links()
     elif key == 'DOWNLOAD_DIR':
         if not value.endswith('/'):
             value = f'{value}/'
-    elif key == 'STATUS_UPDATE_INTERVAL':
+    elif key == 'DOWNLOAD_STATUS_UPDATE_INTERVAL':
         value = int(value)
         if len(download_dict) != 0:
             with status_reply_dict_lock:
@@ -437,7 +552,7 @@ def edit_variable(update, context, omsg, key):
         value = min(int(value), MAX_SPLIT_SIZE)
     elif key == 'SERVER_PORT':
         value = int(value)
-        srun(["pkill", "-9", "-f", "gunicorn"])
+        run(["pkill", "-9", "-f", "gunicorn"])
         Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{value}", shell=True)
     elif key == 'EXTENSION_FILTER':
         fx = value.split()
@@ -450,12 +565,22 @@ def edit_variable(update, context, omsg, key):
             DRIVES_IDS[0] = value
         else:
             DRIVES_IDS.insert(0, value)
+        if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
+            CATEGORY_IDS[0] = value
+        else:
+            CATEGORY_IDS.insert(0, value)
     elif key == 'INDEX_URL':
         if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
             INDEX_URLS[0] = value
         else:
             INDEX_URLS.insert(0, value)
-    elif value.isdigit():
+        if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
+            CATEGORY_INDEXS[0] = value
+        else:
+            CATEGORY_INDEXS.insert(0, value)
+    elif key not in ['SEARCH_LIMIT', 'STATUS_LIMIT'] and key.endswith(('_THRESHOLD', '_LIMIT')):
+        value = float(value)
+    elif value.isdigit() and key != 'FSUB_IDS':
         value = int(value)
     config_dict[key] = value
     update_buttons(omsg, 'var')
@@ -466,6 +591,8 @@ def edit_variable(update, context, omsg, key):
         initiate_search_tools()
     elif key in ['QUEUE_ALL', 'QUEUE_DOWNLOAD', 'QUEUE_UPLOAD']:
         start_from_queued()
+    elif key == 'SET_COMMANDS':
+        set_commands(context.bot)
 
 def edit_aria(update, context, omsg, key):
     handler_dict[omsg.chat.id] = False
@@ -515,30 +642,52 @@ def update_private_file(update, context, omsg):
     handler_dict[omsg.chat.id] = False
     message = update.message
     if not message.document and message.text:
-        file_name = message.text
+        file_name = message.text.strip()
         fn = file_name.rsplit('.zip', 1)[0]
-        if ospath.isfile(fn):
+        if path.isfile(fn):
             remove(fn)
         if fn == 'accounts':
-            if ospath.exists('accounts'):
-                srun(["rm", "-rf", "accounts"])
+            if path.exists('accounts'):
+                run(["rm", "-rf", "accounts"])
             config_dict['USE_SERVICE_ACCOUNTS'] = False
             if DATABASE_URL:
                 DbManger().update_config({'USE_SERVICE_ACCOUNTS': False})
         elif file_name in ['.netrc', 'netrc']:
-            srun(["touch", ".netrc"])
-            srun(["cp", ".netrc", "/root/.netrc"])
-            srun(["chmod", "600", ".netrc"])
-        update.message.delete()
+            run(["touch", ".netrc"])
+            run(["cp", ".netrc", "/root/.netrc"])
+            run(["chmod", "600", ".netrc"])
+        elif file_name == 'buttons.txt':
+            BUTTON_NAMES.clear()
+            BUTTON_URLS.clear()
+        elif file_name == 'categories.txt':
+            CATEGORY_NAMES.clear()
+            CATEGORY_IDS.clear()
+            CATEGORY_INDEXS.clear()
+            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+                CATEGORY_NAMES.append('Root')
+                CATEGORY_IDS.append(GDRIVE_ID)
+                CATEGORY_INDEXS.append(config_dict['INDEX_URL'])
+        elif file_name == 'list_drives.txt':
+            DRIVES_IDS.clear()
+            DRIVES_NAMES.clear()
+            INDEX_URLS.clear()
+            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+                DRIVES_NAMES.append('Main')
+                DRIVES_IDS.append(GDRIVE_ID)
+                INDEX_URLS.append(config_dict['INDEX_URL'])
+        elif file_name == 'shorteners.txt':
+            SHORTENERES.clear()
+            SHORTENER_APIS.clear()
+        message.delete()
     else:
-        doc = update.message.document
+        doc = message.document
         file_name = doc.file_name
         doc.get_file().download(custom_path=file_name)
         if file_name == 'accounts.zip':
-            if ospath.exists('accounts'):
-                srun(["rm", "-rf", "accounts"])
-            srun(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
-            srun(["chmod", "-R", "777", "accounts"])
+            if path.exists('accounts'):
+                run(["rm", "-rf", "accounts"])
+            run(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
+            run(["chmod", "-R", "777", "accounts"])
         elif file_name == 'list_drives.txt':
             DRIVES_IDS.clear()
             DRIVES_NAMES.clear()
@@ -557,12 +706,52 @@ def update_private_file(update, context, omsg):
                         INDEX_URLS.append(temp[2])
                     else:
                         INDEX_URLS.append('')
+        elif file_name == 'categories.txt':
+            CATEGORY_IDS.clear()
+            CATEGORY_NAMES.clear()
+            CATEGORY_INDEXS.clear()
+            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+                CATEGORY_NAMES.append("Root")
+                CATEGORY_IDS.append(GDRIVE_ID)
+                CATEGORY_INDEXS.append(config_dict['INDEX_URL'])
+            with open('categories.txt', 'r+') as f:
+                lines = f.readlines()
+                for line in lines:
+                    temp = line.strip().split()
+                    CATEGORY_IDS.append(temp[1])
+                    CATEGORY_NAMES.append(temp[0].replace("_", " "))
+                    if len(temp) > 2:
+                        CATEGORY_INDEXS.append(temp[2])
+                    else:
+                        CATEGORY_INDEXS.append('')
+        elif file_name == 'shorteners.txt':
+            SHORTENERES.clear()
+            SHORTENER_APIS.clear()
+            with open('shorteners.txt', 'r+') as f:
+                lines = f.readlines()
+                for line in lines:
+                    temp = line.strip().split()
+                    if len(temp) == 2:
+                        SHORTENERES.append(temp[0])
+                        SHORTENER_APIS.append(temp[1])
+        elif file_name == 'buttons.txt':
+            BUTTON_NAMES.clear()
+            BUTTON_URLS.clear()
+            with open('buttons.txt', 'r+') as f:
+                lines = f.readlines()
+                for line in lines:
+                    temp = line.strip().split()
+                    if len(BUTTON_NAMES) == 4:
+                        break
+                    if len(temp) == 2:
+                        BUTTON_NAMES.append(temp[0].replace("_", " "))
+                        BUTTON_URLS.append(temp[1])
         elif file_name in ['.netrc', 'netrc']:
             if file_name == 'netrc':
                 rename('netrc', '.netrc')
                 file_name = '.netrc'
-            srun(["cp", ".netrc", "/root/.netrc"])
-            srun(["chmod", "600", ".netrc"])
+            run(["cp", ".netrc", "/root/.netrc"])
+            run(["chmod", "600", ".netrc"])
         elif file_name == 'config.env':
             load_dotenv('config.env', override=True)
             load_config()
@@ -571,13 +760,13 @@ def update_private_file(update, context, omsg):
             msg = 'Push to UPSTREAM_REPO ?'
             buttons.sbutton('Yes!', f"botset push {file_name}")
             buttons.sbutton('No', "botset close")
-            sendMessage(msg, context.bot, update.message, buttons.build_menu(2))
+            sendMessage(msg, context.bot, message, buttons.build_menu(2))
         else:
-            update.message.delete()
+            message.delete()
     update_buttons(omsg)
     if DATABASE_URL and file_name != 'config.env':
         DbManger().update_private_file(file_name)
-    if ospath.exists('accounts.zip'):
+    if path.exists('accounts.zip'):
         remove('accounts.zip')
 
 @new_thread
@@ -592,8 +781,8 @@ def edit_bot_settings(update, context):
     elif data[1] == 'close':
         query.answer()
         handler_dict[message.chat.id] = False
-        query.message.delete()
-        query.message.reply_to_message.delete()
+        message.delete()
+        message.reply_to_message.delete()
     elif data[1] == 'back':
         query.answer()
         handler_dict[message.chat.id] = False
@@ -610,7 +799,7 @@ def edit_bot_settings(update, context):
         value = ''
         if data[2] in default_values:
             value = default_values[data[2]]
-            if data[2] == "STATUS_UPDATE_INTERVAL" and len(download_dict) != 0:
+            if data[2] == "DOWNLOAD_STATUS_UPDATE_INTERVAL" and len(download_dict) != 0:
                 with status_reply_dict_lock:
                     if Interval:
                         Interval[0].cancel()
@@ -624,28 +813,36 @@ def edit_bot_settings(update, context):
             for download in downloads:
                 if not download.is_complete:
                     try:
-                        aria2.client.change_option(download.gid, {'bt-stop-timeout': '0'})
+                        download.options.bt_stop_timeout = 0
                     except Exception as e:
                         LOGGER.error(e)
             aria2_options['bt-stop-timeout'] = '0'
             if DATABASE_URL:
                 DbManger().update_aria2('bt-stop-timeout', '0')
         elif data[2] == 'BASE_URL':
-            srun(["pkill", "-9", "-f", "gunicorn"])
+            run(["pkill", "-9", "-f", "gunicorn"])
         elif data[2] == 'SERVER_PORT':
             value = 80
-            srun(["pkill", "-9", "-f", "gunicorn"])
+            run(["pkill", "-9", "-f", "gunicorn"])
             Popen("gunicorn web.wserver:app --bind 0.0.0.0:80", shell=True)
         elif data[2] == 'GDRIVE_ID':
             if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
                 DRIVES_NAMES.pop(0)
                 DRIVES_IDS.pop(0)
                 INDEX_URLS.pop(0)
+            if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
+                CATEGORY_NAMES.pop(0)
+                CATEGORY_IDS.pop(0)
+                CATEGORY_INDEXS.pop(0)
         elif data[2] == 'INDEX_URL':
             if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
                 INDEX_URLS[0] = ''
+            if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
+                CATEGORY_INDEXS[0] = ''
         elif data[2] == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
             DbManger().trunc_table('tasks')
+        elif data[2] == 'STOP_DUPLICATE_TASKS' and DATABASE_URL:
+            DbManger().clear_download_links()
         config_dict[data[2]] = value
         update_buttons(message, 'var')
         if DATABASE_URL:
@@ -726,8 +923,7 @@ def edit_bot_settings(update, context):
         handler_dict[message.chat.id] = True
         update_buttons(message, data[2], data[1])
         partial_fnc = partial(edit_variable, omsg=message, key=data[2])
-        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
-                                       callback=partial_fnc)
+        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id), callback=partial_fnc)
         dispatcher.add_handler(value_handler)
         while handler_dict[message.chat.id]:
             if time() - start_time > 60:
@@ -743,7 +939,10 @@ def edit_bot_settings(update, context):
                 f.write(f'{value}')
             sendFile(context.bot, message, filename)
             return
-        elif value == '':
+        elif value and data[2] not in ['SEARCH_LIMIT', 'STATUS_LIMIT'] and data[2].endswith(('_THRESHOLD', '_LIMIT')):
+            value = float(value)
+            value = get_readable_file_size(value * 1024**3)
+        elif not value:
             value = None
         query.answer(text=f'{value}', show_alert=True)
     elif data[1] == 'editaria' and (STATE == 'edit' or data[2] == 'newkey'):
@@ -818,18 +1017,17 @@ def edit_bot_settings(update, context):
             globals()['START'] = int(data[3])
             update_buttons(message, data[2])
     elif data[1] == 'push':
-        query.answer()
         filename = data[2].rsplit('.zip', 1)[0]
-        if ospath.exists(filename):
-            srun([f"git add -f {filename} \
+        if path.exists(filename):
+            run([f"git add -f {filename} \
                     && git commit -sm botsettings -q \
                     && git push origin {config_dict['UPSTREAM_BRANCH']} -q"], shell=True)
         else:
-            srun([f"git rm -r --cached {filename} \
+            run([f"git rm -r --cached {filename} \
                     && git commit -sm botsettings -q \
                     && git push origin {config_dict['UPSTREAM_BRANCH']} -q"], shell=True)
-        query.message.delete()
-        query.message.reply_to_message.delete()
+        message.delete()
+        message.reply_to_message.delete()
 
 
 def bot_settings(update, context):

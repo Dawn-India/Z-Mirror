@@ -1,12 +1,10 @@
 from telegram.ext import CommandHandler
-
 from bot import user_data, dispatcher, DATABASE_URL
 from bot.helper.telegram_helper.message_utils import sendMessage
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.bot_utils import update_user_ldata
-
 
 def authorize(update, context):
     reply_message = update.message.reply_to_message
@@ -82,8 +80,10 @@ authorize_handler = CommandHandler(BotCommands.AuthorizeCommand, authorize,
                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 unauthorize_handler = CommandHandler(BotCommands.UnAuthorizeCommand, unauthorize,
                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
-addsudo_handler = CommandHandler(BotCommands.AddSudoCommand, addSudo, filters=CustomFilters.owner_filter)
-removesudo_handler = CommandHandler(BotCommands.RmSudoCommand, removeSudo, filters=CustomFilters.owner_filter)
+addsudo_handler = CommandHandler(BotCommands.AddSudoCommand, addSudo,
+                                   filters=CustomFilters.owner_filter)
+removesudo_handler = CommandHandler(BotCommands.RmSudoCommand, removeSudo,
+                                   filters=CustomFilters.owner_filter)
 
 dispatcher.add_handler(authorize_handler)
 dispatcher.add_handler(unauthorize_handler)
