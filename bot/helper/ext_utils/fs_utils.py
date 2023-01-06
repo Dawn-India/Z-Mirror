@@ -1,16 +1,15 @@
-from os import remove as osremove, path as ospath, mkdir, walk, listdir, rmdir, makedirs
-from sys import exit as sysexit
-from shutil import rmtree, disk_usage
+from math import ceil
+from time import time
 from PIL import Image
 from magic import Magic
-from subprocess import run as srun, check_output, Popen
-from time import time
-from math import ceil
+from sys import exit as sysexit
 from re import split as re_split, I
-from bot import (DOWNLOAD_DIR, LOGGER, MAX_SPLIT_SIZE, app, aria2, config_dict,
-                 get_client, user_data)
-from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
+from shutil import rmtree, disk_usage
+from subprocess import run as srun, check_output, Popen
 from bot.helper.ext_utils.telegraph_helper import telegraph
+from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
+from os import remove as osremove, path as ospath, mkdir, walk, listdir, rmdir, makedirs
+from bot import (DOWNLOAD_DIR, LOGGER, MAX_SPLIT_SIZE, app, aria2, config_dict, get_client, user_data)
 
 ARCH_EXT = [".tar.bz2", ".tar.gz", ".bz2", ".gz", ".tar.xz", ".tar", ".tbz2", ".tgz", ".lzma2",
             ".zip", ".7z", ".z", ".rar", ".iso", ".wim", ".cab", ".apm", ".arj", ".chm",

@@ -1,8 +1,8 @@
 from base64 import b64encode
-from random import choice, random, randrange
-from urllib.parse import quote, unquote
 from cfscrape import create_scraper
 from urllib3 import disable_warnings
+from urllib.parse import quote, unquote
+from random import choice, random, randrange
 from bot import LOGGER, SHORTENER_APIS, SHORTENERES
 
 def short_url(longurl):

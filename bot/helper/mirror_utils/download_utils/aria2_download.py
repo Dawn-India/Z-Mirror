@@ -1,11 +1,11 @@
-from time import sleep, time
 from os import remove, path
-from bot import (LOGGER, aria2, aria2_options, aria2c_global, config_dict, download_dict, download_dict_lock)
+from time import sleep, time
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import (bt_selection_buttons, get_readable_file_size, getDownloadByGid, is_magnet, new_thread)
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
-from bot.helper.telegram_helper.message_utils import (deleteMessage, sendMessage, sendStatusMessage, update_all_messages)
 from bot.helper.ext_utils.fs_utils import (check_storage_threshold, clean_unwanted, get_base_name)
+from bot import (LOGGER, aria2, aria2_options, aria2c_global, config_dict, download_dict, download_dict_lock)
+from bot.helper.telegram_helper.message_utils import (deleteMessage, sendMessage, sendStatusMessage, update_all_messages)
+from bot.helper.ext_utils.bot_utils import (bt_selection_buttons, get_readable_file_size, getDownloadByGid, is_magnet, new_thread)
 
 @new_thread
 def __onDownloadStarted(api, gid):

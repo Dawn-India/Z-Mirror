@@ -1,21 +1,20 @@
-from os import path, listdir
-from random import SystemRandom
-from string import ascii_letters, digits
-from logging import getLogger
-from yt_dlp import YoutubeDL, DownloadError
 from threading import RLock
+from os import path, listdir
+from logging import getLogger
+from random import SystemRandom
 from re import search as re_search
-from bot import (config_dict, download_dict, download_dict_lock, non_queued_dl, non_queued_up, queue_dict_lock, queued_dl)
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import sendStatusMessage
-from bot.helper.mirror_utils.status_utils.yt_dlp_download_status import YtDlpDownloadStatus
-from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.mirror_utils.status_utils.convert_status import ConvertStatus
+from string import ascii_letters, digits
+from yt_dlp import YoutubeDL, DownloadError
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from bot.helper.ext_utils.fs_utils import check_storage_threshold
+from bot.helper.telegram_helper.message_utils import sendStatusMessage
+from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
+from bot.helper.mirror_utils.status_utils.convert_status import ConvertStatus
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.status_utils.yt_dlp_download_status import YtDlpDownloadStatus
+from bot import (config_dict, download_dict, download_dict_lock, non_queued_dl, non_queued_up, queue_dict_lock, queued_dl)
 
 LOGGER = getLogger(__name__)
-
 
 class MyLogger:
     def __init__(self, obj):

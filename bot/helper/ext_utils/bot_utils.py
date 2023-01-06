@@ -1,19 +1,18 @@
-from re import findall
-from threading import Event, Thread
+import psutil
 from time import time
 from math import ceil
+from re import findall
 from html import escape
-import psutil
-from psutil import cpu_percent, disk_usage, virtual_memory
 from requests import request
 from urllib.parse import urlparse
 from urllib.request import urlopen
-from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_NAMES, DOWNLOAD_DIR,
-                 botStartTime, btn_listener, config_dict, download_dict,
-                 download_dict_lock, user_data, dispatcher)
+from threading import Event, Thread
+from telegram.ext import CallbackQueryHandler
+from psutil import cpu_percent, disk_usage, virtual_memory
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from telegram.ext import CallbackQueryHandler
+from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_NAMES, DOWNLOAD_DIR, botStartTime,
+                 config_dict, download_dict, download_dict_lock, user_data, dispatcher, btn_listener)
 
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 

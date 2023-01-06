@@ -1,9 +1,9 @@
-from string import ascii_letters
-from random import SystemRandom
+from bot import *
 from time import sleep
 from telegraph import Telegraph
+from random import SystemRandom
+from string import ascii_letters
 from telegraph.exceptions import RetryAfterError
-from bot import *
 
 class TelegraphHelper:
     def __init__(self, author_name=None, author_url=None):

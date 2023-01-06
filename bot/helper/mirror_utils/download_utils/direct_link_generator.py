@@ -1,5 +1,4 @@
 # Copyright (C) 2019 The Raphielscape Company LLC.
-#
 # Licensed under the Raphielscape Public License, Version 1.c (the "License");
 # you may not use this file except in compliance with the License.
 #
@@ -8,25 +7,22 @@ from https://github.com/AvinashReddy3108/PaperplaneExtended . I hereby take no c
 than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtended/commits/master/userbot/modules/direct_links.py
 for original authorship. """
 
-from base64 import standard_b64encode
-from http.cookiejar import MozillaCookieJar
-from json import loads
 from os import path
-from re import findall, match, search, sub
+from json import loads
 from time import sleep
-from urllib.parse import unquote, urlparse
-
+from lk21 import Bypass
 from bs4 import BeautifulSoup
 from cfscrape import create_scraper
-from lk21 import Bypass
-from requests import Session, request
-
 from bot import LOGGER, config_dict
+from requests import Session, request
+from base64 import standard_b64encode
+from re import findall, match, search, sub
+from urllib.parse import unquote, urlparse
+from http.cookiejar import MozillaCookieJar
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
-
 
 def direct_link_generator(link: str):
     """ direct links generator """

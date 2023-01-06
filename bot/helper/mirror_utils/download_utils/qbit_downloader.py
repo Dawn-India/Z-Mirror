@@ -1,16 +1,16 @@
-from hashlib import sha1
-from base64 import b16encode, b32decode
-from bencoding import bencode, bdecode
-from time import sleep, time
 from re import search
 from os import remove
+from hashlib import sha1
+from time import sleep, time
 from threading import Lock, Thread
-from bot import (LOGGER, QbInterval, config_dict, download_dict, download_dict_lock, get_client)
-from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
+from bencoding import bencode, bdecode
+from base64 import b16encode, b32decode
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
+from bot import (LOGGER, QbInterval, config_dict, download_dict, download_dict_lock, get_client)
+from bot.helper.ext_utils.fs_utils import (check_storage_threshold, clean_unwanted, get_base_name)
 from bot.helper.telegram_helper.message_utils import (deleteMessage, sendMessage, sendStatusMessage, update_all_messages)
 from bot.helper.ext_utils.bot_utils import (bt_selection_buttons, get_readable_file_size, get_readable_time, getDownloadByGid, new_thread, setInterval)
-from bot.helper.ext_utils.fs_utils import (check_storage_threshold, clean_unwanted, get_base_name)
 
 qb_download_lock = Lock()
 STALLED_TIME = {}

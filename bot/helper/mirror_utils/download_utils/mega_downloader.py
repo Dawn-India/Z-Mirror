@@ -1,15 +1,15 @@
-from random import SystemRandom
-from string import ascii_letters, digits
 from os import makedirs
 from threading import Event
+from random import SystemRandom
+from string import ascii_letters, digits
+from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
-from bot import (LOGGER, config_dict, download_dict, download_dict_lock, non_queued_dl, non_queued_up, queue_dict_lock, queued_dl)
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.ext_utils.fs_utils import (check_storage_threshold, get_base_name)
 from bot.helper.telegram_helper.message_utils import (sendMessage, sendStatusMessage)
 from bot.helper.ext_utils.bot_utils import (get_mega_link_type, get_readable_file_size)
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
-from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.fs_utils import (check_storage_threshold, get_base_name)
+from bot import (LOGGER, config_dict, download_dict, download_dict_lock, non_queued_dl, non_queued_up, queue_dict_lock, queued_dl)
 
 class MegaAppListener(MegaListener):
     _NO_EVENT_ON = (MegaRequest.TYPE_LOGIN,MegaRequest.TYPE_FETCH_NODES)
@@ -117,7 +117,6 @@ class MegaAppListener(MegaListener):
         self.is_cancelled = True
         self.listener.onDownloadError("Download Canceled by user")
 
-
 class AsyncExecutor:
 
     def __init__(self):
@@ -127,7 +126,6 @@ class AsyncExecutor:
         self.continue_event.clear()
         function(*args)
         self.continue_event.wait()
-
 
 def add_mega_download(mega_link, path, listener, name, from_queue=False):
     MEGA_API_KEY = config_dict['MEGA_API_KEY']
