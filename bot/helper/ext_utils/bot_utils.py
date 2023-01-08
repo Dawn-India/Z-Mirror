@@ -1,18 +1,21 @@
-import psutil
-from time import time
+from html import escape
 from math import ceil
 from re import findall
-from html import escape
-from requests import request
+from threading import Event, Thread
+from time import time
 from urllib.parse import urlparse
 from urllib.request import urlopen
-from threading import Event, Thread
-from telegram.ext import CallbackQueryHandler
+
+import psutil
 from psutil import cpu_percent, disk_usage, virtual_memory
+from requests import request
+
+from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_NAMES, DOWNLOAD_DIR, dispatcher,
+                 botStartTime, config_dict, download_dict, download_dict_lock,
+                 user_data)
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_NAMES, DOWNLOAD_DIR, botStartTime,
-                 config_dict, download_dict, download_dict_lock, user_data, dispatcher, btn_listener)
+from telegram.ext import CallbackQueryHandler
 
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 
@@ -116,8 +119,7 @@ def get_progress_bar_string(status):
     cFull = p // 8
     p_str = '⬢' * cFull
     p_str += '⬡' * (12 - cFull)
-    p_str = f"[{p_str}]"
-    return p_str
+    return f"[{p_str}]"
 
 def progress_bar(percentage):
     p_used = '⬢'
@@ -190,7 +192,21 @@ def get_readable_message():
             msg += f"\n<b>Status:</b> <code>{download.status()}</code>"
             if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_CONVERTING]:
                 msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
-                msg += f"\n<b>Processed</b>: <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                if download.status() in [MirrorStatus.STATUS_DOWNLOADING,
+                                         MirrorStatus.STATUS_QUEUEDL,
+                                         MirrorStatus.STATUS_QUEUEUP,
+                                         MirrorStatus.STATUS_PAUSED]:
+                    msg += f"\n<b>Downloaded:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                elif download.status() == MirrorStatus.STATUS_UPLOADING:
+                    msg += f"\n<b>Uploaded:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                elif download.status() == MirrorStatus.STATUS_CLONING:
+                    msg += f"\n<b>Cloned:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                elif download.status() == MirrorStatus.STATUS_ARCHIVING:
+                    msg += f"\n<b>Archived:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                elif download.status() == MirrorStatus.STATUS_EXTRACTING:
+                    msg += f"\n<b>Extracted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                elif download.status() == MirrorStatus.STATUS_SPLITTING:
+                    msg += f"\n<b>Splitted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
                 msg += f"\n<b>Speed</b>: <code>{download.speed()}</code>"
                 msg += f"\n<b>Elapsed:</b> <code>{get_readable_time(time() - download.message.date.timestamp())}</code> | <b>ETA</b>: <code>{download.eta()}</code>"
                 if hasattr(download, 'seeders_num'):
@@ -254,6 +270,14 @@ def get_readable_message():
         return msg + bmsg, button
 
 
+def _get_readable_message_btns(msg, bmsg):
+    buttons = ButtonMaker()
+    buttons.sbutton("PREV", "status pre")
+    buttons.sbutton(f"{PAGE_NO}/{PAGES}", str(THREE))
+    buttons.sbutton("NEXT", "status nex")
+    button = buttons.build_menu(3)
+    return msg + bmsg, button
+
 def get_category_btns(time_out, msg_id, c_index):
     text = '<b>Select the category where you want to upload</b>'
     text += f'\n<b>Upload</b>: to Drive in {CATEGORY_NAMES[c_index]} folder'
@@ -297,10 +321,6 @@ def turn(data):
 def check_user_tasks(user_id, maxtask):
     if tasks:= getAllDownload(MirrorStatus.STATUS_DOWNLOADING, user_id, False):
         return len(tasks) >= maxtask
-
-def check_buttons():
-    if len(btn_listener) >= 3:
-        return 'Sorry, I can only handle 3 tasks at a time.'
 
 def get_readable_time(seconds: int) -> str:
     result = ''
@@ -400,7 +420,7 @@ def set_commands(bot):
         (f'{BotCommands.BtSelectCommand}', 'Select files to download only torrents'),
         (f'{BotCommands.CategorySelect}', 'Select category to upload only mirror'),
         (f'{BotCommands.CancelMirror}', 'Cancel a Task'),
-        (f'{BotCommands.CancelAllCommand}', 'Cancel all tasks which added by you'),
+        (f'{BotCommands.CancelAllCommand[0]}', f'Cancel all tasks which added by you or {BotCommands.CancelAllCommand[1]} to in bots.'),
         (f'{BotCommands.ListCommand}', 'Search in Drive'),
         (f'{BotCommands.SearchCommand}', 'Search in Torrent'),
         (f'{BotCommands.UserSetCommand}', 'Users settings'),

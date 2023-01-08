@@ -1,8 +1,12 @@
+from os import makedirs
+from os import path as ospath
+
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-from os import path as ospath, makedirs
+
 from bot import (DATABASE_URL, LOGGER, aria2_options, bot_id, botname,
                  config_dict, qbit_options, rss_dict, user_data)
+
 
 class DbManger:
     def __init__(self):
@@ -14,7 +18,7 @@ class DbManger:
     def __connect(self):
         try:
             self.__conn = MongoClient(DATABASE_URL)
-            self.__db = self.__conn.mltb
+            self.__db = self.__conn.z
         except PyMongoError as e:
             LOGGER.error(f"Error in DB connection: {e}")
             self.__err = True
@@ -32,7 +36,8 @@ class DbManger:
             self.__db.settings.qbittorrent.update_one({'_id': bot_id}, {'$set': qbit_options}, upsert=True)
         # User Data
         if self.__db.users[bot_id].find_one():
-            rows = self.__db.users[bot_id].find({})  # return a dict ==> {_id, is_sudo, is_auth, as_media, as_doc, thumb}
+            rows = self.__db.users[bot_id].find({})
+            # return a dict ==> {_id, is_sudo, is_auth, as_doc, thumb, yt_ql, media_group, equal_splits, split_size}
             for row in rows:
                 uid = row['_id']
                 del row['_id']

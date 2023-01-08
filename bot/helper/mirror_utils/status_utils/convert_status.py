@@ -1,5 +1,6 @@
 from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size
 
+
 class ConvertStatus:
     def __init__(self, name, size, gid, listener):
         self.__name = name

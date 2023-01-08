@@ -1,15 +1,23 @@
 from math import ceil
-from time import time
-from PIL import Image
-from magic import Magic
+from os import listdir, makedirs, mkdir
+from os import path as ospath
+from os import remove as osremove
+from os import rmdir, walk
+from re import I
+from re import split as re_split
+from shutil import disk_usage, rmtree
+from subprocess import Popen, check_output
+from subprocess import run as srun
 from sys import exit as sysexit
-from re import split as re_split, I
-from shutil import rmtree, disk_usage
-from subprocess import run as srun, check_output, Popen
-from bot.helper.ext_utils.telegraph_helper import telegraph
+from time import time
+
+from magic import Magic
+from PIL import Image
+
+from bot import (DOWNLOAD_DIR, LOGGER, MAX_SPLIT_SIZE, app, aria2, config_dict,
+                 get_client, user_data)
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
-from os import remove as osremove, path as ospath, mkdir, walk, listdir, rmdir, makedirs
-from bot import (DOWNLOAD_DIR, LOGGER, MAX_SPLIT_SIZE, app, aria2, config_dict, get_client, user_data)
+from bot.helper.ext_utils.telegraph_helper import telegraph
 
 ARCH_EXT = [".tar.bz2", ".tar.gz", ".bz2", ".gz", ".tar.xz", ".tar", ".tbz2", ".tgz", ".lzma2",
             ".zip", ".7z", ".z", ".rar", ".iso", ".wim", ".cab", ".apm", ".arj", ".chm",
@@ -44,7 +52,7 @@ def start_cleanup():
         rmtree(DOWNLOAD_DIR)
     except:
         pass
-    makedirs(DOWNLOAD_DIR)
+    makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def clean_all():
     aria2.remove_all(True)
@@ -130,10 +138,10 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
         if not ospath.exists(dirpath):
             mkdir(dirpath)
     user_id = listener.message.from_user.id
-    user_dict = user_data.get(user_id, False)
-    leech_split_size = user_dict and user_dict.get('split_size') or config_dict['LEECH_SPLIT_SIZE']
+    user_dict = user_data.get(user_id, {})
+    leech_split_size = user_dict.get('split_size') or config_dict['LEECH_SPLIT_SIZE']
     parts = ceil(size/leech_split_size)
-    if (user_dict and user_dict.get('equal_splits') or config_dict['EQUAL_SPLITS']) and not inLoop:
+    if (user_dict.get('equal_splits') or config_dict['EQUAL_SPLITS']) and not inLoop:
         split_size = ceil(size/parts) + 1000
     if get_media_streams(path)[0]:
         duration = get_media_info(path)[0]
@@ -234,14 +242,19 @@ def get_media_streams(path):
 
     is_video = False
     is_audio = False
+    is_image = False
 
     mime_type = get_mime_type(path)
     if mime_type.startswith('audio'):
         is_audio = True
-        return is_video, is_audio
+        return is_video, is_audio, is_image
+
+    if mime_type.startswith('image'):
+        is_image = True
+        return is_video, is_audio, is_image
 
     if path.endswith('.bin') or not mime_type.startswith('video') and not mime_type.endswith('octet-stream'):
-        return is_video, is_audio
+        return is_video, is_audio, is_image
 
     try:
         result = check_output(["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format",
@@ -249,12 +262,12 @@ def get_media_streams(path):
     except Exception as e:
         if not mime_type.endswith('octet-stream'):
             LOGGER.error(f'{e}. Mostly file not found!')
-        return is_video, is_audio
+        return is_video, is_audio, is_image
 
     fields = eval(result).get('streams')
     if fields is None:
         LOGGER.error(f"get_media_streams: {result}")
-        return is_video, is_audio
+        return is_video, is_audio, is_image
 
     for stream in fields:
         if stream.get('codec_type') == 'video':
@@ -262,7 +275,7 @@ def get_media_streams(path):
         elif stream.get('codec_type') == 'audio':
             is_audio = True
 
-    return is_video, is_audio
+    return is_video, is_audio, is_image
 
 def check_storage_threshold(size, threshold, arch=False, alloc=False):
     if not alloc:

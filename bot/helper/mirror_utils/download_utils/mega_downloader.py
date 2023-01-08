@@ -1,15 +1,22 @@
 from os import makedirs
-from threading import Event
 from random import SystemRandom
 from string import ascii_letters, digits
-from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.fs_utils import (check_storage_threshold, get_base_name)
-from bot.helper.telegram_helper.message_utils import (sendMessage, sendStatusMessage)
-from bot.helper.ext_utils.bot_utils import (get_mega_link_type, get_readable_file_size)
+from threading import Event
+
+from mega import MegaApi, MegaError, MegaListener, MegaRequest, MegaTransfer
+
+from bot import (LOGGER, config_dict, download_dict, download_dict_lock,
+                 non_queued_dl, non_queued_up, queue_dict_lock, queued_dl)
+from bot.helper.ext_utils.bot_utils import (get_mega_link_type,
+                                            get_readable_file_size)
+from bot.helper.ext_utils.fs_utils import (check_storage_threshold,
+                                           get_base_name)
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
-from bot import (LOGGER, config_dict, download_dict, download_dict_lock, non_queued_dl, non_queued_up, queue_dict_lock, queued_dl)
+from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.telegram_helper.message_utils import (sendMessage,
+                                                      sendStatusMessage)
+
 
 class MegaAppListener(MegaListener):
     _NO_EVENT_ON = (MegaRequest.TYPE_LOGIN,MegaRequest.TYPE_FETCH_NODES)
@@ -117,6 +124,7 @@ class MegaAppListener(MegaListener):
         self.is_cancelled = True
         self.listener.onDownloadError("Download Canceled by user")
 
+
 class AsyncExecutor:
 
     def __init__(self):
@@ -127,6 +135,7 @@ class AsyncExecutor:
         function(*args)
         self.continue_event.wait()
 
+
 def add_mega_download(mega_link, path, listener, name, from_queue=False):
     MEGA_API_KEY = config_dict['MEGA_API_KEY']
     executor = AsyncExecutor()
@@ -134,7 +143,7 @@ def add_mega_download(mega_link, path, listener, name, from_queue=False):
     folder_api = None
     mega_listener = MegaAppListener(executor.continue_event, listener)
     api.addListener(mega_listener)
-    if (MEGA_EMAIL_ID := config_dict['MEGA_EMAIL_ID']) and (MEGA_PASSWORD := config_dict['MEGA_PASSWORD']):
+    if (MEGA_EMAIL_ID:= config_dict['MEGA_EMAIL_ID']) and (MEGA_PASSWORD:= config_dict['MEGA_PASSWORD']):
         executor.do(api.login, (MEGA_EMAIL_ID, MEGA_PASSWORD))
     if get_mega_link_type(mega_link) == "file":
         executor.do(api.getPublicNode, (mega_link,))
@@ -218,7 +227,7 @@ def add_mega_download(mega_link, path, listener, name, from_queue=False):
         download_dict[listener.uid] = MegaDownloadStatus(mega_listener, listener)
     with queue_dict_lock:
         non_queued_dl.add(listener.uid)
-    makedirs(path)
+    makedirs(path, exist_ok=True)
     mega_listener.setValues(mname, size, gid)
     if not from_queue:
         listener.ismega.delete()

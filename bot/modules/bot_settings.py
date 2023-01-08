@@ -1,21 +1,30 @@
-from time import time, sleep
 from functools import partial
+from os import environ, path, remove, rename
+from subprocess import Popen, run
+from time import sleep, time
+
 from dotenv import load_dotenv
-from subprocess import run, Popen
-from os import remove, rename, path, environ
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
+                          MessageHandler)
+
+from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_IDS, CATEGORY_INDEXS,
+                 CATEGORY_NAMES, DATABASE_URL, DRIVES_IDS, DRIVES_NAMES,
+                 GLOBAL_EXTENSION_FILTER, INDEX_URLS, IS_PREMIUM_USER, LOGGER,
+                 MAX_SPLIT_SIZE, SHORTENER_APIS, SHORTENERES, Interval, aria2,
+                 aria2_options, aria2c_global, config_dict, dispatcher,
+                 download_dict, get_client, qbit_options,
+                 status_reply_dict_lock, user_data)
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread,
+                                            set_commands, setInterval)
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.modules.search import initiate_search_tools
-from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.ext_utils.queued_starter import start_from_queued
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.queued_starter import start_from_queued
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters, MessageHandler)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread, set_commands, setInterval)
-from bot.helper.telegram_helper.message_utils import (editMessage, sendFile, sendMessage, update_all_messages)
-from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_IDS, CATEGORY_INDEXS, IS_PREMIUM_USER, LOGGER, SHORTENERES,
-                 MAX_SPLIT_SIZE, SHORTENER_APIS, Interval, aria2, aria2_options, aria2c_global, GLOBAL_EXTENSION_FILTER,
-                 CATEGORY_NAMES, DATABASE_URL, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, get_client, qbit_options, config_dict,
-                 download_dict, status_reply_dict_lock, user_data, dispatcher)
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import (editMessage, sendFile,
+                                                      sendMessage,
+                                                      update_all_messages)
+from bot.modules.search import initiate_search_tools
 
 START = 0
 STATE = 'view'
@@ -310,8 +319,8 @@ def load_config():
     SET_COMMANDS = environ.get('SET_COMMANDS', '')
     SET_COMMANDS = SET_COMMANDS.lower() == 'true'
 
-    ENABLE_DM = environ.get('ENABLE_DM', '')
-    ENABLE_DM = ENABLE_DM.lower() == 'true'
+    DM_MODE = environ.get('DM_MODE', '')
+    DM_MODE = DM_MODE.lower() if DM_MODE.lower() in ['leech', 'mirror', 'all'] else ''
 
     DELETE_LINKS = environ.get('DELETE_LINKS', '')
     DELETE_LINKS = DELETE_LINKS.lower() == 'true'
@@ -429,7 +438,7 @@ def load_config():
                         'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                         'SET_COMMANDS': SET_COMMANDS,
                         'DISABLE_LEECH': DISABLE_LEECH,
-                        'ENABLE_DM': ENABLE_DM,
+                        'DM_MODE': DM_MODE,
                         'DELETE_LINKS': DELETE_LINKS})
 
     if DATABASE_URL:
@@ -489,11 +498,16 @@ def get_buttons(key=None, edit_type=None):
             buttons.sbutton(int(x/10), f"botset start qbit {x}", position='footer')
         msg = f'Qbittorrent Options | Page: {int(START/10)} | State: {STATE}'
     elif edit_type == 'editvar':
+        msg = ''
         buttons.sbutton('Back', "botset back var")
         if key not in ['TELEGRAM_HASH', 'TELEGRAM_API', 'OWNER_ID', 'BOT_TOKEN']:
             buttons.sbutton('Default', f"botset resetvar {key}")
         buttons.sbutton('Close', "botset close")
-        msg = f'Send a valid value for {key}. Timeout: 60 sec'
+        if key in ['SUDO_USERS', 'RSS_USER_SESSION_STRING', 'IGNORE_PENDING_REQUESTS', 'CMD_SUFFIX', 'OWNER_ID',
+                   'USER_SESSION_STRING', 'TELEGRAM_HASH', 'TELEGRAM_API', 'AUTHORIZED_CHATS', 'RSS_DELAY'
+                   'DATABASE_URL', 'BOT_TOKEN', 'DOWNLOAD_DIR']:
+            msg += 'Restart required for this edit to take effect!\n\n'
+        msg += f'Send a valid value for {key}. Timeout: 60 sec'
     elif edit_type == 'editaria':
         buttons.sbutton('Back', "botset back aria")
         if key != 'newkey':
@@ -578,6 +592,8 @@ def edit_variable(update, context, omsg, key):
             CATEGORY_INDEXS[0] = value
         else:
             CATEGORY_INDEXS.insert(0, value)
+    elif key == 'DM_MODE':
+        value = value.lower() if value.lower() in ['leech', 'mirror', 'all'] else ''
     elif key not in ['SEARCH_LIMIT', 'STATUS_LIMIT'] and key.endswith(('_THRESHOLD', '_LIMIT')):
         value = float(value)
     elif value.isdigit() and key != 'FSUB_IDS':
@@ -663,7 +679,7 @@ def update_private_file(update, context, omsg):
             CATEGORY_NAMES.clear()
             CATEGORY_IDS.clear()
             CATEGORY_INDEXS.clear()
-            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+            if GDRIVE_ID:= config_dict['GDRIVE_ID']:
                 CATEGORY_NAMES.append('Root')
                 CATEGORY_IDS.append(GDRIVE_ID)
                 CATEGORY_INDEXS.append(config_dict['INDEX_URL'])
@@ -671,7 +687,7 @@ def update_private_file(update, context, omsg):
             DRIVES_IDS.clear()
             DRIVES_NAMES.clear()
             INDEX_URLS.clear()
-            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+            if GDRIVE_ID:= config_dict['GDRIVE_ID']:
                 DRIVES_NAMES.append('Main')
                 DRIVES_IDS.append(GDRIVE_ID)
                 INDEX_URLS.append(config_dict['INDEX_URL'])
@@ -692,7 +708,7 @@ def update_private_file(update, context, omsg):
             DRIVES_IDS.clear()
             DRIVES_NAMES.clear()
             INDEX_URLS.clear()
-            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+            if GDRIVE_ID:= config_dict['GDRIVE_ID']:
                 DRIVES_NAMES.append("Main")
                 DRIVES_IDS.append(GDRIVE_ID)
                 INDEX_URLS.append(config_dict['INDEX_URL'])
@@ -710,7 +726,7 @@ def update_private_file(update, context, omsg):
             CATEGORY_IDS.clear()
             CATEGORY_NAMES.clear()
             CATEGORY_INDEXS.clear()
-            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+            if GDRIVE_ID:= config_dict['GDRIVE_ID']:
                 CATEGORY_NAMES.append("Root")
                 CATEGORY_IDS.append(GDRIVE_ID)
                 CATEGORY_INDEXS.append(config_dict['INDEX_URL'])
@@ -910,12 +926,7 @@ def edit_bot_settings(update, context):
                 update_buttons(message)
         dispatcher.remove_handler(file_handler)
     elif data[1] == 'editvar' and STATE == 'edit':
-        if data[2] in ['SUDO_USERS', 'RSS_USER_SESSION_STRING', 'IGNORE_PENDING_REQUESTS', 'CMD_SUFFIX', 'OWNER_ID',
-                       'USER_SESSION_STRING', 'TELEGRAM_HASH', 'TELEGRAM_API', 'AUTHORIZED_CHATS', 'RSS_DELAY'
-                       'DATABASE_URL', 'BOT_TOKEN', 'DOWNLOAD_DIR']:
-            query.answer(text='Restart required for this edit to take effect!', show_alert=True)
-        else:
-            query.answer()
+        query.answer()
         if handler_dict.get(message.chat.id):
             handler_dict[message.chat.id] = False
             sleep(0.5)
@@ -923,7 +934,8 @@ def edit_bot_settings(update, context):
         handler_dict[message.chat.id] = True
         update_buttons(message, data[2], data[1])
         partial_fnc = partial(edit_variable, omsg=message, key=data[2])
-        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id), callback=partial_fnc)
+        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
+                        callback=partial_fnc)
         dispatcher.add_handler(value_handler)
         while handler_dict[message.chat.id]:
             if time() - start_time > 60:
@@ -934,10 +946,8 @@ def edit_bot_settings(update, context):
         value = config_dict[data[2]]
         if len(str(value)) > 200:
             query.answer()
-            filename = f"{data[2]}.txt"
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(f'{value}')
-            sendFile(context.bot, message, filename)
+            fileName = f"{data[2]}.txt"
+            sendFile(context.bot, message, value, fileName, data[2])
             return
         elif value and data[2] not in ['SEARCH_LIMIT', 'STATUS_LIMIT'] and data[2].endswith(('_THRESHOLD', '_LIMIT')):
             value = float(value)

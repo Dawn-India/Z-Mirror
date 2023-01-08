@@ -1,11 +1,15 @@
-from os import remove
+from io import BytesIO
 from time import sleep, time
-from telegram import ChatPermissions
+
 from pyrogram.errors import FloodWait
+from telegram import ChatPermissions
 from telegram.error import RetryAfter, Unauthorized
-from bot.helper.telegram_helper.button_build import ButtonMaker
+
+from bot import (LOGGER, Interval, bot, btn_listener, config_dict, rss_session,
+                 status_reply_dict, status_reply_dict_lock)
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
-from bot import (LOGGER, Interval, bot, btn_listener, config_dict, rss_session, status_reply_dict, status_reply_dict_lock)
+from bot.helper.telegram_helper.button_build import ButtonMaker
+
 
 def sendMessage(text, bot, message, reply_markup=None):
     try:
@@ -76,17 +80,16 @@ def sendLogFile(bot, message):
                           reply_to_message_id=message.message_id,
                           chat_id=message.chat_id)
 
-def sendFile(bot, message, name, caption=""):
+def sendFile(bot, message, txt, fileName, caption=""):
     try:
-        with open(name, 'rb') as f:
-            bot.sendDocument(document=f, filename=f.name, reply_to_message_id=message.message_id,
-                             caption=caption, chat_id=message.chat_id)
-        remove(name)
-        return
+        with BytesIO(str.encode(txt)) as document:
+            document.name = fileName
+            return bot.sendDocument(document=document, reply_to_message_id=message.message_id,
+                                    caption=caption, chat_id=message.chat_id)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         sleep(r.retry_after * 1.5)
-        return sendFile(bot, message, name, caption)
+        return sendFile(bot, message, txt, fileName, caption)
     except Exception as e:
         LOGGER.error(str(e))
         return
@@ -94,9 +97,9 @@ def sendFile(bot, message, name, caption=""):
 def auto_delete_message(bot, cmd_message=None, bot_message=None):
     if config_dict['AUTO_DELETE_MESSAGE_DURATION'] != -1:
         sleep(config_dict['AUTO_DELETE_MESSAGE_DURATION'])
-        if cmd_message is not None:
+        if cmd_message:
             deleteMessage(bot, cmd_message)
-        if bot_message is not None:
+        if bot_message:
             deleteMessage(bot, bot_message)
 
 def delete_all_messages():
@@ -116,7 +119,7 @@ def update_all_messages(force=False):
             status_reply_dict[chat_id][1] = time()
 
     msg, buttons = get_readable_message()
-    if msg is None:
+    if not msg:
         return
     with status_reply_dict_lock:
         for chat_id in status_reply_dict:
@@ -130,7 +133,7 @@ def update_all_messages(force=False):
 
 def sendStatusMessage(msg, bot):
     progress, buttons = get_readable_message()
-    if progress is None:
+    if not progress:
         return
     with status_reply_dict_lock:
         if msg.chat_id in status_reply_dict:
@@ -142,31 +145,45 @@ def sendStatusMessage(msg, bot):
         if not Interval:
             Interval.append(setInterval(config_dict['DOWNLOAD_STATUS_UPDATE_INTERVAL'], update_all_messages))
 
-def sendDmMessage(bot, message):
+def sendDmMessage(bot, message, dmMode, isLeech=False):
+    if dmMode == 'mirror' and isLeech or dmMode == 'leech' and not isLeech:
+        return
     try:
         return bot.sendMessage(message.from_user.id, disable_notification=True, text=message.link)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         sleep(r.retry_after * 1.5)
-        return sendDmMessage(bot, message)
+        return sendDmMessage(bot, message, isLeech)
     except Unauthorized:
         buttons = ButtonMaker()
         buttons.buildbutton("Start", f"{bot.link}?start=start")
         sendMessage("<b>You didn't START the bot in DM</b>", bot, message, buttons.build_menu(1))
-        return
+        return 'BotNotStarted'
     except Exception as e:
         LOGGER.error(str(e))
         return
 
-def sendLogMessage(bot, message):
+def sendLogMessage(bot, message, link, tag):
     if not (log_chat := config_dict['LOG_CHAT']):
         return
     try:
-        return bot.sendMessage(log_chat, disable_notification=True, text=message.link or message.text)
+        
+        if (reply_to := message.reply_to_message) or "https://api.telegram.org/file/" in link:
+            if reply_to.document or reply_to.video or reply_to.audio or reply_to.photo:
+                __forwared = reply_to.forward(log_chat)
+                __forwared.delete()
+                __temp = reply_to.copy(
+                    log_chat,
+                    caption=f'<b><a href="{message.link}">Source</a></b> | <b>#cc</b>: {tag} (<code>{message.from_user.id}</code>)'
+                )
+                __forwared.message_id = __temp['message_id']
+                return __forwared
+        msg = f'<b><a href="{message.link}">Source</a></b>: <code>{link}</code>\n\n<b>#cc</b>: {tag} (<code>{message.from_user.id}</code>)'
+        return bot.sendMessage(log_chat, disable_notification=True, text=msg)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         sleep(r.retry_after * 1.5)
-        return sendLogMessage(bot, message)
+        return sendLogMessage(bot, message, link, tag)
     except Exception as e:
         LOGGER.error(str(e))
         return
@@ -188,13 +205,13 @@ def forcesub(bot, message, tag):
             continue
         chat = bot.get_chat(channel_id)
         member = chat.get_member(message.from_user.id)
-        if member.status in [member.LEFT, member.KICKED] :
+        if member.status in [member.LEFT, member.KICKED]:
             join_button[chat.title] = chat.link or chat.invite_link
     if join_button:
         btn = ButtonMaker()
         for key, value in join_button.items():
             btn.buildbutton(key, value)
-        return sendMessage(f'Dear {tag},\nPlease join our channel to use me!\n🔻 Join And Try Again!', bot, message, btn.build_menu(2))
+        return sendMessage(f'Dear {tag},\nPlease join our channel to use me!\nJoin And Try Again!\nThank You.', bot, message, btn.build_menu(2))
 
 def message_filter(bot, message, tag):
     if not config_dict['ENABLE_MESSAGE_FILTER']:
@@ -222,8 +239,8 @@ def chat_restrict(message):
 
 def delete_links(bot, message):
     if config_dict['DELETE_LINKS']:
-        if message.reply_to_message:
-            deleteMessage(bot, message.reply_to_message)
+        if reply_to := message.reply_to_message:
+            deleteMessage(bot, reply_to)
         deleteMessage(bot, message)
 
 def anno_checker(message):

@@ -1,10 +1,15 @@
-from os import remove, path
-from bot.helper.telegram_helper.filters import CustomFilters
-from telegram.ext import CommandHandler, CallbackQueryHandler
-from bot.helper.telegram_helper.bot_commands import BotCommands
+from os import path, remove
+
+from telegram.ext import CallbackQueryHandler, CommandHandler
+
 from bot import LOGGER, aria2, dispatcher, download_dict, download_dict_lock
-from bot.helper.ext_utils.bot_utils import (MirrorStatus, bt_selection_buttons, getDownloadByGid)
-from bot.helper.telegram_helper.message_utils import (sendMessage, anno_checker, sendStatusMessage)
+from bot.helper.ext_utils.bot_utils import (MirrorStatus, bt_selection_buttons,
+                                            getDownloadByGid)
+from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import (sendMessage, anno_checker,
+                                                      sendStatusMessage)
+
 
 def select(update, context):
     message = update.message

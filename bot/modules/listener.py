@@ -1,52 +1,66 @@
-from re import search
 from html import escape
+from os import listdir, makedirs, path, remove, rename, walk
+from re import search
+from shutil import move
 from subprocess import Popen
 from time import sleep, time
+
 from requests import utils as rutils
-from os import listdir, path, remove, walk
+
+from bot import (CATEGORY_INDEXS, CATEGORY_NAMES, DATABASE_URL, DOWNLOAD_DIR,
+                 LOGGER, MAX_SPLIT_SIZE, SHORTENERES, Interval, aria2,
+                 btn_listener, config_dict, download_dict, download_dict_lock,
+                 non_queued_dl, non_queued_up, queue_dict_lock, queued_dl,
+                 queued_up, status_reply_dict_lock, user_data)
+from bot.helper.ext_utils.bot_utils import (extra_btns, get_category_btns,
+                                            get_readable_time)
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.ext_utils.shortener import short_url
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
+from bot.helper.ext_utils.fs_utils import (clean_download, clean_target,
+                                           get_base_name, get_path_size,
+                                           split_file)
 from bot.helper.ext_utils.queued_starter import start_from_queued
-from bot.helper.mirror_utils.status_utils.zip_status import ZipStatus
+from bot.helper.ext_utils.shortener import short_url
+from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.status_utils.split_status import SplitStatus
-from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
-from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
-from bot.helper.mirror_utils.status_utils.upload_status import UploadStatus
-from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.tg_upload_status import TgUploadStatus
-from bot.helper.ext_utils.bot_utils import (extra_btns, get_category_btns, get_readable_time)
-from bot import (CATEGORY_INDEXS, CATEGORY_NAMES, DATABASE_URL, DOWNLOAD_DIR, config_dict, download_dict,
-                 LOGGER, MAX_SPLIT_SIZE, SHORTENERES, Interval, aria2, btn_listener, download_dict_lock,
-                 non_queued_dl, non_queued_up, queue_dict_lock, queued_up, queued_dl, status_reply_dict_lock, user_data)
-from bot.helper.ext_utils.fs_utils import (clean_download, clean_target, get_base_name, get_path_size, split_file)
-from bot.helper.telegram_helper.message_utils import (delete_all_messages, delete_links, editMessage, sendMessage, update_all_messages)
+from bot.helper.mirror_utils.status_utils.upload_status import UploadStatus
+from bot.helper.mirror_utils.status_utils.zip_status import ZipStatus
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
+from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.telegram_helper.message_utils import (delete_all_messages,
+                                                      delete_links,
+                                                      editMessage, sendMessage,
+                                                      update_all_messages)
+
 
 class MirrorLeechListener:
-    def __init__(self, bot, message, isZip=False, extract=False, isQbit=False, c_index=0, dmMessage=None,
-                isLeech=False, pswd=None, tag=None, select=False, seed=False, raw_url=None, logMessage=None):
-        self.bot         = bot
-        self.tag         = tag
-        self.pswd        = pswd
-        self.seed        = seed
-        self.newDir      = ""
-        self.suproc      = None
-        self.isZip       = isZip
-        self.select      = select
-        self.isQbit      = isQbit
-        self.queuedUp    = False
-        self.raw_url     = raw_url
-        self.c_index     = c_index
-        self.isLeech     = isLeech
-        self.message     = message
-        self.extract     = extract
-        self.dmMessage   = dmMessage
-        self.logMessage  = logMessage
-        self.uid         = message.message_id
-        self.dir         = f"{DOWNLOAD_DIR}{self.uid}"
-        self.isPrivate   = message.chat.type in ['private', 'group']
+    def __init__(self, bot, message, isZip=False, extract=False, isQbit=False,
+                isLeech=False, pswd=None, tag=None, select=False, seed=False, sameDir={},
+                raw_url=None, c_index=0, dmMessage=None, logMessage=None):
+        self.bot = bot
+        self.message = message
+        self.uid = message.message_id
+        self.extract = extract
+        self.isZip = isZip
+        self.isQbit = isQbit
+        self.isLeech = isLeech
+        self.pswd = pswd
+        self.tag = tag
+        self.seed = seed
+        self.newDir = ""
+        self.dir = f"{DOWNLOAD_DIR}{self.uid}"
+        self.select = select
+        self.isPrivate = message.chat.type in ['private', 'group']
+        self.suproc = None
+        self.raw_url = raw_url
+        self.c_index = c_index
+        self.dmMessage = dmMessage
+        self.logMessage = logMessage
+        self.queuedUp = False
+        self.sameDir = sameDir
 
     def clean(self):
         try:
@@ -84,19 +98,31 @@ class MirrorLeechListener:
 
     def onDownloadComplete(self):
         with download_dict_lock:
+            if len(self.sameDir) > 1:
+                self.sameDir.remove(self.uid)
+                folder_name = listdir(self.dir)[-1]
+                des_path = f"{DOWNLOAD_DIR}{list(self.sameDir)[0]}/{folder_name}"
+                makedirs(des_path, exist_ok=True)
+                for subdir in listdir(f"{self.dir}/{folder_name}"):
+                    sub_path = f"{self.dir}/{folder_name}/{subdir}"
+                    if subdir in listdir(des_path):
+                        sub_path = rename(sub_path, f"{self.dir}/{folder_name}/1-{subdir}")
+                    move(sub_path, des_path)
+                del download_dict[self.uid]
+                return
             download = download_dict[self.uid]
             name = str(download.name()).replace('/', '')
             gid = download.gid()
         LOGGER.info(f"Download completed: {name}")
         if name == "None" or self.isQbit or not path.exists(f"{self.dir}/{name}"):
             name = listdir(self.dir)[-1]
-        m_path = f'{self.dir}/{name}'
+        m_path = f"{self.dir}/{name}"
         size = get_path_size(m_path)
         with queue_dict_lock:
             if self.uid in non_queued_dl:
                 non_queued_dl.remove(self.uid)
         start_from_queued()
-        user_dict = user_data.get(self.message.from_user.id, False)
+        user_dict = user_data.get(self.message.from_user.id, {})
         if self.isZip:
             if self.seed and self.isLeech:
                 self.newDir = f"{self.dir}10000"
@@ -105,7 +131,7 @@ class MirrorLeechListener:
                 path_ = f"{m_path}.zip"
             with download_dict_lock:
                 download_dict[self.uid] = ZipStatus(name, size, gid, self)
-            LEECH_SPLIT_SIZE = user_dict and user_dict.get('split_size') or config_dict['LEECH_SPLIT_SIZE']
+            LEECH_SPLIT_SIZE = user_dict.get('split_size', False) or config_dict['LEECH_SPLIT_SIZE']
             if self.pswd:
                 if self.isLeech and int(size) > LEECH_SPLIT_SIZE:
                     LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path_}.0*')
@@ -194,8 +220,8 @@ class MirrorLeechListener:
             o_files = []
             if not self.isZip:
                 checked = False
-                LEECH_SPLIT_SIZE = user_dict and user_dict.get('split_size') or config_dict['LEECH_SPLIT_SIZE']
-                for dirpath, _, files in walk(up_dir, topdown=False):
+                LEECH_SPLIT_SIZE = user_dict.get('split_size', False) or config_dict['LEECH_SPLIT_SIZE']
+                for dirpath, subdir, files in walk(up_dir, topdown=False):
                     for file_ in files:
                         f_path = path.join(dirpath, file_)
                         f_size = path.getsize(f_path)
@@ -283,7 +309,9 @@ class MirrorLeechListener:
             msg += f"\n<b>Upload</b>: {self.mode}\n\n"
             if not files:
                 sendMessage(msg, self.bot, self.message)
-            elif self.dmMessage:
+                if self.logMessage:
+                    sendMessage(msg, self.bot, self.logMessage)
+            elif self.dmMessage and not config_dict['DUMP_CHAT']:
                 sendMessage(msg, self.bot, self.dmMessage)
                 msg += '<b>Files has been sent in your DM.</b>'
                 sendMessage(msg, self.bot, self.message)
@@ -345,15 +373,15 @@ class MirrorLeechListener:
                     if config_dict['VIEW_LINK']:
                         share_urls = short_url(f'{INDEX_URL}/{url_path}?a=view')
                         buttons.buildbutton("💻 View Link", share_urls)
-            __btns = extra_btns(buttons)
+            buttons = extra_btns(buttons)
             if self.dmMessage:
-                sendMessage(msg, self.bot, self.dmMessage, __btns.build_menu(2))
+                sendMessage(msg, self.bot, self.dmMessage, buttons.build_menu(2))
                 msg += '\n\n<b>Links has been sent in your DM.</b>'
                 sendMessage(msg, self.bot, self.message)
             else:
                 if self.message.chat.type != 'private':
-                    __btns.sbutton("Save This Message", 'save', 'footer')
-                sendMessage(msg, self.bot, self.message, __btns.build_menu(2))
+                    buttons.sbutton("Save This Message", 'save', 'footer')
+                sendMessage(msg, self.bot, self.message, buttons.build_menu(2))
             if self.logMessage:
                 if config_dict['DISABLE_DRIVE_LINK']:
                     link = short_url(link)
@@ -388,9 +416,13 @@ class MirrorLeechListener:
             if self.uid in download_dict:
                 del download_dict[self.uid]
             count = len(download_dict)
+            if self.uid in self.sameDir:
+                self.sameDir.remove(self.uid)
         if msg:
             msg += f"\n<b>Upload</b>: {self.mode}"
             sendMessage(msg, self.bot, self.message, button)
+            if self.logMessage:
+                sendMessage(msg, self.bot, self.logMessage, button)
         if count == 0:
             self.clean()
         else:

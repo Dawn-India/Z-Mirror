@@ -1,20 +1,29 @@
-from time import time
+from os import execl, path, remove
+from signal import SIGINT, signal
+from subprocess import check_output, run
 from sys import executable
-from signal import signal, SIGINT
-from os import path, remove, execl
+from time import time
+
+from psutil import (boot_time, cpu_count, cpu_percent, disk_usage,
+                    net_io_counters, swap_memory, virtual_memory)
 from telegram.ext import CommandHandler
-from subprocess import run ,check_output
+
+from bot import (DATABASE_URL, IGNORE_PENDING_REQUESTS,
+                 INCOMPLETE_TASK_NOTIFIER, LOGGER, STOP_DUPLICATE_TASKS,
+                 Interval, QbInterval, app, bot, botStartTime, config_dict,
+                 dispatcher, main_loop, updater)
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
+                                            get_readable_time, set_commands)
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.ext_utils.fs_utils import (clean_all, exit_clean_up,
+                                           start_cleanup)
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from psutil import (cpu_percent, disk_usage, net_io_counters, virtual_memory)
-from bot.helper.ext_utils.fs_utils import (start_cleanup, clean_all, exit_clean_up)
+from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (editMessage, sendLogFile, sendMessage)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size, get_readable_time, set_commands)
-from bot import (DATABASE_URL, IGNORE_PENDING_REQUESTS, INCOMPLETE_TASK_NOTIFIER, LOGGER, STOP_DUPLICATE_TASKS,
-                 Interval, QbInterval, app, bot, botStartTime, config_dict, dispatcher, main_loop, updater)
-from bot.modules import (authorize, bot_settings, bt_select, cancel_mirror, category_select, clone, count, delete, drive_list,
-                         eval, mirror_leech, mirror_status, rmdb, rss, save_message, search, shell, users_settings, ytdlp, anonymous)
+from bot.modules import (authorize, bot_settings, bt_select, cancel_mirror,
+                         category_select, clone, count, delete, drive_list,
+                         eval, mirror_leech, mirror_status, rmdb, rss,
+                         save_message, search, shell, users_settings, ytdlp, anonymous)
 
 def progress_bar(percentage):
     p_used = '⬢'
@@ -56,14 +65,17 @@ def stats(update, context):
     sendMessage(stats, context.bot, update.message)
 
 def start(update, context):
-    if config_dict['ENABLE_DM']:
+    if config_dict['DM_MODE']:
         start_string = 'Welcome | Z BOT is ready for you.\n' \
                        'Thanks for starting me in DM.\n' \
                        'Now I can send all of your files and links here.\n'
     else:
         start_string = 'Hey, Welcome dear. \n' \
                        'I can Mirror all your links To Google Drive! \n' \
-                       'Created With Love by @Z_Mirror . \n'
+                       'Unfortunately you are not authorized!\n' \
+                       'Please deploy your own BOT!' \
+                       'Created With Love by @Z_Mirror . \n' \
+                       'Thank You!'
     sendMessage(start_string, context.bot, update.message)
 
 def restart(update, context):
@@ -119,7 +131,7 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.BtSelectCommand}: Select files from torrents by gid or reply.
 /{BotCommands.CategorySelect}: Change upload category for Google Drive.
 /{BotCommands.CancelMirror}: Cancel task by gid or reply.
-/{BotCommands.CancelAllCommand} : Cancel all tasks which added by you.
+/{BotCommands.CancelAllCommand[0]} : Cancel all tasks which added by you {BotCommands.CancelAllCommand[1]} to in bots.
 /{BotCommands.ListCommand} [query]: Search in Google Drive(s).
 /{BotCommands.SearchCommand} [query]: Search for torrents with API.
 /{BotCommands.StatusCommand[0]} or /{BotCommands.StatusCommand[1]}: Shows a status of all the downloads.

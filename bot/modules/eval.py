@@ -1,12 +1,14 @@
+from contextlib import redirect_stdout
+from io import BytesIO, StringIO
+from os import chdir, getcwd, path
 from textwrap import indent
 from traceback import format_exc
-from io import StringIO, BytesIO
-from bot import LOGGER, dispatcher
-from contextlib import redirect_stdout
+
 from telegram.ext import CommandHandler
-from os import path as ospath, getcwd, chdir
-from bot.helper.telegram_helper.filters import CustomFilters
+
+from bot import LOGGER, dispatcher
 from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.filters import CustomFilters
 
 namespaces = {}
 
@@ -20,6 +22,7 @@ def namespace_of(chat, update, bot):
             'effective_chat': update.effective_chat,
             'update': update
         }
+
     return namespaces[chat]
 
 def log_input(update):
@@ -62,7 +65,7 @@ def do(func, bot, update):
 
     chdir(getcwd())
     with open(
-            ospath.join(getcwd(),
+            path.join(getcwd(),
                          'bot/modules/temp.txt'),
             'w') as temp:
         temp.write(body)

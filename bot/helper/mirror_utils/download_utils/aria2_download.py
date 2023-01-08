@@ -1,11 +1,21 @@
-from os import remove, path
+from os import path, remove
 from time import sleep, time
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+
+from bot import (LOGGER, aria2, aria2_options, aria2c_global, config_dict,
+                 download_dict, download_dict_lock)
+from bot.helper.ext_utils.bot_utils import (bt_selection_buttons,
+                                            get_readable_file_size,
+                                            getDownloadByGid, is_magnet,
+                                            new_thread)
+from bot.helper.ext_utils.fs_utils import (check_storage_threshold,
+                                           clean_unwanted, get_base_name)
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
-from bot.helper.ext_utils.fs_utils import (check_storage_threshold, clean_unwanted, get_base_name)
-from bot import (LOGGER, aria2, aria2_options, aria2c_global, config_dict, download_dict, download_dict_lock)
-from bot.helper.telegram_helper.message_utils import (deleteMessage, sendMessage, sendStatusMessage, update_all_messages)
-from bot.helper.ext_utils.bot_utils import (bt_selection_buttons, get_readable_file_size, getDownloadByGid, is_magnet, new_thread)
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.telegram_helper.message_utils import (deleteMessage,
+                                                      sendMessage,
+                                                      sendStatusMessage,
+                                                      update_all_messages)
+
 
 @new_thread
 def __onDownloadStarted(api, gid):
@@ -13,7 +23,7 @@ def __onDownloadStarted(api, gid):
     if download.is_metadata:
         LOGGER.info(f'onDownloadStarted: {gid} METADATA')
         sleep(1)
-        if dl := getDownloadByGid(gid):
+        if dl:= getDownloadByGid(gid):
             listener = dl.listener()
             if listener.select:
                 metamsg = "Downloading Metadata, wait then you can select files. Use torrent file to avoid this wait."
@@ -29,7 +39,7 @@ def __onDownloadStarted(api, gid):
     try:
         if config_dict['STOP_DUPLICATE']:
             sleep(1)
-            if dl := getDownloadByGid(gid):
+            if dl:= getDownloadByGid(gid):
                 listener = dl.listener()
                 download = api.get_download(gid)
                 if not listener.isLeech and not listener.select:
@@ -51,10 +61,10 @@ def __onDownloadStarted(api, gid):
                             listener.onDownloadError('File/Folder already available in Drive.\nHere are the search results:\n', button)
                             api.remove([download], force=True, files=True, clean=True)
                             return
-        if any([(DIRECT_LIMIT := config_dict['DIRECT_LIMIT']),
-                (TORRENT_LIMIT := config_dict['TORRENT_LIMIT']),
-                (LEECH_LIMIT := config_dict['LEECH_LIMIT']),
-                (STORAGE_THRESHOLD := config_dict['STORAGE_THRESHOLD'])]):
+        if any([(DIRECT_LIMIT:= config_dict['DIRECT_LIMIT']),
+                (TORRENT_LIMIT:= config_dict['TORRENT_LIMIT']),
+                (LEECH_LIMIT:= config_dict['LEECH_LIMIT']),
+                (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD'])]):
             sleep(1)
             dl = getDownloadByGid(gid)
             if dl and hasattr(dl, 'listener'):
@@ -62,6 +72,7 @@ def __onDownloadStarted(api, gid):
             else:
                 return
             download = api.get_download(gid)
+            download = download.live
             if download.total_length == 0:
                 start_time = time()
                 while time() - start_time <= 15:
@@ -107,7 +118,7 @@ def __onDownloadComplete(api, gid):
     if download.followed_by_ids:
         new_gid = download.followed_by_ids[0]
         LOGGER.info(f'Gid changed from {gid} to {new_gid}')
-        if dl := getDownloadByGid(new_gid):
+        if dl:= getDownloadByGid(new_gid):
             listener = dl.listener()
             if config_dict['BASE_URL'] and listener.select:
                 api.client.force_pause(new_gid)
@@ -115,14 +126,14 @@ def __onDownloadComplete(api, gid):
                 msg = f"<b>Name</b>: <code>{dl.name()}</code>\n\nYour download paused. Choose files then press Done Selecting button to start downloading."
                 sendMessage(msg, listener.bot, listener.message, SBUTTONS)
     elif download.is_torrent:
-        if dl := getDownloadByGid(gid):
+        if dl:= getDownloadByGid(gid):
             if hasattr(dl, 'listener') and dl.seeding:
                 LOGGER.info(f"Cancelling Seed: {download.name} onDownloadComplete")
                 dl.listener().onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
                 api.remove([download], force=True, files=True, clean=True)
     else:
         LOGGER.info(f"onDownloadComplete: {download.name} - Gid: {gid}")
-        if dl := getDownloadByGid(gid):
+        if dl:= getDownloadByGid(gid):
             dl.listener().onDownloadComplete()
             api.remove([download], force=True, files=True, clean=True)
 
@@ -132,7 +143,7 @@ def __onBtDownloadComplete(api, gid):
     sleep(1)
     download = api.get_download(gid)
     LOGGER.info(f"onBtDownloadComplete: {download.name} - Gid: {gid}")
-    if dl := getDownloadByGid(gid):
+    if dl:= getDownloadByGid(gid):
         listener = dl.listener()
         if listener.select:
             res = download.files
@@ -158,7 +169,7 @@ def __onBtDownloadComplete(api, gid):
         download = download.live
         if listener.seed:
             if download.is_complete:
-                if dl := getDownloadByGid(gid):
+                if dl:= getDownloadByGid(gid):
                     LOGGER.info(f"Cancelling Seed: {download.name}")
                     listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
                     api.remove([download], force=True, files=True, clean=True)
@@ -177,7 +188,7 @@ def __onBtDownloadComplete(api, gid):
 @new_thread
 def __onDownloadStopped(api, gid):
     sleep(6)
-    if dl := getDownloadByGid(gid):
+    if dl:=getDownloadByGid(gid):
         dl.listener().onDownloadError('Dead Torrent! Find Torrent with good Seeders.\n\nYou Can Try With qBittorrent engine.')
 
 @new_thread
@@ -190,7 +201,7 @@ def __onDownloadError(api, gid):
         LOGGER.info(f"Download Error: {error}")
     except:
         pass
-    if dl := getDownloadByGid(gid):
+    if dl:= getDownloadByGid(gid):
         dl.listener().onDownloadError(error)
 
 def start_listener():
@@ -215,7 +226,7 @@ def add_aria2c_download(link: str, path, listener, filename, auth, ratio, seed_t
         args['seed-ratio'] = ratio
     if seed_time:
         args['seed-time'] = seed_time
-    if TORRENT_TIMEOUT := config_dict['TORRENT_TIMEOUT']:
+    if TORRENT_TIMEOUT:= config_dict['TORRENT_TIMEOUT']:
         args['bt-stop-timeout'] = str(TORRENT_TIMEOUT)
     listener.selectCategory()
     if is_magnet(link):

@@ -1,11 +1,13 @@
 from telegram.ext import CommandHandler
-from bot.helper.ext_utils.db_handler import DbManger
+
 from bot import DATABASE_URL, config_dict, dispatcher
-from bot.helper.ext_utils.z_utils import extract_link
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import sendMessage
 from bot.helper.ext_utils.bot_utils import is_magnet, is_url, new_thread
+from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.z_utils import extract_link
+from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import sendMessage
+
 
 def _rmdb(message, bot):
     mesg = message.text.split('\n')

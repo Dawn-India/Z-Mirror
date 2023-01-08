@@ -1,6 +1,8 @@
 from time import time
-from bot import aria2, LOGGER
+
+from bot import LOGGER, aria2
 from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_time
+
 
 def get_download(gid):
     try:

@@ -1,16 +1,27 @@
-from re import search
-from os import remove
-from hashlib import sha1
-from time import sleep, time
-from threading import Lock, Thread
-from bencoding import bencode, bdecode
 from base64 import b16encode, b32decode
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from hashlib import sha1
+from os import remove
+from re import search
+from threading import Lock, Thread
+from time import sleep, time
+
+from bencoding import bdecode, bencode
+
+from bot import (LOGGER, QbInterval, config_dict, download_dict,
+                 download_dict_lock, get_client)
+from bot.helper.ext_utils.bot_utils import (bt_selection_buttons,
+                                            get_readable_file_size,
+                                            get_readable_time,
+                                            getDownloadByGid, new_thread,
+                                            setInterval)
+from bot.helper.ext_utils.fs_utils import (check_storage_threshold,
+                                           clean_unwanted, get_base_name)
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
-from bot import (LOGGER, QbInterval, config_dict, download_dict, download_dict_lock, get_client)
-from bot.helper.ext_utils.fs_utils import (check_storage_threshold, clean_unwanted, get_base_name)
-from bot.helper.telegram_helper.message_utils import (deleteMessage, sendMessage, sendStatusMessage, update_all_messages)
-from bot.helper.ext_utils.bot_utils import (bt_selection_buttons, get_readable_file_size, get_readable_time, getDownloadByGid, new_thread, setInterval)
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.telegram_helper.message_utils import (deleteMessage,
+                                                      sendMessage,
+                                                      sendStatusMessage,
+                                                      update_all_messages)
 
 qb_download_lock = Lock()
 STALLED_TIME = {}
@@ -178,17 +189,17 @@ def __size_checked(client, tor):
         listener = download.listener()
         size = tor.size
         limit_exceeded = ''
-        if not limit_exceeded and (STORAGE_THRESHOLD := config_dict['STORAGE_THRESHOLD']):
+        if not limit_exceeded and (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']):
             limit = STORAGE_THRESHOLD * 1024**3
             arch = any([listener.isZip, listener.extract])
             acpt = check_storage_threshold(size, limit, arch)
             if not acpt:
                 limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
-        if not limit_exceeded and (TORRENT_LIMIT := config_dict['TORRENT_LIMIT']):
+        if not limit_exceeded and (TORRENT_LIMIT:= config_dict['TORRENT_LIMIT']):
             limit = TORRENT_LIMIT * 1024**3
             if size > limit:
                 limit_exceeded = f'Torrent limit is {get_readable_file_size(limit)}'
-        if not limit_exceeded and (LEECH_LIMIT := config_dict['LEECH_LIMIT']) and listener.isLeech:
+        if not limit_exceeded and (LEECH_LIMIT:= config_dict['LEECH_LIMIT']) and listener.isLeech:
             limit = LEECH_LIMIT * 1024**3
             if size > limit:
                 limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
@@ -200,6 +211,7 @@ def __size_checked(client, tor):
 
 @new_thread
 def __onDownloadComplete(client, tor):
+    sleep(2)
     download = getDownloadByGid(tor.hash[:12])
     try:
         listener = download.listener()

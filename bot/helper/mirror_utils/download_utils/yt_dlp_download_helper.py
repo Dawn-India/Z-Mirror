@@ -1,20 +1,24 @@
-from threading import RLock
-from os import path, listdir
 from logging import getLogger
+from os import listdir, path
 from random import SystemRandom
 from re import search as re_search
 from string import ascii_letters, digits
-from yt_dlp import YoutubeDL, DownloadError
+from threading import RLock
+
+from yt_dlp import DownloadError, YoutubeDL
+
+from bot import (config_dict, download_dict, download_dict_lock, non_queued_dl,
+                 non_queued_up, queue_dict_lock, queued_dl)
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from bot.helper.ext_utils.fs_utils import check_storage_threshold
-from bot.helper.telegram_helper.message_utils import sendStatusMessage
-from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.status_utils.convert_status import ConvertStatus
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.status_utils.yt_dlp_download_status import YtDlpDownloadStatus
-from bot import (config_dict, download_dict, download_dict_lock, non_queued_dl, non_queued_up, queue_dict_lock, queued_dl)
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.telegram_helper.message_utils import sendStatusMessage
 
 LOGGER = getLogger(__name__)
+
 
 class MyLogger:
     def __init__(self, obj):
@@ -247,24 +251,24 @@ class YoutubeDLHelper:
                     self.__onDownloadError('File/Folder already available in Drive.\nHere are the search results:\n', button)
                     return
         limit_exceeded = ''
-        if not limit_exceeded and (STORAGE_THRESHOLD := config_dict['STORAGE_THRESHOLD']):
+        if not limit_exceeded and (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']):
             limit = STORAGE_THRESHOLD * 1024**3
             acpt = check_storage_threshold(self.__size, limit, self.listener.isZip)
             if not acpt:
                 limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
                 limit_exceeded += f'\nYour File/Folder size is {get_readable_file_size(self.__size)}'
-        if not limit_exceeded and (MAX_PLAYLIST := config_dict['MAX_PLAYLIST']) \
+        if not limit_exceeded and (MAX_PLAYLIST:= config_dict['MAX_PLAYLIST']) \
                             and (self.is_playlist and self.listener.isLeech):
             if self.playlist_count > MAX_PLAYLIST:
                 limit_exceeded = f'Leech Playlist limit is {MAX_PLAYLIST}\n'
                 limit_exceeded += f'Your Playlist is {self.playlist_count}'
-        if not limit_exceeded and (YTDLP_LIMIT := config_dict['YTDLP_LIMIT']):
+        if not limit_exceeded and (YTDLP_LIMIT:= config_dict['YTDLP_LIMIT']):
             limit = YTDLP_LIMIT * 1024**3
             if self.__size > limit:
                 limit_exceeded = f'Ytldp limit is {get_readable_file_size(limit)}\n'
                 limit_exceeded+= f'Your {"Playlist" if self.is_playlist else "Video"} size\n'
                 limit_exceeded+= f'is {get_readable_file_size(self.__size)}'
-        if not limit_exceeded and (LEECH_LIMIT := config_dict['LEECH_LIMIT']) and self.listener.isLeech:
+        if not limit_exceeded and (LEECH_LIMIT:= config_dict['LEECH_LIMIT']) and self.listener.isLeech:
             limit = LEECH_LIMIT * 1024**3
             if self.__size > limit:
                 limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}\n'

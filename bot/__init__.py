@@ -1,17 +1,20 @@
+from asyncio import get_event_loop
+from faulthandler import enable as faulthandler_enable
+from logging import (INFO, FileHandler, StreamHandler, basicConfig, error,
+                     getLogger, info, warning)
+from os import environ, path, remove
+from socket import setdefaulttimeout
+from subprocess import Popen, run
+from threading import Lock, Thread
 from time import sleep, time
+
+from aria2p import API as ariaAPI
+from aria2p import Client as ariaClient
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from subprocess import Popen, run
-from threading import Thread, Lock
 from pyrogram import Client, enums
-from asyncio import get_event_loop
-from os import remove, path, environ
-from socket import setdefaulttimeout
 from qbittorrentapi import Client as qbClient
-from faulthandler import enable as faulthandler_enable
 from telegram.ext import Updater as tgUpdater, Defaults
-from aria2p import API as ariaAPI, Client as ariaClient
-from logging import (INFO, FileHandler, StreamHandler, basicConfig, error, getLogger, info, warning)
 
 main_loop = get_event_loop()
 
@@ -137,7 +140,7 @@ if len(TELEGRAM_HASH) == 0:
 
 GDRIVE_ID = environ.get('GDRIVE_ID', '')
 if len(GDRIVE_ID) == 0:
-    warning('GDRIVE_ID is missing. Upload to drive is disabled!')
+    warning('GDRIVE_ID not provided!')
     GDRIVE_ID = ''
 
 DOWNLOAD_DIR = environ.get('DOWNLOAD_DIR', '')
@@ -376,8 +379,8 @@ DISABLE_LEECH = DISABLE_LEECH.lower() == 'true'
 SET_COMMANDS = environ.get('SET_COMMANDS', '')
 SET_COMMANDS = SET_COMMANDS.lower() == 'true'
 
-ENABLE_DM = environ.get('ENABLE_DM', '')
-ENABLE_DM = ENABLE_DM.lower() == 'true'
+DM_MODE = environ.get('DM_MODE', '')
+DM_MODE = DM_MODE.lower() if DM_MODE.lower() in ['leech', 'mirror', 'all'] else ''
 
 DELETE_LINKS = environ.get('DELETE_LINKS', '')
 DELETE_LINKS = DELETE_LINKS.lower() == 'true'
@@ -453,7 +456,7 @@ config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'SET_COMMANDS': SET_COMMANDS,
                'DISABLE_LEECH': DISABLE_LEECH,
-               'ENABLE_DM': ENABLE_DM,
+               'DM_MODE': DM_MODE,
                'DELETE_LINKS': DELETE_LINKS}
 
 if GDRIVE_ID:

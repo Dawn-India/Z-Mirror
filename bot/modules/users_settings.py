@@ -1,17 +1,23 @@
-from math import ceil
-from PIL import Image
-from html import escape
-from time import sleep, time
 from functools import partial
+from html import escape
+from math import ceil
 from os import mkdir, path, remove
+from time import sleep, time
+
+from PIL import Image
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
+                          MessageHandler)
+
+from bot import (DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, config_dict,
+                 dispatcher, user_data)
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
+                                            update_user_ldata)
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size, update_user_ldata)
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters, MessageHandler)
-from bot.helper.telegram_helper.message_utils import (editMessage, sendMessage, sendPhoto)
-from bot import (DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, config_dict, dispatcher, user_data)
+from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import (editMessage, sendMessage, sendFile,
+                                                      sendPhoto)
 
 handler_dict = {}
 
@@ -20,49 +26,54 @@ def get_user_settings(from_user):
     name = from_user.full_name
     buttons = ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
-    user_dict = user_data.get(user_id, False)
-    if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
+    user_dict = user_data.get(user_id, {})
+    if user_dict.get('as_doc', False) or 'as_doc' not in user_dict and config_dict['AS_DOCUMENT']:
         ltype = "DOCUMENT"
-        buttons.sbutton("Send As Media", f"userset {user_id} med")
+        buttons.sbutton("Send As Media", f"userset {user_id} doc")
     else:
         ltype = "MEDIA"
         buttons.sbutton("Send As Document", f"userset {user_id} doc")
-    buttons.sbutton("Leech Splits", f"userset {user_id} lss")
-    if user_dict and user_dict.get('split_size'):
-        split_size = user_dict['split_size']
-    else:
-        split_size = config_dict['LEECH_SPLIT_SIZE']
 
-    if not user_dict and config_dict['EQUAL_SPLITS'] or user_dict and user_dict.get('equal_splits'):
+    buttons.sbutton("Leech Splits", f"userset {user_id} lss")
+    split_size = user_dict.get('split_size', False) or config_dict['LEECH_SPLIT_SIZE']
+    split_size = get_readable_file_size(split_size)
+
+    if user_dict.get('equal_splits', False) or 'equal_splits' not in user_dict and config_dict['EQUAL_SPLITS']:
         equal_splits = 'Enabled'
     else:
         equal_splits = 'Disabled'
 
-    if not user_dict and config_dict['MEDIA_GROUP'] or user_dict and user_dict.get('media_group'):
+    if user_dict.get('media_group', False) or 'media_group' not in user_dict and config_dict['MEDIA_GROUP']:
         media_group = 'Enabled'
     else:
         media_group = 'Disabled'
 
     buttons.sbutton("YT-DLP Quality", f"userset {user_id} ytq")
-    if user_dict and user_dict.get('yt_ql'):
+    YQ = config_dict['YT_DLP_QUALITY']
+    if user_dict.get('yt_ql', False):
         ytq = user_dict['yt_ql']
-    elif config_dict['YT_DLP_QUALITY']:
-        ytq = config_dict['YT_DLP_QUALITY']
+    elif 'yt_ql' not in user_dict and YQ:
+        ytq = YQ
     else:
         ytq = 'None'
 
     buttons.sbutton("Thumbnail", f"userset {user_id} sthumb")
     thumbmsg = "Exists" if path.exists(thumbpath) else "Not Exists"
-    buttons.sbutton("Leech Prefix", f"userset {user_id} lprefix")
-    buttons.sbutton("Close", f"userset {user_id} close")
-    if user_dict and user_dict.get('lprefix'):
+
+    LP = config_dict['LEECH_FILENAME_PREFIX']
+    if user_dict.get('lprefix', False):
         lprefix = user_dict['lprefix']
+    elif 'lprefix' not in user_dict and LP:
+        lprefix = LP
     else:
-        lprefix = config_dict['LEECH_FILENAME_PREFIX'] or 'None'
+        lprefix = 'None'
+    buttons.sbutton("Leech Prefix", f"userset {user_id} lprefix")
+
+    buttons.sbutton("Close", f"userset {user_id} close")
     text = f"<u>Settings for <a href='tg://user?id={user_id}'>{name}</a></u>\n"\
             f"Leech Type is <b>{ltype}</b>\n"\
             f"Custom Thumbnail <b>{thumbmsg}</b>\n"\
-            f"Leech Split Size is <b>{get_readable_file_size(split_size)}</b>\n"\
+            f"Leech Split Size is <b>{split_size}</b>\n"\
             f"Equal Splits is <b>{equal_splits}</b>\n"\
             f"YT-DLP Quality is <b><code>{escape(ytq)}</code></b>\n" \
             f"Media Group is <b>{media_group}</b>\n"\
@@ -134,17 +145,11 @@ def edit_user_settings(update, context):
     data = query.data
     data = data.split()
     thumb_path = f"Thumbnails/{user_id}.jpg"
-    user_dict = user_data.get(user_id, False)
+    user_dict = user_data.get(user_id, {})
     if user_id != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == "doc":
-        update_user_ldata(user_id, 'as_doc', True)
-        query.answer()
-        update_user_settings(message, query.from_user)
-        if DATABASE_URL:
-            DbManger().update_user_data(user_id)
-    elif data[2] == "med":
-        update_user_ldata(user_id, 'as_doc', False)
+        update_user_ldata(user_id, 'as_doc', not user_dict.get('as_doc', False))
         query.answer()
         update_user_settings(message, query.from_user)
         if DATABASE_URL:
@@ -198,7 +203,7 @@ def edit_user_settings(update, context):
         handler_dict[user_id] = True
         buttons = ButtonMaker()
         buttons.sbutton("Back", f"userset {user_id} back")
-        if user_dict and user_dict.get('yt_ql'):
+        if user_dict.get('yt_ql', False) or config_dict['YT_DLP_QUALITY']:
             buttons.sbutton("Remove YT-DLP Quality", f"userset {user_id} rytq", 'header')
         buttons.sbutton("Close", f"userset {user_id} close")
         rmsg = f'''
@@ -234,7 +239,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         handler_dict[user_id] = True
         buttons = ButtonMaker()
         buttons.sbutton("Back", f"userset {user_id} back")
-        if user_dict and user_dict.get('lprefix'):
+        if user_dict.get('lprefix', False) or config_dict['LEECH_FILENAME_PREFIX']:
             buttons.sbutton("Remove Leech Prefix", f"userset {user_id} rlpre", 'header')
         buttons.sbutton("Close", f"userset {user_id} close")
         rmsg = f'''
@@ -274,13 +279,13 @@ Check all available formatting options <a href="https://core.telegram.org/bots/a
             sleep(0.5)
         handler_dict[user_id] = True
         buttons = ButtonMaker()
-        if user_dict and user_dict.get('split_size'):
+        if user_dict.get('split_size', False):
             buttons.sbutton("Reset Split Size", f"userset {user_id} rlss")
-        if not user_dict and config_dict['EQUAL_SPLITS'] or user_dict and user_dict.get('equal_splits', False):
+        if user_dict.get('equal_splits', False) or 'equal_splits' not in user_dict and config_dict['EQUAL_SPLITS']:
             buttons.sbutton("Disable Equal Splits", f"userset {user_id} esplits")
         else:
             buttons.sbutton("Enable Equal Splits", f"userset {user_id} esplits")
-        if not user_dict and config_dict['MEDIA_GROUP'] or user_dict and user_dict.get('media_group'):
+        if user_dict.get('media_group', False) or 'media_group' not in user_dict and config_dict['MEDIA_GROUP']:
             buttons.sbutton("Disable Media Group", f"userset {user_id} mgroup")
         else:
             buttons.sbutton("Enable Media Group", f"userset {user_id} mgroup")
@@ -309,14 +314,14 @@ Check all available formatting options <a href="https://core.telegram.org/bots/a
     elif data[2] == 'esplits':
         query.answer()
         handler_dict[user_id] = False
-        update_user_ldata(user_id, 'equal_splits', not bool(user_dict and user_dict.get('equal_splits')))
+        update_user_ldata(user_id, 'equal_splits', not user_dict.get('equal_splits', False))
         update_user_settings(message, query.from_user)
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == 'mgroup':
         query.answer()
         handler_dict[user_id] = False
-        update_user_ldata(user_id, 'media_group', not bool(user_dict and user_dict.get('media_group')))
+        update_user_ldata(user_id, 'media_group', not user_dict.get('media_group', False))
         update_user_settings(message, query.from_user)
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
@@ -336,10 +341,9 @@ def send_users_settings(update, context):
         msg += f'\n\n<code>{user}</code>:'
         for key, value in data.items():
             msg += f'\n<b>{key}</b>: <code>{escape(str(value))}</code>'
-        if len(msg.encode()) > 4000:
-            sendMessage(msg, context.bot, update.message)
-            msg = ''
-    if msg:
+    if len(msg.encode()) > 4000:
+        sendFile(context.bot, update.message, msg, 'users_settings.txt')
+    else:
         sendMessage(msg, context.bot, update.message)
 
 users_settings_handler = CommandHandler(BotCommands.UsersCommand, send_users_settings,

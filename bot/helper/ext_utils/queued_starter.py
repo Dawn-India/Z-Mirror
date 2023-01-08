@@ -1,9 +1,12 @@
 from threading import Thread
-from bot.helper.mirror_utils.download_utils.gd_downloader import add_gd_download
+
+from bot import (config_dict, non_queued_dl, non_queued_up, queue_dict_lock,
+                 queued_dl, queued_up)
+from bot.helper.mirror_utils.download_utils.gd_downloader import  add_gd_download
 from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
-from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
-from bot import (config_dict, non_queued_dl, non_queued_up, queue_dict_lock, queued_dl, queued_up)
+from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
+
 
 def start_dl_from_queued(uid):
     dl = queued_dl[uid]
@@ -27,6 +30,7 @@ def start_up_from_queued(uid):
 def start_from_queued():
     if all_limit := config_dict['QUEUE_ALL']:
         dl_limit = config_dict['QUEUE_DOWNLOAD']
+        up_limit = config_dict['QUEUE_UPLOAD']
         with queue_dict_lock:
             dl = len(non_queued_dl)
             up = len(non_queued_up)
@@ -62,7 +66,7 @@ def start_from_queued():
                 for uid in list(queued_up.keys()):
                     start_up_from_queued(uid)
 
-    if dl_limit := config_dict['QUEUE_ALL']:
+    if dl_limit := config_dict['QUEUE_DOWNLOAD']:
         with queue_dict_lock:
             dl = len(non_queued_dl)
             if queued_dl and dl <  dl_limit:

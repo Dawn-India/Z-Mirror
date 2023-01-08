@@ -1,8 +1,11 @@
-from bot import LOGGER, dispatcher
 from subprocess import PIPE, Popen
+
 from telegram.ext import CommandHandler
-from bot.helper.telegram_helper.filters import CustomFilters
+
+from bot import LOGGER, dispatcher
 from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.filters import CustomFilters
+
 
 def shell(update, context):
     message = update.effective_message
@@ -16,7 +19,7 @@ def shell(update, context):
     stderr = stderr.decode()
     stdout = stdout.decode()
     if len(stdout) != 0:
-        reply += f"*Stdout*\n`{stdout}`\n"
+        reply += f"`{stdout}`\n"
         LOGGER.info(f"Shell - {cmd} - {stdout}")
     if len(stderr) != 0:
         reply += f"*Stderr*\n`{stderr}`\n"
@@ -34,6 +37,7 @@ def shell(update, context):
         message.reply_text(reply, parse_mode='Markdown')
     else:
         message.reply_text('No Reply', parse_mode='Markdown')
+
 
 SHELL_HANDLER = CommandHandler(BotCommands.ShellCommand, shell,
                                 filters=CustomFilters.owner_filter)

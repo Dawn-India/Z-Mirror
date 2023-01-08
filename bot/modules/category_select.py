@@ -1,10 +1,16 @@
 from time import time
-from bot.helper.telegram_helper.filters import CustomFilters
+
 from telegram.ext import CallbackQueryHandler, CommandHandler
+
+from bot import (CATEGORY_NAMES, btn_listener, dispatcher, download_dict,
+                 download_dict_lock)
+from bot.helper.ext_utils.bot_utils import (MirrorStatus, get_category_btns,
+                                            getDownloadByGid, new_thread)
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot import (CATEGORY_NAMES, btn_listener, dispatcher, download_dict, download_dict_lock)
-from bot.helper.telegram_helper.message_utils import (anno_checker, editMessage, sendMessage)
-from bot.helper.ext_utils.bot_utils import (MirrorStatus, get_category_btns, getDownloadByGid, new_thread)
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import (anno_checker,
+                                                      editMessage, sendMessage)
+
 
 def change_category(update, context):
     message = update.message

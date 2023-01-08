@@ -1,5 +1,6 @@
 from bot import CMD_SUFFIX
 
+
 class _BotCommands:
     def __init__(self):
         self.StartCommand = f'start{CMD_SUFFIX}'
@@ -23,7 +24,7 @@ class _BotCommands:
         self.CountCommand = f'count{CMD_SUFFIX}'
         self.DeleteCommand = f'del{CMD_SUFFIX}'
         self.CancelMirror = f'cancel{CMD_SUFFIX}'
-        self.CancelAllCommand = f'cancelall{CMD_SUFFIX}'
+        self.CancelAllCommand = (f'cancelall{CMD_SUFFIX}', 'cancelallbot')
         self.ListCommand = f'list{CMD_SUFFIX}'
         self.SearchCommand = f'search{CMD_SUFFIX}'
         self.StatusCommand = (f'status{CMD_SUFFIX}', f's{CMD_SUFFIX}')

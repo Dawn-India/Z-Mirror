@@ -1,12 +1,22 @@
-from time import time
 from threading import Thread
+from time import time
+
 from psutil import cpu_percent, disk_usage, virtual_memory
-from bot.helper.telegram_helper.filters import CustomFilters
 from telegram.ext import CallbackQueryHandler, CommandHandler
+
+from bot import (DOWNLOAD_DIR, Interval, botStartTime, config_dict, dispatcher,
+                 download_dict, download_dict_lock, status_reply_dict_lock)
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
+                                            get_readable_time, new_thread,
+                                            setInterval, turn)
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size, get_readable_time, new_thread, setInterval, turn)
-from bot import (DOWNLOAD_DIR, Interval, botStartTime, config_dict, dispatcher, download_dict, download_dict_lock, status_reply_dict_lock)
-from bot.helper.telegram_helper.message_utils import (auto_delete_message, deleteMessage, sendMessage, sendStatusMessage, update_all_messages)
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import (auto_delete_message,
+                                                      deleteMessage,
+                                                      sendMessage,
+                                                      sendStatusMessage,
+                                                      update_all_messages)
+
 
 def mirror_status(update, context):
     with download_dict_lock:
