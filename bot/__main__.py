@@ -233,7 +233,7 @@ def main():
     dispatcher.add_handler(log_handler)
 
     updater.start_polling(drop_pending_updates=IGNORE_PENDING_REQUESTS)
-    LOGGER.info("Bot Started!")
+    LOGGER.info("Bot Started Successfully!")
     signal(SIGINT, exit_clean_up)
 
 app.start()
