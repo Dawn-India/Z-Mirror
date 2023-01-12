@@ -30,7 +30,7 @@ class MirrorStatus:
     STATUS_DOWNLOADING = "Downloading"
     STATUS_CLONING = "Cloneing"
     STATUS_QUEUEDL = "QueueDl"
-    STATUS_QUEUEUP = "QueueUp"
+    STATUS_QUEUEUP = "QueueUl"
     STATUS_PAUSED = "Paused"
     STATUS_ARCHIVING = "Archiving"
     STATUS_EXTRACTING = "Extracting"
@@ -179,16 +179,30 @@ Made with ❤️ by Dawn
 dispatcher.add_handler(CallbackQueryHandler(pop_up_stats, pattern=f"^{str(THREE)}$"))
 
 def get_readable_message():
+    cDl = 0
+    cUl = 0
+    cQdl = 0
+    cQul = 0
     with download_dict_lock:
-        msg = ""
+        for c in list(download_dict.values()):
+            if c.status() == MirrorStatus.STATUS_DOWNLOADING:
+                cDl += 1
+            if c.status() == MirrorStatus.STATUS_UPLOADING:
+                cUl += 1
+            if c.status() == MirrorStatus.STATUS_QUEUEDL:
+                cQdl += 1
+            if c.status() == MirrorStatus.STATUS_QUEUEUP:
+                cQul += 1
+            cQu = cQdl + cQul
+        tasks = len(download_dict)
+        msg = f"<b>Total:</b> <code>{tasks}</code> | <b>Dn:</b> <code>{cDl}</code> | <b>Up:</b> <code>{cUl}</code> | <b>Qu:</b> <code>{cQu}</code>\n<b>--------------------------------------</b>"
         if STATUS_LIMIT := config_dict['STATUS_LIMIT']:
-            tasks = len(download_dict)
             globals()['PAGES'] = ceil(tasks/STATUS_LIMIT)
             if PAGE_NO > PAGES and PAGES != 0:
                 globals()['COUNT'] -= STATUS_LIMIT
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
-            msg += f'\n\n<b>File Name:</b> <a href="{download.message.link}">{escape(str(download.name()))}</a>'
+            msg += f'\n<b>File Name:</b> <a href="{download.message.link}">{escape(str(download.name()))}</a>'
             msg += f"\n<b>Status:</b> <code>{download.status()}</code>"
             if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_CONVERTING]:
                 msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
@@ -265,10 +279,8 @@ def get_readable_message():
         buttons.sbutton("Bot SYS Statistics", str(THREE))
         button = buttons.build_menu(1)
         if STATUS_LIMIT and tasks > STATUS_LIMIT:
-            msg += f"\n<b>Total Tasks:</b> {tasks}\n"
             return _get_readable_message_btns(msg, bmsg)
         return msg + bmsg, button
-
 
 def _get_readable_message_btns(msg, bmsg):
     buttons = ButtonMaker()
