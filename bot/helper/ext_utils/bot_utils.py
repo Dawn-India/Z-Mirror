@@ -359,6 +359,10 @@ def is_url(url: str):
 def is_gdrive_link(url: str):
     return "drive.google.com" in urlparse(url).netloc
 
+def is_filepress_link(url: str):
+    url = re_match(r'https?://(filepress|filebee)\.\S+', url)
+    return bool(url)
+
 def is_mega_link(url: str):
     url_ = urlparse(url)
     return any(x in url_.netloc for x in ['mega.nz', 'mega.co.nz'])
