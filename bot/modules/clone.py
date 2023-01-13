@@ -9,7 +9,7 @@ from bot import (CATEGORY_NAMES, DATABASE_URL, LOGGER, Interval, btn_listener,
                  config_dict, dispatcher, download_dict, download_dict_lock)
 from bot.helper.ext_utils.bot_utils import (check_user_tasks, extra_btns,
                                             get_readable_file_size,
-                                            get_readable_time, is_gdrive_link,
+                                            get_readable_time, is_gdrive_link, is_filepress_link,
                                             new_thread)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.z_utils import extract_link
@@ -83,6 +83,15 @@ def _clone(message, bot):
             tag = f"@{reply_to.from_user.username}"
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
+    is_filepress = is_filepress_link(link)
+    if is_filepress:
+        try:
+            msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
+            link = filepress(link)
+            deleteMessage(bot, msg)
+        except DirectDownloadLinkException as e:
+            deleteMessage(bot, msg)
+            return sendMessage(str(e), bot, message)
     if not is_gdrive_link(link) or (link.strip().isdigit() and multi == 0):
         msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
         msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
