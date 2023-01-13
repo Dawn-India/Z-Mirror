@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 from cfscrape import create_scraper
 from lk21 import Bypass
 from requests import Session, request
+from playwright.sync_api import Playwright, sync_playwright, expect
 
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
@@ -74,6 +75,8 @@ def direct_link_generator(link: str):
         return uploadee(link)
     elif 'terabox' in domain:
         return terabox(link)
+    elif is_filepress_link(link):
+        return filepress(link)
     elif any(x in domain for x in fmed_list):
         return fembed(link)
     elif any(x in domain for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
@@ -443,3 +446,36 @@ def terabox(url) -> str:
     if result['isdir'] != '0':
         raise DirectDownloadLinkException("ERROR: Can't download folder")
     return result['dlink']
+
+def prun(playwright: Playwright, link:str) -> str:
+    browser = playwright.chromium.launch()
+    context = browser.new_context()
+
+    page = context.new_page()
+    page.goto(link)
+
+    firstbtn = page.locator("xpath=//div[text()='Direct Download']/parent::button")
+    expect(firstbtn).to_be_visible()
+    firstbtn.click()
+    sleep(10)
+
+    secondBtn = page.get_by_role("button", name="Download Now")
+    expect(secondBtn).to_be_visible()
+    with page.expect_navigation():
+        secondBtn.click()
+
+    Flink = page.url
+
+    context.close()
+    browser.close()
+
+    if 'drive.google.com' in Flink:
+        return Flink
+    else:
+        raise DirectDownloadLinkException("Unable To Get Google Drive Link!")
+
+
+def filepress(link:str) -> str:
+    with sync_playwright() as playwright:
+        flink = prun(playwright, link)
+        return flink            
