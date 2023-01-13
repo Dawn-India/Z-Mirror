@@ -93,8 +93,10 @@ def _clone(message, bot):
             deleteMessage(bot, msg)
             return sendMessage(str(e), bot, message)
     if not is_gdrive_link(link) or (link.strip().isdigit() and multi == 0):
-        msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
-        msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
+        msg_ = (
+            "Send Gdrive link along with command or by replying to the link by command\n"
+            + "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
+        )
         return sendMessage(msg_, bot, message)
     if message.from_user.id in [1087968824, 136817688]:
         message.from_user.id = anno_checker(message)
