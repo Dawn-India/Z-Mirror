@@ -363,6 +363,10 @@ def is_mega_link(url: str):
     url_ = urlparse(url)
     return any(x in url_.netloc for x in ['mega.nz', 'mega.co.nz'])
 
+def is_filepress_link(url: str):
+    url = re_match(r'https?://(filepress|filebee)\.\S+', url)
+    return bool(url)
+
 def get_mega_link_type(url: str):
     if "folder" in url:
         return "folder"
