@@ -24,7 +24,6 @@ from playwright.sync_api import Playwright, sync_playwright, expect
 
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from bot.helper.ext_utils.bot_utils import is_filepress_link
 
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
@@ -479,4 +478,5 @@ def prun(playwright: Playwright, link:str) -> str:
 def filepress(link:str) -> str:
     with sync_playwright() as playwright:
         flink = prun(playwright, link)
-        return flink           
+        angel = flink.split("continue=")[-1]
+        return angel
