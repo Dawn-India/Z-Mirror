@@ -1,6 +1,6 @@
 from html import escape
 from math import ceil
-from re import findall
+from re import findall, match
 from threading import Event, Thread
 from time import time
 from urllib.parse import urlparse
@@ -360,7 +360,7 @@ def is_gdrive_link(url: str):
     return "drive.google.com" in urlparse(url).netloc
 
 def is_filepress_link(url: str):
-    url = re_match(r'https?://(filepress|filebee)\.\S+', url)
+    url = match(r'https?://(filepress|filebee)\.\S+', url)
     return bool(url)
 
 def is_mega_link(url: str):

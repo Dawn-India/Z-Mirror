@@ -12,7 +12,7 @@ from bot import (CATEGORY_NAMES, DATABASE_URL, DOWNLOAD_DIR, IS_USER_SESSION,
                  LOGGER, config_dict, dispatcher)
 from bot.helper.ext_utils.bot_utils import (check_user_tasks, get_content_type,
                                             is_gdrive_link, is_magnet,
-                                            is_mega_link, is_url)
+                                            is_mega_link, is_url, is_filepress_link)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.z_utils import extract_link
@@ -326,7 +326,7 @@ Number should be always before |newname or pswd:
             delete_links(bot, message)
             sendMessage(gmsg, bot, message)
         else:
-            Thread(target=add_gd_download, args=(link, dl_path, listener, name)).start()
+            Thread(target=add_gd_download, args=(link, dl_path, listener, name, is_filepress)).start()
     elif is_mega_link(link):
         listener.ismega = sendMessage("<b>Mega link detected.\nThis might take a minute.</b>", bot, message)
         Thread(target=add_mega_download, args=(link, f'{dl_path}/', listener, name)).start()
