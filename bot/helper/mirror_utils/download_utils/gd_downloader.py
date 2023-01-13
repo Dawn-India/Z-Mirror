@@ -13,7 +13,7 @@ from bot.helper.telegram_helper.message_utils import (sendMessage,
                                                       sendStatusMessage)
 
 
-def add_gd_download(link, path, listener, newname, from_queue=False):
+def add_gd_download(link, path, listener, newname, is_filepress, from_queue=False):
     drive = GoogleDriveHelper()
     res, size, name, _ = drive.helper(link)
     if res != "":
