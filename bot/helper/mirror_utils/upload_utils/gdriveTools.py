@@ -17,7 +17,7 @@ from requests.utils import quote as rquote
 from tenacity import (RetryError, retry, retry_if_exception_type,
                       stop_after_attempt, wait_exponential)
 
-from bot import (CATEGORY_IDS, CATEGORY_INDEXS, DRIVES_IDS, DRIVES_NAMES,
+from bot import (CATEGORY_IDS, CATEGORY_INDEXES, DRIVES_IDS, DRIVES_NAMES,
                  GLOBAL_EXTENSION_FILTER, INDEX_URLS, SHORTENERES, config_dict)
 from bot.helper.ext_utils.bot_utils import (extra_btns, get_readable_file_size,
                                             setInterval)
@@ -382,7 +382,7 @@ class GoogleDriveHelper:
                 msg += f' |<b>SubFolders</b>: {self.__total_folders}'
                 msg += f' |<b>Files</b>: {self.__total_files}'
                 links_dict['durl'] = short_url(durl)
-                if INDEX_URL:= CATEGORY_INDEXS[c_index]:
+                if INDEX_URL:= CATEGORY_INDEXES[c_index]:
                     url_path = rquote(f'{meta.get("name")}', safe='')
                     links_dict['index'] = short_url(f'{INDEX_URL}/{url_path}/')
             else:
@@ -397,7 +397,7 @@ class GoogleDriveHelper:
                 links_dict['durl'] = short_url(durl)
                 msg += f'\n\n<b>Size</b>: {get_readable_file_size(int(meta.get("size", 0)))}'
                 msg += f'\n\n<b>Type</b>: {mime_type}'
-                if INDEX_URL:= CATEGORY_INDEXS[c_index]:
+                if INDEX_URL:= CATEGORY_INDEXES[c_index]:
                     url_path = rquote(f'{file.get("name")}', safe='')
                     links_dict['index'] = short_url(f'{INDEX_URL}/{url_path}')
                     if config_dict['VIEW_LINK']:

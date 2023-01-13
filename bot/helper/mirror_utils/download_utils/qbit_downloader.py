@@ -58,7 +58,6 @@ def add_qb_torrent(link, path, listener, ratio, seed_time):
         if len(tor_info) > 0:
             sendMessage("This Torrent already added!", listener.bot, listener.message)
             return
-        listener.selectCategory()
         if link.startswith('magnet:'):
             op = client.torrents_add(link, save_path=path, ratio_limit=ratio, seeding_time_limit=seed_time)
         else:

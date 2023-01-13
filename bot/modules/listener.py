@@ -7,7 +7,7 @@ from time import sleep, time
 
 from requests import utils as rutils
 
-from bot import (CATEGORY_INDEXS, CATEGORY_NAMES, DATABASE_URL, DOWNLOAD_DIR,
+from bot import (CATEGORY_INDEXES, CATEGORY_NAMES, DATABASE_URL, DOWNLOAD_DIR,
                  LOGGER, MAX_SPLIT_SIZE, SHORTENERES, Interval, aria2,
                  btn_listener, config_dict, download_dict, download_dict_lock,
                  non_queued_dl, non_queued_up, queue_dict_lock, queued_dl,
@@ -95,6 +95,7 @@ class MirrorLeechListener:
             DbManger().add_download_url(self.raw_url, self.tag)
         if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
+        self.selectCategory()
 
     def onDownloadComplete(self):
         with download_dict_lock:
@@ -362,7 +363,7 @@ class MirrorLeechListener:
                 link = short_url(link)
                 buttons.buildbutton("🔐 Drive Link", link)
             LOGGER.info(f'Done Uploading {name}')
-            if INDEX_URL:= CATEGORY_INDEXS[self.c_index]:
+            if INDEX_URL:= CATEGORY_INDEXES[self.c_index]:
                 url_path = rutils.quote(f'{name}')
                 if typ == "Folder":
                     share_url = short_url(f'{INDEX_URL}/{url_path}/')

@@ -218,7 +218,7 @@ Number should be always before |newname or pswd:
 
 <b>NOTES:</b>
 1. When use cmd by reply don't add any option in link msg! always add them after cmd msg!
-2. You can't add this those options <b>|newname, pswd: and authorization</b> randomly. They should be arranged like exmaple above, rename then pswd. Those options should be after the link if link along with the cmd and after any other option
+2. You can't add this those options <b>|newname, pswd: and authorization</b> randomly. They should be arranged like example above, rename then pswd. Those options should be after the link if link along with the cmd and after any other option
 3. You can add this those options <b>d, s and multi</b> randomly. Ex: <code>/{cmd}</code> d:1:20 s 10 <b>or</b> <code>/{cmd}</code> s 10 d:0.5:100
 4. Commands that start with <b>qb</b> are ONLY for torrents.
 '''
@@ -314,7 +314,7 @@ Number should be always before |newname or pswd:
                     __run_multi()
                     return
         else:
-            msg = "qBittorrent for torrents only. if you are trying to dowload torrent then report."
+            msg = "qBittorrent for torrents only. if you are trying to download torrent then report."
             sendMessage(msg, bot, message)
             __run_multi()
             return

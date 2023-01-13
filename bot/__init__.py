@@ -76,7 +76,9 @@ rss_dict = {}
 # value: [listener, extras, isNeedEngine, time_out]
 btn_listener = {}
 
-for file_ in ['pyrogram.session', 'pyrogram.session-journal', 'rss_session.session', 'rss_session.session-journal']:
+for file_ in ['pyrogram.session', 'pyrogram.session-journal',
+            'rss_session.session', 'rss_session.session-journal',
+            'buttons.txt', 'shorteners.txt', 'categories.txt']:
     if path.exists(file_):
         remove(file_)
 
@@ -463,6 +465,9 @@ if GDRIVE_ID:
     DRIVES_NAMES.append("Main")
     DRIVES_IDS.append(GDRIVE_ID)
     INDEX_URLS.append(INDEX_URL)
+    CATEGORY_NAMES.append("Root")
+    CATEGORY_IDS.append(GDRIVE_ID)
+    CATEGORY_INDEXES.append(INDEX_URL)
 
 if path.exists('list_drives.txt'):
     with open('list_drives.txt', 'r+') as f:
@@ -496,10 +501,6 @@ if path.exists('shorteners.txt'):
                 SHORTENERES.append(temp[0])
                 SHORTENER_APIS.append(temp[1])
 
-if GDRIVE_ID:
-    CATEGORY_NAMES.append("Root")
-    CATEGORY_IDS.append(GDRIVE_ID)
-    CATEGORY_INDEXS.append(INDEX_URL)
 
 if path.exists('categories.txt'):
     with open('categories.txt', 'r+') as f:
@@ -509,9 +510,9 @@ if path.exists('categories.txt'):
             CATEGORY_IDS.append(temp[1])
             CATEGORY_NAMES.append(temp[0].replace("_", " "))
             if len(temp) > 2:
-                CATEGORY_INDEXS.append(temp[2])
+                CATEGORY_INDEXES.append(temp[2])
             else:
-                CATEGORY_INDEXS.append('')
+                CATEGORY_INDEXES.append('')
 
 if BASE_URL:
     Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}", shell=True)

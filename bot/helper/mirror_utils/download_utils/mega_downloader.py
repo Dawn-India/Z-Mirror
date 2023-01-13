@@ -200,7 +200,6 @@ def add_mega_download(mega_link, path, listener, name, from_queue=False):
         listener.ismega.delete()
         return sendMessage(f"{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}.", listener.bot, listener.message)
     mname = name or node.getName()
-    listener.selectCategory()
     gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=8))
     all_limit = config_dict['QUEUE_ALL']
     dl_limit = config_dict['QUEUE_DOWNLOAD']

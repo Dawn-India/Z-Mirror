@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
                           MessageHandler)
 
-from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_IDS, CATEGORY_INDEXS,
+from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_IDS, CATEGORY_INDEXES,
                  CATEGORY_NAMES, DATABASE_URL, DRIVES_IDS, DRIVES_NAMES,
                  GLOBAL_EXTENSION_FILTER, INDEX_URLS, IS_PREMIUM_USER, LOGGER,
                  MAX_SPLIT_SIZE, SHORTENER_APIS, SHORTENERES, Interval, aria2,
@@ -332,11 +332,17 @@ def load_config():
     DRIVES_NAMES.clear()
     DRIVES_IDS.clear()
     INDEX_URLS.clear()
+    CATEGORY_NAMES.clear()
+    CATEGORY_IDS.clear()
+    CATEGORY_INDEXES.clear()
 
     if GDRIVE_ID:
         DRIVES_NAMES.append("Main")
         DRIVES_IDS.append(GDRIVE_ID)
         INDEX_URLS.append(INDEX_URL)
+        CATEGORY_NAMES.append("Root")
+        CATEGORY_IDS.append(GDRIVE_ID)
+        CATEGORY_INDEXES.append(INDEX_URL)
 
     if path.exists('list_drives.txt'):
         with open('list_drives.txt', 'r+') as f:
@@ -350,14 +356,7 @@ def load_config():
                 else:
                     INDEX_URLS.append('')
 
-    CATEGORY_NAMES.clear()
-    CATEGORY_IDS.clear()
-    CATEGORY_INDEXS.clear()
 
-    if GDRIVE_ID:
-        CATEGORY_NAMES.append("Root")
-        CATEGORY_IDS.append(GDRIVE_ID)
-        CATEGORY_INDEXS.append(INDEX_URL)
 
     if path.exists('categories.txt'):
         with open('categories.txt', 'r+') as f:
@@ -367,9 +366,9 @@ def load_config():
                 CATEGORY_IDS.append(temp[1])
                 CATEGORY_NAMES.append(temp[0].replace("_", " "))
                 if len(temp) > 2:
-                    CATEGORY_INDEXS.append(temp[2])
+                    CATEGORY_INDEXES.append(temp[2])
                 else:
-                    CATEGORY_INDEXS.append('')
+                    CATEGORY_INDEXES.append('')
 
     config_dict.update({'AS_DOCUMENT': AS_DOCUMENT,
                         'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
@@ -470,7 +469,7 @@ def get_buttons(key=None, edit_type=None):
     elif key == 'private':
         buttons.sbutton('Back', "botset back")
         buttons.sbutton('Close', "botset close")
-        msg = f'Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, categories.txt, shortnners.txt, buttons.txt, cookies.txt, terabox.txt or .netrc.\nTimeout: 60 sec' \
+        msg = f'Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, categories.txt, shorteners.txt, buttons.txt, cookies.txt, terabox.txt or .netrc.\nTimeout: 60 sec' \
             '\nTo delete private file send the name of the file only as text message.\nTimeout: 60 sec'
     elif key == 'aria':
         for k in list(aria2_options.keys())[START:10+START]:
@@ -589,9 +588,9 @@ def edit_variable(update, context, omsg, key):
         else:
             INDEX_URLS.insert(0, value)
         if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
-            CATEGORY_INDEXS[0] = value
+            CATEGORY_INDEXES[0] = value
         else:
-            CATEGORY_INDEXS.insert(0, value)
+            CATEGORY_INDEXES.insert(0, value)
     elif key == 'DM_MODE':
         value = value.lower() if value.lower() in ['leech', 'mirror', 'all'] else ''
     elif key not in ['SEARCH_LIMIT', 'STATUS_LIMIT'] and key.endswith(('_THRESHOLD', '_LIMIT')):
@@ -678,11 +677,11 @@ def update_private_file(update, context, omsg):
         elif file_name == 'categories.txt':
             CATEGORY_NAMES.clear()
             CATEGORY_IDS.clear()
-            CATEGORY_INDEXS.clear()
+            CATEGORY_INDEXES.clear()
             if GDRIVE_ID:= config_dict['GDRIVE_ID']:
                 CATEGORY_NAMES.append('Root')
                 CATEGORY_IDS.append(GDRIVE_ID)
-                CATEGORY_INDEXS.append(config_dict['INDEX_URL'])
+                CATEGORY_INDEXES.append(config_dict['INDEX_URL'])
         elif file_name == 'list_drives.txt':
             DRIVES_IDS.clear()
             DRIVES_NAMES.clear()
@@ -725,11 +724,11 @@ def update_private_file(update, context, omsg):
         elif file_name == 'categories.txt':
             CATEGORY_IDS.clear()
             CATEGORY_NAMES.clear()
-            CATEGORY_INDEXS.clear()
+            CATEGORY_INDEXES.clear()
             if GDRIVE_ID:= config_dict['GDRIVE_ID']:
                 CATEGORY_NAMES.append("Root")
                 CATEGORY_IDS.append(GDRIVE_ID)
-                CATEGORY_INDEXS.append(config_dict['INDEX_URL'])
+                CATEGORY_INDEXES.append(config_dict['INDEX_URL'])
             with open('categories.txt', 'r+') as f:
                 lines = f.readlines()
                 for line in lines:
@@ -737,9 +736,9 @@ def update_private_file(update, context, omsg):
                     CATEGORY_IDS.append(temp[1])
                     CATEGORY_NAMES.append(temp[0].replace("_", " "))
                     if len(temp) > 2:
-                        CATEGORY_INDEXS.append(temp[2])
+                        CATEGORY_INDEXES.append(temp[2])
                     else:
-                        CATEGORY_INDEXS.append('')
+                        CATEGORY_INDEXES.append('')
         elif file_name == 'shorteners.txt':
             SHORTENERES.clear()
             SHORTENER_APIS.clear()
@@ -849,12 +848,12 @@ def edit_bot_settings(update, context):
             if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
                 CATEGORY_NAMES.pop(0)
                 CATEGORY_IDS.pop(0)
-                CATEGORY_INDEXS.pop(0)
+                CATEGORY_INDEXES.pop(0)
         elif data[2] == 'INDEX_URL':
             if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
                 INDEX_URLS[0] = ''
             if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
-                CATEGORY_INDEXS[0] = ''
+                CATEGORY_INDEXES[0] = ''
         elif data[2] == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
             DbManger().trunc_table('tasks')
         elif data[2] == 'STOP_DUPLICATE_TASKS' and DATABASE_URL:

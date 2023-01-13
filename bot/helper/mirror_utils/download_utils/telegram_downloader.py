@@ -121,7 +121,6 @@ class TelegramDownloadHelper:
                         msg = f'You must leave {get_readable_file_size(limit)} free storage.'
                         msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
                         return sendMessage(msg, self.__listener.bot, self.__listener.message)
-                self.__listener.selectCategory()
                 all_limit = config_dict['QUEUE_ALL']
                 dl_limit = config_dict['QUEUE_DOWNLOAD']
                 if all_limit or dl_limit:
