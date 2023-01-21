@@ -21,7 +21,7 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (editMessage, sendLogFile, sendMessage)
 from bot.modules import (authorize, bot_settings, bt_select, cancel_mirror,
-                         category_select, clone, count, delete, drive_list,
+                         category_select, count, delete, drive_list,
                          eval, mirror_leech, mirror_status, rmdb, rss,
                          save_message, search, shell, users_settings, ytdlp, anonymous)
 

@@ -5,7 +5,7 @@ from time import sleep
 from requests import request
 from telegram.ext import CallbackQueryHandler, CommandHandler
 
-from bot import (CATEGORY_NAMES, DATABASE_URL, DOWNLOAD_DIR, IS_USER_SESSION,
+from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_USER_SESSION,
                  LOGGER, config_dict, dispatcher, user_data)
 from bot.helper.ext_utils.bot_utils import (check_user_tasks,
                                             get_readable_file_size, is_url)
@@ -187,9 +187,6 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
     listener = MirrorLeechListener(bot, message, isZip, isLeech=isLeech, pswd=pswd,
                                 tag=tag, sameDir=sameDir, raw_url=raw_url, c_index=c_index,
                                 dmMessage=dmMessage, logMessage=logMessage)
-    listener.mode = 'Leech' if isLeech else f'Drive {CATEGORY_NAMES[c_index]}'
-    if isZip:
-        listener.mode += ' as Zip'
     if 'mdisk.me' in link:
         name, link = _mdisk(link, name)
     ydl = YoutubeDLHelper(listener)

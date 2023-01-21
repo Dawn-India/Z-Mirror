@@ -69,7 +69,7 @@ def add_gd_download(link, path, listener, newname, from_queue=False):
             listener.onDownloadStart()
             sendStatusMessage(listener.message, listener.bot)
             return
-    drive = GoogleDriveHelper(name, path, size, listener, listener.message.from_user.id)
+    drive = GoogleDriveHelper(name, path, size, listener)
     with download_dict_lock:
         download_dict[listener.uid] = GdDownloadStatus(drive, size, listener, gid)
     with queue_dict_lock:

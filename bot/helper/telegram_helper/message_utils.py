@@ -145,7 +145,7 @@ def sendStatusMessage(msg, bot):
         if not Interval:
             Interval.append(setInterval(config_dict['DOWNLOAD_STATUS_UPDATE_INTERVAL'], update_all_messages))
 
-def sendDmMessage(bot, message, dmMode, isLeech=False):
+def sendDmMessage(bot, message, dmMode, tag, isLeech=False):
     if dmMode == 'mirror' and isLeech or dmMode == 'leech' and not isLeech:
         return
     try:
@@ -155,9 +155,11 @@ def sendDmMessage(bot, message, dmMode, isLeech=False):
         sleep(r.retry_after * 1.5)
         return sendDmMessage(bot, message, isLeech)
     except Unauthorized:
+        delete_links(bot, message)
         buttons = ButtonMaker()
         buttons.buildbutton("Start", f"{bot.link}?start=start")
-        sendMessage("<b>You didn't START the bot in DM</b>", bot, message, buttons.build_menu(1))
+        uname = message.from_user.mention_html(message.from_user.first_name)
+        sendMessage(f"<b>Hey {uname}!\nYou didn't START the me in DM\nStart and try again.</b>", bot, message, buttons.build_menu(1))
         return 'BotNotStarted'
     except Exception as e:
         LOGGER.error(str(e))
@@ -170,14 +172,14 @@ def sendLogMessage(bot, message, link, tag):
         
         if (reply_to := message.reply_to_message) or "https://api.telegram.org/file/" in link:
             if reply_to.document or reply_to.video or reply_to.audio or reply_to.photo:
-                __forwared = reply_to.forward(log_chat)
-                __forwared.delete()
+                __forwarded = reply_to.forward(log_chat)
+                __forwarded.delete()
                 __temp = reply_to.copy(
                     log_chat,
                     caption=f'<b><a href="{message.link}">Source</a></b> | <b>#cc</b>: {tag} (<code>{message.from_user.id}</code>)'
                 )
-                __forwared.message_id = __temp['message_id']
-                return __forwared
+                __forwarded.message_id = __temp['message_id']
+                return __forwarded
         msg = f'<b><a href="{message.link}">Source</a></b>: <code>{link}</code>\n\n<b>#cc</b>: {tag} (<code>{message.from_user.id}</code>)'
         return bot.sendMessage(log_chat, disable_notification=True, text=msg)
     except RetryAfter as r:

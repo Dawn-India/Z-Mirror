@@ -8,15 +8,16 @@ from time import sleep, time
 from requests import request
 from telegram.ext import CommandHandler
 
-from bot import (CATEGORY_NAMES, DATABASE_URL, DOWNLOAD_DIR, IS_USER_SESSION,
-                 LOGGER, config_dict, dispatcher)
+from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_USER_SESSION, LOGGER,
+                 config_dict, dispatcher)
 from bot.helper.ext_utils.bot_utils import (check_user_tasks, get_content_type,
-                                            is_gdrive_link, is_magnet,
+                                            is_gdrive_link, is_magnet, is_Sharerlink,
                                             is_mega_link, is_url)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.z_utils import extract_link
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
+from bot.helper.mirror_utils.download_utils.clonner import start_clone
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.download_utils.gd_downloader import add_gd_download
 from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
@@ -35,7 +36,7 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
 from bot.modules.listener import MirrorLeechListener
 
 
-def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, sameDir={}):
+def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, sameDir={}, isClone=False):
     if not isLeech and not config_dict['GDRIVE_ID']:
         sendMessage('GDRIVE_ID not Provided!', bot, message)
         return
@@ -106,7 +107,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             sameDir.add(nextmsg.message_id)
         nextmsg.from_user.id = message.from_user.id
         sleep(4)
-        Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech, sameDir)).start()
+        Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech, sameDir, isClone)).start()
 
     dl_path = f'{DOWNLOAD_DIR}{message.message_id}{folder_name}'
 
@@ -141,9 +142,9 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 reply_text = reply_to.text.split(maxsplit=1)[0].strip()
                 if is_url(reply_text) or is_magnet(reply_text):
                     link = reply_to.text.strip()
-            elif isinstance(file_, list):
+            elif isinstance(file_, list) and not isClone:
                 link = file_[-1].get_file().file_path
-            elif not isQbit and file_.mime_type != "application/x-bittorrent":
+            elif not isQbit and file_.mime_type != "application/x-bittorrent" and not isClone:
                 if message.from_user.id in [1087968824, 136817688]:
                     message.from_user.id = anno_checker(message)
                     if not message.from_user.id:
@@ -174,19 +175,18 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 else:
                     dmMessage = None
                 logMessage = sendLogMessage(bot, message, link, tag)
-                listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed, sameDir, raw_url, c_index, dmMessage, logMessage)
-                listener.mode = 'Leech' if isLeech else f'Drive {CATEGORY_NAMES[c_index]}'
-                if isZip:
-                    listener.mode += ' as Zip'
-                elif extract:
-                    listener.mode += ' as Unzip'
+                listener = MirrorLeechListener(bot, message,
+                                isZip, extract, isQbit, isLeech, isClone,
+                                pswd, tag, select, seed, sameDir,
+                                raw_url, c_index, dmMessage, logMessage)
                 chat_restrict(message)
                 Thread(target=TelegramDownloadHelper(listener).add_download, args=(message, f'{dl_path}/', name)).start()
                 __run_multi()
                 return
             else:
-                tfile = True
-                link = file_.get_file().file_path
+                if not isClone:
+                    tfile = True
+                    link = file_.get_file().file_path
     if not is_url(link) and not is_magnet(link) or (link.isdigit() and multi == 0):
         help_msg = '''
 <code>/{cmd}</code> link |newname pswd: xx(zip/unzip)
@@ -225,6 +225,10 @@ Number should be always before |newname or pswd:
         delete_links(bot, message)
         sendMessage(help_msg.format_map({'cmd': BotCommands.MirrorCommand[0]}), bot, message)
         return
+    if isClone and not is_gdrive_link(link) and not is_Sharerlink(link):
+        msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
+        msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
+        return sendMessage(msg_, bot, message)
     if message.from_user.id in [1087968824, 136817688]:
         message.from_user.id = anno_checker(message)
         if not message.from_user.id:
@@ -259,15 +263,10 @@ Number should be always before |newname or pswd:
         dmMessage = None
     logMessage = sendLogMessage(bot, message, link, tag)
     listener = MirrorLeechListener(bot, message,
-                                isZip, extract, isQbit, isLeech,
+                                isZip, extract, isQbit, isLeech, isClone,
                                 pswd, tag, select, seed, sameDir,
                                 raw_url, c_index, dmMessage, logMessage)
     chat_restrict(message)
-    listener.mode = 'Leech' if isLeech else f'Drive {CATEGORY_NAMES[c_index]}'
-    if isZip:
-        listener.mode += ' as Zip'
-    elif extract:
-        listener.mode += ' as Unzip'
     LOGGER.info(f"{link} added by: {message.from_user.id}")
     if not is_mega_link(link) and not isQbit and not is_magnet(link) \
         and not is_gdrive_link(link) and not link.endswith('.torrent'):
@@ -286,7 +285,7 @@ Number should be always before |newname or pswd:
                     __run_multi()
                     return
             _tempmsg.delete()
-    elif isQbit and not is_magnet(link):
+    elif isQbit and not is_magnet(link) and not isClone:
         if link.endswith('.torrent') or "https://api.telegram.org/file/" in link:
             content_type = None
         else:
@@ -319,12 +318,14 @@ Number should be always before |newname or pswd:
             __run_multi()
             return
     if is_gdrive_link(link):
-        if not any([isZip, extract, isLeech]):
+        if not any([isZip, extract, isLeech, isClone]):
             gmsg = f"Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\n\n"
             gmsg += f"Use /{BotCommands.ZipMirrorCommand[0]} to make zip of Google Drive folder\n\n"
             gmsg += f"Use /{BotCommands.UnzipMirrorCommand[0]} to extracts Google Drive archive folder/file"
             delete_links(bot, message)
             sendMessage(gmsg, bot, message)
+        elif isClone:
+            Thread(target=start_clone, args=(link, listener)).start()
         else:
             Thread(target=add_gd_download, args=(link, dl_path, listener, name)).start()
     elif is_mega_link(link):
@@ -384,6 +385,9 @@ def qb_unzip_leech(update, context):
 def qb_zip_leech(update, context):
     _mirror_leech(context.bot, update.message, True, isQbit=True, isLeech=True)
 
+def cloneNode(update, context):
+    _mirror_leech(context.bot, update.message, isClone=True)
+
 mirror_handler = CommandHandler(BotCommands.MirrorCommand, mirror,
                                 filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
 unzip_mirror_handler = CommandHandler(BotCommands.UnzipMirrorCommand, unzip_mirror,
@@ -408,7 +412,8 @@ qb_unzip_leech_handler = CommandHandler(BotCommands.QbUnzipLeechCommand, qb_unzi
                                 filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
 qb_zip_leech_handler = CommandHandler(BotCommands.QbZipLeechCommand, qb_zip_leech,
                                 filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
-
+clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode, 
+                                filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
 
 dispatcher.add_handler(mirror_handler)
 dispatcher.add_handler(unzip_mirror_handler)
@@ -422,3 +427,4 @@ dispatcher.add_handler(zip_leech_handler)
 dispatcher.add_handler(qb_leech_handler)
 dispatcher.add_handler(qb_unzip_leech_handler)
 dispatcher.add_handler(qb_zip_leech_handler)
+dispatcher.add_handler(clone_handler)

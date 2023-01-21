@@ -7,11 +7,12 @@ from time import sleep, time
 
 from requests import utils as rutils
 
-from bot import (CATEGORY_INDEXES, CATEGORY_NAMES, DATABASE_URL, DOWNLOAD_DIR,
-                 LOGGER, MAX_SPLIT_SIZE, SHORTENERES, Interval, aria2,
-                 btn_listener, config_dict, download_dict, download_dict_lock,
-                 non_queued_dl, non_queued_up, queue_dict_lock, queued_dl,
-                 queued_up, status_reply_dict_lock, user_data)
+from bot import (CATEGORY_IDS, CATEGORY_INDEXES, CATEGORY_NAMES, DATABASE_URL,
+                 DOWNLOAD_DIR, LOGGER, MAX_SPLIT_SIZE, SHORTENERES, Interval,
+                 aria2, btn_listener, config_dict, download_dict,
+                 download_dict_lock, non_queued_dl, non_queued_up,
+                 queue_dict_lock, queued_dl, queued_up, status_reply_dict_lock,
+                 user_data)
 from bot.helper.ext_utils.bot_utils import (extra_btns, get_category_btns,
                                             get_readable_time)
 from bot.helper.ext_utils.db_handler import DbManger
@@ -38,8 +39,11 @@ from bot.helper.telegram_helper.message_utils import (delete_all_messages,
 
 class MirrorLeechListener:
     def __init__(self, bot, message, isZip=False, extract=False, isQbit=False,
-                isLeech=False, pswd=None, tag=None, select=False, seed=False, sameDir={},
-                raw_url=None, c_index=0, dmMessage=None, logMessage=None):
+                isLeech=False, isClone=False, pswd=None, tag=None, select=False,
+                seed=False, sameDir=None, raw_url=None,
+                c_index=0, dmMessage=None, logMessage=None):
+        if not sameDir:
+            sameDir = {}
         self.bot = bot
         self.message = message
         self.uid = message.message_id
@@ -47,6 +51,7 @@ class MirrorLeechListener:
         self.isZip = isZip
         self.isQbit = isQbit
         self.isLeech = isLeech
+        self.isClone = isClone
         self.pswd = pswd
         self.tag = tag
         self.seed = seed
@@ -61,6 +66,7 @@ class MirrorLeechListener:
         self.logMessage = logMessage
         self.queuedUp = False
         self.sameDir = sameDir
+        self.__setMode()
 
     def clean(self):
         try:
@@ -71,6 +77,19 @@ class MirrorLeechListener:
             delete_all_messages()
         except:
             pass
+
+    def __setMode(self):
+        if self.isLeech:
+            mode = 'Leech'
+        elif self.isClone:
+            mode = f'Clone {CATEGORY_NAMES[self.c_index]}'
+        else:
+            mode = f'Drive {CATEGORY_NAMES[self.c_index]}'
+        if self.isZip:
+            mode += ' as Zip'
+        elif self.extract:
+            mode += ' as Unzip'
+        self.mode = mode
 
     def selectCategory(self):
         if len(CATEGORY_NAMES) <= 1 or self.isLeech:
@@ -288,12 +307,12 @@ class MirrorLeechListener:
             up_path = f'{up_dir}/{up_name}'
             size = get_path_size(up_path)
             LOGGER.info(f"Upload Name: {up_name}")
-            drive = GoogleDriveHelper(up_name, up_dir, size, self, self.message.from_user.id)
+            drive = GoogleDriveHelper(up_name, up_dir, size, self)
             upload_status = UploadStatus(drive, size, gid, self)
             with download_dict_lock:
                 download_dict[self.uid] = upload_status
             update_all_messages()
-            drive.upload(up_name, self.c_index)
+            drive.upload(up_name, CATEGORY_IDS[self.c_index])
 
     def onUploadComplete(self, link: str, size, files, folders, typ, name: str):
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS'] and self.raw_url:
@@ -388,7 +407,7 @@ class MirrorLeechListener:
                     link = short_url(link)
                     buttons.buildbutton("🔐 Drive Link", link, 'header')
                 sendMessage(msg, self.bot, self.logMessage, buttons.build_menu(2))
-            if self.seed:
+            if not self.isClone and self.seed:
                 if self.isZip:
                     clean_target(f"{self.dir}/{name}")
                 elif self.newDir:
@@ -410,9 +429,10 @@ class MirrorLeechListener:
         self._clean_update(msg)
 
     def _clean_update(self, msg=None, button=None):
-        clean_download(self.dir)
-        if self.newDir:
-            clean_download(self.newDir)
+        if not self.isClone:
+            clean_download(self.dir)
+            if self.newDir:
+                clean_download(self.newDir)
         with download_dict_lock:
             if self.uid in download_dict:
                 del download_dict[self.uid]

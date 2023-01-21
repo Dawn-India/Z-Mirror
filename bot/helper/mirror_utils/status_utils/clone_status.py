@@ -7,12 +7,12 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus,
 engine_ = f"Google Api v{get_distribution('google-api-python-client').version}"
 
 class CloneStatus:
-    def __init__(self, obj, size, message, gid, mode):
+    def __init__(self, obj, size, listener, gid):
         self.__obj = obj
         self.__size = size
         self.__gid = gid
-        self.message = message
-        self.__mode = mode
+        self.__listener = listener
+        self.message = listener.message
         self.source = self.__source()
         self.engine = engine_
 
@@ -69,4 +69,4 @@ class CloneStatus:
                 or self.message.from_user.id
 
     def mode(self):
-        return self.__mode
+        return self.__listener.mode

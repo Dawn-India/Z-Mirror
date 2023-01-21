@@ -43,7 +43,7 @@ SHORTENERES              = []
 SHORTENER_APIS           = []
 BUTTON_NAMES             = []
 BUTTON_URLS              = []
-CATEGORY_INDEXES          = []
+CATEGORY_INDEXES         = []
 GLOBAL_EXTENSION_FILTER  = ['.aria2']
 user_data                = {}
 aria2_options            = {}
@@ -77,8 +77,7 @@ rss_dict = {}
 btn_listener = {}
 
 for file_ in ['pyrogram.session', 'pyrogram.session-journal',
-            'rss_session.session', 'rss_session.session-journal',
-            'buttons.txt', 'shorteners.txt', 'categories.txt']:
+              'rss_session.session', 'rss_session.session-journal']:
     if path.exists(file_):
         remove(file_)
 
