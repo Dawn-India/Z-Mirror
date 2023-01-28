@@ -203,8 +203,7 @@ def get_readable_message():
                 globals()['COUNT'] -= STATUS_LIMIT
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
-            msg += f'\n<b>File Name:</b> <a href="{download.message.link}">{escape(str(download.name()))}</a>'
-            msg += f"\n<b>Status:</b> <code>{download.status()}</code>"
+            msg += f'\n<b>{download.status()}:</b> <code>{escape(str(download.name()))}</code>'
             if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_CONVERTING]:
                 msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
                 if download.status() in [MirrorStatus.STATUS_DOWNLOADING,
@@ -244,10 +243,9 @@ def get_readable_message():
                 except:
                     pass
             msg += f"\n<b>Engine</b>: <code>{download.engine}</code>"
-            msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.mode()}</a>"
-            msg += f"\n<b>By</b>: <a href='https://t.me/{download.message.from_user.username}'>{download.source}</a>"
+            msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.mode()}</a> | <b>By</b>: <a href='https://t.me/{download.message.from_user.username}'>{download.source}</a>"
             if download.status() != MirrorStatus.STATUS_CONVERTING:
-                msg += f"\n<b>Stop</b>: <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
+                msg += f"\n🛑 <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             msg += "\n\n"
             if STATUS_LIMIT and index == STATUS_LIMIT:
                 break

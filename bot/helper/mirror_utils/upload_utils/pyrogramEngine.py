@@ -252,9 +252,12 @@ class TgUploader:
 
     def __msg_to_reply(self):
         if DUMP_CHAT:= config_dict['DUMP_CHAT']:
-            msg = self.__listener.message.text if self.__listener.isPrivate else f'<b><a href="{self.__listener.message.link}">Source</a></b>'
-            msg = f'{msg}\n\n<b>#cc</b>: {self.__listener.tag} (<code>{self.__listener.message.from_user.id}</code>)'
-            self.__sent_msg = app.send_message(DUMP_CHAT, msg, disable_web_page_preview=True)
+            if self.__listener.logMessage:
+                self.__sent_msg = app.copy_message(DUMP_CHAT, self.__listener.logMessage.chat.id, self.__listener.logMessage.message_id)
+            else:
+                msg = self.__listener.message.text if self.__listener.isPrivate else f'<b><a href="{self.__listener.message.link}">Source</a></b>'
+                msg = f'{msg}\n\n<b>#cc</b>: {self.__listener.tag} (<code>{self.__listener.message.from_user.id}</code>)'
+                self.__sent_msg = app.send_message(DUMP_CHAT, msg, disable_web_page_preview=True)
             if self.__listener.dmMessage:
                 self.__sent_DMmsg = copy(self.__listener.dmMessage)
         elif self.__listener.dmMessage:

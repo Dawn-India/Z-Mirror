@@ -145,7 +145,7 @@ def sendStatusMessage(msg, bot):
         if not Interval:
             Interval.append(setInterval(config_dict['DOWNLOAD_STATUS_UPDATE_INTERVAL'], update_all_messages))
 
-def sendDmMessage(bot, message, dmMode, tag, isLeech=False):
+def sendDmMessage(bot, message, dmMode, isLeech=False):
     if dmMode == 'mirror' and isLeech or dmMode == 'leech' and not isLeech:
         return
     try:
@@ -213,7 +213,7 @@ def forcesub(bot, message, tag):
         btn = ButtonMaker()
         for key, value in join_button.items():
             btn.buildbutton(key, value)
-        return sendMessage(f'Dear {tag},\nPlease join our channel to use me!\nJoin And Try Again!\nThank You.', bot, message, btn.build_menu(2))
+        return sendMessage(f'Hey {tag}!\nPlease join our channel to use me!\nJoin And Try Again!\nThank You.', bot, message, btn.build_menu(2))
 
 def message_filter(bot, message, tag):
     if not config_dict['ENABLE_MESSAGE_FILTER']:
@@ -236,7 +236,7 @@ def message_filter(bot, message, tag):
 def chat_restrict(message):
     if not config_dict['ENABLE_CHAT_RESTRICT']:
         return
-    if not isAdmin(message):
+    if message.chat.type != message.chat.PRIVATE and not isAdmin(message):
         message.chat.restrict_member(message.from_user.id, ChatPermissions(), int(time() + 60))
 
 def delete_links(bot, message):

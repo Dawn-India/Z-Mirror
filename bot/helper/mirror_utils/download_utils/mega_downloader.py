@@ -139,7 +139,7 @@ class AsyncExecutor:
 def add_mega_download(mega_link, path, listener, name, from_queue=False):
     MEGA_API_KEY = config_dict['MEGA_API_KEY']
     executor = AsyncExecutor()
-    api = MegaApi(MEGA_API_KEY, None, None, 'mirror-leech-telegram-bot')
+    api = MegaApi(MEGA_API_KEY, None, None, 'z')
     folder_api = None
     mega_listener = MegaAppListener(executor.continue_event, listener)
     api.addListener(mega_listener)
@@ -149,7 +149,7 @@ def add_mega_download(mega_link, path, listener, name, from_queue=False):
         executor.do(api.getPublicNode, (mega_link,))
         node = mega_listener.public_node
     else:
-        folder_api = MegaApi(MEGA_API_KEY, None, None, 'mltb')
+        folder_api = MegaApi(MEGA_API_KEY, None, None, 'z')
         folder_api.addListener(mega_listener)
         executor.do(folder_api.loginToFolder, (mega_link,))
         node = folder_api.authorizeNode(mega_listener.node)

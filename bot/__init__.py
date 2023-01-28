@@ -333,7 +333,7 @@ if len(UPSTREAM_REPO) == 0:
 
 UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
 if len(UPSTREAM_BRANCH) == 0:
-    UPSTREAM_BRANCH = 'master'
+    UPSTREAM_BRANCH = ''
 
 STORAGE_THRESHOLD = environ.get('STORAGE_THRESHOLD', '')
 STORAGE_THRESHOLD = '' if len(STORAGE_THRESHOLD) == 0 else float(STORAGE_THRESHOLD)
@@ -520,6 +520,7 @@ run(["qbittorrent-nox", "-d", "--profile=."])
 if not path.exists('.netrc'):
     run(["touch", ".netrc"])
 run(["cp", ".netrc", "/root/.netrc"])
+run(["chmod", "600", "/root/.netrc"])
 run(["chmod", "600", ".netrc"])
 run(["chmod", "+x", "aria.sh"])
 run("./aria.sh", shell=True)
