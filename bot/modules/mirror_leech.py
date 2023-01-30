@@ -142,7 +142,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 reply_text = reply_to.text.split(maxsplit=1)[0].strip()
                 if is_url(reply_text) or is_magnet(reply_text):
                     link = reply_to.text.strip()
-            elif isinstance(file_, list) and not isClone:
+            elif isinstance(file_, list):
                 link = file_[-1].get_file().file_path
             elif not isQbit and file_.mime_type != "application/x-bittorrent" and not isClone:
                 if message.from_user.id in [1087968824, 136817688]:
@@ -184,9 +184,12 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 __run_multi()
                 return
             else:
-                if not isClone:
-                    tfile = True
-                    link = file_.get_file().file_path
+                tfile = True
+                link = file_.get_file().file_path
+    if isClone and not is_gdrive_link(link) and not is_Sharerlink(link) or (link.isdigit() and multi == 0):
+        msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
+        msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
+        return sendMessage(msg_, bot, message)
     if not is_url(link) and not is_magnet(link) or (link.isdigit() and multi == 0):
         help_msg = '''
 <code>/{cmd}</code> link |newname pswd: xx(zip/unzip)
@@ -221,14 +224,10 @@ Number should be always before |newname or pswd:
 2. You can't add this those options <b>|newname, pswd: and authorization</b> randomly. They should be arranged like example above, rename then pswd. Those options should be after the link if link along with the cmd and after any other option
 3. You can add this those options <b>d, s and multi</b> randomly. Ex: <code>/{cmd}</code> d:1:20 s 10 <b>or</b> <code>/{cmd}</code> s 10 d:0.5:100
 4. Commands that start with <b>qb</b> are ONLY for torrents.
-'''
+'''.format_map({'cmd': BotCommands.MirrorCommand[0]})
         delete_links(bot, message)
-        sendMessage(help_msg.format_map({'cmd': BotCommands.MirrorCommand[0]}), bot, message)
+        sendMessage(help_msg, bot, message)
         return
-    if isClone and not is_gdrive_link(link) and not is_Sharerlink(link):
-        msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
-        msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
-        return sendMessage(msg_, bot, message)
     if message.from_user.id in [1087968824, 136817688]:
         message.from_user.id = anno_checker(message)
         if not message.from_user.id:

@@ -88,7 +88,7 @@ def confirm_category(update, context):
             mode += ' as Unzip'
         listener.mode = mode
         del btn_listener[msg_id]
-        return editMessage("<b>Has been cancelled</b>", message)
+        return editMessage("<b>Skipped</b>", message)
     elif data[1] == 'done':
         query.answer()
         del btn_listener[msg_id]

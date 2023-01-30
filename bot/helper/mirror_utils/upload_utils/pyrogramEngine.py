@@ -15,7 +15,7 @@ from telegram import InputMediaVideo as ptbInputMediaVideo
 from tenacity import (RetryError, retry, retry_if_exception_type,
                       stop_after_attempt, wait_exponential)
 
-from bot import GLOBAL_EXTENSION_FILTER, app, config_dict, user_data
+from bot import GLOBAL_EXTENSION_FILTER, app, config_dict, user_data, IS_USER_SESSION
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from bot.helper.ext_utils.fs_utils import (clean_unwanted, get_media_info,
                                            get_media_streams, take_ss)
@@ -80,8 +80,13 @@ class TgUploader:
                     self.__upload_file(up_path, cap_mono)
                     if self.__is_cancelled:
                         return
+<<<<<<< HEAD
                     if not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_z"):
                             remove(up_path)
+=======
+                    if not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_mltb"):
+                        remove(up_path)
+>>>>>>> 52d0354 (Minor Update)
                     if not self.__is_corrupted and (not self.__listener.isPrivate or config_dict['DUMP_CHAT']):
                         self.__msgs_dict[self.__sent_msg.link] = file_
                     sleep(1)
@@ -95,6 +100,13 @@ class TgUploader:
             for subkey, msgs in list(value.items()):
                 if len(msgs) > 1:
                     self.__send_media_group(subkey, key, msgs)
+                elif self.__sent_DMmsg:
+                    sleep(1)
+                    __ptb = self.__sent_DMmsg.reply_copy(
+                    from_chat_id=self.__sent_msg.chat.id,
+                    quote=True,
+                    message_id=self.__sent_msg.id)
+                    self.__sent_DMmsg.message_id = __ptb['message_id']
         if self.__is_cancelled:
             return
         if self.__listener.seed and not self.__listener.newDir:
@@ -264,51 +276,46 @@ class TgUploader:
             self.__sent_msg = app.get_messages(self.__listener.message.from_user.id, self.__listener.dmMessage.message_id)
         else:
             self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
-        if (self.__listener.message.chat.type != 'private' and config_dict['DUMP_CHAT']) or not self.__listener.dmMessage:
+        if (not IS_USER_SESSION and self.__listener.message.chat.type != 'private' and config_dict['DUMP_CHAT']) or not self.__listener.dmMessage:
             self.__button = InlineKeyboardMarkup([[InlineKeyboardButton(text='Save Message', callback_data="save")]])
 
 
     def __get_input_media(self, subkey, key):
         rlist = []
+        ptblist = []
         for msg in self.__media_dict[key][subkey]:
             if key == 'videos':
                 input_media = InputMediaVideo(media=msg.video.file_id, caption=msg.caption)
+                ptbinput_media = ptbInputMediaVideo(media=msg.video.file_id, caption=msg.caption)
             else:
                 input_media = InputMediaDocument(media=msg.document.file_id, caption=msg.caption)
+                ptbinput_media = ptbInputMediaDocument(media=msg.document.file_id, caption=msg.caption)
             rlist.append(input_media)
-        return rlist
-
-    def __get_ptb_input_media(self, subkey, key):
-        rlist = []
-        for msg in self.__media_dict[key][subkey]:
-            if key == 'videos':
-                input_media = ptbInputMediaVideo(media=msg.video.file_id, caption=msg.caption)
-            else:
-                input_media = ptbInputMediaDocument(media=msg.document.file_id, caption=msg.caption)
-            rlist.append(input_media)
-        return rlist
+            ptblist.append(ptbinput_media)
+        return rlist, ptblist
 
     def __send_media_group(self, subkey, key, msgs):
+        pyromedia, ptbmdedia = self.__get_input_media(subkey, key)
         msgs_list = msgs[0].reply_to_message.reply_media_group(
-                            media=self.__get_input_media(subkey, key),
+                            media=pyromedia,
                             quote=True,
                             disable_notification=True)
         for msg in msgs:
             if msg.link in self.__msgs_dict:
                 del self.__msgs_dict[msg.link]
             msg.delete()
+        del self.__media_dict[key][subkey]
         if not self.__listener.isPrivate or config_dict['DUMP_CHAT']:
             for m in msgs_list:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
         if self.__sent_DMmsg:
             msgs_list = self.__sent_DMmsg.reply_media_group(
-                self.__get_ptb_input_media(subkey, key),
+                ptbmdedia,
                 quote=True,
                 disable_notification=True
             )
             self.__sent_DMmsg = msgs_list[-1]
-        del self.__media_dict[key][subkey]
 
     @property
     def speed(self):
