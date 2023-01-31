@@ -281,14 +281,6 @@ def get_readable_message():
             return _get_readable_message_btns(msg, bmsg)
         return msg + bmsg, button
 
-def _get_readable_message_btns(msg, bmsg):
-    buttons = ButtonMaker()
-    buttons.sbutton("PREV", "status pre")
-    buttons.sbutton(f"{PAGE_NO}/{PAGES}", str(THREE))
-    buttons.sbutton("NEXT", "status nex")
-    button = buttons.build_menu(3)
-    return msg + bmsg, button
-
 def get_category_btns(time_out, msg_id, c_index):
     text = '<b>Select the category where you want to upload</b>'
     text += f'\n<b>Upload</b>: to Drive in {CATEGORY_NAMES[c_index]} folder'
