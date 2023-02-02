@@ -80,13 +80,8 @@ class TgUploader:
                     self.__upload_file(up_path, cap_mono)
                     if self.__is_cancelled:
                         return
-<<<<<<< HEAD
                     if not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_z"):
                             remove(up_path)
-=======
-                    if not self.__listener.seed or self.__listener.newDir or dirpath.endswith("splited_files_mltb"):
-                        remove(up_path)
->>>>>>> 52d0354 (Minor Update)
                     if not self.__is_corrupted and (not self.__listener.isPrivate or config_dict['DUMP_CHAT']):
                         self.__msgs_dict[self.__sent_msg.link] = file_
                     sleep(1)
