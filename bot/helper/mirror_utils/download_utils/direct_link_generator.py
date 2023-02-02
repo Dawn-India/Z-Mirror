@@ -535,8 +535,6 @@ def sharer_scraper(url):
         return drive_link[0]
     else:
         raise DirectDownloadLinkException('ERROR: Drive Link not found')
-<<<<<<< HEAD
-=======
 
 def wetransfer(url):
     cget = create_scraper().request
@@ -610,4 +608,3 @@ def linkbox(url):
     name = quote(itemInfo["name"])
     raw = itemInfo['url'].split("/", 3)[-1]
     return f'https://wdl.nuplink.net/{raw}&filename={name}'
->>>>>>> 52d0354 (Minor Update)
