@@ -177,7 +177,7 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `GDRIVE_ID`: This is the Folder/TeamDrive ID of the Google Drive Folder or `root` to which you want to upload all the mirrors. Required for `Google Drive` upload. `Str`
 - `IS_TEAM_DRIVE`: Set `True` if uploading to TeamDrive. Default is `False`. `Bool`
 - `DOWNLOAD_DIR`: The path to the local folder where the downloads should be downloaded to. `Str`
-- `DOWNLOAD_STATUS_UPDATE_INTERVAL`: Time in seconds after which the progress/status message will be updated. Recommended `10` seconds at least. `Int`
+- `STATUS_UPDATE_INTERVAL`: Time in seconds after which the progress/status message will be updated. Recommended `10` seconds at least. `Int`
 - `AUTO_DELETE_MESSAGE_DURATION`: Interval of time (in seconds), after which the bot deletes it's message and command message which is expected to be viewed instantly. **NOTE**: Set to `-1` to disable auto message deletion. `Int`
 - `DATABASE_URL`: Your Mongo Database URL (Connection string). Follow this [Generate Database](#generate-database) to generate database. Data will be saved in Database: auth and sudo users, users settings including thumbnails for each user, rss data and incomplete tasks. **NOTE**: You can always edit all settings that saved in database from the official site -> (Browse collections). `Str`
 - `AUTHORIZED_CHATS`: Fill user_id and chat_id of groups/users you want to authorize. Separate them by space. `Int`
@@ -187,7 +187,7 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `INDEX_URL`: Refer to https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index. `Str`
 - `STATUS_LIMIT`: Limit the no. of tasks shown in status message with buttons. **NOTE**: Recommended limit is `4` tasks. `Int`
 - `STOP_DUPLICATE`: Bot will check file in Drive, if it is present in Drive, downloading or cloning will be stopped. (**NOTE**: File will be checked using filename not file hash, so this feature is not perfect yet). Default is `False`. `Bool`
-- `CMD_SUFFIX`: commands index number. This number will added at the end all commands. `Str`|`Int`
+- `CMD_SUFFIX`: Commands index number. This number will added at the end all commands. `Str`|`Int`
 - `TORRENT_TIMEOUT`: Timeout of dead torrents downloading with qBittorrent and Aria2c in seconds. `Int`
 - `EXTENSION_FILTER`: File extensions that won't upload/clone. Separate them by space. `Str`
 - `INCOMPLETE_TASK_NOTIFIER`: Get incomplete task messages after restart. Require database and superGroup. Default is `False`. `Bool`
@@ -374,6 +374,14 @@ sudo docker container prune
 sudo docker image prune -a
 ```
 5. Check the number of processing units of your machine with `nproc` cmd and times it by 4, then edit `AsyncIOThreadsCount` in qBittorrent.conf.
+
+------
+
+## Deploy on Railway
+
+- Fill mandatory environment variables* and click on deploy.
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://github.com/Dawn-India/Z-Mirror/blob/railway/README.md#deploy-on-railway)
 
 ------
 
