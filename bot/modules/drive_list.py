@@ -5,6 +5,7 @@ from telegram.ext import CallbackQueryHandler, CommandHandler
 
 from bot import LOGGER, dispatcher
 from bot.helper.ext_utils.bot_utils import get_readable_time
+from bot.helper.ext_utils.rate_limiter import ratelimiter
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -24,6 +25,7 @@ def common_btn(isRecur, msg_id):
     buttons.sbutton("Cancel", f"types cancel {msg_id}")
     return buttons.build_menu(3)
 
+@ratelimiter
 def list_buttons(update, context):
     message = update.message
     if message.from_user.id in [1087968824, 136817688]:
@@ -40,6 +42,7 @@ def list_buttons(update, context):
     list_listener[msg_id] = [user_id, query, isRecur]
     sendMessage('Choose option to list.', context.bot, message, button)
 
+@ratelimiter
 def select_type(update, context):
     query = update.callback_query
     user_id = query.from_user.id

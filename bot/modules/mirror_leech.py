@@ -9,13 +9,15 @@ from requests import request
 from telegram.ext import CommandHandler
 
 from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_USER_SESSION, LOGGER,
-                 config_dict, dispatcher)
+                 categories, config_dict, dispatcher)
 from bot.helper.ext_utils.bot_utils import (check_user_tasks, get_content_type,
-                                            is_gdrive_link, is_magnet, is_Sharerlink,
-                                            is_mega_link, is_url)
+                                            is_gdrive_link, is_magnet,
+                                            is_mega_link, is_Sharerlink,
+                                            is_url)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.z_utils import extract_link
+from bot.helper.ext_utils.rate_limiter import ratelimiter
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
 from bot.helper.mirror_utils.download_utils.clonner import start_clone
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
@@ -23,13 +25,14 @@ from bot.helper.mirror_utils.download_utils.gd_downloader import add_gd_download
 from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
 from bot.helper.mirror_utils.download_utils.qbit_downloader import add_qb_torrent
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
-                                                      chat_restrict,
                                                       delete_links,
                                                       editMessage, forcesub,
                                                       isAdmin, message_filter,
+                                                      open_category_btns,
                                                       sendDmMessage,
                                                       sendLogMessage,
                                                       sendMessage)
@@ -37,9 +40,6 @@ from bot.modules.listener import MirrorLeechListener
 
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, sameDir={}, isClone=False):
-    if not isLeech and not config_dict['GDRIVE_ID']:
-        sendMessage('GDRIVE_ID not Provided!', bot, message)
-        return
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     index = 1
@@ -52,10 +52,10 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     folder_name = ''
     tfile = False
     raw_url = None
-    c_index = 0
-    maxtask = config_dict['USER_MAX_TASKS']
+    drive_id = None
+    index_link = None
     if len(message_args) > 1:
-        args = mesg[0].split(maxsplit=4)
+        args = mesg[0].split(maxsplit=5)
         for x in args:
             x = x.strip()
             if x in ['|', 'pswd:']:
@@ -83,6 +83,18 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                     if not sameDir:
                         sameDir = set()
                     sameDir.add(message.message_id)
+            elif x.startswith('id:'):
+                index += 1
+                drive_id = x.split(':', 1)
+                if len(drive_id) > 1:
+                    drive_id = drive_id[1]
+                    if is_gdrive_link(drive_id):
+                        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
+            elif x.startswith('index:'):
+                index += 1
+                index_link = x.split(':', 1)
+                if len(index_link) > 1 and is_url(index_link[1]):
+                    index_link = index_link[1]
         if multi == 0:
             message_args = mesg[0].split(maxsplit=index)
             if len(message_args) > index:
@@ -166,6 +178,13 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                     if isLeech and config_dict['DISABLE_LEECH']:
                         delete_links(bot, message)
                         return sendMessage('Locked!', bot, message)
+                    if not isLeech and not drive_id and len(categories) > 1:
+                        drive_id, index_link = open_category_btns(message)
+                    if not isLeech and not config_dict['GDRIVE_ID'] and not drive_id:
+                        sendMessage('GDRIVE_ID not Provided!', bot, message)
+                        return
+                    if not isLeech and drive_id and not GoogleDriveHelper().getFolderData(drive_id):
+                        return sendMessage("Google Drive id validation failed!!", bot, message)
                 if (dmMode:=config_dict['DM_MODE']) and message.chat.type == message.chat.SUPERGROUP:
                     if isLeech and IS_USER_SESSION and not config_dict['DUMP_CHAT']:
                         return sendMessage('DM_MODE and User Session need DUMP_CHAT', bot, message)
@@ -178,8 +197,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 listener = MirrorLeechListener(bot, message,
                                 isZip, extract, isQbit, isLeech, isClone,
                                 pswd, tag, select, seed, sameDir,
-                                raw_url, c_index, dmMessage, logMessage)
-                chat_restrict(message)
+                                raw_url, drive_id, index_link, dmMessage, logMessage)
                 Thread(target=TelegramDownloadHelper(listener).add_download, args=(message, f'{dl_path}/', name)).start()
                 __run_multi()
                 return
@@ -198,8 +216,13 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 <code>/{cmd}</code> |newname pswd: xx(zip/unzip)
 
 <b>Multi links within same upload directory only by replying to first link/file:</b>
-<code>/cmd</code> 10(number of links/files) m:folder_name
+<code>/{cmd}</code> 10(number of links/files) m:folder_name
 Number and m:folder_name should be always before |newname or pswd:
+
+<b>Upload Custom Drive</b>
+<code>/{cmd}</code> <b>id:</b><code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b><code>https://anything.in/0:</code> link or by replying to file/link
+drive_id must be folder id and index must be url else it will not accept
+This options  should be always before |newname or pswd:
 
 <b>Direct link authorization:</b>
 <code>/{cmd}</code> link |newname pswd: xx(zip/unzip)
@@ -252,6 +275,13 @@ Number should be always before |newname or pswd:
         if isLeech and config_dict['DISABLE_LEECH']:
             delete_links(bot, message)
             return sendMessage('Locked!', bot, message)
+    if not isLeech and not drive_id and len(categories) > 1:
+        drive_id, index_link = open_category_btns(message)
+    if not isLeech and not config_dict['GDRIVE_ID'] and not drive_id:
+        sendMessage('GDRIVE_ID not Provided!', bot, message)
+        return
+    if not isLeech and drive_id and not GoogleDriveHelper().getFolderData(drive_id):
+        return sendMessage("Google Drive id validation failed!!", bot, message)
     if (dmMode:=config_dict['DM_MODE']) and message.chat.type == message.chat.SUPERGROUP:
         if isLeech and IS_USER_SESSION and not config_dict['DUMP_CHAT']:
             return sendMessage('DM_MODE and User Session need DUMP_CHAT', bot, message)
@@ -264,11 +294,9 @@ Number should be always before |newname or pswd:
     listener = MirrorLeechListener(bot, message,
                                 isZip, extract, isQbit, isLeech, isClone,
                                 pswd, tag, select, seed, sameDir,
-                                raw_url, c_index, dmMessage, logMessage)
-    chat_restrict(message)
+                                raw_url, drive_id, index_link, dmMessage, logMessage)
     LOGGER.info(f"{link} added by: {message.from_user.id}")
-    if not is_mega_link(link) and not isQbit and not is_magnet(link) \
-        and not is_gdrive_link(link) and not link.endswith('.torrent'):
+    if not is_mega_link(link) and not isQbit and not is_magnet(link)     and not is_gdrive_link(link) and not link.endswith('.torrent'):
         content_type = get_content_type(link)
         if content_type is None or match(r'text/html|text/plain', content_type):
             _tempmsg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
@@ -344,46 +372,59 @@ Number should be always before |newname or pswd:
         Thread(target=add_aria2c_download, args=(link, dl_path, listener, name, auth, ratio, seed_time)).start()
     __run_multi()
 
-
+@ratelimiter
 def mirror(update, context):
     _mirror_leech(context.bot, update.message)
 
+@ratelimiter
 def mirror(update, context):
     _mirror_leech(context.bot, update.message)
 
+@ratelimiter
 def unzip_mirror(update, context):
     _mirror_leech(context.bot, update.message, extract=True)
 
+@ratelimiter
 def zip_mirror(update, context):
     _mirror_leech(context.bot, update.message, True)
 
+@ratelimiter
 def qb_mirror(update, context):
     _mirror_leech(context.bot, update.message, isQbit=True)
 
+@ratelimiter
 def qb_unzip_mirror(update, context):
     _mirror_leech(context.bot, update.message, extract=True, isQbit=True)
 
+@ratelimiter
 def qb_zip_mirror(update, context):
     _mirror_leech(context.bot, update.message, True, isQbit=True)
 
+@ratelimiter
 def leech(update, context):
     _mirror_leech(context.bot, update.message, isLeech=True)
 
+@ratelimiter
 def unzip_leech(update, context):
     _mirror_leech(context.bot, update.message, extract=True, isLeech=True)
 
+@ratelimiter
 def zip_leech(update, context):
     _mirror_leech(context.bot, update.message, True, isLeech=True)
 
+@ratelimiter
 def qb_leech(update, context):
     _mirror_leech(context.bot, update.message, isQbit=True, isLeech=True)
 
+@ratelimiter
 def qb_unzip_leech(update, context):
     _mirror_leech(context.bot, update.message, extract=True, isQbit=True, isLeech=True)
 
+@ratelimiter
 def qb_zip_leech(update, context):
     _mirror_leech(context.bot, update.message, True, isQbit=True, isLeech=True)
 
+@ratelimiter
 def cloneNode(update, context):
     _mirror_leech(context.bot, update.message, isClone=True)
 

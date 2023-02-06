@@ -6,13 +6,14 @@ from telegram.ext import CallbackQueryHandler, CommandHandler
 from bot import dispatcher, download_dict, download_dict_lock
 from bot.helper.ext_utils.bot_utils import (MirrorStatus, getAllDownload,
                                             getDownloadByGid)
+from bot.helper.ext_utils.rate_limiter import ratelimiter
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       editMessage, sendMessage)
 
-
+@ratelimiter
 def cancel_mirror(update, context):
     message = update.message
     if message.from_user.id in [1087968824, 136817688]:
@@ -82,6 +83,7 @@ def cancel_all(status, info):
     else:
         editMessage(f"{user_id} Don't have any active task!", msg)
 
+@ratelimiter
 def cancell_all_buttons(update, context):
     message = update.message
     with download_dict_lock:

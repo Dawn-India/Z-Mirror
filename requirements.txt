@@ -17,6 +17,7 @@ playwright
 psutil
 pybase64
 pymongo
+pyrate_limiter
 Pyrogram==2.0.66
 python-dotenv
 python-magic

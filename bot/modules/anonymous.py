@@ -1,7 +1,8 @@
 from telegram.ext import CallbackQueryHandler
 
-from bot import btn_listener, dispatcher, LOGGER
-from bot.helper.telegram_helper.message_utils import editMessage, isAdmin, deleteMessage
+from bot import LOGGER, btn_listener, dispatcher
+from bot.helper.telegram_helper.message_utils import (deleteMessage,
+                                                      editMessage, isAdmin)
 
 
 def verifyAnno(update, context):
