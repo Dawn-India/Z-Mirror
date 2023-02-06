@@ -17,8 +17,7 @@ from requests.utils import quote as rquote
 from tenacity import (RetryError, retry, retry_if_exception_type,
                       stop_after_attempt, wait_exponential)
 
-from bot import (DRIVES_IDS, DRIVES_NAMES, GLOBAL_EXTENSION_FILTER, INDEX_URLS,
-                 SHORTENERES, config_dict)
+from bot import GLOBAL_EXTENSION_FILTER, SHORTENERES, config_dict, list_drives
 from bot.helper.ext_utils.bot_utils import (extra_btns, get_readable_file_size,
                                             setInterval)
 from bot.helper.ext_utils.fs_utils import get_mime_type
@@ -119,7 +118,7 @@ class GoogleDriveHelper:
         self.__service = self.__authorize()
 
     @staticmethod
-    def __getIdFromUrl(link: str):
+    def getIdFromUrl(link: str):
         if "folders" in link or "file" in link:
             regex = r"https:\/\/drive\.google\.com\/(?:drive(.*?)\/folders\/|file(.*?)?\/d\/)([-\w]+)"
             res = re_search(regex,link)
@@ -148,6 +147,16 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
+    def getFolderData(self, file_id):
+        try:
+            meta = self.__service.files().get(fileId=file_id, supportsAllDrives=True).execute()
+            if meta.get('mimeType', '') == self.__G_DRIVE_DIR_MIME_TYPE:
+                return meta.get('name')
+        except:
+            return
+
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
+           retry=retry_if_exception_type(Exception))
     def __getFilesByFolderId(self, folder_id):
         page_token = None
         files = []
@@ -172,7 +181,7 @@ class GoogleDriveHelper:
 
     def deletefile(self, link: str):
         try:
-            file_id = self.__getIdFromUrl(link)
+            file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             return "Google Drive ID could not be found in the provided link"
         msg = ''
@@ -203,7 +212,8 @@ class GoogleDriveHelper:
         try:
             if ospath.isfile(file_path):
                 mime_type = get_mime_type(file_path)
-                link = self.__upload_file(file_path, file_name, mime_type, gdrive_id)
+                dir_id = gdrive_id
+                link = self.__upload_file(file_path, file_name, mime_type, dir_id)
                 if self.__is_cancelled:
                     return
                 if link is None:
@@ -235,7 +245,7 @@ class GoogleDriveHelper:
                 return
             elif self.__is_errored:
                 return
-        self.__listener.onUploadComplete(link, size, self.__total_files, self.__total_folders, mime_type, self.name)
+        self.__listener.onUploadComplete(link, size, self.__total_files, self.__total_folders, mime_type, self.name, dir_id)
 
     def __upload_dir(self, input_directory, dest_id):
         list_dirs = listdir(input_directory)
@@ -315,10 +325,7 @@ class GoogleDriveHelper:
             except HttpError as err:
                 if err.resp.get('content-type', '').startswith('application/json'):
                     reason = eval(err.content).get('error').get('errors')[0].get('reason')
-                    if reason not in [
-                        'userRateLimitExceeded',
-                        'dailyLimitExceeded',
-                    ]:
+                    if reason not in ['userRateLimitExceeded', 'dailyLimitExceeded']:
                         raise err
                     if config_dict['USE_SERVICE_ACCOUNTS']:
                         if self.__sa_count >= SERVICE_ACCOUNTS_NUMBER:
@@ -354,7 +361,7 @@ class GoogleDriveHelper:
         self.__total_files = 0
         self.__total_folders = 0
         try:
-            file_id = self.__getIdFromUrl(link)
+            file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             return self.__listener.onDownloadError("Google Drive ID could not be found in the provided link")
         LOGGER.info(f"File ID: {file_id}")
@@ -372,7 +379,8 @@ class GoogleDriveHelper:
                 size = get_readable_file_size(self.transferred_size)
                 mime_type = "Folder"
             else:
-                file = self.__copyFile(meta.get('id'), gdrive_id)
+                dir_id = gdrive_id
+                file = self.__copyFile(meta.get('id'), dir_id)
                 durl = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))
                 if mime_type is None:
                     mime_type = 'File'
@@ -392,7 +400,7 @@ class GoogleDriveHelper:
             else:
                 self.__listener.onDownloadError(f"Error.\n{err}")
             return
-        return self.__listener.onUploadComplete(durl, size, self.__total_files, self.__total_folders, mime_type, meta.get("name"))
+        return self.__listener.onUploadComplete(durl, size, self.__total_files, self.__total_folders, mime_type, meta.get("name"), dir_id)
 
     def __cloneFolder(self, name, local_path, folder_id, dest_id):
         LOGGER.info(f"Syncing: {local_path}")
@@ -515,10 +523,12 @@ class GoogleDriveHelper:
         contents_count = 0
         telegraph_content = []
         Title = False
-        if len(DRIVES_IDS) > 1:
+        if len(list_drives) > 1:
             if token_service := self.__alt_authorize():
                 self.__service = token_service
-        for drive_name, dir_id, index_url in zip(DRIVES_NAMES, DRIVES_IDS, INDEX_URLS):
+        for drive_name, drive_dict in list_drives.items():
+            dir_id = drive_dict['drive_id']
+            index_url = drive_dict['index_link']
             isRecur = False if isRecursive and len(dir_id) > 23 else isRecursive
             response = self.__drive_query(dir_id, fileName, stopDup, isRecur, itemType)
             if not response["files"]:
@@ -604,7 +614,7 @@ class GoogleDriveHelper:
 
     def count(self, link):
         try:
-            file_id = self.__getIdFromUrl(link)
+            file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             return "Google Drive ID could not be found in the provided link"
         msg = ""
@@ -667,7 +677,7 @@ class GoogleDriveHelper:
 
     def helper(self, link):
         try:
-            file_id = self.__getIdFromUrl(link)
+            file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             msg = "Google Drive ID could not be found in the provided link"
             return msg, "", "", ""
@@ -700,7 +710,7 @@ class GoogleDriveHelper:
 
     def download(self, link):
         self.__is_downloading = True
-        file_id = self.__getIdFromUrl(link)
+        file_id = self.getIdFromUrl(link)
         self.__updater = setInterval(self.__update_interval, self._progress)
         try:
             meta = self.__getFileMetadata(file_id)

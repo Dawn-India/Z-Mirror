@@ -5,21 +5,24 @@ from time import sleep
 from requests import request
 from telegram.ext import CallbackQueryHandler, CommandHandler
 
-from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_USER_SESSION,
-                 LOGGER, config_dict, dispatcher, user_data)
+from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_USER_SESSION, LOGGER,
+                 categories, config_dict, dispatcher, user_data)
 from bot.helper.ext_utils.bot_utils import (check_user_tasks,
-                                            get_readable_file_size, is_url)
+                                            get_readable_file_size,
+                                            is_gdrive_link, is_url)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.z_utils import extract_link
+from bot.helper.ext_utils.rate_limiter import ratelimiter
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
-                                                      chat_restrict,
                                                       delete_links,
                                                       editMessage, forcesub,
                                                       isAdmin, message_filter,
+                                                      open_category_btns,
                                                       sendDmMessage,
                                                       sendLogMessage,
                                                       sendMessage)
@@ -28,9 +31,6 @@ from bot.modules.listener import MirrorLeechListener
 listener_dict = {}
 
 def _ytdl(bot, message, isZip=False, isLeech=False, sameDir={}):
-    if not isLeech and not config_dict['GDRIVE_ID']:
-        sendMessage('GDRIVE_ID not Provided!', bot, message)
-        return
     mssg = message.text
     msg_id = message.message_id
     qual = ''
@@ -39,9 +39,10 @@ def _ytdl(bot, message, isZip=False, isLeech=False, sameDir={}):
     index = 1
     link = ''
     folder_name = ''
-    c_index = 0
     raw_url = None
-    args = mssg.split(maxsplit=3)
+    args = mssg.split(maxsplit=5)
+    drive_id = None
+    index_link = None
     if len(args) > 1:
         for x in args:
             x = x.strip()
@@ -60,6 +61,18 @@ def _ytdl(bot, message, isZip=False, isLeech=False, sameDir={}):
                     if not sameDir:
                         sameDir = set()
                     sameDir.add(message.message_id)
+            elif x.startswith('id:'):
+                index += 1
+                drive_id = x.split(':', 1)
+                if len(drive_id) > 1:
+                    drive_id = drive_id[1]
+                    if is_gdrive_link(drive_id):
+                        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
+            elif x.startswith('index:'):
+                index += 1
+                index_link = x.split(':', 1)
+                if len(index_link) > 1 and is_url(index_link[1]):
+                    index_link = index_link[1]
         if multi == 0:
             args = mssg.split(maxsplit=index)
             if len(args) > index:
@@ -174,6 +187,15 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
         if isLeech and config_dict['DISABLE_LEECH']:
             delete_links(bot, message)
             return sendMessage('Locked!', bot, message)
+
+    if not isLeech and not drive_id and len(categories) > 1:
+        drive_id, index_link = open_category_btns(message)
+    if not isLeech and not config_dict['GDRIVE_ID'] and not drive_id:
+        sendMessage('GDRIVE_ID not Provided!', bot, message)
+        return
+    if not isLeech and drive_id and not GoogleDriveHelper().getFolderData(drive_id):
+        return sendMessage("Google Drive id validation failed!!", bot, message)
+
     if (dmMode:=config_dict['DM_MODE']) and message.chat.type == message.chat.SUPERGROUP:
         if isLeech and IS_USER_SESSION and not config_dict['DUMP_CHAT']:
             return sendMessage('DM_MODE and User Session need DUMP_CHAT', bot, message)
@@ -183,10 +205,9 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
     else:
         dmMessage = None
     logMessage = sendLogMessage(bot, message, link, tag)
-    chat_restrict(message)
     listener = MirrorLeechListener(bot, message, isZip, isLeech=isLeech, pswd=pswd,
-                                tag=tag, sameDir=sameDir, raw_url=raw_url, c_index=c_index,
-                                dmMessage=dmMessage, logMessage=logMessage)
+                                tag=tag, sameDir=sameDir, raw_url=raw_url, drive_id=drive_id,
+                                index_link=index_link, dmMessage=dmMessage, logMessage=logMessage)
     if 'mdisk.me' in link:
         name, link = _mdisk(link, name)
     ydl = YoutubeDLHelper(listener)
@@ -319,6 +340,7 @@ def _mp3_subbuttons(task_id, msg, playlist=False):
     SUBBUTTONS = buttons.build_menu(2)
     editMessage(f"Choose Audio{i} Bitrate:", msg, SUBBUTTONS)
 
+@ratelimiter
 def select_format(update, context):
     query = update.callback_query
     user_id = query.from_user.id
@@ -394,16 +416,19 @@ def _auto_cancel(msg, task_id):
     del listener_dict[task_id]
     editMessage('Timed out! Task has been cancelled.', msg)
 
-
+@ratelimiter
 def ytdl(update, context):
     _ytdl(context.bot, update.message)
 
+@ratelimiter
 def ytdlZip(update, context):
     _ytdl(context.bot, update.message, True)
 
+@ratelimiter
 def ytdlleech(update, context):
     _ytdl(context.bot, update.message, isLeech=True)
 
+@ratelimiter
 def ytdlZipleech(update, context):
     _ytdl(context.bot, update.message, True, True)
 

@@ -161,7 +161,7 @@ def add_mega_download(mega_link, path, listener, name, from_queue=False):
             folder_api.removeListener(mega_listener)
         return
     mname = name or node.getName()
-    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech and not listener.select:
         LOGGER.info('Checking File/Folder if already in Drive')
         if listener.isZip:
             mname = f"{mname}.zip"

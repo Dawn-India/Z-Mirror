@@ -9,6 +9,7 @@ from bot import (DOWNLOAD_DIR, Interval, botStartTime, config_dict, dispatcher,
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
                                             get_readable_time, new_thread,
                                             setInterval, turn)
+from bot.helper.ext_utils.rate_limiter import ratelimiter
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (auto_delete_message,
@@ -18,6 +19,7 @@ from bot.helper.telegram_helper.message_utils import (auto_delete_message,
                                                       update_all_messages)
 
 
+@ratelimiter
 def mirror_status(update, context):
     with download_dict_lock:
         count = len(download_dict)
@@ -37,7 +39,7 @@ def mirror_status(update, context):
                 Interval[0].cancel()
                 Interval.clear()
                 Interval.append(setInterval(config_dict['DOWNLOAD_STATUS_UPDATE_INTERVAL'], update_all_messages))
-
+@ratelimiter
 @new_thread
 def status_pages(update, context):
     query = update.callback_query

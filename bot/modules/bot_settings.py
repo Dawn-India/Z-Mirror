@@ -7,13 +7,12 @@ from dotenv import load_dotenv
 from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
                           MessageHandler)
 
-from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_IDS, CATEGORY_INDEXES,
-                 CATEGORY_NAMES, DATABASE_URL, DRIVES_IDS, DRIVES_NAMES,
-                 GLOBAL_EXTENSION_FILTER, INDEX_URLS, IS_PREMIUM_USER, LOGGER,
+from bot import (BUTTON_NAMES, BUTTON_URLS, DATABASE_URL,
+                 GLOBAL_EXTENSION_FILTER, IS_PREMIUM_USER, LOGGER,
                  MAX_SPLIT_SIZE, SHORTENER_APIS, SHORTENERES, Interval, aria2,
-                 aria2_options, aria2c_global, config_dict, dispatcher,
-                 download_dict, get_client, qbit_options,
-                 status_reply_dict_lock, user_data)
+                 aria2_options, aria2c_global, categories, config_dict,
+                 dispatcher, download_dict, get_client, list_drives,
+                 qbit_options, status_reply_dict_lock, user_data)
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread,
                                             set_commands, setInterval)
 from bot.helper.ext_utils.db_handler import DbManger
@@ -297,9 +296,8 @@ def load_config():
     MAX_PLAYLIST = environ.get('MAX_PLAYLIST', '')
     MAX_PLAYLIST = '' if len(MAX_PLAYLIST) == 0 else int(MAX_PLAYLIST)
 
-
-    ENABLE_CHAT_RESTRICT = environ.get('ENABLE_CHAT_RESTRICT', '')
-    ENABLE_CHAT_RESTRICT = ENABLE_CHAT_RESTRICT.lower() == 'true'
+    ENABLE_RATE_LIMIT = environ.get('ENABLE_RATE_LIMIT', '')
+    ENABLE_RATE_LIMIT = ENABLE_RATE_LIMIT.lower() == 'true'
 
     ENABLE_MESSAGE_FILTER = environ.get('ENABLE_MESSAGE_FILTER', '')
     ENABLE_MESSAGE_FILTER = ENABLE_MESSAGE_FILTER.lower() == 'true'
@@ -329,116 +327,114 @@ def load_config():
     if len(FSUB_IDS) == 0:
         FSUB_IDS = ''
 
-    DRIVES_NAMES.clear()
-    DRIVES_IDS.clear()
-    INDEX_URLS.clear()
-    CATEGORY_NAMES.clear()
-    CATEGORY_IDS.clear()
-    CATEGORY_INDEXES.clear()
+    list_drives.clear()
+    categories.clear()
 
     if GDRIVE_ID:
-        DRIVES_NAMES.append("Main")
-        DRIVES_IDS.append(GDRIVE_ID)
-        INDEX_URLS.append(INDEX_URL)
-        CATEGORY_NAMES.append("Root")
-        CATEGORY_IDS.append(GDRIVE_ID)
-        CATEGORY_INDEXES.append(INDEX_URL)
+        list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
+        categories['Root'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
 
     if path.exists('list_drives.txt'):
         with open('list_drives.txt', 'r+') as f:
             lines = f.readlines()
             for line in lines:
                 temp = line.strip().split()
-                DRIVES_IDS.append(temp[1])
-                DRIVES_NAMES.append(temp[0].replace("_", " "))
+                name = temp[0].replace("_", " ")
+                if name.casefold() == "Main":
+                    name = "Main Custom"
+                tempdict = {}
+                tempdict['drive_id'] = temp[1]
                 if len(temp) > 2:
-                    INDEX_URLS.append(temp[2])
+                    tempdict['index_link'] = temp[2]
                 else:
-                    INDEX_URLS.append('')
-
-
+                    tempdict['index_link'] = ''
+                list_drives[name] = tempdict
 
     if path.exists('categories.txt'):
         with open('categories.txt', 'r+') as f:
             lines = f.readlines()
             for line in lines:
                 temp = line.strip().split()
-                CATEGORY_IDS.append(temp[1])
-                CATEGORY_NAMES.append(temp[0].replace("_", " "))
+                name = temp[0].replace("_", " ")
+                if name.casefold() == "Root":
+                    name = "Root Custom"
+                tempdict = {}
+                tempdict['drive_id'] = temp[1]
                 if len(temp) > 2:
-                    CATEGORY_INDEXES.append(temp[2])
+                    tempdict['index_link'] = temp[2]
                 else:
-                    CATEGORY_INDEXES.append('')
+                    tempdict['index_link'] = ''
+                categories[name] = tempdict
 
     config_dict.update({'AS_DOCUMENT': AS_DOCUMENT,
-                        'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
-                        'FSUB_IDS': FSUB_IDS,
-                        'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
-                        'BASE_URL': BASE_URL,
-                        'BOT_TOKEN': BOT_TOKEN,
-                        'CMD_SUFFIX': CMD_SUFFIX,
-                        'DATABASE_URL': DATABASE_URL,
-                        'DOWNLOAD_DIR': DOWNLOAD_DIR,
-                        'DUMP_CHAT': DUMP_CHAT,
-                        'LOG_CHAT': LOG_CHAT,
-                        'EQUAL_SPLITS': EQUAL_SPLITS,
-                        'EXTENSION_FILTER': EXTENSION_FILTER,
-                        'GDRIVE_ID': GDRIVE_ID,
-                        'IGNORE_PENDING_REQUESTS': IGNORE_PENDING_REQUESTS,
-                        'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
-                        'INDEX_URL': INDEX_URL,
-                        'IS_TEAM_DRIVE': IS_TEAM_DRIVE,
-                        'LEECH_FILENAME_PREFIX': LEECH_FILENAME_PREFIX,
-                        'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
-                        'MEDIA_GROUP': MEDIA_GROUP,
-                        'MEGA_API_KEY': MEGA_API_KEY,
-                        'MEGA_EMAIL_ID': MEGA_EMAIL_ID,
-                        'MEGA_PASSWORD': MEGA_PASSWORD,
-                        'OWNER_ID': OWNER_ID,
-                        'QUEUE_ALL': QUEUE_ALL,
-                        'QUEUE_DOWNLOAD': QUEUE_DOWNLOAD,
-                        'QUEUE_UPLOAD': QUEUE_UPLOAD,
-                        'RSS_USER_SESSION_STRING': RSS_USER_SESSION_STRING,
-                        'RSS_CHAT_ID': RSS_CHAT_ID,
-                        'RSS_COMMAND': RSS_COMMAND,
-                        'RSS_DELAY': RSS_DELAY,
-                        'SEARCH_API_LINK': SEARCH_API_LINK,
-                        'SEARCH_LIMIT': SEARCH_LIMIT,
-                        'SEARCH_PLUGINS': SEARCH_PLUGINS,
-                        'SERVER_PORT': SERVER_PORT,
-                        'STATUS_LIMIT': STATUS_LIMIT,
-                        'USER_MAX_TASKS': USER_MAX_TASKS,
-                        'DOWNLOAD_STATUS_UPDATE_INTERVAL': DOWNLOAD_STATUS_UPDATE_INTERVAL,
-                        'STOP_DUPLICATE': STOP_DUPLICATE,
-                        'SUDO_USERS': SUDO_USERS,
-                        'TELEGRAM_API': TELEGRAM_API,
-                        'TELEGRAM_HASH': TELEGRAM_HASH,
-                        'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
-                        'UPSTREAM_REPO': UPSTREAM_REPO,
-                        'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
-                        'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
-                        'USER_SESSION_STRING': USER_SESSION_STRING,
-                        'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
-                        'VIEW_LINK': VIEW_LINK,
-                        'WEB_PINCODE': WEB_PINCODE,
-                        'YT_DLP_QUALITY': YT_DLP_QUALITY,
-                        'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
-                        'TORRENT_LIMIT': TORRENT_LIMIT,
-                        'DIRECT_LIMIT': DIRECT_LIMIT,
-                        'YTDLP_LIMIT': YTDLP_LIMIT,
-                        'GDRIVE_LIMIT': GDRIVE_LIMIT,
-                        'CLONE_LIMIT': CLONE_LIMIT,
-                        'MEGA_LIMIT': MEGA_LIMIT,
-                        'LEECH_LIMIT': LEECH_LIMIT,
-                        'MAX_PLAYLIST': MAX_PLAYLIST,
-                        'ENABLE_CHAT_RESTRICT': ENABLE_CHAT_RESTRICT,
-                        'ENABLE_MESSAGE_FILTER': ENABLE_MESSAGE_FILTER,
-                        'STOP_DUPLICATE_TASKS': STOP_DUPLICATE_TASKS,
-                        'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
-                        'SET_COMMANDS': SET_COMMANDS,
-                        'DISABLE_LEECH': DISABLE_LEECH,
-                        'DM_MODE': DM_MODE,
-                        'DELETE_LINKS': DELETE_LINKS})
+                   'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
+                   'FSUB_IDS': FSUB_IDS,
+                   'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
+                   'BASE_URL': BASE_URL,
+                   'BOT_TOKEN': BOT_TOKEN,
+                   'CMD_SUFFIX': CMD_SUFFIX,
+                   'DATABASE_URL': DATABASE_URL,
+                   'DOWNLOAD_DIR': DOWNLOAD_DIR,
+                   'DUMP_CHAT': DUMP_CHAT,
+                   'LOG_CHAT': LOG_CHAT,
+                   'EQUAL_SPLITS': EQUAL_SPLITS,
+                   'EXTENSION_FILTER': EXTENSION_FILTER,
+                   'GDRIVE_ID': GDRIVE_ID,
+                   'IGNORE_PENDING_REQUESTS': IGNORE_PENDING_REQUESTS,
+                   'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
+                   'INDEX_URL': INDEX_URL,
+                   'IS_TEAM_DRIVE': IS_TEAM_DRIVE,
+                   'LEECH_FILENAME_PREFIX': LEECH_FILENAME_PREFIX,
+                   'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
+                   'MEDIA_GROUP': MEDIA_GROUP,
+                   'MEGA_API_KEY': MEGA_API_KEY,
+                   'MEGA_EMAIL_ID': MEGA_EMAIL_ID,
+                   'MEGA_PASSWORD': MEGA_PASSWORD,
+                   'OWNER_ID': OWNER_ID,
+                   'QUEUE_ALL': QUEUE_ALL,
+                   'QUEUE_DOWNLOAD': QUEUE_DOWNLOAD,
+                   'QUEUE_UPLOAD': QUEUE_UPLOAD,
+                   'RSS_USER_SESSION_STRING': RSS_USER_SESSION_STRING,
+                   'RSS_CHAT_ID': RSS_CHAT_ID,
+                   'RSS_COMMAND': RSS_COMMAND,
+                   'RSS_DELAY': RSS_DELAY,
+                   'SEARCH_API_LINK': SEARCH_API_LINK,
+                   'SEARCH_LIMIT': SEARCH_LIMIT,
+                   'SEARCH_PLUGINS': SEARCH_PLUGINS,
+                   'SERVER_PORT': SERVER_PORT,
+                   'STATUS_LIMIT': STATUS_LIMIT,
+                   'USER_MAX_TASKS': USER_MAX_TASKS,
+                   'DOWNLOAD_STATUS_UPDATE_INTERVAL': DOWNLOAD_STATUS_UPDATE_INTERVAL,
+                   'STOP_DUPLICATE': STOP_DUPLICATE,
+                   'SUDO_USERS': SUDO_USERS,
+                   'TELEGRAM_API': TELEGRAM_API,
+                   'TELEGRAM_HASH': TELEGRAM_HASH,
+                   'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
+                   'UPSTREAM_REPO': UPSTREAM_REPO,
+                   'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
+                   'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
+                   'USER_SESSION_STRING': USER_SESSION_STRING,
+                   'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
+                   'VIEW_LINK': VIEW_LINK,
+                   'WEB_PINCODE': WEB_PINCODE,
+                   'YT_DLP_QUALITY': YT_DLP_QUALITY,
+                   'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
+                   'TORRENT_LIMIT': TORRENT_LIMIT,
+                   'DIRECT_LIMIT': DIRECT_LIMIT,
+                   'YTDLP_LIMIT': YTDLP_LIMIT,
+                   'GDRIVE_LIMIT': GDRIVE_LIMIT,
+                   'CLONE_LIMIT': CLONE_LIMIT,
+                   'MEGA_LIMIT': MEGA_LIMIT,
+                   'LEECH_LIMIT': LEECH_LIMIT,
+                   'MAX_PLAYLIST': MAX_PLAYLIST,
+                   'ENABLE_RATE_LIMIT': ENABLE_RATE_LIMIT,
+                   'ENABLE_MESSAGE_FILTER': ENABLE_MESSAGE_FILTER,
+                   'STOP_DUPLICATE_TASKS': STOP_DUPLICATE_TASKS,
+                   'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
+                   'SET_COMMANDS': SET_COMMANDS,
+                   'DISABLE_LEECH': DISABLE_LEECH,
+                   'DM_MODE': DM_MODE,
+                   'DELETE_LINKS': DELETE_LINKS})
 
     if DATABASE_URL:
         DbManger().update_config(config_dict)
@@ -574,23 +570,12 @@ def edit_variable(update, context, omsg, key):
         for x in fx:
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
     elif key == 'GDRIVE_ID':
-        if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
-            DRIVES_IDS[0] = value
-        else:
-            DRIVES_IDS.insert(0, value)
-        if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
-            CATEGORY_IDS[0] = value
-        else:
-            CATEGORY_IDS.insert(0, value)
+        list_drives['Main'] = {"drive_id": value, "index_link": config_dict['INDEX_URL']}
+        list_drives['Root'] = {"drive_id": value, "index_link": config_dict['INDEX_URL']}
     elif key == 'INDEX_URL':
-        if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
-            INDEX_URLS[0] = value
-        else:
-            INDEX_URLS.insert(0, value)
-        if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
-            CATEGORY_INDEXES[0] = value
-        else:
-            CATEGORY_INDEXES.insert(0, value)
+        if GDRIVE_ID:=config_dict['GDRIVE_ID']:
+            list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": value}
+            categories['Root'] = {"drive_id": GDRIVE_ID, "index_link": value}
     elif key == 'DM_MODE':
         value = value.lower() if value.lower() in ['leech', 'mirror', 'all'] else ''
     elif key not in ['SEARCH_LIMIT', 'STATUS_LIMIT'] and key.endswith(('_THRESHOLD', '_LIMIT')):
@@ -675,21 +660,13 @@ def update_private_file(update, context, omsg):
             BUTTON_NAMES.clear()
             BUTTON_URLS.clear()
         elif file_name == 'categories.txt':
-            CATEGORY_NAMES.clear()
-            CATEGORY_IDS.clear()
-            CATEGORY_INDEXES.clear()
+            categories.clear()            
             if GDRIVE_ID:= config_dict['GDRIVE_ID']:
-                CATEGORY_NAMES.append('Root')
-                CATEGORY_IDS.append(GDRIVE_ID)
-                CATEGORY_INDEXES.append(config_dict['INDEX_URL'])
+                categories['Root'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
         elif file_name == 'list_drives.txt':
-            DRIVES_IDS.clear()
-            DRIVES_NAMES.clear()
-            INDEX_URLS.clear()
+            list_drives.clear()
             if GDRIVE_ID:= config_dict['GDRIVE_ID']:
-                DRIVES_NAMES.append('Main')
-                DRIVES_IDS.append(GDRIVE_ID)
-                INDEX_URLS.append(config_dict['INDEX_URL'])
+                list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
         elif file_name == 'shorteners.txt':
             SHORTENERES.clear()
             SHORTENER_APIS.clear()
@@ -704,41 +681,41 @@ def update_private_file(update, context, omsg):
             run(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
             run(["chmod", "-R", "777", "accounts"])
         elif file_name == 'list_drives.txt':
-            DRIVES_IDS.clear()
-            DRIVES_NAMES.clear()
-            INDEX_URLS.clear()
+            list_drives.clear()
             if GDRIVE_ID:= config_dict['GDRIVE_ID']:
-                DRIVES_NAMES.append("Main")
-                DRIVES_IDS.append(GDRIVE_ID)
-                INDEX_URLS.append(config_dict['INDEX_URL'])
+                list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
             with open('list_drives.txt', 'r+') as f:
                 lines = f.readlines()
                 for line in lines:
                     temp = line.strip().split()
-                    DRIVES_IDS.append(temp[1])
-                    DRIVES_NAMES.append(temp[0].replace("_", " "))
+                    name = temp[0].replace("_", " ")
+                    if name.casefold() == "Main":
+                        name = "Main Custom"
+                    tempdict = {}
+                    tempdict['drive_id'] = temp[1]
                     if len(temp) > 2:
-                        INDEX_URLS.append(temp[2])
+                        tempdict['index_link'] = temp[2]
                     else:
-                        INDEX_URLS.append('')
+                        tempdict['index_link'] = ''
+                    list_drives[name] = tempdict
         elif file_name == 'categories.txt':
-            CATEGORY_IDS.clear()
-            CATEGORY_NAMES.clear()
-            CATEGORY_INDEXES.clear()
+            categories.clear()
             if GDRIVE_ID:= config_dict['GDRIVE_ID']:
-                CATEGORY_NAMES.append("Root")
-                CATEGORY_IDS.append(GDRIVE_ID)
-                CATEGORY_INDEXES.append(config_dict['INDEX_URL'])
+                list_drives['Root'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
             with open('categories.txt', 'r+') as f:
                 lines = f.readlines()
                 for line in lines:
                     temp = line.strip().split()
-                    CATEGORY_IDS.append(temp[1])
-                    CATEGORY_NAMES.append(temp[0].replace("_", " "))
+                    name = temp[0].replace("_", " ")
+                    if name.casefold() == "Root":
+                        name = "Root Custom"
+                    tempdict = {}
+                    tempdict['drive_id'] = temp[1]
                     if len(temp) > 2:
-                        CATEGORY_INDEXES.append(temp[2])
+                        tempdict['index_link'] = temp[2]
                     else:
-                        CATEGORY_INDEXES.append('')
+                        tempdict['index_link'] = ''
+                    categories[name] = tempdict
         elif file_name == 'shorteners.txt':
             SHORTENERES.clear()
             SHORTENER_APIS.clear()
@@ -841,19 +818,15 @@ def edit_bot_settings(update, context):
             run(["pkill", "-9", "-f", "gunicorn"])
             Popen("gunicorn web.wserver:app --bind 0.0.0.0:80", shell=True)
         elif data[2] == 'GDRIVE_ID':
-            if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
-                DRIVES_NAMES.pop(0)
-                DRIVES_IDS.pop(0)
-                INDEX_URLS.pop(0)
-            if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
-                CATEGORY_NAMES.pop(0)
-                CATEGORY_IDS.pop(0)
-                CATEGORY_INDEXES.pop(0)
+            if 'Main' in list_drives:
+                del list_drives['Main']
+            if 'Root' in categories:
+                del categories['Root']
         elif data[2] == 'INDEX_URL':
-            if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
-                INDEX_URLS[0] = ''
-            if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
-                CATEGORY_INDEXES[0] = ''
+            if (GDRIVE_ID:= config_dict['GDRIVE_ID']) and 'Main' in list_drives:
+                list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": ''}
+            if (GDRIVE_ID:= config_dict['GDRIVE_ID']) and 'Root' in categories:
+                categories['Root'] = {"drive_id": GDRIVE_ID, "index_link": ''}
         elif data[2] == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
             DbManger().trunc_table('tasks')
         elif data[2] == 'STOP_DUPLICATE_TASKS' and DATABASE_URL:

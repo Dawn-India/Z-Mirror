@@ -10,8 +10,6 @@ from PIL import Image
 from pyrogram.errors import FloodWait, RPCError
 from pyrogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
                             InputMediaDocument, InputMediaVideo)
-from telegram import InputMediaDocument as ptbInputMediaDocument
-from telegram import InputMediaVideo as ptbInputMediaVideo
 from tenacity import (RetryError, retry, retry_if_exception_type,
                       stop_after_attempt, wait_exponential)
 
@@ -95,13 +93,6 @@ class TgUploader:
             for subkey, msgs in list(value.items()):
                 if len(msgs) > 1:
                     self.__send_media_group(subkey, key, msgs)
-                elif self.__sent_DMmsg:
-                    sleep(1)
-                    __ptb = self.__sent_DMmsg.reply_copy(
-                    from_chat_id=self.__sent_msg.chat.id,
-                    quote=True,
-                    message_id=self.__sent_msg.id)
-                    self.__sent_DMmsg.message_id = __ptb['message_id']
         if self.__is_cancelled:
             return
         if self.__listener.seed and not self.__listener.newDir:
@@ -112,6 +103,10 @@ class TgUploader:
         if self.__total_files <= self.__corrupted:
             self.__listener.onUploadError('Files Corrupted or unable to upload. Check logs!')
             return
+        if config_dict['DUMP_CHAT']:
+            msg = self.__listener.message.text if self.__listener.isPrivate else f'<b><a href="{self.__listener.message.link}">Source</a></b>'
+            msg = f'{msg}\n\n<b>#LeechCompleted</b>: {self.__listener.tag} #id{self.__listener.message.from_user.id}'
+            self.__sent_msg.reply_text(text=msg, quote=True)
         LOGGER.info(f"Leech Completed: {self.name}")
         size = get_readable_file_size(self.__size)
         self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
@@ -218,7 +213,7 @@ class TgUploader:
                     else:
                         self.__last_msg_in_group = True
 
-            if not self.__last_msg_in_group and self.__sent_DMmsg:
+            if self.__sent_DMmsg:
                 sleep(1)
                 __ptb = self.__sent_DMmsg.reply_copy(
                 from_chat_id=self.__sent_msg.chat.id,
@@ -274,25 +269,19 @@ class TgUploader:
         if (not IS_USER_SESSION and self.__listener.message.chat.type != 'private' and config_dict['DUMP_CHAT']) or not self.__listener.dmMessage:
             self.__button = InlineKeyboardMarkup([[InlineKeyboardButton(text='Save Message', callback_data="save")]])
 
-
     def __get_input_media(self, subkey, key):
         rlist = []
-        ptblist = []
         for msg in self.__media_dict[key][subkey]:
             if key == 'videos':
                 input_media = InputMediaVideo(media=msg.video.file_id, caption=msg.caption)
-                ptbinput_media = ptbInputMediaVideo(media=msg.video.file_id, caption=msg.caption)
             else:
                 input_media = InputMediaDocument(media=msg.document.file_id, caption=msg.caption)
-                ptbinput_media = ptbInputMediaDocument(media=msg.document.file_id, caption=msg.caption)
             rlist.append(input_media)
-            ptblist.append(ptbinput_media)
-        return rlist, ptblist
+        return rlist
 
     def __send_media_group(self, subkey, key, msgs):
-        pyromedia, ptbmdedia = self.__get_input_media(subkey, key)
         msgs_list = msgs[0].reply_to_message.reply_media_group(
-                            media=pyromedia,
+                            media=self.__get_input_media(subkey, key),
                             quote=True,
                             disable_notification=True)
         for msg in msgs:
@@ -304,13 +293,6 @@ class TgUploader:
             for m in msgs_list:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
-        if self.__sent_DMmsg:
-            msgs_list = self.__sent_DMmsg.reply_media_group(
-                ptbmdedia,
-                quote=True,
-                disable_notification=True
-            )
-            self.__sent_DMmsg = msgs_list[-1]
 
     @property
     def speed(self):

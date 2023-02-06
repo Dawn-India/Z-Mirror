@@ -1,8 +1,10 @@
 from telegram.ext import CallbackQueryHandler
 
 from bot import dispatcher
+from bot.helper.ext_utils.rate_limiter import ratelimiter
 
 
+@ratelimiter
 def save_message(update, context):
     query = update.callback_query
     if query.data == "save":

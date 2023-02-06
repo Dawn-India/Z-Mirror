@@ -32,26 +32,22 @@ LOGGER = getLogger(__name__)
 
 load_dotenv('config.env', override=True)
 
-Interval                 = []
-QbInterval               = []
-DRIVES_NAMES             = []
-DRIVES_IDS               = []
-INDEX_URLS               = []
-CATEGORY_NAMES           = []
-CATEGORY_IDS             = []
-SHORTENERES              = []
-SHORTENER_APIS           = []
-BUTTON_NAMES             = []
-BUTTON_URLS              = []
-CATEGORY_INDEXES         = []
-GLOBAL_EXTENSION_FILTER  = ['.aria2']
-user_data                = {}
-aria2_options            = {}
-qbit_options             = {}
-queued_dl                = {}
-queued_up                = {}
-non_queued_dl            = set()
-non_queued_up            = set()
+Interval = []
+QbInterval = []
+list_drives = {}
+SHORTENERES = []
+SHORTENER_APIS = []
+BUTTON_NAMES = []
+BUTTON_URLS = []
+GLOBAL_EXTENSION_FILTER = ['.aria2']
+user_data = {}
+aria2_options = {}
+qbit_options = {}
+queued_dl = {}
+queued_up = {}
+categories = {}
+non_queued_dl = set()
+non_queued_up = set()
 
 try:
     if bool(environ.get('_____REMOVE_THIS_LINE_____')):
@@ -362,8 +358,8 @@ LEECH_LIMIT = '' if len(LEECH_LIMIT) == 0 else float(LEECH_LIMIT)
 MAX_PLAYLIST = environ.get('MAX_PLAYLIST', '')
 MAX_PLAYLIST = '' if len(MAX_PLAYLIST) == 0 else int(MAX_PLAYLIST)
 
-ENABLE_CHAT_RESTRICT = environ.get('ENABLE_CHAT_RESTRICT', '')
-ENABLE_CHAT_RESTRICT = ENABLE_CHAT_RESTRICT.lower() == 'true'
+ENABLE_RATE_LIMITER = environ.get('ENABLE_RATE_LIMITER', '')
+ENABLE_RATE_LIMITER = ENABLE_RATE_LIMITER.lower() == 'true'
 
 ENABLE_MESSAGE_FILTER = environ.get('ENABLE_MESSAGE_FILTER', '')
 ENABLE_MESSAGE_FILTER = ENABLE_MESSAGE_FILTER.lower() == 'true'
@@ -391,94 +387,94 @@ if len(FSUB_IDS) == 0:
     FSUB_IDS = ''
 
 config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
-               'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
-               'FSUB_IDS': FSUB_IDS,
-               'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
-               'BASE_URL': BASE_URL,
-               'BOT_TOKEN': BOT_TOKEN,
-               'CMD_SUFFIX': CMD_SUFFIX,
-               'DATABASE_URL': DATABASE_URL,
-               'DOWNLOAD_DIR': DOWNLOAD_DIR,
-               'DUMP_CHAT': DUMP_CHAT,
-               'LOG_CHAT': LOG_CHAT,
-               'EQUAL_SPLITS': EQUAL_SPLITS,
-               'EXTENSION_FILTER': EXTENSION_FILTER,
-               'GDRIVE_ID': GDRIVE_ID,
-               'IGNORE_PENDING_REQUESTS': IGNORE_PENDING_REQUESTS,
-               'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
-               'INDEX_URL': INDEX_URL,
-               'IS_TEAM_DRIVE': IS_TEAM_DRIVE,
-               'LEECH_FILENAME_PREFIX': LEECH_FILENAME_PREFIX,
-               'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
-               'MEDIA_GROUP': MEDIA_GROUP,
-               'MEGA_API_KEY': MEGA_API_KEY,
-               'MEGA_EMAIL_ID': MEGA_EMAIL_ID,
-               'MEGA_PASSWORD': MEGA_PASSWORD,
-               'OWNER_ID': OWNER_ID,
-               'QUEUE_ALL': QUEUE_ALL,
-               'QUEUE_DOWNLOAD': QUEUE_DOWNLOAD,
-               'QUEUE_UPLOAD': QUEUE_UPLOAD,
-               'RSS_USER_SESSION_STRING': RSS_USER_SESSION_STRING,
-               'RSS_CHAT_ID': RSS_CHAT_ID,
-               'RSS_COMMAND': RSS_COMMAND,
-               'RSS_DELAY': RSS_DELAY,
-               'SEARCH_API_LINK': SEARCH_API_LINK,
-               'SEARCH_LIMIT': SEARCH_LIMIT,
-               'SEARCH_PLUGINS': SEARCH_PLUGINS,
-               'SERVER_PORT': SERVER_PORT,
-               'STATUS_LIMIT': STATUS_LIMIT,
-               'USER_MAX_TASKS': USER_MAX_TASKS,
-               'DOWNLOAD_STATUS_UPDATE_INTERVAL': DOWNLOAD_STATUS_UPDATE_INTERVAL,
-               'STOP_DUPLICATE': STOP_DUPLICATE,
-               'SUDO_USERS': SUDO_USERS,
-               'TELEGRAM_API': TELEGRAM_API,
-               'TELEGRAM_HASH': TELEGRAM_HASH,
-               'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
-               'UPSTREAM_REPO': UPSTREAM_REPO,
-               'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
-               'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
-               'USER_SESSION_STRING': USER_SESSION_STRING,
-               'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
-               'VIEW_LINK': VIEW_LINK,
-               'WEB_PINCODE': WEB_PINCODE,
-               'YT_DLP_QUALITY': YT_DLP_QUALITY,
-               'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
-               'TORRENT_LIMIT': TORRENT_LIMIT,
-               'DIRECT_LIMIT': DIRECT_LIMIT,
-               'YTDLP_LIMIT': YTDLP_LIMIT,
-               'GDRIVE_LIMIT': GDRIVE_LIMIT,
-               'CLONE_LIMIT': CLONE_LIMIT,
-               'MEGA_LIMIT': MEGA_LIMIT,
-               'LEECH_LIMIT': LEECH_LIMIT,
-               'MAX_PLAYLIST': MAX_PLAYLIST,
-               'ENABLE_CHAT_RESTRICT': ENABLE_CHAT_RESTRICT,
-               'ENABLE_MESSAGE_FILTER': ENABLE_MESSAGE_FILTER,
-               'STOP_DUPLICATE_TASKS': STOP_DUPLICATE_TASKS,
-               'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
-               'SET_COMMANDS': SET_COMMANDS,
-               'DISABLE_LEECH': DISABLE_LEECH,
-               'DM_MODE': DM_MODE,
-               'DELETE_LINKS': DELETE_LINKS}
+                'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
+                'FSUB_IDS': FSUB_IDS,
+                'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
+                'BASE_URL': BASE_URL,
+                'BOT_TOKEN': BOT_TOKEN,
+                'CMD_SUFFIX': CMD_SUFFIX,
+                'DATABASE_URL': DATABASE_URL,
+                'DOWNLOAD_DIR': DOWNLOAD_DIR,
+                'DUMP_CHAT': DUMP_CHAT,
+                'LOG_CHAT': LOG_CHAT,
+                'EQUAL_SPLITS': EQUAL_SPLITS,
+                'EXTENSION_FILTER': EXTENSION_FILTER,
+                'GDRIVE_ID': GDRIVE_ID,
+                'IGNORE_PENDING_REQUESTS': IGNORE_PENDING_REQUESTS,
+                'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
+                'INDEX_URL': INDEX_URL,
+                'IS_TEAM_DRIVE': IS_TEAM_DRIVE,
+                'LEECH_FILENAME_PREFIX': LEECH_FILENAME_PREFIX,
+                'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
+                'MEDIA_GROUP': MEDIA_GROUP,
+                'MEGA_API_KEY': MEGA_API_KEY,
+                'MEGA_EMAIL_ID': MEGA_EMAIL_ID,
+                'MEGA_PASSWORD': MEGA_PASSWORD,
+                'OWNER_ID': OWNER_ID,
+                'QUEUE_ALL': QUEUE_ALL,
+                'QUEUE_DOWNLOAD': QUEUE_DOWNLOAD,
+                'QUEUE_UPLOAD': QUEUE_UPLOAD,
+                'RSS_USER_SESSION_STRING': RSS_USER_SESSION_STRING,
+                'RSS_CHAT_ID': RSS_CHAT_ID,
+                'RSS_COMMAND': RSS_COMMAND,
+                'RSS_DELAY': RSS_DELAY,
+                'SEARCH_API_LINK': SEARCH_API_LINK,
+                'SEARCH_LIMIT': SEARCH_LIMIT,
+                'SEARCH_PLUGINS': SEARCH_PLUGINS,
+                'SERVER_PORT': SERVER_PORT,
+                'STATUS_LIMIT': STATUS_LIMIT,
+                'USER_MAX_TASKS': USER_MAX_TASKS,
+                'DOWNLOAD_STATUS_UPDATE_INTERVAL': DOWNLOAD_STATUS_UPDATE_INTERVAL,
+                'STOP_DUPLICATE': STOP_DUPLICATE,
+                'SUDO_USERS': SUDO_USERS,
+                'TELEGRAM_API': TELEGRAM_API,
+                'TELEGRAM_HASH': TELEGRAM_HASH,
+                'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
+                'UPSTREAM_REPO': UPSTREAM_REPO,
+                'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
+                'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
+                'USER_SESSION_STRING': USER_SESSION_STRING,
+                'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
+                'VIEW_LINK': VIEW_LINK,
+                'WEB_PINCODE': WEB_PINCODE,
+                'YT_DLP_QUALITY': YT_DLP_QUALITY,
+                'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
+                'TORRENT_LIMIT': TORRENT_LIMIT,
+                'DIRECT_LIMIT': DIRECT_LIMIT,
+                'YTDLP_LIMIT': YTDLP_LIMIT,
+                'GDRIVE_LIMIT': GDRIVE_LIMIT,
+                'CLONE_LIMIT': CLONE_LIMIT,
+                'MEGA_LIMIT': MEGA_LIMIT,
+                'LEECH_LIMIT': LEECH_LIMIT,
+                'MAX_PLAYLIST': MAX_PLAYLIST,
+                'ENABLE_RATE_LIMITER': ENABLE_RATE_LIMITER,
+                'ENABLE_MESSAGE_FILTER': ENABLE_MESSAGE_FILTER,
+                'STOP_DUPLICATE_TASKS': STOP_DUPLICATE_TASKS,
+                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
+                'SET_COMMANDS': SET_COMMANDS,
+                'DISABLE_LEECH': DISABLE_LEECH,
+                'DM_MODE': DM_MODE,
+                'DELETE_LINKS': DELETE_LINKS}
 
 if GDRIVE_ID:
-    DRIVES_NAMES.append("Main")
-    DRIVES_IDS.append(GDRIVE_ID)
-    INDEX_URLS.append(INDEX_URL)
-    CATEGORY_NAMES.append("Root")
-    CATEGORY_IDS.append(GDRIVE_ID)
-    CATEGORY_INDEXES.append(INDEX_URL)
+    list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
+    categories['Root'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
 
 if path.exists('list_drives.txt'):
     with open('list_drives.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
             temp = line.strip().split()
-            DRIVES_IDS.append(temp[1])
-            DRIVES_NAMES.append(temp[0].replace("_", " "))
+            name = temp[0].replace("_", " ")
+            if name.casefold() == "Main":
+                name = "Main Custom"
+            tempdict = {}
+            tempdict['drive_id'] = temp[1]
             if len(temp) > 2:
-                INDEX_URLS.append(temp[2])
+                tempdict['index_link'] = temp[2]
             else:
-                INDEX_URLS.append('')
+                tempdict['index_link'] = ''
+            list_drives[name] = tempdict
 
 if path.exists('buttons.txt'):
     with open('buttons.txt', 'r+') as f:
@@ -506,12 +502,16 @@ if path.exists('categories.txt'):
         lines = f.readlines()
         for line in lines:
             temp = line.strip().split()
-            CATEGORY_IDS.append(temp[1])
-            CATEGORY_NAMES.append(temp[0].replace("_", " "))
+            name = temp[0].replace("_", " ")
+            if name.casefold() == "Root":
+                name = "Root Custom"
+            tempdict = {}
+            tempdict['drive_id'] = temp[1]
             if len(temp) > 2:
-                CATEGORY_INDEXES.append(temp[2])
+                tempdict['index_link'] = temp[2]
             else:
-                CATEGORY_INDEXES.append('')
+                tempdict['index_link'] = ''
+            categories[name] = tempdict
 
 if BASE_URL:
     Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}", shell=True)

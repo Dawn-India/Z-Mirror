@@ -5,12 +5,15 @@ from telegram.ext import CallbackQueryHandler, CommandHandler
 from bot import LOGGER, aria2, dispatcher, download_dict, download_dict_lock
 from bot.helper.ext_utils.bot_utils import (MirrorStatus, bt_selection_buttons,
                                             getDownloadByGid)
+from bot.helper.ext_utils.rate_limiter import ratelimiter
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (sendMessage, anno_checker,
+from bot.helper.telegram_helper.message_utils import (anno_checker,
+                                                      sendMessage,
                                                       sendStatusMessage)
 
 
+@ratelimiter
 def select(update, context):
     message = update.message
     if message.from_user.id in [1087968824, 136817688]:
@@ -72,6 +75,7 @@ def select(update, context):
         "\n<b><i>Your download will not start automatically</i></b>"
     sendMessage(msg, context.bot, message, SBUTTONS)
 
+@ratelimiter
 def get_confirm(update, context):
     query = update.callback_query
     user_id = query.from_user.id

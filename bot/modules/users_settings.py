@@ -8,6 +8,7 @@ from PIL import Image
 from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
                           MessageHandler)
 
+from bot.helper.ext_utils.rate_limiter import ratelimiter
 from bot import (DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, config_dict,
                  dispatcher, user_data)
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
@@ -84,6 +85,7 @@ def update_user_settings(message, from_user):
     msg, button = get_user_settings(from_user)
     editMessage(msg, message, button)
 
+@ratelimiter
 def user_settings(update, context):
     msg, button = get_user_settings(update.message.from_user)
     sendMessage(msg, context.bot, update.message, button)
@@ -138,6 +140,7 @@ def leech_split_size(update, context, omsg):
     if DATABASE_URL:
         DbManger().update_user_data(user_id)
 
+@ratelimiter
 def edit_user_settings(update, context):
     query = update.callback_query
     message = query.message
@@ -335,6 +338,7 @@ Check all available formatting options <a href="https://core.telegram.org/bots/a
         query.message.delete()
         query.message.reply_to_message.delete()
 
+@ratelimiter
 def send_users_settings(update, context):
     msg = f'{len(user_data)} users save there setting'
     for user, data in user_data.items():

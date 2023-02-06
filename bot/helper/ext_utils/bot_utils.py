@@ -10,9 +10,8 @@ import psutil
 from psutil import cpu_percent, disk_usage, virtual_memory
 from requests import request
 
-from bot import (BUTTON_NAMES, BUTTON_URLS, CATEGORY_NAMES, DOWNLOAD_DIR, dispatcher,
-                 botStartTime, config_dict, download_dict, download_dict_lock,
-                 user_data)
+from bot import (BUTTON_NAMES, BUTTON_URLS, dispatcher, DOWNLOAD_DIR, botStartTime,
+                 config_dict, download_dict, download_dict_lock, user_data)
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from telegram.ext import CallbackQueryHandler
@@ -281,16 +280,6 @@ def get_readable_message():
             return _get_readable_message_btns(msg, bmsg)
         return msg + bmsg, button
 
-def get_category_btns(time_out, msg_id, c_index):
-    text = '<b>Select the category where you want to upload</b>'
-    text += f'\n<b>Upload</b>: to Drive in {CATEGORY_NAMES[c_index]} folder'
-    text += f'<u>\n\nYou have {get_readable_time(time_out)} to select the mode</u>'
-    button = ButtonMaker()
-    for i, _name in enumerate(CATEGORY_NAMES):
-        button.sbutton(f'{_name}{" ✅" if _name == CATEGORY_NAMES[c_index] else ""}', f'change scat {msg_id} {i}')
-    button.sbutton('Skip', f"change cancel {msg_id}", 'footer')
-    button.sbutton(f'Done ({get_readable_time(time_out)})', f'change done {msg_id}', 'footer')
-    return text, button.build_menu(3)
 
 def extra_btns(buttons):
     if BUTTON_NAMES and BUTTON_URLS:
