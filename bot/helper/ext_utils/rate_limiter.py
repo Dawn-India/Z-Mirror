@@ -34,8 +34,7 @@ def ratelimiter(func):
         if not config_dict['ENABLE_RATE_LIMITER']:
             return func(update, context)
         if query := update.callback_query:
-            message = query.message
-            userid = query.message.from_user.id
+            userid = query.from_user.id
         elif message := update.message:
             userid = message.from_user.id
         if CustomFilters.owner_query(userid) or userid == 1087968824:

@@ -1,3 +1,4 @@
+from html import escape
 from copy import copy
 from logging import ERROR, getLogger
 from os import path as ospath
@@ -104,8 +105,7 @@ class TgUploader:
             self.__listener.onUploadError('Files Corrupted or unable to upload. Check logs!')
             return
         if config_dict['DUMP_CHAT']:
-            msg = self.__listener.message.text if self.__listener.isPrivate else f'<b><a href="{self.__listener.message.link}">Source</a></b>'
-            msg = f'{msg}\n\n<b>#LeechCompleted</b>: {self.__listener.tag} #id{self.__listener.message.from_user.id}'
+            msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>#Leech_Completed</b>!\n<b>#cc</b>: {self.__listener.tag}\n<b>#User_id</b>: {self.__listener.message.from_user.id}'
             self.__sent_msg.reply_text(text=msg, quote=True)
         LOGGER.info(f"Leech Completed: {self.name}")
         size = get_readable_file_size(self.__size)

@@ -195,14 +195,17 @@ def get_readable_message():
                 cQul += 1
             cQu = cQdl + cQul
         tasks = len(download_dict)
-        msg = f"<b>Tasks</b> ➜ <b>DL:</b> <code>{cDl}</code>  <b>UL:</b> <code>{cUl}</code>  <b>Queued:</b> <code>{cQu}</code>  <b>Total:</b> <code>{tasks}</code>\n<code>---------------------------------</code>"
+        msg = f"<b>Tasks</b> ➜ <b>DL:</b> <code>{cDl}</code>  <b>UL:</b> <code>{cUl}</code>  <b>Queued:</b> <code>{cQu}</code>  <b>Total:</b> <code>{tasks}</code>\n<code>--------------------------------</code>\n"
         if STATUS_LIMIT := config_dict['STATUS_LIMIT']:
             globals()['PAGES'] = ceil(tasks/STATUS_LIMIT)
             if PAGE_NO > PAGES and PAGES != 0:
                 globals()['COUNT'] -= STATUS_LIMIT
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
-            msg += f'\n<b>{download.status()}:</b> <code>{escape(str(download.name()))}</code>'
+            if config_dict['DM_MODE']:
+                msg += f"Hey <b><a href='https://t.me/{download.message.from_user.username}'>{download.source}</a>, Please wait!\n{download.status()}</b> Your Task [<a href='{download.message.link}'>{download.mode()}</a>]"
+            else:
+                msg += f'\n<b>{download.status()}:</b> <code>{escape(str(download.name()))}</code>'
             if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_CONVERTING]:
                 msg += f"\n{get_progress_bar_string(download)} {download.progress()}"
                 if download.status() in [MirrorStatus.STATUS_DOWNLOADING,
@@ -220,8 +223,10 @@ def get_readable_message():
                     msg += f"\n<b>Extracted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
                 elif download.status() == MirrorStatus.STATUS_SPLITTING:
                     msg += f"\n<b>Splitted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
-                msg += f"\n<b>Speed</b>: <code>{download.speed()}</code>"
-                msg += f"\n<b>Elapsed:</b> <code>{get_readable_time(time() - download.message.date.timestamp())}</code> | <b>ETA</b>: <code>{download.eta()}</code>"
+                msg += f"\n<b>Speed</b>: <code>{download.speed()}</code> | <b>Elapsed:</b> <code>{get_readable_time(time() - download.message.date.timestamp())}</code>"
+                msg += f"\n<b>ETA</b>: <code>{download.eta()}</code> | <b>Eng</b>: <code>{download.engine}</code>"
+                if not config_dict['DM_MODE']:
+                    msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.mode()}</a> | <b>By</b>: <a href='https://t.me/{download.message.from_user.username}'>{download.source}</a>"
                 if hasattr(download, 'seeders_num'):
                     try:
                         msg += f"\n<b>Seeders</b>: {download.seeders_num()} | <b>Leechers</b>: {download.leechers_num()}"
@@ -241,8 +246,6 @@ def get_readable_message():
                         msg += f"\n<b>Playlist</b>: {playlist}"
                 except:
                     pass
-            msg += f"\n<b>Engine</b>: <code>{download.engine}</code>"
-            msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.mode()}</a> | <b>By</b>: <a href='https://t.me/{download.message.from_user.username}'>{download.source}</a>"
             if download.status() != MirrorStatus.STATUS_CONVERTING:
                 msg += f"\n🛑 <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             msg += "\n\n"
@@ -271,7 +274,7 @@ def get_readable_message():
                     up_speed += float(spd.split('K')[0]) * 1024
                 elif 'M' in spd:
                     up_speed += float(spd.split('M')[0]) * 1048576
-        bmsg = f"\n<b>FREE:</b> <code>{get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}</code><b> | UPTM:</b> <code>{get_readable_time(time() - botStartTime)}</code>"
+        bmsg = f"<b>FREE:</b> <code>{get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}</code><b> | UPTM:</b> <code>{get_readable_time(time() - botStartTime)}</code>"
         bmsg += f"\n<b>DL:</b> <code>{get_readable_file_size(dl_speed)}/s</code><b> | UL:</b> <code>{get_readable_file_size(up_speed)}/s</code>"
         buttons = ButtonMaker()
         buttons.sbutton("Bot SYS Statistics", str(THREE))
