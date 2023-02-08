@@ -82,12 +82,13 @@ class GoogleDriveHelper:
         # Get credentials
         credentials = None
         if config_dict['USE_SERVICE_ACCOUNTS']:
-            globals()['SERVICE_ACCOUNTS_NUMBER'] = len(listdir("accounts"))
+            json_files = listdir("accounts")
+            globals()['SERVICE_ACCOUNTS_NUMBER'] = len(json_files)
             if self.__sa_count == 0:
                 self.__service_account_index = randrange(SERVICE_ACCOUNTS_NUMBER)
-            LOGGER.info(f"Authorizing with {self.__service_account_index}.json service account")
+            LOGGER.info(f"Authorizing with {json_files[self.__service_account_index]} service account")
             credentials = service_account.Credentials.from_service_account_file(
-                f'accounts/{self.__service_account_index}.json',
+                f'accounts/{json_files[self.__service_account_index]}',
                 scopes=self.__OAUTH_SCOPE)
         elif ospath.exists(self.__G_DRIVE_TOKEN_FILE):
             LOGGER.info("Authorize with token.pickle")
@@ -114,7 +115,7 @@ class GoogleDriveHelper:
         else:
             self.__service_account_index += 1
         self.__sa_count += 1
-        LOGGER.info(f"Switching to {self.__service_account_index}.json service account")
+        LOGGER.info(f"Switching to {self.__service_account_index} service account")
         self.__service = self.__authorize()
 
     @staticmethod

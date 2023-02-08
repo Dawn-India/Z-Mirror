@@ -527,7 +527,7 @@ run("./aria.sh", shell=True)
 if path.exists('accounts.zip'):
     if path.exists('accounts'):
         run(["rm", "-rf", "accounts"])
-    run(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
+    run(["unzip", "-q", "-o", "accounts.zip", "-W", "??*/*.json"])
     run(["chmod", "-R", "777", "accounts"])
     remove('accounts.zip')
 if not path.exists('accounts'):
