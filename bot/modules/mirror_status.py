@@ -39,8 +39,9 @@ def mirror_status(update, context):
                 Interval[0].cancel()
                 Interval.clear()
                 Interval.append(setInterval(config_dict['DOWNLOAD_STATUS_UPDATE_INTERVAL'], update_all_messages))
-@ratelimiter
+
 @new_thread
+@ratelimiter
 def status_pages(update, context):
     query = update.callback_query
     query.answer()

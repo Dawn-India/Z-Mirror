@@ -10,8 +10,8 @@ import psutil
 from psutil import cpu_percent, disk_usage, virtual_memory
 from requests import request
 
-from bot import (BUTTON_NAMES, BUTTON_URLS, dispatcher, DOWNLOAD_DIR, botStartTime,
-                 config_dict, download_dict, download_dict_lock, user_data)
+from bot import (dispatcher, DOWNLOAD_DIR, botStartTime, config_dict, download_dict,
+                 download_dict_lock, extra_buttons, user_data)
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from telegram.ext import CallbackQueryHandler
@@ -203,7 +203,7 @@ def get_readable_message():
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
             if config_dict['DM_MODE']:
-                msg += f"Hey <b><a href='https://t.me/{download.message.from_user.username}'>{download.source}</a>, Please wait!\n{download.status()}</b> Your Task [<a href='{download.message.link}'>{download.mode()}</a>]"
+                msg += f"Hey <b><i>@{download.message.from_user.username}</i></b>, Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.link}'>{download.mode}</a>]"
             else:
                 msg += f'\n<b>{download.status()}:</b> <code>{escape(str(download.name()))}</code>'
             if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_CONVERTING]:
@@ -223,10 +223,10 @@ def get_readable_message():
                     msg += f"\n<b>Extracted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
                 elif download.status() == MirrorStatus.STATUS_SPLITTING:
                     msg += f"\n<b>Splitted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
-                msg += f"\n<b>Speed</b>: <code>{download.speed()}</code> | <b>Elapsed:</b> <code>{get_readable_time(time() - download.message.date.timestamp())}</code>"
+                msg += f"\n<b>Speed</b>: <code>{download.speed()}</code> | <b>Elapsed:</b> <code>{get_readable_time(time() - download.startTime)}</code>"
                 msg += f"\n<b>ETA</b>: <code>{download.eta()}</code> | <b>Eng</b>: <code>{download.engine}</code>"
                 if not config_dict['DM_MODE']:
-                    msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.mode()}</a> | <b>By</b>: <a href='https://t.me/{download.message.from_user.username}'>{download.source}</a>"
+                    msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.mode()}</a> | <b>By</b>: {download.source}"
                 if hasattr(download, 'seeders_num'):
                     try:
                         msg += f"\n<b>Seeders</b>: {download.seeders_num()} | <b>Leechers</b>: {download.leechers_num()}"
@@ -285,8 +285,8 @@ def get_readable_message():
 
 
 def extra_btns(buttons):
-    if BUTTON_NAMES and BUTTON_URLS:
-        for btn_name, btn_url in zip(BUTTON_NAMES, BUTTON_URLS):
+    if extra_buttons:
+        for btn_name, btn_url in extra_buttons.items():
             buttons.buildbutton(btn_name, btn_url)
     return buttons
 

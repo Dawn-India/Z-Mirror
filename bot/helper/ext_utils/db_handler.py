@@ -1,4 +1,4 @@
-from os import makedirs
+from os import environ, makedirs
 from os import path as ospath
 
 from pymongo import MongoClient
@@ -65,6 +65,21 @@ class DbManger:
             return
         self.__db.settings.config.update_one({'_id': bot_id}, {'$set': dict_}, upsert=True)
         self.__conn.close()
+
+    def load_configs(self):
+        if self.__err:
+            return
+        if db_dict := self.__db.settings.config.find_one({'_id': bot_id}):
+            del db_dict['_id']
+            for key, value in db_dict.items():
+                environ[key] = str(value)
+        if pf_dict := self.__db.settings.files.find_one({'_id': bot_id}):
+            del pf_dict['_id']
+            for key, value in pf_dict.items():
+                if value:
+                    file_ = key.replace('__', '.')
+                    with open(file_, 'wb+') as f:
+                        f.write(value)
 
     def update_aria2(self, key, value):
         if self.__err:

@@ -37,8 +37,7 @@ QbInterval = []
 list_drives = {}
 SHORTENERES = []
 SHORTENER_APIS = []
-BUTTON_NAMES = []
-BUTTON_URLS = []
+extra_buttons = {}
 GLOBAL_EXTENSION_FILTER = ['.aria2']
 user_data = {}
 aria2_options = {}
@@ -481,11 +480,10 @@ if path.exists('buttons.txt'):
         lines = f.readlines()
         for line in lines:
             temp = line.strip().split()
-            if len(BUTTON_NAMES) == 4:
+            if len(extra_buttons.keys()) == 4:
                 break
             if len(temp) == 2:
-                BUTTON_NAMES.append(temp[0].replace("_", " "))
-                BUTTON_URLS.append(temp[1])
+                extra_buttons[temp[0].replace("_", " ")] = temp[1]
 
 if path.exists('shorteners.txt'):
     with open('shorteners.txt', 'r+') as f:
@@ -527,7 +525,7 @@ run("./aria.sh", shell=True)
 if path.exists('accounts.zip'):
     if path.exists('accounts'):
         run(["rm", "-rf", "accounts"])
-    run(["unzip", "-q", "-o", "accounts.zip", "-W", "??*/*.json"])
+    run(["unzip", "-q", "-o", "accounts.zip", "-W", "accounts/*.json"])
     run(["chmod", "-R", "777", "accounts"])
     remove('accounts.zip')
 if not path.exists('accounts'):
@@ -546,13 +544,11 @@ def aria2c_init():
         info("Initializing Aria2c")
         link = "https://linuxmint.com/torrents/lmde-5-cinnamon-64bit.iso.torrent"
         dl = aria2.add_uris([link], {'dir': DOWNLOAD_DIR.rstrip("/")})
-        atepmt = 0
-        while atepmt <= 3:
+        for _ in range(4):
             dl = dl.live
             if dl.followed_by_ids:
                 dl = dl.api.get_download(dl.followed_by_ids[0])
                 dl = dl.live
-            atepmt+= 1
             sleep(8)
         if dl.remove(True, True):
             info('Aria2c initializing finished')
