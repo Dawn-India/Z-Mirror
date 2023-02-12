@@ -304,7 +304,7 @@ class MirrorLeechListener:
             if self.dmMessage:
                 msg = f'Hey <b>{self.tag}</b>, \nYour job is done!'
             else:
-                msg = f'<b>Name</b>: <code>{escape(name)}</code>'
+                msg = f'<b>File Name</b>: <code>{escape(name)}</code>'
                 msg += f'\n\n<b>#cc</b>: {self.tag}'
             msg += f'\n\n<b>Size</b>: {size}'
             msg += f'\n<b>Total Files</b>: {folders}'
@@ -312,30 +312,29 @@ class MirrorLeechListener:
             if typ != 0:
                 msg += f'\n<b>Corrupted Files</b>: {typ}'
             msg += f"\n<b>Upload</b>: {self.mode}\n\n"
+            msg_ = '<b>Files has been sent in your DM.</b>'
             if not files:
                 if self.dmMessage:
-                    msg += '<b>Files has been sent in your DM.</b>'
                     buttons = ButtonMaker()
                     buttons.buildbutton("View in DM", f"{bot.link}")
                     button = buttons.build_menu(1)
-                    sendMessage(msg, self.bot, self.message, button)
+                    sendMessage(msg + msg_, self.bot, self.message, button)
                 else:
-                    msg += '<b>Files has been sent in Leech Dump.</b>'
-                    sendMessage(msg, self.bot, self.message)
+                    msg__ = '<b>Files has been sent in Leech Dump.</b>'
+                    sendMessage(msg + msg__, self.bot, self.message)
                 if self.logMessage:
                     if self.dmMessage:
-                        msg += f'\n\n<b>File Name</b>: <code>{escape(name)}</code>'
+                        msg += f'<b>File Name</b>: <code>{escape(name)}</code>'
                     sendMessage(msg, self.bot, self.logMessage)
             elif self.dmMessage and not config_dict['DUMP_CHAT']:
                 sendMessage(msg, self.bot, self.dmMessage)
-                msg += '<b>Files has been sent in your DM.</b>'
                 buttons = ButtonMaker()
                 buttons.buildbutton("View in DM", f"{bot.link}")
                 button = buttons.build_menu(1)
-                sendMessage(msg, self.bot, self.message, button)
+                sendMessage(msg + msg_, self.bot, self.message, button)
                 if self.logMessage:
                     if self.dmMessage:
-                        msg += f'\n\n<b>File Name</b>: <code>{escape(name)}</code>'
+                        msg += f'<b>File Name</b>: <code>{escape(name)}</code>'
                     sendMessage(msg, self.bot, self.logMessage)
             else:
                 fmsg = ''
@@ -344,7 +343,7 @@ class MirrorLeechListener:
                     if len(fmsg.encode() + msg.encode()) > 4000:
                         if self.logMessage:
                             if self.dmMessage:
-                                msg += f'\n\n<b>File Name</b>: <code>{escape(name)}</code>'
+                                msg += f'<b>File Name</b>: <code>{escape(name)}</code>'
                             sendMessage(msg + fmsg, self.bot, self.logMessage)
                         buttons = ButtonMaker()
                         buttons = extra_btns(buttons)
@@ -354,15 +353,17 @@ class MirrorLeechListener:
                         sleep(1)
                         fmsg = ''
                 if fmsg != '':
+                    if self.dmMessage:
+                        _msg_ = f'\n<b>Files has been sent in your DM.</b>'
                     if self.logMessage:
                         if self.dmMessage:
-                            msg += f'\n\n<b>File Name</b>: <code>{escape(name)}</code>'
-                        sendMessage(msg + fmsg, self.bot, self.logMessage)
+                            __msg = f'<b>File Name</b>: <code>{escape(name)}</code>\n'
+                        sendMessage(msg + __msg + fmsg, self.bot, self.logMessage)
                     buttons = ButtonMaker()
                     buttons = extra_btns(buttons)
                     if self.message.chat.type != 'private':
                         buttons.sbutton('Save This Message', 'save', 'footer')
-                    sendMessage(msg + fmsg, self.bot, self.message, buttons.build_menu(2))
+                    sendMessage(msg + fmsg + _msg_, self.bot, self.message, buttons.build_menu(2))
             if self.seed:
                 if self.newDir:
                     clean_target(self.newDir)
@@ -408,11 +409,11 @@ class MirrorLeechListener:
             buttons = extra_btns(buttons)
             if self.dmMessage:
                 sendMessage(msg, self.bot, self.dmMessage, buttons.build_menu(2))
-                msg += '\n\n<b>Links has been sent in your DM.</b>'
+                _msg = '\n\n<b>Links has been sent in your DM.</b>'
                 buttons = ButtonMaker()
                 buttons.buildbutton("View in DM", f"{bot.link}")
                 button = buttons.build_menu(1)
-                sendMessage(msg, self.bot, self.message, button)
+                sendMessage(msg + _msg, self.bot, self.message, button)
             else:
                 if self.message.chat.type != 'private':
                     buttons.sbutton("Save This Message", 'save', 'footer')
