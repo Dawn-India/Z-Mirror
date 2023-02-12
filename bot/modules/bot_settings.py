@@ -7,12 +7,11 @@ from dotenv import load_dotenv
 from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
                           MessageHandler)
 
-from bot import (BUTTON_NAMES, BUTTON_URLS, DATABASE_URL,
-                 GLOBAL_EXTENSION_FILTER, IS_PREMIUM_USER, LOGGER,
-                 MAX_SPLIT_SIZE, SHORTENER_APIS, SHORTENERES, Interval, aria2,
-                 aria2_options, aria2c_global, categories, config_dict,
-                 dispatcher, download_dict, get_client, list_drives,
-                 qbit_options, status_reply_dict_lock, user_data)
+from bot import (DATABASE_URL, GLOBAL_EXTENSION_FILTER, IS_PREMIUM_USER,
+                 LOGGER, MAX_SPLIT_SIZE, SHORTENER_APIS, SHORTENERES, Interval,
+                 aria2, aria2_options, aria2c_global, categories, config_dict,
+                 dispatcher, download_dict, extra_buttons, get_client,
+                 list_drives, qbit_options, status_reply_dict_lock, user_data)
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread,
                                             set_commands, setInterval)
 from bot.helper.ext_utils.db_handler import DbManger
@@ -366,6 +365,37 @@ def load_config():
                     tempdict['index_link'] = ''
                 categories[name] = tempdict
 
+    extra_buttons.clear()
+    if path.exists('buttons.txt'):
+        with open('buttons.txt', 'r+') as f:
+            lines = f.readlines()
+            for line in lines:
+                temp = line.strip().split()
+                if len(extra_buttons.keys()) == 4:
+                    break
+                if len(temp) == 2:
+                    extra_buttons[temp[0].replace("_", " ")] = temp[1]
+
+    SHORTENERES.clear()
+    SHORTENER_APIS.clear()
+    if path.exists('shorteners.txt'):
+        with open('shorteners.txt', 'r+') as f:
+            lines = f.readlines()
+            for line in lines:
+                temp = line.strip().split()
+                if len(temp) == 2:
+                    SHORTENERES.append(temp[0])
+                    SHORTENER_APIS.append(temp[1])
+
+    if path.exists('accounts.zip'):
+        if path.exists('accounts'):
+            run(["rm", "-rf", "accounts"])
+        run(["unzip", "-q", "-o", "accounts.zip", "-W", "accounts/*.json"])
+        run(["chmod", "-R", "777", "accounts"])
+        remove('accounts.zip')
+    if not path.exists('accounts'):
+        USE_SERVICE_ACCOUNTS = False
+
     config_dict.update({'AS_DOCUMENT': AS_DOCUMENT,
                    'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
                    'FSUB_IDS': FSUB_IDS,
@@ -444,6 +474,8 @@ def load_config():
 def get_buttons(key=None, edit_type=None):
     buttons = ButtonMaker()
     if key is None:
+        if DATABASE_URL:
+            buttons.sbutton('Fetch Config', "botset fetch")
         buttons.sbutton('Config Variables', "botset var")
         buttons.sbutton('Private Files', "botset private")
         buttons.sbutton('Qbit Settings', "botset qbit")
@@ -657,8 +689,7 @@ def update_private_file(update, context, omsg):
             run(["cp", ".netrc", "/root/.netrc"])
             run(["chmod", "600", ".netrc"])
         elif file_name == 'buttons.txt':
-            BUTTON_NAMES.clear()
-            BUTTON_URLS.clear()
+            extra_buttons.clear()
         elif file_name == 'categories.txt':
             categories.clear()            
             if GDRIVE_ID:= config_dict['GDRIVE_ID']:
@@ -678,7 +709,7 @@ def update_private_file(update, context, omsg):
         if file_name == 'accounts.zip':
             if path.exists('accounts'):
                 run(["rm", "-rf", "accounts"])
-            run(["unzip", "-q", "-o", "accounts.zip", "-W", "??*/*.json"])
+            run(["unzip", "-q", "-o", "accounts.zip", "-W", "accounts/*.json"])
             run(["chmod", "-R", "777", "accounts"])
         elif file_name == 'list_drives.txt':
             list_drives.clear()
@@ -727,22 +758,21 @@ def update_private_file(update, context, omsg):
                         SHORTENERES.append(temp[0])
                         SHORTENER_APIS.append(temp[1])
         elif file_name == 'buttons.txt':
-            BUTTON_NAMES.clear()
-            BUTTON_URLS.clear()
+            extra_buttons.clear()
             with open('buttons.txt', 'r+') as f:
                 lines = f.readlines()
                 for line in lines:
                     temp = line.strip().split()
-                    if len(BUTTON_NAMES) == 4:
+                    if len(extra_buttons.keys()) == 4:
                         break
                     if len(temp) == 2:
-                        BUTTON_NAMES.append(temp[0].replace("_", " "))
-                        BUTTON_URLS.append(temp[1])
+                        extra_buttons[temp[0].replace("_", " ")] = temp[1]
         elif file_name in ['.netrc', 'netrc']:
             if file_name == 'netrc':
                 rename('netrc', '.netrc')
                 file_name = '.netrc'
             run(["cp", ".netrc", "/root/.netrc"])
+            run(["chmod", "600", "/root/.netrc"])
             run(["chmod", "600", ".netrc"])
         elif file_name == 'config.env':
             load_dotenv('config.env', override=True)
@@ -775,6 +805,13 @@ def edit_bot_settings(update, context):
         handler_dict[message.chat.id] = False
         message.delete()
         message.reply_to_message.delete()
+    elif data[1] == 'fetch':
+        query.answer()
+        handler_dict[message.chat.id] = False
+        message.delete()
+        message.reply_to_message.delete()
+        DbManger().load_configs()
+        load_config()
     elif data[1] == 'back':
         query.answer()
         handler_dict[message.chat.id] = False

@@ -37,6 +37,8 @@ def ratelimiter(func):
             userid = query.from_user.id
         elif message := update.message:
             userid = message.from_user.id
+        else:
+            return func(update, context)
         if CustomFilters.owner_query(userid) or userid == 1087968824:
             return func(update, context)
         is_limited = ratelimit.acquire(userid)
@@ -49,6 +51,8 @@ def ratelimiter(func):
                 message.reply_text("Spam detected! ignoring your all requests for few minutes.")
                 warned_users[userid] = 1
                 return
+            else:
+                return func(update, context)
         elif is_limited and userid in warned_users:
             pass
         else:

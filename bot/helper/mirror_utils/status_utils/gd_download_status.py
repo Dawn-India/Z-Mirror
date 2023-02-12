@@ -12,7 +12,9 @@ class GdDownloadStatus:
         self.__size = size
         self.__gid = gid
         self.__listener = listener
-        self.message = listener.message
+        self.message = self.__listener.message
+        self.startTime = self.__listener.startTime
+        self.mode = self.__listener.mode
         self.source = self.__source()
         self.engine = engine_
 
@@ -67,9 +69,7 @@ class GdDownloadStatus:
 
     def __source(self):
         reply_to = self.message.reply_to_message
-        return reply_to.from_user.username or reply_to.from_user.id if reply_to and \
+        source = reply_to.from_user.username or reply_to.from_user.id if reply_to and \
             not reply_to.from_user.is_bot else self.message.from_user.username \
                 or self.message.from_user.id
-
-    def mode(self):
-        return self.__listener.mode
+        return f"<a href='{self.message.link}'>{source}</a>"

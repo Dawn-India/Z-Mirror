@@ -65,6 +65,7 @@ class MirrorLeechListener:
         self.logMessage = logMessage
         self.queuedUp = False
         self.sameDir = sameDir
+        self.startTime = time()
         self.__setMode()
 
     def clean(self):
@@ -308,7 +309,7 @@ class MirrorLeechListener:
                 msg += f'\n\n<b>#cc</b>: {self.tag}'
             msg += f'\n\n<b>Size</b>: {size}'
             msg += f'\n<b>Total Files</b>: {folders}'
-            msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.message.date.timestamp())}"
+            msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.startTime)}"
             if typ != 0:
                 msg += f'\n<b>Corrupted Files</b>: {typ}'
             msg += f"\n<b>Upload</b>: {self.mode}\n\n"
@@ -438,12 +439,12 @@ class MirrorLeechListener:
 
     def onDownloadError(self, error, button=None):
         error = error.replace('<', ' ').replace('>', ' ')
-        msg = f"{self.tag} your download has been stopped due to: {error}\n<b>Elapsed</b>: {get_readable_time(time() - self.message.date.timestamp())}"
+        msg = f"{self.tag} your download has been stopped due to: {error}\n<b>Elapsed</b>: {get_readable_time(time() - self.startTime)}"
         self._clean_update(msg, button)
 
     def onUploadError(self, error):
         e_str = error.replace('<', '').replace('>', '')
-        msg = f"{self.tag} {e_str}\n<b>Elapsed</b>: {get_readable_time(time() - self.message.date.timestamp())}"
+        msg = f"{self.tag} {e_str}\n<b>Elapsed</b>: {get_readable_time(time() - self.startTime)}"
         self._clean_update(msg)
 
     def _clean_update(self, msg=None, button=None):
