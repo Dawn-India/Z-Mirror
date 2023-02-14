@@ -356,9 +356,13 @@ class MirrorLeechListener:
                 if fmsg != '':
                     if self.dmMessage:
                         _msg_ = f'\n<b>Files has been sent in your DM.</b>'
+                    else:
+                        _msg_ = f''
                     if self.logMessage:
                         if self.dmMessage:
-                            __msg = f'<b>File Name</b>: <code>{escape(name)}</code>\n'
+                            __msg = f'<b>File Name</b>: <code>{escape(name)}</code>\n\n'
+                        else:
+                            __msg = f''
                         sendMessage(msg + __msg + fmsg, self.bot, self.logMessage)
                     buttons = ButtonMaker()
                     buttons = extra_btns(buttons)
