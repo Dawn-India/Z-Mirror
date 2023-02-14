@@ -18,7 +18,7 @@ from bot.helper.ext_utils.fs_utils import (check_storage_threshold,
                                            clean_unwanted, get_base_name)
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import (deleteMessage,
+from bot.helper.telegram_helper.message_utils import (deleteMessage, delete_links,
                                                       sendMessage,
                                                       sendStatusMessage,
                                                       update_all_messages)
@@ -177,6 +177,7 @@ def __stop_duplicate(client, tor):
             if qbname:
                 qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
                 if qbmsg:
+                    delete_links(listener.bot, listener.message)
                     __onDownloadError("File/Folder is already available in Drive.\nHere are the search results:\n", client, tor, button)
                     return
     except:

@@ -15,7 +15,7 @@ from bot.helper.mirror_utils.status_utils.convert_status import ConvertStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.status_utils.yt_dlp_download_status import YtDlpDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import sendStatusMessage
+from bot.helper.telegram_helper.message_utils import (delete_links, sendStatusMessage)
 
 LOGGER = getLogger(__name__)
 
@@ -247,6 +247,7 @@ class YoutubeDLHelper:
             if sname:
                 smsg, button = GoogleDriveHelper().drive_list(name, True)
                 if smsg:
+                    delete_links(listener.bot, listener.message)
                     self.__onDownloadError('File/Folder already available in Drive.\nHere are the search results:\n', button)
                     return
         limit_exceeded = ''

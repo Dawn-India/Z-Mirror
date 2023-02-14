@@ -340,6 +340,7 @@ Number should be always before |newname or pswd:
                     __run_multi()
                     return
         else:
+            delete_links(bot, message)
             msg = "qBittorrent for torrents only. if you are trying to download torrent then report."
             sendMessage(msg, bot, message)
             __run_multi()

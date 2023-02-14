@@ -157,8 +157,8 @@ def sendDmMessage(bot, message, dmMode, isLeech=False):
         delete_links(bot, message)
         buttons = ButtonMaker()
         buttons.buildbutton("Start", f"{bot.link}?start=start")
-        uname = message.from_user.mention_html(message.from_user.first_name)
-        sendMessage(f"<b>Hey {uname}!\nYou didn't START the me in DM\nStart and try again.</b>", bot, message, buttons.build_menu(1))
+        tag = message.from_user.mention_html(message.from_user.username)
+        sendMessage(f"<b>Hey @{tag}!\nYou didn't START the me in DM.\nI'll send all files in DM.\n\nStart and try again.</b>", bot, message, buttons.build_menu(1))
         return 'BotNotStarted'
     except Exception as e:
         LOGGER.error(str(e))
@@ -207,6 +207,7 @@ def forcesub(bot, message, tag):
         chat = bot.get_chat(channel_id)
         member = chat.get_member(message.from_user.id)
         if member.status in [member.LEFT, member.KICKED]:
+            delete_links(bot, message)
             join_button[chat.title] = chat.link or chat.invite_link
     if join_button:
         btn = ButtonMaker()

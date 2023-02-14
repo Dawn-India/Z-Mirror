@@ -5,7 +5,7 @@ from bot import LOGGER, config_dict, download_dict, download_dict_lock
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import (deleteMessage,
+from bot.helper.telegram_helper.message_utils import (deleteMessage, delete_links,
                                                       sendMessage,
                                                       sendStatusMessage)
 
@@ -19,6 +19,7 @@ def start_clone(link, listener):
         LOGGER.info('Checking File/Folder if already in Drive...')
         smsg, button = gd.drive_list(name, True)
         if smsg:
+            delete_links(listener.bot, listener.message)
             msg = "File/Folder is already available in Drive.\nHere are the search results:"
             return listener.onDownloadError(msg, button)
     if CLONE_LIMIT := config_dict['CLONE_LIMIT']:

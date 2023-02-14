@@ -14,7 +14,7 @@ from bot.helper.ext_utils.fs_utils import (check_storage_threshold,
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import (sendMessage,
+from bot.helper.telegram_helper.message_utils import (sendMessage, delete_links,
                                                       sendStatusMessage)
 
 
@@ -174,6 +174,7 @@ def add_mega_download(mega_link, path, listener, name, from_queue=False):
             smsg, button = GoogleDriveHelper().drive_list(mname, True)
             if smsg:
                 listener.ismega.delete()
+                delete_links(listener.bot, listener.message)
                 msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
                 sendMessage(msg1, listener.bot, listener.message, button)
                 api.removeListener(mega_listener)

@@ -9,7 +9,7 @@ from bot.helper.ext_utils.fs_utils import check_storage_threshold
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.status_utils.telegram_download_status import TelegramDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import (sendMessage,
+from bot.helper.telegram_helper.message_utils import (sendMessage, delete_links,
                                                       sendStatusMessage)
 
 global_lock = Lock()
@@ -111,6 +111,7 @@ class TelegramDownloadHelper:
                     LOGGER.info('Checking File/Folder if already in Drive...')
                     smsg, button = GoogleDriveHelper().drive_list(name, True, True)
                     if smsg:
+                        delete_links(self.__listener.bot, self.__listener.message)
                         msg = "File/Folder is already available in Drive.\nHere are the search results:"
                         return sendMessage(msg, self.__listener.bot, self.__listener.message, button)
                 if STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']:
