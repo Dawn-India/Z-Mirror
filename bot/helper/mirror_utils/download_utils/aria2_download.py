@@ -11,7 +11,7 @@ from bot.helper.ext_utils.fs_utils import (check_storage_threshold,
                                            clean_unwanted, get_base_name)
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import (deleteMessage,
+from bot.helper.telegram_helper.message_utils import (deleteMessage, delete_links,
                                                       sendMessage,
                                                       sendStatusMessage,
                                                       update_all_messages)
@@ -58,6 +58,7 @@ def __onDownloadStarted(api, gid):
                     if sname:
                         smsg, button = GoogleDriveHelper().drive_list(sname, True)
                         if smsg:
+                            delete_links(listener.bot, listener.message)
                             listener.onDownloadError('File/Folder already available in Drive.\nHere are the search results:\n', button)
                             api.remove([download], force=True, files=True, clean=True)
                             return
