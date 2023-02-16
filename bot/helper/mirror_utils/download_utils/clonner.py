@@ -25,6 +25,7 @@ def start_clone(link, listener):
     if CLONE_LIMIT := config_dict['CLONE_LIMIT']:
         limit = CLONE_LIMIT * 1024**3
         if size > limit:
+            delete_links(listener.bot, listener.message)
             msg2 = f'Failed, Clone limit is {get_readable_file_size(limit)}.\nYour File/Folder size is {get_readable_file_size(size)}.'
             return listener.onDownloadError(msg2)
     listener.onDownloadStart()

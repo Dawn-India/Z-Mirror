@@ -13,20 +13,20 @@ from bot.helper.telegram_helper.filters import CustomFilters
 class RateLimiter:
     def __init__(self) -> None:
 
-        # 1 requests per seconds
-        self.second_rate = RequestRate(1, 1)
+        # 1 requests per 10 seconds
+        self.__second_rate = RequestRate(1, 10)
 
-        self.limiter = Limiter(self.second_rate, bucket_class=MemoryListBucket)
+        self.__limiter = Limiter(self.__second_rate, bucket_class=MemoryListBucket)
 
     def acquire(self, userid):
         try:
-            self.limiter.try_acquire(userid)
+            self.__limiter.try_acquire(userid)
             return False
         except BucketFullException:
             return True
 
 ratelimit = RateLimiter()
-warned_users = TTLCache(maxsize=128, ttl=60)
+warned_users = TTLCache(maxsize=128, ttl=30)
 
 def ratelimiter(func):
     @wraps(func)
@@ -44,11 +44,11 @@ def ratelimiter(func):
         is_limited = ratelimit.acquire(userid)
         if is_limited and userid not in warned_users:
             if query := update.callback_query:
-                query.answer("Spam detected! ignoring your all requests for few minutes.", show_alert=True)
+                query.answer("Spam detected! ignoring your all requests for 30 seconds.", show_alert=True)
                 warned_users[userid] = 1
                 return
             elif message := update.message:
-                message.reply_text("Spam detected! ignoring your all requests for few minutes.")
+                message.reply_text("Spam detected! ignoring your all requests for 30 seconds.")
                 warned_users[userid] = 1
                 return
             else:

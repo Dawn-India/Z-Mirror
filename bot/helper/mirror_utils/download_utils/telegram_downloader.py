@@ -119,6 +119,7 @@ class TelegramDownloadHelper:
                     arch = any([self.__listener.isZip, self.__listener.extract])
                     acpt = check_storage_threshold(size, limit, arch)
                     if not acpt:
+                        delete_links(self.__listener.bot, self.__listener.message)
                         msg = f'You must leave {get_readable_file_size(limit)} free storage.'
                         msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
                         return sendMessage(msg, self.__listener.bot, self.__listener.message)

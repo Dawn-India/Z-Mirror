@@ -247,7 +247,7 @@ class YoutubeDLHelper:
             if sname:
                 smsg, button = GoogleDriveHelper().drive_list(name, True)
                 if smsg:
-                    delete_links(listener.bot, listener.message)
+                    delete_links(self.listener.bot, self.listener.message)
                     self.__onDownloadError('File/Folder already available in Drive.\nHere are the search results:\n', button)
                     return
         limit_exceeded = ''
@@ -275,6 +275,7 @@ class YoutubeDLHelper:
                 limit_exceeded += f'Your {"Playlist" if self.is_playlist else "Video"} size\n'
                 limit_exceeded += f'is {get_readable_file_size(self.__size)}'
         if limit_exceeded:
+            delete_links(self.listener.bot, self.listener.message)
             return self.__onDownloadError(limit_exceeded)
         all_limit = config_dict['QUEUE_ALL']
         dl_limit = config_dict['QUEUE_DOWNLOAD']
