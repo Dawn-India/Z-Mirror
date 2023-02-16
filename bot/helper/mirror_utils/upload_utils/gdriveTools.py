@@ -7,13 +7,12 @@ from pickle import load as pload
 from random import randrange
 from re import search as re_search
 from time import time
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse, quote as rquote
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
-from requests.utils import quote as rquote
 from tenacity import (RetryError, retry, retry_if_exception_type,
                       stop_after_attempt, wait_exponential)
 
@@ -115,7 +114,8 @@ class GoogleDriveHelper:
         else:
             self.__service_account_index += 1
         self.__sa_count += 1
-        LOGGER.info(f"Switching to {self.__service_account_index} service account")
+        if self.__sa_count <= 5:
+            LOGGER.info(f"Switching to {self.__service_account_index} service account")
         self.__service = self.__authorize()
 
     @staticmethod
@@ -336,7 +336,8 @@ class GoogleDriveHelper:
                             if self.__is_cancelled:
                                 return
                             self.__switchServiceAccount()
-                            LOGGER.info(f"Got: {reason}, Trying Again.")
+                            if self.__sa_count <= 5:
+                                LOGGER.info(f"Got: {reason}, Trying Again.")
                             return self.__upload_file(file_path, file_name, mime_type, dest_id)
                     else:
                         LOGGER.error(f"Got: {reason}")
@@ -799,7 +800,8 @@ class GoogleDriveHelper:
                             raise err
                         else:
                             self.__switchServiceAccount()
-                            LOGGER.info(f"Got: {reason}, Trying Again...")
+                            if self.__sa_count <= 5:
+                                LOGGER.info(f"Got: {reason}, Trying Again...")
                             return self.__download_file(file_id, path, filename, mime_type)
                     else:
                         if self.__is_cancelled:

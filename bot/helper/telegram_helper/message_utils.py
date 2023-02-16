@@ -158,7 +158,7 @@ def sendDmMessage(bot, message, dmMode, isLeech=False):
         buttons = ButtonMaker()
         buttons.buildbutton("Start", f"{bot.link}?start=start")
         tag = message.from_user.mention_html(message.from_user.username)
-        sendMessage(f"<b>Hey @{tag}!\nYou didn't START the me in DM.\nI'll send all files in DM.\n\nStart and try again.</b>", bot, message, buttons.build_menu(1))
+        sendMessage(f"<b>Hey @{tag}!\nYou didn't START me in DM.\nI'll send all files in DM.\n\nStart and try again.</b>", bot, message, buttons.build_menu(1))
         return 'BotNotStarted'
     except Exception as e:
         LOGGER.error(str(e))

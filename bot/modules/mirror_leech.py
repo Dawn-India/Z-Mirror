@@ -54,6 +54,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     raw_url = None
     drive_id = None
     index_link = None
+    auth = ''
     if len(message_args) > 1:
         args = mesg[0].split(maxsplit=5)
         for x in args:
@@ -296,7 +297,7 @@ Number should be always before |newname or pswd:
                                 pswd, tag, select, seed, sameDir,
                                 raw_url, drive_id, index_link, dmMessage, logMessage)
     LOGGER.info(f"{link} added by: {message.from_user.id}")
-    if not is_mega_link(link) and not isQbit and not is_magnet(link)     and not is_gdrive_link(link) and not link.endswith('.torrent'):
+    if not is_mega_link(link) and not isQbit and not is_magnet(link) and not is_gdrive_link(link) and not link.endswith('.torrent'):
         content_type = get_content_type(link)
         if content_type is None or match(r'text/html|text/plain', content_type):
             _tempmsg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
@@ -367,9 +368,7 @@ Number should be always before |newname or pswd:
             ussr = mesg[1]
             pssw = mesg[2] if len(mesg) > 2 else ''
             auth = f"{ussr}:{pssw}"
-            auth = "Basic " + b64encode(auth.encode()).decode('ascii')
-        else:
-            auth = ''
+            auth = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
         Thread(target=add_aria2c_download, args=(link, dl_path, listener, name, auth, ratio, seed_time)).start()
     __run_multi()
 

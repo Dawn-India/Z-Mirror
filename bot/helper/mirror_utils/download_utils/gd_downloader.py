@@ -51,6 +51,7 @@ def add_gd_download(link, path, listener, newname, from_queue=False):
         if size > limit:
             limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
     if limit_exceeded:
+        delete_links(listener.bot, listener.message)
         return sendMessage(f'{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}.', listener.bot, listener.message)
     gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
     all_limit = config_dict['QUEUE_ALL']

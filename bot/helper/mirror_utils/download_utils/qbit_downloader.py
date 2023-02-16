@@ -204,6 +204,7 @@ def __size_checked(client, tor):
             if size > limit:
                 limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
         if limit_exceeded:
+            delete_links(listener.bot, listener.message)
             fmsg = f"{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}"
             return __onDownloadError(fmsg, client, tor)
     except:

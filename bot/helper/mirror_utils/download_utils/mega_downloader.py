@@ -198,6 +198,7 @@ def add_mega_download(mega_link, path, listener, name, from_queue=False):
         if size > limit:
             limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
     if limit_exceeded:
+        delete_links(listener.bot, listener.message)
         listener.ismega.delete()
         return sendMessage(f"{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}.", listener.bot, listener.message)
     mname = name or node.getName()
