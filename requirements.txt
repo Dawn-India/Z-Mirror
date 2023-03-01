@@ -3,7 +3,6 @@ aiofiles
 aioshutil
 anytree
 apscheduler
-aria2p
 asyncio
 beautifulsoup4
 bencoding
@@ -27,7 +26,6 @@ pymongo
 pyrogram==2.0.73
 python-dotenv
 python-magic
-qbittorrent-api
 requests
 telegraph
 tenacity
