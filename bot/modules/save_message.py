@@ -1,21 +1,19 @@
-from telegram.ext import CallbackQueryHandler
+from pyrogram.filters import regex
+from pyrogram.handlers import CallbackQueryHandler
 
-from bot import dispatcher
-from bot.helper.ext_utils.rate_limiter import ratelimiter
+from bot import bot
+from bot.helper.ext_utils.bot_utils import new_task
 
 
-@ratelimiter
-def save_message(update, context):
-    query = update.callback_query
+@new_task
+async def save_message(client, query):
     if query.data == "save":
         try:
-            del query.message.reply_markup['inline_keyboard'][-1]
-            query.message.copy(query.from_user.id, reply_markup=query.message.reply_markup)
-            query.answer('Message Saved Successfully', show_alert=True)
+            del query.message.reply_markup.inline_keyboard[-1]
+            await query.message.copy(query.from_user.id, reply_markup=query.message.reply_markup)
+            await query.answer('Message Saved Successfully', show_alert=True)
         except:
-            query.answer('Start the bot in private and try again', show_alert=True)
+            await query.answer('Start the bot in private and try again', show_alert=True)
 
 
-msgsave_handler = CallbackQueryHandler(save_message, pattern="save")
-
-dispatcher.add_handler(msgsave_handler)
+bot.add_handler(CallbackQueryHandler(save_message, filters=regex("^save")))

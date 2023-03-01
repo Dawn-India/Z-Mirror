@@ -1,22 +1,25 @@
-from asyncio import get_event_loop
+from uvloop import install
+
+install()
+from asyncio import Lock
 from faulthandler import enable as faulthandler_enable
 from logging import (INFO, FileHandler, StreamHandler, basicConfig, error,
                      getLogger, info, warning)
-from os import environ, path, remove
+from os import environ, path, remove, getcwd
 from socket import setdefaulttimeout
 from subprocess import Popen, run
-from threading import Lock, Thread
+from threading import Thread
 from time import sleep, time
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aria2p import API as ariaAPI
 from aria2p import Client as ariaClient
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from pyrogram import Client, enums
+from pyrogram import Client as tgClient
+from pyrogram import enums
 from qbittorrentapi import Client as qbClient
-from telegram.ext import Updater as tgUpdater, Defaults
-
-main_loop = get_event_loop()
+from tzlocal import get_localzone
 
 faulthandler_enable()
 
@@ -25,8 +28,8 @@ setdefaulttimeout(600)
 botStartTime = time()
 
 basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[FileHandler('log.txt'), StreamHandler()],
-            level=INFO)
+                    handlers=[FileHandler('log.txt'), StreamHandler()],
+                    level=INFO)
 
 LOGGER = getLogger(__name__)
 
@@ -50,7 +53,7 @@ non_queued_up = set()
 
 try:
     if bool(environ.get('_____REMOVE_THIS_LINE_____')):
-        error('The README.md file there to be read! Exiting now!')
+        error('README is there to be read! Read and try again! Exiting now!')
         exit()
 except:
     pass
@@ -58,30 +61,17 @@ except:
 download_dict_lock = Lock()
 status_reply_dict_lock = Lock()
 queue_dict_lock = Lock()
-# Key: update.effective_chat.id
-# Value: telegram.Message
 status_reply_dict = {}
-# Key: update.message.message_id
-# Value: An object of Status
 download_dict = {}
-# key: rss_title
-# value: {link, last_feed, last_title, filter}
 rss_dict = {}
-# key: msg_id
-# value: [listener, extras, isNeedEngine, time_out]
 btn_listener = {}
-
-for file_ in ['pyrogram.session', 'pyrogram.session-journal',
-              'rss_session.session', 'rss_session.session-journal']:
-    if path.exists(file_):
-        remove(file_)
 
 BOT_TOKEN = environ.get('BOT_TOKEN', '')
 if len(BOT_TOKEN) == 0:
     error("BOT_TOKEN variable is missing! Exiting now")
     exit(1)
 
-bot_id = int(BOT_TOKEN.split(':', 1)[0])
+bot_id = BOT_TOKEN.split(':', 1)[0]
 
 DATABASE_URL = environ.get('DATABASE_URL', '')
 if len(DATABASE_URL) == 0:
@@ -90,8 +80,7 @@ if len(DATABASE_URL) == 0:
 if DATABASE_URL:
     conn = MongoClient(DATABASE_URL)
     db = conn.mltb
-    # retrun config dict (all env vars)
-    if config_dict := db.settings.config.find_one({'_id': bot_id}):
+    if config_dict := db.settings.config.find_one({'_id': bot_id}):  #return config dict (all env vars)
         del config_dict['_id']
         for key, value in config_dict.items():
             environ[key] = str(value)
@@ -108,10 +97,10 @@ if DATABASE_URL:
     if qbit_opt := db.settings.qbittorrent.find_one({'_id': bot_id}):
         del qbit_opt['_id']
         qbit_options = qbit_opt
-    BOT_TOKEN = environ.get('BOT_TOKEN', '')
-    bot_id = int(BOT_TOKEN.split(':', 1)[0])
-    DATABASE_URL = environ.get('DATABASE_URL', '')
     conn.close()
+    BOT_TOKEN = environ.get('BOT_TOKEN', '')
+    bot_id = BOT_TOKEN.split(':', 1)[0]
+    DATABASE_URL = environ.get('DATABASE_URL', '')
 else:
     config_dict = {}
 
@@ -164,27 +153,14 @@ if len(EXTENSION_FILTER) > 0:
         GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
 
 IS_PREMIUM_USER = False
+user = ''
 USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
-if len(USER_SESSION_STRING) == 0:
-    info("Creating client from BOT_TOKEN")
-    app = Client(name='pyrogram', api_id=TELEGRAM_API, api_hash=TELEGRAM_HASH,
-                 bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
-    IS_USER_SESSION = False
-else:
+if len(USER_SESSION_STRING) != 0:
     info("Creating client from USER_SESSION_STRING")
-    app = Client(name='pyrogram', api_id=TELEGRAM_API, api_hash=TELEGRAM_HASH,
-                 session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
-    with app:
-        IS_PREMIUM_USER = app.me.is_premium
-    IS_USER_SESSION = True
-
-RSS_USER_SESSION_STRING = environ.get('RSS_USER_SESSION_STRING', '')
-if len(RSS_USER_SESSION_STRING) == 0:
-    rss_session = ''
-else:
-    info("Creating client from RSS_USER_SESSION_STRING")
-    rss_session = Client(name='rss_session', api_id=TELEGRAM_API, api_hash=TELEGRAM_HASH,
-                         session_string=RSS_USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+    user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
+                    parse_mode=enums.ParseMode.HTML, no_updates=True)
+    user.start()
+    IS_PREMIUM_USER = user.me.is_premium
 
 MEGA_API_KEY = environ.get('MEGA_API_KEY', '')
 if len(MEGA_API_KEY) == 0:
@@ -210,10 +186,6 @@ SEARCH_API_LINK = environ.get('SEARCH_API_LINK', '').rstrip("/")
 if len(SEARCH_API_LINK) == 0:
     SEARCH_API_LINK = ''
 
-RSS_COMMAND = environ.get('RSS_COMMAND', '')
-if len(RSS_COMMAND) == 0:
-    RSS_COMMAND = ''
-
 LEECH_FILENAME_PREFIX = environ.get('LEECH_FILENAME_PREFIX', '')
 if len(LEECH_FILENAME_PREFIX) == 0:
     LEECH_FILENAME_PREFIX = ''
@@ -230,11 +202,11 @@ if len(LEECH_SPLIT_SIZE) == 0 or int(LEECH_SPLIT_SIZE) > MAX_SPLIT_SIZE:
 else:
     LEECH_SPLIT_SIZE = int(LEECH_SPLIT_SIZE)
 
-DOWNLOAD_STATUS_UPDATE_INTERVAL = environ.get('DOWNLOAD_STATUS_UPDATE_INTERVAL', '')
-if len(DOWNLOAD_STATUS_UPDATE_INTERVAL) == 0:
-    DOWNLOAD_STATUS_UPDATE_INTERVAL = 10
+STATUS_UPDATE_INTERVAL = environ.get('STATUS_UPDATE_INTERVAL', '')
+if len(STATUS_UPDATE_INTERVAL) == 0:
+    STATUS_UPDATE_INTERVAL = 10
 else:
-    DOWNLOAD_STATUS_UPDATE_INTERVAL = int(DOWNLOAD_STATUS_UPDATE_INTERVAL)
+    STATUS_UPDATE_INTERVAL = int(STATUS_UPDATE_INTERVAL)
 
 AUTO_DELETE_MESSAGE_DURATION = environ.get('AUTO_DELETE_MESSAGE_DURATION', '')
 if len(AUTO_DELETE_MESSAGE_DURATION) == 0:
@@ -299,9 +271,6 @@ USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
 WEB_PINCODE = environ.get('WEB_PINCODE', '')
 WEB_PINCODE = WEB_PINCODE.lower() == 'true'
 
-IGNORE_PENDING_REQUESTS = environ.get('IGNORE_PENDING_REQUESTS', '')
-IGNORE_PENDING_REQUESTS = IGNORE_PENDING_REQUESTS.lower() == 'true'
-
 AS_DOCUMENT = environ.get('AS_DOCUMENT', '')
 AS_DOCUMENT = AS_DOCUMENT.lower() == 'true'
 
@@ -354,12 +323,6 @@ MEGA_LIMIT = '' if len(MEGA_LIMIT) == 0 else float(MEGA_LIMIT)
 LEECH_LIMIT = environ.get('LEECH_LIMIT', '')
 LEECH_LIMIT = '' if len(LEECH_LIMIT) == 0 else float(LEECH_LIMIT)
 
-MAX_PLAYLIST = environ.get('MAX_PLAYLIST', '')
-MAX_PLAYLIST = '' if len(MAX_PLAYLIST) == 0 else int(MAX_PLAYLIST)
-
-ENABLE_RATE_LIMITER = environ.get('ENABLE_RATE_LIMITER', '')
-ENABLE_RATE_LIMITER = ENABLE_RATE_LIMITER.lower() == 'true'
-
 ENABLE_MESSAGE_FILTER = environ.get('ENABLE_MESSAGE_FILTER', '')
 ENABLE_MESSAGE_FILTER = ENABLE_MESSAGE_FILTER.lower() == 'true'
 
@@ -399,7 +362,6 @@ config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                 'EQUAL_SPLITS': EQUAL_SPLITS,
                 'EXTENSION_FILTER': EXTENSION_FILTER,
                 'GDRIVE_ID': GDRIVE_ID,
-                'IGNORE_PENDING_REQUESTS': IGNORE_PENDING_REQUESTS,
                 'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
                 'INDEX_URL': INDEX_URL,
                 'IS_TEAM_DRIVE': IS_TEAM_DRIVE,
@@ -413,9 +375,7 @@ config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                 'QUEUE_ALL': QUEUE_ALL,
                 'QUEUE_DOWNLOAD': QUEUE_DOWNLOAD,
                 'QUEUE_UPLOAD': QUEUE_UPLOAD,
-                'RSS_USER_SESSION_STRING': RSS_USER_SESSION_STRING,
                 'RSS_CHAT_ID': RSS_CHAT_ID,
-                'RSS_COMMAND': RSS_COMMAND,
                 'RSS_DELAY': RSS_DELAY,
                 'SEARCH_API_LINK': SEARCH_API_LINK,
                 'SEARCH_LIMIT': SEARCH_LIMIT,
@@ -423,7 +383,7 @@ config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                 'SERVER_PORT': SERVER_PORT,
                 'STATUS_LIMIT': STATUS_LIMIT,
                 'USER_MAX_TASKS': USER_MAX_TASKS,
-                'DOWNLOAD_STATUS_UPDATE_INTERVAL': DOWNLOAD_STATUS_UPDATE_INTERVAL,
+                'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                 'STOP_DUPLICATE': STOP_DUPLICATE,
                 'SUDO_USERS': SUDO_USERS,
                 'TELEGRAM_API': TELEGRAM_API,
@@ -445,8 +405,6 @@ config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                 'CLONE_LIMIT': CLONE_LIMIT,
                 'MEGA_LIMIT': MEGA_LIMIT,
                 'LEECH_LIMIT': LEECH_LIMIT,
-                'MAX_PLAYLIST': MAX_PLAYLIST,
-                'ENABLE_RATE_LIMITER': ENABLE_RATE_LIMITER,
                 'ENABLE_MESSAGE_FILTER': ENABLE_MESSAGE_FILTER,
                 'STOP_DUPLICATE_TASKS': STOP_DUPLICATE_TASKS,
                 'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
@@ -494,7 +452,6 @@ if path.exists('shorteners.txt'):
                 SHORTENERES.append(temp[0])
                 SHORTENER_APIS.append(temp[1])
 
-
 if path.exists('categories.txt'):
     with open('categories.txt', 'r+') as f:
         lines = f.readlines()
@@ -516,16 +473,16 @@ if BASE_URL:
 
 run(["qbittorrent-nox", "-d", "--profile=."])
 if not path.exists('.netrc'):
-    run(["touch", ".netrc"])
-run(["cp", ".netrc", "/root/.netrc"])
-run(["chmod", "600", "/root/.netrc"])
+    with open('.netrc', 'w'):
+       pass
 run(["chmod", "600", ".netrc"])
+run(["cp", ".netrc", "/root/.netrc"])
 run(["chmod", "+x", "aria.sh"])
 run("./aria.sh", shell=True)
 if path.exists('accounts.zip'):
     if path.exists('accounts'):
         run(["rm", "-rf", "accounts"])
-    run(["unzip", "-q", "-o", "accounts.zip", "-W", "accounts/*.json"])
+    run(["7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json"])
     run(["chmod", "-R", "777", "accounts"])
     remove('accounts.zip')
 if not path.exists('accounts'):
@@ -533,7 +490,6 @@ if not path.exists('accounts'):
 sleep(0.5)
 
 aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
-
 
 def get_client():
     return qbClient(host="localhost", port=8090, VERIFY_WEBUI_CERTIFICATE=False, REQUESTS_ARGS={'timeout': (30, 60)})
@@ -554,6 +510,9 @@ def aria2c_init():
             info('Aria2c initializing finished')
     except Exception as e:
         error(f"Aria2c initializing error: {e}")
+
+Thread(target=aria2c_init).start()
+sleep(1.5)
 
 aria2c_global = ['bt-max-open-files', 'download-result', 'keep-unfinished-download-result', 'log', 'log-level',
                  'max-concurrent-downloads', 'max-download-result', 'max-overall-download-limit', 'save-session',
@@ -583,12 +542,9 @@ else:
             del qb_opt[k]
     qb_client.app_set_preferences(qb_opt)
 
-Thread(target=aria2c_init).start()
-sleep(1.5)
-
-tgDefaults = Defaults(parse_mode='HTML', disable_web_page_preview=True, allow_sending_without_reply=True, run_async=True)
-updater = tgUpdater(token=BOT_TOKEN, defaults=tgDefaults, request_kwargs={'read_timeout': 20, 'connect_timeout': 15})
-bot = updater.bot
-dispatcher = updater.dispatcher
-job_queue = updater.job_queue
-botname = bot.username
+info("Creating client from BOT_TOKEN")
+bot = tgClient('bot', TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML)
+bot.start()
+bot_loop = bot.loop
+bot_name = bot.me.username
+scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)

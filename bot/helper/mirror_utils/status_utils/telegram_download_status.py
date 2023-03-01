@@ -5,6 +5,7 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus,
                                             get_readable_time)
 
 engine_ = f"pyrogram v{get_distribution('pyrogram').version}"
+
 class TelegramDownloadStatus:
     def __init__(self, obj, listener, gid):
         self.__obj = obj
@@ -13,7 +14,7 @@ class TelegramDownloadStatus:
         self.message = self.__listener.message
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
-        self.source = self.__source()
+        self.source = self.__listener.source
         self.engine = engine_
 
     def gid(self):
@@ -60,8 +61,13 @@ class TelegramDownloadStatus:
         return self.__obj
     
     def __source(self):
-        reply_to = self.message.reply_to_message
-        source = reply_to.from_user.username or reply_to.from_user.id if reply_to and \
-            not reply_to.from_user.is_bot else self.message.from_user.username \
-                or self.message.from_user.id
-        return f"<a href='{self.message.link}'>{source}</a>"
+        if (reply_to := self.message.reply_to_message) and reply_to.from_user and not reply_to.from_user.is_bot:
+            source = reply_to.from_user.username or reply_to.from_user.id
+        elif self.__listener.tag == 'Anonymous':
+            source = self.__listener.tag
+        else:
+            source = self.message.from_user.username or self.message.from_user.id
+        if self.__listener.isSuperGroup:
+            return f"<a href='{self.message.link}'>{source}</a>"
+        else:
+            return f"<i>{source}</i>"
