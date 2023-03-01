@@ -1,7 +1,7 @@
 from time import time
 
 from bot import DOWNLOAD_DIR, LOGGER
-from bot.helper.ext_utils.bot_utils import (MirrorStatus,
+from bot.helper.ext_utils.bot_utils import (MirrorStatus, async_to_sync,
                                             get_readable_file_size,
                                             get_readable_time)
 from bot.helper.ext_utils.fs_utils import get_path_size
@@ -18,7 +18,7 @@ class ExtractStatus:
         self.message = self.__listener.message
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
-        self.source = self.__source()
+        self.source = self.__listener.source
         self.engine = '7z'
 
     def gid(self):
@@ -60,22 +60,15 @@ class ExtractStatus:
 
     def processed_bytes(self):
         if self.__listener.newDir:
-            return get_path_size(f"{DOWNLOAD_DIR}{self.__uid}10000")
+            return async_to_sync(get_path_size, f"{DOWNLOAD_DIR}{self.__uid}10000")
         else:
-            return get_path_size(f"{DOWNLOAD_DIR}{self.__uid}") - self.__size
+            return async_to_sync(get_path_size, f"{DOWNLOAD_DIR}{self.__uid}") - self.__size
 
     def download(self):
         return self
 
-    def cancel_download(self):
+    async def cancel_download(self):
         LOGGER.info(f'Cancelling Extract: {self.__name}')
         if self.__listener.suproc:
             self.__listener.suproc.kill()
-        self.__listener.onUploadError('extracting stopped by user!')
-
-    def __source(self):
-        reply_to = self.message.reply_to_message
-        source = reply_to.from_user.username or reply_to.from_user.id if reply_to and \
-            not reply_to.from_user.is_bot else self.message.from_user.username \
-                or self.message.from_user.id
-        return f"<a href='{self.message.link}'>{source}</a>"
+        await self.__listener.onUploadError('extracting stopped by user!')

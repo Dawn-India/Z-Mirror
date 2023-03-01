@@ -1,11 +1,11 @@
-from string import ascii_letters
+from asyncio import sleep
 from random import SystemRandom
-from time import sleep
-from telegraph import Telegraph
+from string import ascii_letters
+
+from telegraph.aio import Telegraph
 from telegraph.exceptions import RetryAfterError
 
-from bot import LOGGER
-
+from bot import LOGGER, bot_loop
 
 class TelegraphHelper:
     def __init__(self, author_name=None, author_url=None):
@@ -14,20 +14,23 @@ class TelegraphHelper:
         self.access_token = None
         self.author_name = author_name
         self.author_url = author_url
-        self.create_account()
 
-    def create_account(self):
-        self.telegraph.create_account(
-            short_name=self.short_name,
-            author_name=self.author_name,
-            author_url=self.author_url
-        )
-        self.access_token = self.telegraph.get_access_token()
-        LOGGER.info("Creating Telegraph Account")
-
-    def create_page(self, title, content):
+    async def create_account(self):
         try:
-           return self.telegraph.create_page(
+            await self.telegraph.create_account(
+                short_name=self.short_name,
+                author_name=self.author_name,
+                author_url=self.author_url
+            )
+            self.access_token = self.telegraph.get_access_token()
+            LOGGER.info("Creating Telegraph Account")
+        except:
+            LOGGER.error('Unable to create Telegraph account.')
+            pass
+
+    async def create_page(self, title, content):
+        try:
+           return await self.telegraph.create_page(
                 title = title,
                 author_name=self.author_name,
                 author_url=self.author_url,
@@ -35,12 +38,12 @@ class TelegraphHelper:
            )
         except RetryAfterError as st:
             LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
-            sleep(st.retry_after)
-            return self.create_page(title, content)
+            await sleep(st.retry_after)
+            return await self.create_page(title, content)
 
-    def edit_page(self, path, title, content):
+    async def edit_page(self, path, title, content):
         try:
-            return self.telegraph.edit_page(
+            return await self.telegraph.edit_page(
                 path = path,
                 title = title,
                 author_name=self.author_name,
@@ -49,10 +52,10 @@ class TelegraphHelper:
             )
         except RetryAfterError as st:
             LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
-            sleep(st.retry_after)
-            return self.edit_page(path, title, content)
+            await sleep(st.retry_after)
+            return await self.edit_page(path, title, content)
 
-    def edit_telegraph(self, path, telegraph_content):
+    async def edit_telegraph(self, path, telegraph_content):
         nxt_page = 1
         prev_page = 0
         num_of_path = len(path)
@@ -67,23 +70,20 @@ class TelegraphHelper:
                 if nxt_page < num_of_path:
                     content += f'<b> | <a href="https://graph.org/{path[nxt_page]}">Next</a></b>'
                     nxt_page += 1
-            self.edit_page(
+            await self.edit_page(
                 path = path[prev_page],
                 title = 'Z Torrent Search',
                 content=content
             )
         return
-    
-    def revoke_access_token(self):
+
+    async def revoke_access_token(self):
         LOGGER.info('Revoking telegraph access token...')
         try:
-            return self.telegraph.revoke_access_token()
+            return await self.telegraph.revoke_access_token()
         except Exception as e:
             LOGGER.error(f'Failed Revoking telegraph access token due to : {e}')
 
-try:
-    telegraph=TelegraphHelper('Z', 'https://github.com/Dawn-India/Z-Mirror')
-except Exception as err:
-    LOGGER.warning(f"Can't Create Telegraph Account: {err}")
-    telegraph = None
-    pass
+
+telegraph = TelegraphHelper('Z-Mirror', 'https://github.com/Dawn-India/Z-Mirror')
+bot_loop.run_until_complete(telegraph.create_account())

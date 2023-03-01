@@ -1,9 +1,9 @@
-from time import sleep
+from asyncio import sleep
 
 from bot import LOGGER, get_client
 from bot.helper.ext_utils.bot_utils import (MirrorStatus,
                                             get_readable_file_size,
-                                            get_readable_time)
+                                            get_readable_time, sync_to_async)
 
 
 def get_download(client, hash_):
@@ -27,7 +27,7 @@ class QbDownloadStatus:
         self.message = self.__listener.message
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
-        self.source = self.__source()
+        self.source = self.__listener.source
         self.engine = engine_
 
     def __update(self):
@@ -55,7 +55,6 @@ class QbDownloadStatus:
         return f"{get_readable_file_size(self.__info.dlspeed)}/s"
 
     def name(self):
-        self.__update()
         if self.__info.state in ["metaDL", "checkingResumeData"]:
             return f"[METADATA]{self.__info.name}"
         else:
@@ -68,6 +67,7 @@ class QbDownloadStatus:
         return get_readable_time(self.__info.eta)
 
     def status(self):
+        self.__update()
         download = self.__info.state
         if download in ["queuedDL", "queuedUP"]:
             return MirrorStatus.STATUS_QUEUEDL
@@ -90,6 +90,7 @@ class QbDownloadStatus:
         return f"{get_readable_file_size(self.__info.uploaded)}"
 
     def upload_speed(self):
+        self.__update()
         return f"{get_readable_file_size(self.__info.upspeed)}/s"
 
     def ratio(self):
@@ -113,17 +114,10 @@ class QbDownloadStatus:
     def listener(self):
         return self.__listener
 
-    def cancel_download(self):
-        self.__client.torrents_pause(torrent_hashes=self.__hash)
+    async def cancel_download(self):
+        await sync_to_async(self.__client.torrents_pause, torrent_hashes=self.__hash)
         if self.status() != MirrorStatus.STATUS_SEEDING:
             LOGGER.info(f"Cancelling Download: {self.__info.name}")
-            sleep(0.3)
-            self.__listener.onDownloadError('Download stopped by user!')
-            self.__client.torrents_delete(torrent_hashes=self.__hash, delete_files=True)
-
-    def __source(self):
-        reply_to = self.message.reply_to_message
-        source = reply_to.from_user.username or reply_to.from_user.id if reply_to and \
-            not reply_to.from_user.is_bot else self.message.from_user.username \
-                or self.message.from_user.id
-        return f"<a href='{self.message.link}'>{source}</a>"
+            await sleep(0.3)
+            await self.__listener.onDownloadError('Download stopped by user!')
+            await sync_to_async(self.__client.torrents_delete, torrent_hashes=self.__hash, delete_files=True)

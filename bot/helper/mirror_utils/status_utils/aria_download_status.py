@@ -1,7 +1,8 @@
 from time import time
 
 from bot import LOGGER, aria2
-from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_time
+from bot.helper.ext_utils.bot_utils import (MirrorStatus, get_readable_time,
+                                            sync_to_async)
 
 
 def get_download(gid):
@@ -24,16 +25,17 @@ class AriaDownloadStatus:
         self.message = listener.message
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
-        self.source = self.__source()
+        self.source = self.__listener.source
         self.engine = engine_
 
     def __update(self):
-        self.__download = self.__download.live
         if self.__download is None:
             self.__download = get_download(self.__gid)
         elif self.__download.followed_by_ids:
             self.__gid = self.__download.followed_by_ids[0]
             self.__download = get_download(self.__gid)
+        else:
+            self.__download = self.__download.live
 
     def progress(self):
         """
@@ -57,7 +59,6 @@ class AriaDownloadStatus:
         return self.__download.download_speed_string()
 
     def name(self):
-        self.__update()
         return self.__download.name
 
     def size(self):
@@ -67,6 +68,7 @@ class AriaDownloadStatus:
         return self.__download.eta_string()
 
     def status(self):
+        self.__update()
         download = self.__download
         if download.is_waiting:
             return MirrorStatus.STATUS_QUEUEDL
@@ -87,6 +89,7 @@ class AriaDownloadStatus:
         return self.__download.upload_length_string()
 
     def upload_speed(self):
+        self.__update()
         return self.__download.upload_speed_string()
 
     def ratio(self):
@@ -105,25 +108,18 @@ class AriaDownloadStatus:
         self.__update()
         return self.__gid
 
-    def cancel_download(self):
-        self.__update()
+    async def cancel_download(self):
+        await sync_to_async(self.__update)
         if self.__download.seeder and self.seeding:
             LOGGER.info(f"Cancelling Seed: {self.name()}")
-            self.__listener.onUploadError(f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}")
-            aria2.remove([self.__download], force=True, files=True)
+            await self.__listener.onUploadError(f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}")
+            await sync_to_async(aria2.remove, [self.__download], force=True, files=True)
         elif downloads := self.__download.followed_by:
             LOGGER.info(f"Cancelling Download: {self.name()}")
-            self.__listener.onDownloadError('Download cancelled by user!')
+            await self.__listener.onDownloadError('Download cancelled by user!')
             downloads.append(self.__download)
-            aria2.remove(downloads, force=True, files=True)
+            await sync_to_async(aria2.remove, downloads, force=True, files=True)
         else:
             LOGGER.info(f"Cancelling Download: {self.name()}")
-            self.__listener.onDownloadError('Download stopped by user!')
-            aria2.remove([self.__download], force=True, files=True)
-
-    def __source(self):
-        reply_to = self.message.reply_to_message
-        source = reply_to.from_user.username or reply_to.from_user.id if reply_to and \
-            not reply_to.from_user.is_bot else self.message.from_user.username \
-                or self.message.from_user.id
-        return f"<a href='{self.message.link}'>{source}</a>"
+            await self.__listener.onDownloadError('Download stopped by user!')
+            await sync_to_async(aria2.remove, [self.__download], force=True, files=True)

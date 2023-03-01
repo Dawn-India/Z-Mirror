@@ -1,11 +1,13 @@
-from os import environ, makedirs
-from os import path as ospath
+from os import environ
 
-from pymongo import MongoClient
+from aiofiles import open as aiopen
+from aiofiles.os import makedirs
+from aiofiles.os import path as aiopath
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
 
-from bot import (DATABASE_URL, LOGGER, aria2_options, bot_id, botname,
-                 config_dict, qbit_options, rss_dict, user_data)
+from bot import (DATABASE_URL, LOGGER, aria2_options, bot_id, bot_loop,
+                 bot_name, config_dict, qbit_options, rss_dict, user_data)
 
 
 class DbManger:
@@ -15,65 +17,66 @@ class DbManger:
         self.__conn = None
         self.__connect()
 
+
     def __connect(self):
         try:
-            self.__conn = MongoClient(DATABASE_URL)
+            self.__conn = AsyncIOMotorClient(DATABASE_URL)
             self.__db = self.__conn.z
         except PyMongoError as e:
             LOGGER.error(f"Error in DB connection: {e}")
             self.__err = True
 
-    def db_load(self):
+    async def db_load(self):
         if self.__err:
             return
         # Save bot settings
-        self.__db.settings.config.update_one({'_id': bot_id}, {'$set': config_dict}, upsert=True)
+        await self.__db.settings.config.update_one({'_id': bot_id}, {'$set': config_dict}, upsert=True)
         # Save Aria2c options
-        if self.__db.settings.aria2c.find_one({'_id': bot_id}) is None:
-            self.__db.settings.aria2c.update_one({'_id': bot_id}, {'$set': aria2_options}, upsert=True)
+        if await self.__db.settings.aria2c.find_one({'_id': bot_id}) is None:
+            await self.__db.settings.aria2c.update_one({'_id': bot_id}, {'$set': aria2_options}, upsert=True)
         # Save qbittorrent options
-        if self.__db.settings.qbittorrent.find_one({'_id': bot_id}) is None:
-            self.__db.settings.qbittorrent.update_one({'_id': bot_id}, {'$set': qbit_options}, upsert=True)
+        if await self.__db.settings.qbittorrent.find_one({'_id': bot_id}) is None:
+            await self.__db.settings.qbittorrent.update_one({'_id': bot_id}, {'$set': qbit_options}, upsert=True)
         # User Data
-        if self.__db.users[bot_id].find_one():
+        if await self.__db.users[bot_id].find_one():
             rows = self.__db.users[bot_id].find({})
             # return a dict ==> {_id, is_sudo, is_auth, as_doc, thumb, yt_ql, media_group, equal_splits, split_size}
-            for row in rows:
+            async for row in rows:
                 uid = row['_id']
                 del row['_id']
                 path = f"Thumbnails/{uid}.jpg"
                 if row.get('thumb'):
-                    if not ospath.exists('Thumbnails'):
-                        makedirs('Thumbnails')
-                    with open(path, 'wb+') as f:
-                        f.write(row['thumb'])
+                    if not await aiopath.exists('Thumbnails'):
+                        await makedirs('Thumbnails')
+                    async with aiopen(path, 'wb+') as f:
+                        await f.write(row['thumb'])
                     row['thumb'] = path
                 user_data[uid] = row
             LOGGER.info("Users data has been imported from Database")
         # Rss Data
-        if self.__db.rss[bot_id].find_one():
-            rows = self.__db.rss[bot_id].find({})  # return a dict ==> {_id, link, last_feed, last_name, filters}
-            for row in rows:
-                title = row['_id']
+        if await self.__db.rss[bot_id].find_one():
+            rows = self.__db.rss[bot_id].find({})  # return a dict ==> {_id, title: {link, last_feed, last_name, inf, exf, command, paused}
+            async for row in rows:
+                user_id = row['_id']
                 del row['_id']
-                rss_dict[title] = row
+                rss_dict[user_id] = row
             LOGGER.info("Rss data has been imported from Database.")
-        self.__conn.close()
+        self.__conn.close
 
-    def update_config(self, dict_):
+    async def update_config(self, dict_):
         if self.__err:
             return
-        self.__db.settings.config.update_one({'_id': bot_id}, {'$set': dict_}, upsert=True)
-        self.__conn.close()
+        await self.__db.settings.config.update_one({'_id': bot_id}, {'$set': dict_}, upsert=True)
+        self.__conn.close
 
-    def load_configs(self):
+    async def load_configs(self):
         if self.__err:
             return
-        if db_dict := self.__db.settings.config.find_one({'_id': bot_id}):
+        if db_dict := await self.__db.settings.config.find_one({'_id': bot_id}):
             del db_dict['_id']
             for key, value in db_dict.items():
                 environ[key] = str(value)
-        if pf_dict := self.__db.settings.files.find_one({'_id': bot_id}):
+        if pf_dict := await self.__db.settings.files.find_one({'_id': bot_id}):
             del pf_dict['_id']
             for key, value in pf_dict.items():
                 if value:
@@ -81,81 +84,88 @@ class DbManger:
                     with open(file_, 'wb+') as f:
                         f.write(value)
 
-    def update_aria2(self, key, value):
+    async def update_aria2(self, key, value):
         if self.__err:
             return
-        self.__db.settings.aria2c.update_one({'_id': bot_id}, {'$set': {key: value}}, upsert=True)
-        self.__conn.close()
+        await self.__db.settings.aria2c.update_one({'_id': bot_id}, {'$set': {key: value}}, upsert=True)
+        self.__conn.close
 
-    def update_qbittorrent(self, key, value):
+    async def update_qbittorrent(self, key, value):
         if self.__err:
             return
-        self.__db.settings.qbittorrent.update_one({'_id': bot_id}, {'$set': {key: value}}, upsert=True)
-        self.__conn.close()
+        await self.__db.settings.qbittorrent.update_one({'_id': bot_id}, {'$set': {key: value}}, upsert=True)
+        self.__conn.close
 
-    def update_private_file(self, path):
+    async def update_private_file(self, path):
         if self.__err:
             return
-        if ospath.exists(path):
-            with open(path, 'rb+') as pf:
-                pf_bin = pf.read()
+        if await aiopath.exists(path):
+            async with aiopen(path, 'rb+') as pf:
+                pf_bin = await pf.read()
         else:
             pf_bin = ''
         path = path.replace('.', '__')
-        self.__db.settings.files.update_one({'_id': bot_id}, {'$set': {path: pf_bin}}, upsert=True)
-        self.__conn.close()
+        await self.__db.settings.files.update_one({'_id': bot_id}, {'$set': {path: pf_bin}}, upsert=True)
+        self.__conn.close
 
-    def update_user_data(self, user_id):
+    async def update_user_data(self, user_id):
         if self.__err:
             return
         data = user_data[user_id]
         if data.get('thumb'):
             del data['thumb']
-        self.__db.users[bot_id].update_one({'_id': user_id}, {'$set': data}, upsert=True)
-        self.__conn.close()
+        await self.__db.users[bot_id].replace_one({'_id': user_id}, data, upsert=True)
+        self.__conn.close
 
-    def update_thumb(self, user_id, path=None):
+    async def update_thumb(self, user_id, path=None):
         if self.__err:
             return
         if path:
-            with open(path, 'rb+') as image:
-                image_bin = image.read()
+            async with aiopen(path, 'rb+') as image:
+                image_bin = await image.read()
         else:
             image_bin = ''
-        self.__db.users[bot_id].update_one({'_id': user_id}, {'$set': {'thumb': image_bin}}, upsert=True)
-        self.__conn.close()
+        await self.__db.users[bot_id].update_one({'_id': user_id}, {'$set': {'thumb': image_bin}}, upsert=True)
+        self.__conn.close
 
-    def rss_update(self, title):
+    async def rss_update_all(self):
         if self.__err:
             return
-        self.__db.rss[bot_id].update_one({'_id': title}, {'$set': rss_dict[title]}, upsert=True)
-        self.__conn.close()
+        for user_id in list(rss_dict.keys()):
+            await self.__db.rss[bot_id].replace_one({'_id': user_id}, rss_dict[user_id], upsert=True)
+        self.__conn.close
 
-    def rss_delete(self, title):
+    async def rss_update(self, user_id):
         if self.__err:
             return
-        self.__db.rss[bot_id].delete_one({'_id': title})
-        self.__conn.close()
+        await self.__db.rss[bot_id].replace_one({'_id': user_id}, rss_dict[user_id], upsert=True)
+        self.__conn.close
 
-    def add_incomplete_task(self, cid, link, tag):
+    async def rss_delete(self, user_id):
         if self.__err:
             return
-        self.__db.tasks[bot_id].insert_one({'_id': link, 'cid': cid, 'tag': tag})
-        self.__conn.close()
+        await self.__db.rss[bot_id].delete_one({'_id': user_id})
+        self.__conn.close
 
-    def rm_complete_task(self, link):
+    async def add_incomplete_task(self, cid, link, tag):
         if self.__err:
             return
-        self.__db.tasks[bot_id].delete_one({'_id': link})
-        self.__conn.close()
+        await self.__db.tasks[bot_id].insert_one({'_id': link, 'cid': cid, 'tag': tag})
+        self.__conn.close
 
-    def get_incomplete_tasks(self):
+    async def rm_complete_task(self, link):
+        if self.__err:
+            return
+        await self.__db.tasks[bot_id].delete_one({'_id': link})
+        self.__conn.close
+
+    async def get_incomplete_tasks(self):
         notifier_dict = {}
         if self.__err:
             return notifier_dict
-        if self.__db.tasks[bot_id].find_one():
+        if await self.__db.tasks[bot_id].find_one():
             rows = self.__db.tasks[bot_id].find({})  # return a dict ==> {_id, cid, tag}
-            for row in rows:
+            async for row in rows:
                 if row['cid'] in list(notifier_dict.keys()):
                     if row['tag'] in list(notifier_dict[row['cid']]):
                         notifier_dict[row['cid']][row['tag']].append(row['_id'])
@@ -164,43 +174,43 @@ class DbManger:
                 else:
                     usr_dict = {row['tag']: [row['_id']]}
                     notifier_dict[row['cid']] = usr_dict
-        self.__db.tasks[bot_id].drop()
-        self.__conn.close()
+        await self.__db.tasks[bot_id].drop()
+        self.__conn.close
         return notifier_dict # return a dict ==> {cid: {tag: [_id, _id, ...]}}
 
-    def trunc_table(self, name):
+    async def trunc_table(self, name):
         if self.__err:
             return
-        self.__db[name][bot_id].drop()
-        self.__conn.close()
+        await self.__db[name][bot_id].drop()
+        self.__conn.close
 
-    def add_download_url(self, url: str, tag: str):
+    async def add_download_url(self, url: str, tag: str):
         if self.__err:
             return
-        download = {'_id': url, 'tag': tag, 'botname': botname}
-        self.__db.download_links.update_one({'_id': url}, {'$set': download}, upsert=True)
-        self.__conn.close()
+        download = {'_id': url, 'tag': tag, 'botname': bot_name}
+        await self.__db.download_links.update_one({'_id': url}, {'$set': download}, upsert=True)
+        self.__conn.close
 
-    def check_download(self, url:str):
+    async def check_download(self, url:str):
         if self.__err:
             return
-        exist = self.__db.download_links.find_one({'_id': url})
-        self.__conn.close()
+        exist = await self.__db.download_links.find_one({'_id': url})
+        self.__conn.close
         return exist
 
-    def clear_download_links(self, bot_name=None):
+    async def clear_download_links(self, botName=None):
         if self.__err:
             return
-        if not bot_name:
-            bot_name = botname
-        self.__db.download_links.delete_many({'botname': bot_name})
-        self.__conn.close()
+        if not botName:
+            botName = bot_name
+        await self.__db.download_links.delete_many({'botname': botName})
+        self.__conn.close
 
-    def remove_download(self, url: str):
+    async def remove_download(self, url: str):
         if self.__err:
             return
-        self.__db.download_links.delete_one({'_id': url})
-        self.__conn.close()
+        await self.__db.download_links.delete_one({'_id': url})
+        self.__conn.close
 
 if DATABASE_URL:
-    DbManger().db_load()
+    bot_loop.run_until_complete(DbManger().db_load())

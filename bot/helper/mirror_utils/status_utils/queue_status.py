@@ -12,8 +12,8 @@ class QueueStatus:
         self.message = self.__listener.message
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
-        self.source = self.__source()
-        self.engine = "Queue System v1.0"
+        self.source = self.__listener.source
+        self.engine = "Queue System v1.1"
 
     def gid(self):
         return self.__gid
@@ -48,16 +48,9 @@ class QueueStatus:
     def download(self):
         return self
 
-    def cancel_download(self):
+    async def cancel_download(self):
         LOGGER.info(f'Cancelling Queue{self.__state}: {self.__name}')
         if self.__state == 'Dl':
-            self.__listener.onDownloadError('task have been removed from queue/download')
+            await self.__listener.onDownloadError('task have been removed from queue/download')
         else:
-            self.__listener.onUploadError('task have been removed from queue/upload')
-
-    def __source(self):
-        reply_to = self.message.reply_to_message
-        source = reply_to.from_user.username or reply_to.from_user.id if reply_to and \
-            not reply_to.from_user.is_bot else self.message.from_user.username \
-                or self.message.from_user.id
-        return f"<a href='{self.message.link}'>{source}</a>"
+            await self.__listener.onUploadError('task have been removed from queue/upload')
