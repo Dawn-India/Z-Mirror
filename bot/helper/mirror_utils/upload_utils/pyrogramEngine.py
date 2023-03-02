@@ -181,13 +181,10 @@ class TgUploader:
                         return
                     cap_mono = await self.__prepare_file(file_, dirpath)
                     if f_size > 2097152000 and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot:
-                        LOGGER.info('Trying to upload file greater than 2gb fetching message for user client')
-                        if DUMP_CHAT:= config_dict['DUMP_CHAT']:
-                            self.__sent_msg = await user.get_messages(chat_id=DUMP_CHAT, message_ids=self.__sent_msg.id)
-                        else:
-                            self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
                         self.__upload_4gb += 1
-                    elif not self.__sent_msg._client.me.is_bot:
+                        LOGGER.info('Trying to upload file greater than 2gb fetching message for user client')
+                        self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+                    if f_size < 2097152000 and not self.__sent_msg._client.me.is_bot:
                         LOGGER.info('Trying to upload file less than 2gb fetching message for bot client')
                         self.__sent_msg = await bot.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
                     if self.__last_msg_in_group:
@@ -215,8 +212,8 @@ class TgUploader:
                     continue
                 finally:
                     if not self.__is_cancelled and await aiopath.exists(self.__up_path) and \
-                          (not self.__listener.seed or self.__listener.newDir or
-                          dirpath.endswith("splited_files_z") or '/copied_z/' in self.__up_path):
+                              (not self.__listener.seed or self.__listener.newDir or \
+                              dirpath.endswith("splited_files_z") or '/copied_z/' in self.__up_path):
                         await aioremove(self.__up_path)
         for key, value in list(self.__media_dict.items()):
             for subkey, msgs in list(value.items()):
