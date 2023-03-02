@@ -12,8 +12,7 @@ from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot,
 from bot.helper.ext_utils.bot_utils import (check_user_tasks, get_content_type,
                                             is_gdrive_link, is_magnet,
                                             is_mega_link, is_share_link,
-                                            is_url, new_task, new_task,
-                                            sync_to_async)
+                                            is_url, new_task, sync_to_async)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.z_utils import extract_link

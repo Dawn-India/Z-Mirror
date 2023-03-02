@@ -28,7 +28,7 @@ from .helper.telegram_helper.message_utils import (editMessage, sendFile,
 from .modules import (anonymous, authorize, bot_settings, bt_select,
                       cancel_mirror, category_select, count, delete,
                       drive_list, eval, mirror_leech, mirror_status, rmdb, rss,
-                      save_message, search, shell, users_settings, ytdlp)
+                      search, shell, users_settings, ytdlp)
 
 def progress_bar(percentage):
     p_used = '⬢'
