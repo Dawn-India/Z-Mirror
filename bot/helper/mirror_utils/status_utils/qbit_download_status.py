@@ -14,7 +14,7 @@ def get_download(client, hash_):
         client = get_client()
         return get_download(client, hash_)
 
-engine_ = f"qBittorrent {get_client().app.version}"
+engine_ = f"qBit {get_client().app.version}"
 
 class QbDownloadStatus:
 

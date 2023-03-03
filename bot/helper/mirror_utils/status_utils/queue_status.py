@@ -13,7 +13,7 @@ class QueueStatus:
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
         self.source = self.__listener.source
-        self.engine = "Queue System v1.1"
+        self.engine = "Queue_Sys v1.1"
 
     def gid(self):
         return self.__gid

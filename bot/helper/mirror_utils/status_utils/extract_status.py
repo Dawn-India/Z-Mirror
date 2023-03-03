@@ -19,7 +19,7 @@ class ExtractStatus:
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
         self.source = self.__listener.source
-        self.engine = '7z'
+        self.engine = 'p7zip'
 
     def gid(self):
         return self.__gid
