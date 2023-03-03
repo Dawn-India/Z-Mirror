@@ -120,7 +120,7 @@ async def ping(client, message):
     await editMessage(reply, f'{end_time - start_time} ms')
 
 async def log(client, message):
-    await sendFile(message, 'z_logs.txt')
+    await sendFile(message, 'log.txt')
 
 help_string = f'''
 NOTE: Try each command without any argument to see more detalis.
