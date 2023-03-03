@@ -213,7 +213,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                 await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name)
                 return
 
-    if isClone and not is_gdrive_link(link) and not is_share_link(link) or is_mega_link(link) or (link.isdigit() and multi == 0):
+    if isClone and not is_gdrive_link(link) and not is_share_link(link) or (link.isdigit() and multi == 0):
         msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
         msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
         return await sendMessage(message, msg_)
