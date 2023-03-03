@@ -216,7 +216,7 @@ async def main():
                             msg = ''
                 if 'Restarted Successfully!' in msg and cid == chat_id:
                     try:
-                        await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text='Restarted Successfully!\n<b>Change Log</b>: <i>{change_log}</i>\n')
+                        await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=f'Restarted Successfully!\n<b>Change Log</b>: <i>{change_log}</i>\n')
                         await bot.send_message(chat_id, msg, disable_web_page_preview=True, reply_to_message_id=msg_id)
                     except:
                         pass
