@@ -54,12 +54,11 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
     auth = ''
 
     if len(message_args) > 1:
-        args = mesg[0].split(maxsplit=5)
+        args = mesg[0].split(maxsplit=6)
+        args.pop(0)
         for x in args:
             x = x.strip()
-            if x in ['|', 'pswd:']:
-                break
-            elif x == 's':
+            if x == 's':
                select = True
                index += 1
             elif x == 'd':
@@ -78,7 +77,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             elif x.startswith('m:'):
                 marg = x.split('m:', 1)
                 if len(marg) > 1:
-                    folder_name = f"/{marg[-1]}"
+                    folder_name = f"/{marg[1]}"
                     if not sameDir:
                         sameDir = set()
                     sameDir.add(message.id)
@@ -94,12 +93,14 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                 index_link = x.split(':', 1)
                 if len(index_link) > 1 and is_url(index_link[1]):
                     index_link = index_link[1]
+            else:
+                break
         if multi == 0:
             message_args = mesg[0].split(maxsplit=index)
             if len(message_args) > index:
-                link = message_args[index].strip()
-                if link.startswith(("|", "pswd:")):
-                    link = ''
+                x = message_args[index].strip()
+                if not x.startswith(('n:', 'pswd:')):
+                    link = re_split(r' pswd: | n: ', x)[0].strip()
         if len(folder_name) > 0:
             seed = False
             ratio = None
@@ -123,14 +124,11 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
 
     path = f'{DOWNLOAD_DIR}{message.id}{folder_name}'
 
-    name = mesg[0].split('|', maxsplit=1)
-    if len(name) > 1:
-        name = '' if 'pswd:' in name[0] else name[1].split('pswd:')[0].strip()
-    else:
-        name = ''
+    name = mesg[0].split(' n: ', 1)
+    name = name[1].split(' pswd: ')[0].strip() if len(name) > 1 else ''
 
-    pswd = mesg[0].split(' pswd: ')
-    pswd = pswd[1] if len(pswd) > 1 else None
+    pswd = mesg[0].split(' pswd:', 1)
+    pswd = pswd[1].split(' n: ')[0] if len(pswd) > 1 else None
     if len(mesg) > 1 and mesg[1].startswith('Tag: '):
         tag, id_ = mesg[1].split('Tag: ')[1].split()
         message.from_user = await client.get_users(id_)
@@ -145,10 +143,6 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
     else:
         tag = message.from_user.mention
 
-    if link != '':
-        link = re_split(r"pswd:|\|", link)[0]
-        link = link.strip()
-
     if reply_to := message.reply_to_message:
         file_ = reply_to.document or reply_to.photo or reply_to.video or reply_to.audio or \
                  reply_to.voice or reply_to.video_note or reply_to.sticker or reply_to.animation or None
@@ -162,10 +156,10 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
 
         if len(link) == 0 or not is_url(link) and not is_magnet(link):
             if file_ is None:
-                reply_text = reply_to.text.split(maxsplit=1)[0].strip()
+                reply_text = reply_to.text.split('\n', 1)[0].strip()
                 if is_url(reply_text) or is_magnet(reply_text):
                     link = reply_text
-            elif reply_to.document and file_.mime_type == 'application/x-bittorrent':
+            elif reply_to.document and (file_.mime_type == 'application/x-bittorrent' or file_.file_name.endswith('.torrent')):
                 link = await reply_to.download()
             elif not isClone:
                 if not message.from_user:
@@ -213,49 +207,49 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                 await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name)
                 return
 
-    if isClone and not is_gdrive_link(link) and not is_share_link(link) or (link.isdigit() and multi == 0):
+    if isClone and not is_gdrive_link(link) and not is_share_link(link) and is_mega_link(link) or (link.isdigit() and multi == 0):
         msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
         msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
         return await sendMessage(message, msg_)
 
     if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) or (link.isdigit() and multi == 0):
         help_msg = '''
-<code>/{cmd}</code> link |newname pswd: xx(zip/unzip)
+<code>/{cmd}</code> link n: newname pswd: xx(zip/unzip)
 
 <b>By replying to link/file:</b>
-<code>/{cmd}</code> |newname pswd: xx(zip/unzip)
+<code>/{cmd}</code> n: newname pswd: xx(zip/unzip)
 
 <b>Multi links within same upload directory only by replying to first link/file:</b>
 <code>/{cmd}</code> 10(number of links/files) m:folder_name
-Number and m:folder_name should be always before |newname or pswd:
+Number and m:folder_name should be always before n: or pswd:
 
 <b>Upload Custom Drive</b>
 <code>/{cmd}</code> <b>id:</b><code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b><code>https://anything.in/0:</code> link or by replying to file/link
 drive_id must be folder id and index must be url else it will not accept
-This options  should be always before |newname or pswd:
+This options  should be always before n: or pswd:
 
 <b>Direct link authorization:</b>
-<code>/{cmd}</code> link |newname pswd: xx(zip/unzip)
+<code>/{cmd}</code> link n: newname pswd: xx(zip/unzip)
 <b>username</b>
 <b>password</b>
 
 <b>Bittorrent selection:</b>
 <code>/{cmd}</code> <b>s</b> link or by replying to file/link
-This option should be always before |newname or pswd:
+This option should be always before n: or pswd:
 
 <b>Bittorrent seed</b>:
 <code>/{cmd}</code> <b>d</b> link or by replying to file/link
 To specify ratio and seed time add d:ratio:time. Ex: d:0.7:10 (ratio and time) or d:0.7 (only ratio) or d::10 (only time) where time in minutes.
-This options  should be always before |newname or pswd:
+This options  should be always before n: or pswd:
 
 <b>Multi links only by replying to first link/file:</b>
 <code>/{cmd}</code> 10(number of links/files)
 Number should be always before |newname or pswd:
 
 <b>NOTES:</b>
-1. When use cmd by reply don't add any option in link msg! always add them after cmd msg!
-2. You can't add this those options <b>|newname, pswd: and authorization</b> randomly. They should be arranged like example above, rename then pswd. Those options should be after the link if link along with the cmd and after any other option
-3. You can add this those options <b>d, s and multi</b> randomly. Ex: <code>/{cmd}</code> d:1:20 s 10 <b>or</b> <code>/{cmd}</code> s 10 d:0.5:100
+1. When use cmd by reply don't add any option in link msg! Always add them after cmd msg!
+2. Options (<b>n: and pswd:</b>) should be added randomly after the link if link along with the cmd and after any other option
+3. Options (<b>d, s, m: and multi</b>) should be added randomly before the link and before any other option.
 4. Commands that start with <b>qb</b> are ONLY for torrents.
 '''.format_map({'cmd': BotCommands.MirrorCommand[0]})
         await sendMessage(message, help_msg)
