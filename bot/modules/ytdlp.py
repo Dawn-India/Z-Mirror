@@ -64,7 +64,7 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     raw_url = None
     drive_id = None
     index_link = None
-    if len(args) > 1:
+    if len(args) > 0:
         for x in args:
             x = x.strip()
             if x == 's':
