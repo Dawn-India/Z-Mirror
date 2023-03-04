@@ -129,17 +129,15 @@ async def sendDmMessage(message, dmMode, isLeech=False):
         return await message._client.send_message(message.from_user.id, disable_notification=True, text=message.link)
     except FloodWait as r:
         LOGGER.warning(str(r))
-        sleep(r.value * 1.5)
-        return sendDmMessage(message, isLeech)
-    except UserIsBlocked as e:
-        await delete_links(message)
+        await sleep(r.value * 1.5)
+        return sendDmMessage(message, dmMode, isLeech)
+    except (UserIsBlocked, PeerIdInvalid) as e:
         buttons = ButtonMaker()
         buttons.ubutton("Start", f"https://t.me/{message._client.me.username}?start=start")
-        await sendMessage(message, "You didn't START me in DM.\nI'll send all files in DM.\n\n<b>Start and try again</b>\nThank You.", buttons.build_menu(1))
+        await sendMessage(message, f"You didn't START me in DM.\nI'll send all files in DM.\n\n<b>Start and try again</b>\nThank You.\n\nError: {e.MESSAGE}", buttons.build_menu(1))
         return 'BotNotStarted'
     except Exception as e:
         LOGGER.error(str(e))
-        return
 
 async def sendLogMessage(message, link, tag):
     if not (log_chat := config_dict['LOG_CHAT']):
@@ -160,7 +158,7 @@ async def sendLogMessage(message, link, tag):
         return await message._client.send_message(log_chat, msg, disable_web_page_preview=True)
     except FloodWait as r:
         LOGGER.warning(str(r))
-        sleep(r.value * 1.5)
+        await sleep(r.value * 1.5)
         return await sendLogMessage(message, link, tag)
     except PeerIdInvalid as e:
         LOGGER.error(e.MESSAGE)

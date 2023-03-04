@@ -60,15 +60,14 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     link = ''
     folder_name = ''
     args = mssg.split(maxsplit=5)
+    args.pop(0)
     raw_url = None
     drive_id = None
     index_link = None
     if len(args) > 1:
         for x in args:
             x = x.strip()
-            if x in ['|', 'pswd:', 'opt:']:
-                break
-            elif x == 's':
+            if x == 's':
                select = True
                index += 1
             elif x.strip().isdigit():
@@ -77,7 +76,7 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
             elif x.startswith('m:'):
                 marg = x.split('m:', 1)
                 if len(marg) > 1:
-                    folder_name = f"/{marg[-1]}"
+                    folder_name = f"/{marg[1]}"
                     if not sameDir:
                         sameDir = set()
                     sameDir.add(message.id)
@@ -93,15 +92,14 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
                 index_link = x.split(':', 1)
                 if len(index_link) > 1 and is_url(index_link[1]):
                     index_link = index_link[1]
+            else:
+                break
         if multi == 0:
             args = mssg.split(maxsplit=index)
             if len(args) > index:
-                link = args[index].strip()
-                if link.startswith(("|", "pswd:", "opt:")):
-                    link = ''
-                else:
-                    link = re_split(r"opt:|pswd:|\|", link)[0]
-                    link = link.strip()
+                x = args[index].strip()
+                if not x.startswith(("n:", "pswd:", "opt:")):
+                    link = re_split(r" opt: | pswd: | n: ", x)[0].strip()
 
     @new_task
     async def __run_multi():
@@ -121,20 +119,14 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
 
     path = f'{DOWNLOAD_DIR}{message.id}{folder_name}'
 
-    name = mssg.split('|', maxsplit=1)
-    if len(name) > 1:
-        if 'opt:' in name[0] or 'pswd:' in name[0]:
-            name = ''
-        else:
-            name = re_split('pswd:|opt:', name[1])[0].strip()
-    else:
-        name = ''
+    name = mssg.split(' n: ', 1)
+    name = re_split(' pswd: | opt: ', name[1])[0].strip() if len(name) > 1 else ''
 
-    pswd = mssg.split(' pswd: ')
-    pswd = pswd[1].split(' opt: ')[0] if len(pswd) > 1 else None
+    pswd = mssg.split(' pswd: ', 1)
+    pswd = re_split(' n: | opt: ', pswd[1])[0] if len(pswd) > 1 else None
 
-    opt = mssg.split(' opt: ')
-    opt = opt[1] if len(opt) > 1 else ''
+    opt = mssg.split(' opt: ', 1)
+    opt = re_split(' n: | pswd: ', opt[1])[0].strip() if len(opt) > 1 else ''
 
     if sender_chat:= message.sender_chat:
         tag = sender_chat.title
@@ -145,7 +137,7 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
 
     if reply_to := message.reply_to_message:
         if len(link) == 0:
-            link = reply_to.text.split(maxsplit=1)[0].strip()
+            link = reply_to.text.split('\n', 1)[0].strip()
         if sender_chat:= reply_to.sender_chat:
             tag = sender_chat.title
         elif not reply_to.from_user.is_bot:
@@ -157,35 +149,34 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     if (not is_url(link) or (link.isdigit() and multi == 0)) or reply_to and not reply_to.text:
         help_msg = """
 <b>Send link along with command line:</b>
-<code>/{cmd}</code> s link |newname pswd: xx(zip) opt: x:y|x1:y1
+<code>/{cmd}</code> s link n: newname pswd: xx(zip) opt: x:y|x1:y1
 
 <b>By replying to link:</b>
-<code>/{cmd}</code> |newname pswd: xx(zip) opt: x:y|x1:y1
+<code>/{cmd}</code> n: newname pswd: xx(zip) opt: x:y|x1:y1
 
 <b>Quality Buttons:</b>
 Incase default quality added but you need to select quality for specific link or links with multi links feature.
 <code>/cmd</code> s link
-This perfix should be always before |newname, pswd: and opt:
+This perfix should be always before n:, pswd: and opt:
 
 <b>Options Example:</b> opt: playliststart:^10|matchtitle:S13|writesubtitles:true|live_from_start:true|postprocessor_args:{fmg}|wait_for_video:(5, 100)
 
 <b>Multi links only by replying to first link:</b>
 <code>/{cmd}</code> 10(number of links)
-Number should be always before |newname, pswd: and opt:
+Number should be always before n:, pswd: and opt:
 
 <b>Multi links within same upload directory only by replying to first link:</b>
 <code>/cmd</code> 10(number of links) m:folder_name
-Number and m:folder_name should be always before |newname, pswd: and opt:
+Number and m:folder_name should be always before n:, pswd: and opt:
 
 <b>Options Note:</b> Add `^` before integer, some values must be integer and some string.
 Like playlist_items:10 works with string, so no need to add `^` before the number but playlistend works only with integer so you must add `^` before the number like example above.
 You can add tuple and dict also. Use double quotes inside dict.
 
-<b>NOTE:</b>
-1. When use cmd by reply don't add any option in link msg! always add them after cmd msg!
-2. Options (select quality (s) and mutli links (number)) can be add randomly before link or any other option.
-3. Options (rename, pswd, opt) should be arranged like exmaple above, rename then pswd then opt and after the link if link along with the cmd or after cmd if by reply. If you don't want to add pswd for example then it will be (|newname opt:), just don't change the arrangement.
-4. You can always add video quality from yt-dlp api options.
+<b>NOTES:</b>
+1. When use cmd by reply don't add any option in link msg! Always add them after cmd msg!
+2. Options (<b>s, m: and multi</b>) should be added randomly before link and before any other option.
+3. Options (<b>n:, pswd: and opt:</b>) should be added randomly after the link if link along with the cmd or after cmd if by reply.
 
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L178'>FILE</a>.
         """.format_map({'cmd': BotCommands.YtdlCommand[0], 'fmg': '{"ffmpeg": ["-threads", "4"]}'})

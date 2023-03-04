@@ -1,13 +1,15 @@
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
-
-from bot import LOGGER, bot, bot_loop
-from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_task, sync_to_async
+from asyncio import sleep
+from bot import LOGGER, bot
+from bot.helper.ext_utils.bot_utils import (is_gdrive_link, new_task,
+                                            sync_to_async)
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (auto_delete_message,
                                                       editMessage, sendMessage)
+
 
 @new_task
 async def deletefile(client, message):
@@ -41,12 +43,12 @@ async def delete_leech(client, message):
     if not link.startswith('https://t.me/'):
         msg = 'Send telegram message link along with command or by replying to the link by command'
         return await sendMessage(message, msg)
-    if len(delete) != 0:
-        msg = 'Already deleting in progress'
-        return await sendMessage(message, msg)
     msg = f'Okay deleting all replies with {link}'
     link = link.split('/')
     message_id = int(link[-1])
+    if message_id in delete:
+        msg = 'Already deleting in progress'
+        return await sendMessage(message, msg)
     chat_id = link[-2]
     if chat_id.isdigit():
         chat_id = f'-100{chat_id}'
@@ -61,6 +63,7 @@ async def deleting(client, chat_id, message_id, message):
         msg = await client.get_messages(chat_id, message_id, replies=-1)
         replies_ids = []
         while msg:
+            await sleep(0.5)
             replies_ids.append(msg.id)
             if msg.media_group_id:
                 media_group = await msg.get_media_group()
