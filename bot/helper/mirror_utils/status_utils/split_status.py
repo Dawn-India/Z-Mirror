@@ -1,6 +1,7 @@
 from time import time
 from bot import DOWNLOAD_DIR, LOGGER
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus, get_readable_time
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, MirrorStatus,
+                                            get_readable_time, async_to_sync)
 from bot.helper.ext_utils.fs_utils import get_path_size
 
 class SplitStatus:
@@ -15,7 +16,7 @@ class SplitStatus:
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
         self.source = self.__listener.source
-        self.engine = "FFmpeg v0.5"
+        self.engine = "FFmpeg v4.4.2"
 
     def gid(self):
         return self.__gid
@@ -55,7 +56,7 @@ class SplitStatus:
         return MirrorStatus.STATUS_SPLITTING
 
     def processed_bytes(self):
-        return get_path_size(f"{DOWNLOAD_DIR}{self.__uid}") - self.__size
+        return async_to_sync (get_path_size, f"{DOWNLOAD_DIR}{self.__uid}") - self.__size
 
     def download(self):
         return self

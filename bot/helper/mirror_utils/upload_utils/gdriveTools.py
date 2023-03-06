@@ -576,15 +576,15 @@ class GoogleDriveHelper:
                         else:
                             url_path = rquote(f'{file.get("name")}', safe='')
                         url = short_url(f'{index_url}/{url_path}/')
-                        msg += f' 📁 <b>| <a href="{url}">Index Link</a></b>'
+                        msg += f' 📁 <b>| <a href={url}>Index Link</a></b>'
                 elif mime_type == 'application/vnd.google-apps.shortcut':
                     if not config_dict['DISABLE_DRIVE_LINK']:
                         furl = short_url(f"https://drive.google.com/drive/folders/{file.get('id')}")
                         if SHORTENERES:
-                            msg += f"⁍<a href='{furl}'>{file.get('name').replace(' ', '-').replace('.', ',')}" \
+                            msg += f"⁍<a href={furl}>{file.get('name').replace(' ', '-').replace('.', ',')}" \
                                     f"</a> (shortcut)"
                         else:
-                            msg += f"⁍<a href='{furl}'>{file.get('name')}" \
+                            msg += f"⁍<a href={furl}>{file.get('name')}" \
                                    f"</a> (shortcut)"
                 else:
                     if SHORTENERES:
@@ -600,11 +600,11 @@ class GoogleDriveHelper:
                         else:
                             url_path = rquote(f'{file.get("name")}')
                         url = short_url(f'{index_url}/{url_path}')
-                        msg += f' <b>| 🚀 <a href="{url}">Index Link</a></b>'
+                        msg += f' <b>| 🚀 <a href={url}>Index Link</a></b>'
                         if config_dict['VIEW_LINK']:
                             urlv = f'{index_url}/{url_path}?a=view'
                             urlv = short_url(urlv)
-                            msg += f' <b>| 💻 <a href="{urlv}">View Link</a></b>'
+                            msg += f' <b>| 💻 <a href={urlv}>View Link</a></b>'
                 msg += '<br><br>'
                 contents_count += 1
                 if len(msg.encode('utf-8')) > 39000:

@@ -42,9 +42,12 @@ def short_url(longurl, attempt=0):
             res = cget('GET', f'https://{_shortener}/api?api={_shortener_api}&url={quote(longurl)}').json()
             shorted = res['shortenedUrl']
             if not shorted:
-                longurl = cget('GET','http://tinyurl.com/api-create.php', params=dict(url=longurl)).text
-                res = cget('GET', f'https://{_shortener}/api?api={_shortener_api}&url={quote(longurl)}').json()
+                shrtco_res = cget('GET', f'https://api.shrtco.de/v2/shorten?url={quote(longurl)}').json()
+                shrtco_link = shrtco_res['result']['full_short_link']
+                res = cget('GET', f'https://{_shortener}/api?api={_shortener_api}&url={shrtco_link}').json()
                 shorted = res['shortenedUrl']
+            if not shorted:
+                shorted = longurl
             return shorted
     except Exception as e:
         LOGGER.error(e)
