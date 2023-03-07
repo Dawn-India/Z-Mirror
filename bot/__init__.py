@@ -160,7 +160,12 @@ if len(USER_SESSION_STRING) != 0:
     user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
                     parse_mode=enums.ParseMode.HTML, no_updates=True)
     user.start()
-    IS_PREMIUM_USER = user.me.is_premium
+    if user.me.is_bot:
+        log_warning("You added bot string for USER_SESSION_STRING this is not allowed! Exiting now")
+        user.stop()
+        exit(1)
+    else:
+        IS_PREMIUM_USER = user.me.is_premium
 
 MEGA_API_KEY = environ.get('MEGA_API_KEY', '')
 if len(MEGA_API_KEY) == 0:

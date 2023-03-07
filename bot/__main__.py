@@ -179,22 +179,15 @@ async def main():
     await search.initiate_search_tools()
     if DATABASE_URL and STOP_DUPLICATE_TASKS:
         await DbManger().clear_download_links()
-    if await aiopath.exists('.git'):
-        change_log = await cmd_exec("'git', 'log', '-1', '--format=%s'", True)
-        change_log = change_log[0]
-    else:
-        change_log = 'No UPSTREAM_REPO'
     if INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
         if notifier_dict := await DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 if await aiopath.isfile(".restartmsg"):
                     with open(".restartmsg") as f:
                         chat_id, msg_id = map(int, f)
-                    msg = 'Restarted Successfully!' \
-                        f'\n<b>Change Log</b>: <i>{change_log}</i>'
+                    msg = 'Restarted Successfully!'
                 else:
-                    msg = 'Bot Restarted!' \
-                        f'\n<b>Change Log</b>: <i>{change_log}</i>'
+                    msg = 'Bot Restarted!'
                 for tag, links in data.items():
                     msg += f"\n\n👤 {tag} Do your tasks again. \n"
                     for index, link in enumerate(links, start=1):
@@ -216,7 +209,7 @@ async def main():
                             msg = ''
                 if 'Restarted Successfully!' in msg and cid == chat_id:
                     try:
-                        await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=f'Restarted Successfully!\n<b>Change Log</b>: <i>{change_log}</i>\n')
+                        await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text='Restarted Successfully!\n')
                         await bot.send_message(chat_id, msg, disable_web_page_preview=True, reply_to_message_id=msg_id)
                     except:
                         pass

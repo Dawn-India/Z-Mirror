@@ -37,76 +37,79 @@ async def __onDownloadStarted(api, gid):
         return
     else:
         LOGGER.info(f'onDownloadStarted: {download.name} - Gid: {gid}')
-    try:
-        if config_dict['STOP_DUPLICATE']:
-            await sleep(1)
-            if dl:= await getDownloadByGid(gid):
-                listener = dl.listener()
-                download = await sync_to_async(api.get_download, gid)
-                if not listener.isLeech and not listener.select:
-                    if not download.is_torrent:
-                        await sleep(3)
-                        download = download.live
-                    LOGGER.info('Checking File/Folder if already in Drive...')
-                    sname = download.name
-                    if listener.isZip:
-                        sname = f"{sname}.zip"
-                    elif listener.extract:
-                        try:
-                            sname = get_base_name(sname)
-                        except:
-                            sname = None
-                    if sname:
-                        smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, sname, True)
-                        if smsg:
-                            await delete_links(listener.message)
-                            await listener.onDownloadError('File/Folder already available in Drive.\nHere are the search results:\n', button)
-                            await sync_to_async(api.remove, [download], force=True, files=True)
-        if any([(DIRECT_LIMIT:= config_dict['DIRECT_LIMIT']),
-                (TORRENT_LIMIT:= config_dict['TORRENT_LIMIT']),
-                (LEECH_LIMIT:= config_dict['LEECH_LIMIT']),
-                (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD'])]):
-            await sleep(1)
-            dl = await getDownloadByGid(gid)
-            if dl and hasattr(dl, 'listener'):
-                listener = dl.listener()
-                download = await sync_to_async(api.get_download, gid)
-                download = download.live
-                if download.total_length == 0:
-                    start_time = time()
-                    while time() - start_time <= 15:
-                        download = await sync_to_async(api.get_download, gid)
-                        download = download.live
-                        if download.followed_by_ids:
-                            download = await sync_to_async(api.get_download, download.followed_by_ids[0])
-                        if download.total_length > 0:
-                            break
-                size = download.total_length
-                limit_exceeded = ''
-                if not limit_exceeded and STORAGE_THRESHOLD:
-                    limit = STORAGE_THRESHOLD * 1024**3
-                    arch = any([listener.isZip, listener.extract])
-                    acpt = await sync_to_async(check_storage_threshold, size, limit, arch, True)
-                    if not acpt:
-                        limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
-                if not limit_exceeded and DIRECT_LIMIT and not download.is_torrent:
-                    limit = DIRECT_LIMIT * 1024**3
-                    if size > limit:
-                        limit_exceeded = f'Direct limit is {get_readable_file_size(limit)}'
-                if not limit_exceeded and TORRENT_LIMIT and download.is_torrent:
-                    limit = TORRENT_LIMIT * 1024**3
-                    if size > limit:
-                        limit_exceeded = f'Torrent limit is {get_readable_file_size(limit)}'
-                if not limit_exceeded and LEECH_LIMIT and listener.isLeech:
-                    limit = LEECH_LIMIT * 1024**3
-                    if size > limit:
-                        limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
-                if limit_exceeded:
-                    await delete_links(listener.message)
-                    await listener.onDownloadError(f'{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}')
-                    await sync_to_async(api.remove, [download], force=True, files=True)
-    except Exception as e:
-        LOGGER.error(f"{e} onDownloadStart: {gid} check duplicate didn't pass")
+    if config_dict['STOP_DUPLICATE']:
+        await sleep(1)
+        if dl:= await getDownloadByGid(gid):
+            if not hasattr(dl, 'listener'):
+                LOGGER.warning(f"onDownloadStart: {gid}. STOP_DUPLICATE didn't pass since download completed earlier!")
+                return
+            listener = dl.listener()
+            download = await sync_to_async(api.get_download, gid)
+            if not listener.isLeech and not listener.select:
+                if not download.is_torrent:
+                    await sleep(3)
+                    download = download.live
+                LOGGER.info('Checking File/Folder if already in Drive...')
+                sname = download.name
+                if listener.isZip:
+                    sname = f"{sname}.zip"
+                elif listener.extract:
+                    try:
+                        sname = get_base_name(sname)
+                    except:
+                        sname = None
+                if sname:
+                    smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, sname, True)
+                    if smsg:
+                        await listener.onDownloadError('File/Folder already available in Drive.\nHere are the search results:\n', button)
+                        await delete_links(listener.message)
+                        await sync_to_async(api.remove, [download], force=True, files=True)
+    if any([(DIRECT_LIMIT:= config_dict['DIRECT_LIMIT']),
+            (TORRENT_LIMIT:= config_dict['TORRENT_LIMIT']),
+            (LEECH_LIMIT:= config_dict['LEECH_LIMIT']),
+            (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD'])]):
+        await sleep(1)
+        if dl := await getDownloadByGid(gid):
+            if not hasattr(dl, 'listener'):
+                LOGGER.warning(f"onDownloadStart: {gid}. at Download limit didn't pass since download completed earlier!")
+                return
+            listener = dl.listener()
+            download = await sync_to_async(api.get_download, gid)
+            download = download.live
+            if download.total_length == 0:
+                start_time = time()
+                while time() - start_time <= 15:
+                    await sleep(0.5)
+                    download = await sync_to_async(api.get_download, gid)
+                    download = download.live
+                    if download.followed_by_ids:
+                        download = await sync_to_async(api.get_download, download.followed_by_ids[0])
+                    if download.total_length > 0:
+                        break
+            size = download.total_length
+            limit_exceeded = ''
+            if not limit_exceeded and STORAGE_THRESHOLD:
+                limit = STORAGE_THRESHOLD * 1024**3
+                arch = any([listener.isZip, listener.extract])
+                acpt = await sync_to_async(check_storage_threshold, size, limit, arch, True)
+                if not acpt:
+                    limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
+            if not limit_exceeded and DIRECT_LIMIT and not download.is_torrent:
+                limit = DIRECT_LIMIT * 1024**3
+                if size > limit:
+                    limit_exceeded = f'Direct limit is {get_readable_file_size(limit)}'
+            if not limit_exceeded and TORRENT_LIMIT and download.is_torrent:
+                limit = TORRENT_LIMIT * 1024**3
+                if size > limit:
+                    limit_exceeded = f'Torrent limit is {get_readable_file_size(limit)}'
+            if not limit_exceeded and LEECH_LIMIT and listener.isLeech:
+                limit = LEECH_LIMIT * 1024**3
+                if size > limit:
+                    limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
+            if limit_exceeded:
+                await listener.onDownloadError(f'{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}')
+                await delete_links(listener.message)
+                await sync_to_async(api.remove, [download], force=True, files=True)
 
 @new_thread
 async def __onDownloadComplete(api, gid):
