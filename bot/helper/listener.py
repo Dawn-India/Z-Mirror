@@ -417,7 +417,6 @@ class MirrorLeechListener:
                 await sendMessage(self.message, lmsg + msg, buttons.build_menu(2))
             if self.logMessage:
                 if config_dict['DISABLE_DRIVE_LINK']:
-                    link = await sync_to_async(short_url, link)
                     buttons.ubutton("🔐 Drive Link", link, 'header')
                 await sendMessage(self.logMessage, lmsg + msg, buttons.build_menu(2))
             if self.seed and not self.isClone:

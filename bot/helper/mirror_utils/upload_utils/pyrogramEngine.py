@@ -75,24 +75,24 @@ class TgUploader:
     async def __msg_to_reply(self):
         if DUMP_CHAT:= config_dict['DUMP_CHAT']:
             if self.__listener.logMessage:
-                self.__sent_msg = await bot.copy_message(DUMP_CHAT, self.__listener.logMessage.chat.id, self.__listener.logMessage.id)
+                self.__sent_msg = await self.__listener.logMessage.copy(DUMP_CHAT)
             else:
                 msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>#Leech_Completed</b>!\n<b>#cc</b>: {self.__listener.tag}\n<b>#User_id</b>: {self.__listener.message.from_user.id}'
                 self.__sent_msg = await bot.send_message(DUMP_CHAT, msg, disable_web_page_preview=True)
+            if self.__listener.dmMessage:
+                self.__sent_DMmsg = self.__listener.dmMessage
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
                 await self.__listener.onUploadError('Use SuperGroup to leech with User!')
                 return
             self.__sent_msg = await bot.get_messages(chat_id=self.__listener.message.chat.id,
                                                           message_ids=self.__listener.uid)
+            if self.__listener.dmMessage:
+                self.__sent_DMmsg = self.__listener.dmMessage
+        elif self.__listener.dmMessage:
+            self.__sent_msg = self.__listener.dmMessage
         else:
             self.__sent_msg = self.__listener.message
-        if self.__listener.dmMessage:
-            self.__sent_DMmsg = self.__listener.dmMessage
-        if (self.__listener.isSuperGroup or config_dict['DUMP_CHAT']) and not self.__sent_msg.chat.has_protected_content:
-            btn = ButtonMaker()
-            btn.ibutton('Save This File', 'save', 'footer')
-            self.__button = btn.build_menu(1)
 
     async def __prepare_file(self, file_, dirpath):
         if self.__lprefix:

@@ -127,6 +127,7 @@ def get_progress_bar_string(status):
 
 def get_readable_message():
         msg = ""
+        button = None
         if STATUS_LIMIT := config_dict['STATUS_LIMIT']:
             tasks = len(download_dict)
             globals()['PAGES'] = ceil(tasks/STATUS_LIMIT)
@@ -135,7 +136,7 @@ def get_readable_message():
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
             if config_dict['DM_MODE']:
-                msg += f"Hey <b><i>{download.message.from_user.username}</i></b>, \
+                msg += f"Hey <b><i><u>{download.message.from_user.username}</u></i></b>, \
 Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.link}'>{download.mode}</a>]"
             else:
                 msg += f'\n<b>{download.status()}:</b> <code>{escape(str(download.name()))}</code>'
@@ -177,8 +178,7 @@ Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.l
                         msg += f"\n<b>Playlist</b>: {playlist}"
                 except:
                     pass
-            msg += f"\n⚠️ <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
-            msg += "\n\n"
+            msg += f"\n⚠️ <code>/{BotCommands.CancelMirror} {download.gid()}</code>\n\n"
             if STATUS_LIMIT and index == STATUS_LIMIT:
                 break
         if len(msg) == 0:
@@ -204,16 +204,15 @@ Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.l
                     up_speed += float(spd.split('K')[0]) * 1024
                 elif 'M' in spd:
                     up_speed += float(spd.split('M')[0]) * 1048576
-        bmsg = f"<b>FREE:</b> <code>{get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}</code><b> | UPTM:</b> <code>{get_readable_time(time() - botStartTime)}</code>"
-        bmsg += f"\n<b>DL:</b> <code>{get_readable_file_size(dl_speed)}/s</code><b> | UL:</b> <code>{get_readable_file_size(up_speed)}/s</code>"
         if STATUS_LIMIT and tasks > STATUS_LIMIT:
             buttons = ButtonMaker()
             buttons.ibutton("PREV", "status pre")
             buttons.ibutton(f"{PAGE_NO}/{PAGES}", "status ref")
             buttons.ibutton("NEXT", "status nex")
             button = buttons.build_menu(3)
-            return msg + bmsg, button
-        return msg + bmsg, None
+        msg += f"<b>FREE:</b> <code>{get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}</code><b> | UPTM:</b> <code>{get_readable_time(time() - botStartTime)}</code>"
+        msg += f"\n<b>DL:</b> <code>{get_readable_file_size(dl_speed)}/s</code><b> | UL:</b> <code>{get_readable_file_size(up_speed)}/s</code>"
+        return msg, button
 
 def extra_btns(buttons):
     if extra_buttons:
@@ -298,13 +297,12 @@ def is_magnet(url):
 
 def get_content_type(link):
     try:
-        res = rhead(link, allow_redirects=True, timeout=5, headers = {'user-agent': 'Wget/1.12'})
+        res = rhead(link, allow_redirects=True, timeout=5, headers={'user-agent': 'Wget/1.12'})
         content_type = res.headers.get('content-type')
     except:
         try:
             res = urlopen(link, timeout=5)
-            info = res.info()
-            content_type = info.get_content_type()
+            content_type = res.info().get_content_type()
         except:
             content_type = None
     return content_type

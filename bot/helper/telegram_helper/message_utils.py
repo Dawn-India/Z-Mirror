@@ -132,9 +132,10 @@ async def sendDmMessage(message, dmMode, isLeech=False):
         await sleep(r.value * 1.5)
         return sendDmMessage(message, dmMode, isLeech)
     except (UserIsBlocked, PeerIdInvalid) as e:
+        await delete_links(message)
         buttons = ButtonMaker()
         buttons.ubutton("Start", f"https://t.me/{message._client.me.username}?start=start")
-        await sendMessage(message, f"You didn't START me in DM.\nI'll send all files in DM.\n\n<b>Start and try again</b>\nThank You.\n\nError: {e.MESSAGE}", buttons.build_menu(1))
+        await sendMessage(message, f"You didn't START me in DM.\nI'll send all files in DM.\n\n<b>Start and try again</b>\nThank You.", buttons.build_menu(1))
         return 'BotNotStarted'
     except Exception as e:
         LOGGER.error(str(e))
