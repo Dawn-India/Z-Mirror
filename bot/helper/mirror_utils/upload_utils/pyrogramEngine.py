@@ -242,12 +242,16 @@ class TgUploader:
         await self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
 
     async def __send_dm(self):
-        self.__sent_DMmsg = await self.__sent_DMmsg._client.copy_message(
-            chat_id=self.__sent_DMmsg.chat.id,
-            message_id=self.__sent_msg.id,
-            from_chat_id=self.__sent_msg.chat.id,
-            reply_to_message_id=self.__sent_DMmsg.id
-        )
+        try:
+            self.__sent_DMmsg = await self.__sent_DMmsg._client.copy_message(
+                chat_id=self.__sent_DMmsg.chat.id,
+                message_id=self.__sent_msg.id,
+                from_chat_id=self.__sent_msg.chat.id,
+                reply_to_message_id=self.__sent_DMmsg.id
+            )
+        except Exception as err:
+            LOGGER.error(f"Error while sending dm {err.__class__.__name__}")
+            self.__sent_DMmsg = None
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
