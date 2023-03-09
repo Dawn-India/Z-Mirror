@@ -171,7 +171,6 @@ async def __stop_duplicate(client, tor):
                 if qbmsg:
                     await delete_links(listener.message)
                     await __onDownloadError("File/Folder is already available in Drive.\nHere are the search results:\n", client, tor, button)
-                    return
     except:
         pass
 
@@ -198,7 +197,7 @@ async def __size_checked(client, tor):
         if limit_exceeded:
             await delete_links(listener.message)
             fmsg = f"{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}"
-            return await __onDownloadError(fmsg, client, tor)
+            await __onDownloadError(fmsg, client, tor)
     except:
         pass
 
