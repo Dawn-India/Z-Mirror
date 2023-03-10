@@ -162,8 +162,12 @@ class TgUploader:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
         if self.__sent_DMmsg:
-            dm_msgs_list = await self.__sent_DMmsg.reply_media_group(media=grouped_media, quote=True)
-            self.__sent_DMmsg = dm_msgs_list[-1]
+            try:
+                dm_msgs_list = await self.__sent_DMmsg.reply_media_group(media=grouped_media, quote=True)
+                self.__sent_DMmsg = dm_msgs_list[-1]
+            except Exception as err:
+                LOGGER.error(f"Error while sending media group in dm {err.__class__.__name__}")
+                self.__sent_DMmsg = None
 
     async def upload(self, o_files, m_size):
         await self.__msg_to_reply()
