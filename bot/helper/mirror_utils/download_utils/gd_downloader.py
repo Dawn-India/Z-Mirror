@@ -38,12 +38,6 @@ async def add_gd_download(link, path, listener, newname, from_queue=False):
                 msg = "File/Folder is already available in Drive.\nHere are the search results:"
                 return await sendMessage(listener.message, msg, button)
     limit_exceeded = ''
-    if not limit_exceeded and (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']):
-        limit = STORAGE_THRESHOLD * 1024**3
-        arch = any([listener.extract, listener.isZip])
-        acpt = await sync_to_async(check_storage_threshold, size, limit, arch)
-        if not acpt:
-            limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
     if not limit_exceeded and (GDRIVE_LIMIT:= config_dict['GDRIVE_LIMIT']):
         limit = GDRIVE_LIMIT * 1024**3
         if size > limit:
@@ -52,6 +46,12 @@ async def add_gd_download(link, path, listener, newname, from_queue=False):
         limit = LEECH_LIMIT * 1024**3
         if size > limit:
             limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
+    if not limit_exceeded and (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']):
+        limit = STORAGE_THRESHOLD * 1024**3
+        arch = any([listener.extract, listener.isZip])
+        acpt = await sync_to_async(check_storage_threshold, size, limit, arch)
+        if not acpt:
+            limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
     if limit_exceeded:
         await delete_links(listener.message)
         return await sendMessage(listener.message, f'{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}.')

@@ -59,7 +59,9 @@ class TgUploader:
         if self.__is_cancelled:
             if self.__upload_4gb > 0:
                 user.stop_transmission()
-            bot.stop_transmission()
+                bot.stop_transmission()
+            else:
+                self.__sent_msg._client.stop_transmission()
         chunk_size = current - self._last_uploaded
         self._last_uploaded = current
         self.uploaded_bytes += chunk_size
@@ -74,20 +76,19 @@ class TgUploader:
             self.__thumb = None
 
     async def __msg_to_reply(self):
-        if DUMP_CHAT:= config_dict['DUMP_CHAT']:
+        if DUMP_CHAT := config_dict['DUMP_CHAT']:
             if self.__listener.logMessage:
                 self.__sent_msg = await self.__listener.logMessage.copy(DUMP_CHAT)
             else:
                 msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>#Leech_Completed</b>!\n<b>#cc</b>: {self.__listener.tag}\n<b>#User_id</b>: {self.__listener.message.from_user.id}'
-                self.__sent_msg = await bot.send_message(DUMP_CHAT, msg, disable_web_page_preview=True)
+                self.__sent_msg = await self.__listener.message._client.send_message(DUMP_CHAT, msg, disable_web_page_preview=True)
             if self.__listener.dmMessage:
                 self.__sent_DMmsg = self.__listener.dmMessage
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
                 await self.__listener.onUploadError('Use SuperGroup to leech with User!')
                 return
-            self.__sent_msg = await bot.get_messages(chat_id=self.__listener.message.chat.id,
-                                                          message_ids=self.__listener.uid)
+            self.__sent_msg = self.__listener.message
             if self.__listener.dmMessage:
                 self.__sent_DMmsg = self.__listener.dmMessage
         elif self.__listener.dmMessage:
@@ -137,9 +138,17 @@ class TgUploader:
                 self.__up_path = new_path
         return cap_mono
 
-    def __get_input_media(self, subkey, key):
+    async def __get_input_media(self, subkey, key):
         rlist = []
-        for msg in self.__media_dict[key][subkey]:
+        msgs = []
+        if self.__upload_4gb > 0:
+            for msg in self.__media_dict[key][subkey]:
+                media_msg = await bot.get_messages(msg.chat.id, msg.id)
+                msgs.append(media_msg)
+        else:
+            msgs = self.__media_dict[key][subkey]
+        self.__sent_msg = msgs[0].reply_to_message
+        for msg in msgs:
             if key == 'videos':
                 input_media = InputMediaVideo(media=msg.video.file_id, caption=msg.caption)
             else:
@@ -148,8 +157,8 @@ class TgUploader:
         return rlist
 
     async def __send_media_group(self, subkey, key, msgs):
-        grouped_media = self.__get_input_media(subkey, key)
-        msgs_list = await msgs[0].reply_to_message.reply_media_group(media=grouped_media,
+        grouped_media = await self.__get_input_media(subkey, key)
+        msgs_list = await self.__sent_msg.reply_media_group(media=grouped_media,
                                                                      quote=True,
                                                                      disable_notification=True)
         for msg in msgs:
@@ -162,6 +171,7 @@ class TgUploader:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
         if self.__sent_DMmsg:
+            await sleep(0.5)
             try:
                 dm_msgs_list = await self.__sent_DMmsg.reply_media_group(media=grouped_media, quote=True)
                 self.__sent_DMmsg = dm_msgs_list[-1]
@@ -191,11 +201,19 @@ class TgUploader:
                     cap_mono = await self.__prepare_file(file_, dirpath)
                     if f_size > 2097152000 and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot:
                         self.__upload_4gb += 1
-                        LOGGER.info('Trying to upload file greater than 2gb fetching message for user client')
+                        LOGGER.info(f'Trying to upload file greater than {get_readable_file_size(f_size)} fetching message for user client')
                         self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+                        self.__button = None
                     if f_size < 2097152000 and not self.__sent_msg._client.me.is_bot:
-                        LOGGER.info('Trying to upload file less than 2gb fetching message for bot client')
+                        LOGGER.info(f'Trying to upload file less than {get_readable_file_size(f_size)} fetching message for bot client')
                         self.__sent_msg = await bot.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+                    if ((self.__listener.isSuperGroup or config_dict['DUMP_CHAT'])
+                        and self.__sent_msg._client.me.is_bot and not self.__sent_msg.chat.has_protected_content
+                        and not self.__button
+                    ):
+                        btn = ButtonMaker()
+                        btn.ibutton('Save This File', 'save', 'footer')
+                        self.__button = btn.build_menu(1)
                     if self.__last_msg_in_group:
                         group_lists = [x for v in self.__media_dict.values() for x in v.keys()]
                         if (match := re_match(r'.+(?=\.0*\d+$)|.+(?=\.part\d+\..+)', self.__up_path)) and match.group(0) not in group_lists:
@@ -221,8 +239,8 @@ class TgUploader:
                     continue
                 finally:
                     if not self.__is_cancelled and await aiopath.exists(self.__up_path) and \
-                              (not self.__listener.seed or self.__listener.newDir or \
-                              dirpath.endswith("splited_files_z") or '/copied_z/' in self.__up_path):
+                            (not self.__listener.seed or self.__listener.newDir or
+                          dirpath.endswith("splited_files_z") or '/copied_z/' in self.__up_path):
                         await aioremove(self.__up_path)
         for key, value in list(self.__media_dict.items()):
             for subkey, msgs in list(value.items()):
@@ -240,8 +258,8 @@ class TgUploader:
             return
         if config_dict['DUMP_CHAT']:
             msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>#Leech_Completed</b>!\n<b>#cc</b>: {self.__listener.tag}\n<b>#User_id</b>: {self.__listener.message.from_user.id}'
-            await self.__sent_msg.reply_text(text=msg, quote=True)
-        LOGGER.info(f"Leech Compl eted: {self.name}")
+            await self.__sent_msg.reply(text=msg, quote=True)
+        LOGGER.info(f"Leech Completed: {self.name}")
         size = get_readable_file_size(self.__size)
         await self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
 
@@ -354,7 +372,7 @@ class TgUploader:
                     await self.__send_dm()
 
             if not self.__is_cancelled and self.__sent_DMmsg and not self.__media_group:
-                await sleep(1)
+                await sleep(0.5)
                 await self.__send_dm()
             if self.__thumb is None and thumb is not None and await aiopath.exists(thumb):
                 await aioremove(thumb)

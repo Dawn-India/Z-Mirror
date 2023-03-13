@@ -88,12 +88,6 @@ async def __onDownloadStarted(api, gid):
                         break
             size = download.total_length
             limit_exceeded = ''
-            if not limit_exceeded and STORAGE_THRESHOLD:
-                limit = STORAGE_THRESHOLD * 1024**3
-                arch = any([listener.isZip, listener.extract])
-                acpt = await sync_to_async(check_storage_threshold, size, limit, arch, True)
-                if not acpt:
-                    limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
             if not limit_exceeded and DIRECT_LIMIT and not download.is_torrent:
                 limit = DIRECT_LIMIT * 1024**3
                 if size > limit:
@@ -106,6 +100,12 @@ async def __onDownloadStarted(api, gid):
                 limit = LEECH_LIMIT * 1024**3
                 if size > limit:
                     limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
+            if not limit_exceeded and STORAGE_THRESHOLD:
+                limit = STORAGE_THRESHOLD * 1024**3
+                arch = any([listener.isZip, listener.extract])
+                acpt = await sync_to_async(check_storage_threshold, size, limit, arch, True)
+                if not acpt:
+                    limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
             if limit_exceeded:
                 await listener.onDownloadError(f'{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}')
                 await delete_links(listener.message)

@@ -228,12 +228,6 @@ class YoutubeDLHelper:
                     await self.__listener.onDownloadError('File/Folder already available in Drive.\nHere are the search results:\n', button)
                     return
         limit_exceeded = ''
-        if not limit_exceeded and (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']):
-            limit = STORAGE_THRESHOLD * 1024**3
-            acpt = await sync_to_async(check_storage_threshold, self.__size, limit, self.__listener.isZip)
-            if not acpt:
-                limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
-                limit_exceeded += f'\nYour File/Folder size is {get_readable_file_size(self.__size)}'
         if not limit_exceeded and (YTDLP_LIMIT:= config_dict['YTDLP_LIMIT']):
             limit = YTDLP_LIMIT * 1024**3
             if self.__size > limit:
@@ -246,8 +240,14 @@ class YoutubeDLHelper:
                 limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}\n'
                 limit_exceeded += f'Your {"Playlist" if self.is_playlist else "Video"} size\n'
                 limit_exceeded += f'is {get_readable_file_size(self.__size)}'
+        if not limit_exceeded and (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']):
+            limit = STORAGE_THRESHOLD * 1024**3
+            acpt = await sync_to_async(check_storage_threshold, self.__size, limit, self.__listener.isZip)
+            if not acpt:
+                limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
+                limit_exceeded += f'\nYour File/Folder size is {get_readable_file_size(self.__size)}'
         if limit_exceeded:
-            await delete_links(__listener.message)
+            await delete_links(self.__listener.message)
             await self.__listener.onDownloadError(limit_exceeded)
             return
         all_limit = config_dict['QUEUE_ALL']
