@@ -65,7 +65,7 @@ class MegaAppListener(MegaListener):
         if str(error).lower() != "no error":
             self.error = error.copy()
             LOGGER.error(self.error)
-            async_to_sync(self.event_setter)
+            self.event_setter()
             return
         request_type = request.getType()
         if request_type == MegaRequest.TYPE_LOGIN:
@@ -77,7 +77,7 @@ class MegaAppListener(MegaListener):
             self.node = api.getRootNode()
             LOGGER.info(f"Node Name: {self.node.getName()}")
         if request_type not in self._NO_EVENT_ON or self.node and "cloud drive" not in self.node.getName().lower():
-            async_to_sync(self.event_setter)
+            self.event_setter()
 
     def onRequestTemporaryError(self, api, request, error: MegaError):
         LOGGER.error(f'Mega Request error in {error}')
@@ -85,12 +85,12 @@ class MegaAppListener(MegaListener):
             self.is_cancelled = True
             async_to_sync(self.listener.onDownloadError, f"RequestTempError: {error.toString()}")
         self.error = error.toString()
-        async_to_sync(self.event_setter)
+        self.event_setter()
 
     def onTransferUpdate(self, api: MegaApi, transfer: MegaTransfer):
         if self.is_cancelled:
             api.cancelTransfer(transfer, None)
-            async_to_sync(self.event_setter)
+            self.event_setter()
             return
         self.__speed = transfer.getSpeed()
         self.__bytes_transferred = transfer.getTransferredBytes()
@@ -98,10 +98,10 @@ class MegaAppListener(MegaListener):
     def onTransferFinish(self, api: MegaApi, transfer: MegaTransfer, error):
         try:
             if self.is_cancelled:
-                async_to_sync(self.event_setter)
+                self.event_setter()
             elif transfer.isFinished() and (transfer.isFolderTransfer() or transfer.getFileName() == self.name):
                 async_to_sync(self.listener.onDownloadComplete)
-                async_to_sync(self.event_setter)
+                self.event_setter()
         except Exception as e:
             LOGGER.error(e)
 
@@ -119,9 +119,9 @@ class MegaAppListener(MegaListener):
         if not self.is_cancelled:
             self.is_cancelled = True
             async_to_sync(self.listener.onDownloadError, f"TransferTempError: {errStr} ({filen})")
-            async_to_sync(self.event_setter)
+            self.event_setter()
 
-    async def event_setter(self):
+    def event_setter(self):
         self.continue_event.set()
 
     async def cancel_download(self):
@@ -134,7 +134,7 @@ class AsyncExecutor:
     def __init__(self):
         self.continue_event = Event()
 
-    async def do(self, function, args, pool=None):
+    async def do(self, function, args):
         self.continue_event.clear()
         await sync_to_async(function, *args)
         await self.continue_event.wait()
@@ -187,12 +187,6 @@ async def add_mega_download(mega_link, path, listener, name, from_queue=False):
                 return
     size = await sync_to_async(api.getSize, node)
     limit_exceeded = ''
-    if not limit_exceeded and (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']):
-        limit = STORAGE_THRESHOLD * 1024**3
-        arch = any([listener.isZip, listener.extract])
-        acpt = await sync_to_async(check_storage_threshold, size, limit, arch)
-        if not acpt:
-            limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
     if not limit_exceeded and (MEGA_LIMIT:= config_dict['MEGA_LIMIT']):
         limit = MEGA_LIMIT * 1024**3
         if size > limit:
@@ -201,6 +195,12 @@ async def add_mega_download(mega_link, path, listener, name, from_queue=False):
         limit = LEECH_LIMIT * 1024**3
         if size > limit:
             limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
+    if not limit_exceeded and (STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']):
+        limit = STORAGE_THRESHOLD * 1024**3
+        arch = any([listener.isZip, listener.extract])
+        acpt = await sync_to_async(check_storage_threshold, size, limit, arch)
+        if not acpt:
+            limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
     if limit_exceeded:
         await delete_links(listener.message)
         return await sendMessage(listener.message, f"{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}.")

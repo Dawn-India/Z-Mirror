@@ -123,7 +123,11 @@ async def sendStatusMessage(msg):
             Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
 async def sendDmMessage(message, dmMode, isLeech=False):
-    if dmMode == 'mirror' and isLeech or dmMode == 'leech' and not isLeech:
+    if dmMode not in ['leech', 'mirror', 'all']:
+        return
+    if dmMode == 'mirror' and isLeech:
+        return
+    if dmMode == 'leech' and not isLeech:
         return
     try:
         return await message._client.send_message(message.from_user.id, disable_notification=True, text=message.link)

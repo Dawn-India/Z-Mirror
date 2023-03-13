@@ -8,7 +8,10 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus,
 
 def get_download(client, hash_):
     try:
-        return client.torrents_info(torrent_hashes=hash_)[0]
+        if info := client.torrents_info(torrent_hashes=hash_):
+            return info[0]
+        LOGGER.error('Qbittorrent, Error while getting torrent info')
+        return get_download(client, hash_)
     except Exception as e:
         LOGGER.error(f'{e}: Qbittorrent, Error while getting torrent info')
         client = get_client()
@@ -22,9 +25,9 @@ class QbDownloadStatus:
         self.__client = get_client()
         self.__listener = listener
         self.__hash = hash_
-        self.__info = get_download(self.__client, self.__hash)
+        self.__info = get_download(self.__client, hash_)
         self.seeding = seeding
-        self.message = self.__listener.message
+        self.message = listener.message
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
         self.source = self.__listener.source

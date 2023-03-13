@@ -546,7 +546,9 @@ async def update_buttons(message, key=None, edit_type=None):
 async def edit_variable(client, message, pre_message, key):
     handler_dict[message.chat.id] = False
     value = message.text
-    if value.lower() == 'true':
+    if key == 'DM_MODE':
+        value = value.lower() if value.lower() in ['leech', 'mirror', 'all'] else ''
+    elif value.lower() == 'true':
         value = True
     elif value.lower() == 'false':
         value = False
@@ -597,8 +599,6 @@ async def edit_variable(client, message, pre_message, key):
         if GDRIVE_ID:=config_dict['GDRIVE_ID']:
             list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": value}
             categories['Root'] = {"drive_id": GDRIVE_ID, "index_link": value}
-    elif key == 'DM_MODE':
-        value = value.lower() if value.lower() in ['leech', 'mirror', 'all'] else ''
     elif key not in ['SEARCH_LIMIT', 'STATUS_LIMIT'] and key.endswith(('_THRESHOLD', '_LIMIT')):
         value = float(value)
     elif value.isdigit() and key != 'FSUB_IDS':

@@ -13,7 +13,7 @@ from psutil import cpu_percent, disk_usage, virtual_memory
 from pyrogram.types import BotCommand
 from requests import head as rhead
 
-from bot import (DOWNLOAD_DIR, bot_loop, botStartTime, config_dict,
+from bot import (DOWNLOAD_DIR, LOGGER, bot_loop, botStartTime, config_dict,
                  download_dict, download_dict_lock, extra_buttons, user_data)
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -329,7 +329,10 @@ async def cmd_exec(cmd, shell=False):
 def new_task(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        return bot_loop.create_task(func(*args, **kwargs))
+        try:
+            return bot_loop.create_task(func(*args, **kwargs))
+        except Exception as e:
+            LOGGER.error(f"Failed to create task for {func.__name__} : {e}")
     return wrapper
 
 async def sync_to_async(func, *args, wait=True, **kwargs):
