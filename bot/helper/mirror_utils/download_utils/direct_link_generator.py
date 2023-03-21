@@ -19,13 +19,14 @@ from urllib.parse import quote, unquote, urlparse
 from uuid import uuid4
 
 from bs4 import BeautifulSoup
-from cfscrape import create_scraper
+from cloudscraper import create_scraper
 from lk21 import Bypass
 from lxml import etree
 
 from bot import config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
+from bot.helper.telegram_helper.message_utils import deleteMessage
 
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']

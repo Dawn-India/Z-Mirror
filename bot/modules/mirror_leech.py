@@ -32,15 +32,16 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       editMessage, forcesub,
                                                       isAdmin, message_filter,
                                                       open_category_btns,
+                                                      request_limiter,
                                                       sendDmMessage,
                                                       sendLogMessage,
                                                       sendMessage)
+
 
 @new_task
 async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=False, isLeech=False, sameDir={}, isClone=False):
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
-    index = 1
     ratio = None
     seed_time = None
     select = False
@@ -54,6 +55,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
     auth = ''
 
     if len(message_args) > 1:
+        index = 1
         args = mesg[0].split(maxsplit=6)
         args.pop(0)
         for x in args:
@@ -119,6 +121,8 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
         if len(folder_name) > 0:
             sameDir.add(nextmsg.id)
         nextmsg.from_user = message.from_user
+        if message.sender_chat:
+            nextmsg.sender_chat = message.sender_chat
         await sleep(4)
         _mirror_leech(client, nextmsg, isZip, extract, isQbit, isLeech, sameDir, isClone)
 
@@ -169,6 +173,8 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                 if not await isAdmin(message):
                     if await message_filter(message, tag):
                         return
+                    if await request_limiter(message):
+                        return
                     if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS']:
                         raw_url = file_.file_unique_id
                         exist = await DbManger().check_download(raw_url)
@@ -192,7 +198,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                     return await sendMessage(message, "Google Drive id validation failed!!")
                 if (dmMode:=config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
                     if isLeech and IS_PREMIUM_USER and not config_dict['DUMP_CHAT']:
-                        return await sendMessage(message, 'DM_MODE and User Session need DUMP_CHAT')
+                        return await sendMessage(message, 'DM_MODE with User Session required DUMP_CHAT')
                     dmMessage = await sendDmMessage(message, dmMode, isLeech)
                     if dmMessage == 'BotNotStarted':
                         return
@@ -207,12 +213,17 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                 await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name)
                 return
 
-    if isClone and not is_gdrive_link(link) and not is_share_link(link) and is_mega_link(link) or (link.isdigit() and multi == 0):
+    if isClone and is_mega_link(link):
         msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
         msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
         return await sendMessage(message, msg_)
 
-    if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) or (link.isdigit() and multi == 0):
+    if isClone and not is_gdrive_link(link) and not is_share_link(link):
+        msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
+        msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
+        return await sendMessage(message, msg_)
+
+    if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link):
         help_msg = '''
 <code>/{cmd}</code> link n: newname pswd: xx(zip/unzip)
 
@@ -251,6 +262,7 @@ Number should be always before |newname or pswd:
 2. Options (<b>n: and pswd:</b>) should be added randomly after the link if link along with the cmd and after any other option
 3. Options (<b>d, s, m: and multi</b>) should be added randomly before the link and before any other option.
 4. Commands that start with <b>qb</b> are ONLY for torrents.
+5. (n:) option doesn't work with torrents.
 '''.format_map({'cmd': BotCommands.MirrorCommand[0]})
         await sendMessage(message, help_msg)
         await delete_links(message)
@@ -261,6 +273,8 @@ Number should be always before |newname or pswd:
         return
     if not await isAdmin(message):
         if await message_filter(message, tag):
+            return
+        if await request_limiter(message):
             return
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS']:
             raw_url = await extract_link(link)
@@ -330,7 +344,6 @@ Number should be always before |newname or pswd:
         else:
             await add_gd_download(link, path, listener, name)
     elif is_mega_link(link):
-        listener.ismega = await sendMessage(message, "<b>Mega link detected.\nThis might take a minute.</b>")
         await add_mega_download(link, f'{path}/', listener, name)
     elif isQbit:
         await add_qb_torrent(link, path, listener, ratio, seed_time)

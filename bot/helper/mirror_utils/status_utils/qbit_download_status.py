@@ -124,3 +124,5 @@ class QbDownloadStatus:
             await sleep(0.3)
             await self.__listener.onDownloadError('Download stopped by user!')
             await sync_to_async(self.__client.torrents_delete, torrent_hashes=self.__hash, delete_files=True)
+            await sync_to_async(self.__client.torrents_delete_tags, tags=self.__info.tags)
+            await sync_to_async(self.__client.auth_log_out)

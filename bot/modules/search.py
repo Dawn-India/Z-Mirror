@@ -12,7 +12,9 @@ from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
+from bot.helper.telegram_helper.message_utils import (anno_checker,
+                                                      editMessage, isAdmin,
+                                                      request_limiter, sendMessage)
 
 PLUGINS = []
 SITES = None
@@ -20,7 +22,7 @@ TELEGRAPH_LIMIT = 300
 
 
 async def initiate_search_tools():
-    qbclient = get_client()
+    qbclient = await sync_to_async(get_client)
     qb_plugins = await sync_to_async(qbclient.search_plugins)
     if SEARCH_PLUGINS := config_dict['SEARCH_PLUGINS']:
         globals()['PLUGINS'] = []
@@ -29,7 +31,6 @@ async def initiate_search_tools():
             for plugin in qb_plugins:
                 await sync_to_async(qbclient.search_uninstall_plugin, names=plugin['name'])
         await sync_to_async(qbclient.search_install_plugin, src_plugins)
-        await sync_to_async(qbclient.auth_log_out)
     elif qb_plugins:
         for plugin in qb_plugins:
             await sync_to_async(qbclient.search_uninstall_plugin, names=plugin['name'])
@@ -90,7 +91,7 @@ async def __search(key, site, message, method):
             return
     else:
         LOGGER.info(f"PLUGINS Searching: {key} from {site}")
-        client = get_client()
+        client = await sync_to_async(get_client)
         search = await sync_to_async(client.search_start, pattern=key, plugins=site, category='all')
         search_id = search.id
         while True:
@@ -113,6 +114,7 @@ async def __search(key, site, message, method):
     await editMessage(message, msg, button)
     if not method.startswith('api'):
         await sync_to_async(client.search_delete, search_id=search_id)
+    await sync_to_async(client.auth_log_out)
 
 async def __getResult(search_results, key, message, method):
     telegraph_content = []
@@ -192,7 +194,7 @@ def __api_buttons(user_id, method):
 async def __plugin_buttons(user_id):
     buttons = ButtonMaker()
     if not PLUGINS:
-        qbclient = get_client()
+        qbclient = await sync_to_async(get_client)
         pl = await sync_to_async(qbclient.search_plugins)
         for name in pl:
             PLUGINS.append(name['name'])
@@ -204,7 +206,13 @@ async def __plugin_buttons(user_id):
     return buttons.build_menu(2)
 
 async def torrentSearch(client, message):
+    if not message.from_user:
+        message.from_user = await anno_checker(message)
+    if not message.from_user:
+        return
     user_id = message.from_user.id
+    if not await isAdmin(message, user_id) and await request_limiter(message):
+        return
     buttons = ButtonMaker()
     key = message.text.split()
     SEARCH_PLUGINS = config_dict['SEARCH_PLUGINS']

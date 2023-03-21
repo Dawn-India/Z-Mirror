@@ -1,16 +1,16 @@
 from asyncio import sleep
 from re import split as re_split
 
+from aiohttp import ClientSession
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
-from requests import request
 
 from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot,
                  categories, config_dict, user_data)
 from bot.helper.ext_utils.bot_utils import (check_user_tasks,
                                             get_readable_file_size,
                                             is_gdrive_link, is_url, new_task,
-                                            new_task, sync_to_async)
+                                            sync_to_async)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.z_utils import extract_link
 from bot.helper.listener import MirrorLeechListener
@@ -24,21 +24,23 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       editMessage, forcesub,
                                                       isAdmin, message_filter,
                                                       open_category_btns,
+                                                      request_limiter,
                                                       sendDmMessage,
                                                       sendLogMessage,
                                                       sendMessage)
 
 listener_dict = {}
 
-def _mdisk(link, name):
+async def _mdisk(link, name):
     key = link.split('/')[-1]
-    resp = request('GET', f'https://diskuploader.entertainvideo.com/v1/file/cdnurl?param={key}')
-    if resp.ok:
-        resp = resp.json()
-        link = resp['source']
-        if not name:
-            name = resp['filename']
-    return name, link
+    async with ClientSession() as session:
+        async with session.get(f'https://diskuploader.entertainvideo.com/v1/file/cdnurl?param={key}') as resp:
+            if resp.status == 200:
+                resp_json = await resp.json()
+                link = resp_json['source']
+                if not name:
+                    name = resp_json['filename']
+            return name, link
 
 async def _auto_cancel(msg, task_id):
     await sleep(120)
@@ -56,7 +58,6 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     qual = ''
     select = False
     multi = 0
-    index = 1
     link = ''
     folder_name = ''
     args = mssg.split(maxsplit=5)
@@ -65,6 +66,7 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     drive_id = None
     index_link = None
     if len(args) > 0:
+        index = 1
         for x in args:
             x = x.strip()
             if x == 's':
@@ -114,6 +116,8 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
         if len(folder_name) > 0:
             sameDir.add(nextmsg.id)
         nextmsg.from_user = message.from_user
+        if message.sender_chat:
+            nextmsg.sender_chat = message.sender_chat
         await sleep(4)
         _ytdl(client, nextmsg, isZip, isLeech, sameDir)
 
@@ -146,7 +150,7 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
             else:
                 tag = reply_to.from_user.mention
 
-    if (not is_url(link) or (link.isdigit() and multi == 0)) or reply_to and not reply_to.text:
+    if not is_url(link) or reply_to and not reply_to.text:
         help_msg = """
 <b>Send link along with command line:</b>
 <code>/{cmd}</code> s link n: newname pswd: xx(zip) opt: x:y|x1:y1
@@ -190,6 +194,8 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
     if not await isAdmin(message):
         if await message_filter(message, tag):
             return
+        if await request_limiter(message):
+            return
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS']:
             raw_url = await extract_link(link)
             exist = await DbManger().check_download(raw_url)
@@ -224,7 +230,7 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
                                 tag=tag, sameDir=sameDir, raw_url=raw_url, drive_id=drive_id,
                                 index_link=index_link, dmMessage=dmMessage, logMessage=logMessage)
     if 'mdisk.me' in link:
-        name, link = await sync_to_async(_mdisk, link, name)
+        name, link = await _mdisk(link, name)
     ydl = YoutubeDLHelper(listener)
     try:
         result = await sync_to_async(ydl.extractMetaData, link, name, opt, True)

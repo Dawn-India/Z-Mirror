@@ -63,7 +63,7 @@ async def deleting(client, chat_id, message_id, message):
         msg = await client.get_messages(chat_id, message_id, replies=-1)
         replies_ids = []
         while msg:
-            await sleep(0.5)
+            await sleep(0)
             replies_ids.append(msg.id)
             if msg.media_group_id:
                 media_group = await msg.get_media_group()
@@ -77,8 +77,14 @@ async def deleting(client, chat_id, message_id, message):
             else:
                 msg = msg.reply_to_message
         replies_ids = list(set(replies_ids))
-        deleted = await client.delete_messages(chat_id, replies_ids)
-        await editMessage(message, f'{deleted} message deleted')
+        total_ids = len(replies_ids)
+        replies_ids = [replies_ids[i * 100:(i + 1) * 100] for i in range((total_ids + 100 - 1) // 100 )]
+        deleted = 0
+        for each100 in replies_ids:
+            deleted += await client.delete_messages(chat_id, each100)
+            if len(each100) > 100:
+                await sleep(1)
+            await editMessage(message, f'{deleted}/{total_ids} message deleted')
     except Exception as e:
         await editMessage(message, str(e))
     delete.remove(message_id)

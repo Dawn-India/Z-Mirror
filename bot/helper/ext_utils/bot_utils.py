@@ -80,7 +80,7 @@ async def getDownloadByGid(gid):
                 return dl
     return None
 
-async def getAllDownload(req_status: str, user_id: int = None, onece: bool = True):
+async def getAllDownload(req_status, user_id=None, onece=True):
     dls = []
     async with download_dict_lock:
         for dl in list(download_dict.values()):
@@ -94,7 +94,7 @@ async def getAllDownload(req_status: str, user_id: int = None, onece: bool = Tru
                     dls.append(dl)
     return None if onece else dls
 
-def bt_selection_buttons(id_: str, isCanCncl: bool = True):
+def bt_selection_buttons(id_, isCanCncl=True):
     gid = id_[:12] if len(id_) > 20 else id_
     pincode = ""
     for n in id_:
@@ -136,7 +136,7 @@ def get_readable_message():
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
             if config_dict['DM_MODE']:
-                msg += f"Hey <b><i><u>{download.message.from_user.username}</u></i></b>, \
+                msg += f"Hey <a href='https://telegram.me/{download.message.from_user.username}'><b><i><u>{download.message.from_user.username}</u></i></b></a>, \
 Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.link}'>{download.mode}</a>]"
             else:
                 msg += f'\n<b>{download.status()}:</b> <code>{escape(str(download.name()))}</code>'
@@ -157,8 +157,14 @@ Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.l
                     msg += f"\n<b>Splitted:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
                 msg += f"\n<b>Speed</b>: <code>{download.speed()}</code> | <b>Elapsed:</b> <code>{get_readable_time(time() - download.startTime)}</code>"
                 msg += f"\n<b>ETA</b>: <code>{download.eta()}</code> | <b>Eng</b>: <code>{download.engine}</code>"
+                if hasattr(download, 'playList'):
+                    try:
+                        if playlist:=download.playList():
+                            msg += f"\n<b>Playlist Downloaded</b>: {playlist}"
+                    except:
+                        pass
                 if not config_dict['DM_MODE']:
-                    msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.mode}</a> | <b>By</b>: {download.source}"
+                    msg += f"\n<b>Task</b>: <a href='https://telegram.me/{download.message.from_user.username}'>{download.mode}</a> | <b>By</b>: {download.source}"
                 if hasattr(download, 'seeders_num'):
                     try:
                         msg += f"\n<b>Seeders</b>: {download.seeders_num()} | <b>Leechers</b>: {download.leechers_num()}"
@@ -172,13 +178,7 @@ Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.l
                 msg += f" | <b>Time</b>: {download.seeding_time()}"
             else:
                 msg += f"\n<b>Size</b>: {download.size()}"
-            if hasattr(download, 'playList'):
-                try:
-                    if playlist:=download.playList():
-                        msg += f"\n<b>Playlist</b>: {playlist}"
-                except:
-                    pass
-            msg += f"\n⚠️ <code>/{BotCommands.CancelMirror} {download.gid()}</code>\n\n"
+            msg += f"\n⚠️ <code>/{BotCommands.CancelMirror[0]} {download.gid()}</code>\n\n"
             if STATUS_LIMIT and index == STATUS_LIMIT:
                 break
         if len(msg) == 0:
@@ -378,7 +378,7 @@ async def set_commands(client):
         BotCommand(f'{BotCommands.StatsCommand[0]}', f'{BotCommands.StatsCommand[1]} Check bot stats'),
         BotCommand(f'{BotCommands.BtSelectCommand}', 'Select files to download only torrents'),
         BotCommand(f'{BotCommands.CategorySelect}', 'Select category to upload only mirror'),
-        BotCommand(f'{BotCommands.CancelMirror}', 'Cancel a Task'),
+        BotCommand(f'{BotCommands.CancelMirror[0]}', f'or {BotCommands.CancelMirror[1]} Cancel a Task'),
         BotCommand(f'{BotCommands.CancelAllCommand[0]}', f'Cancel all tasks which added by you or {BotCommands.CancelAllCommand[1]} to in bots.'),
         BotCommand(f'{BotCommands.ListCommand}', 'Search in Drive'),
         BotCommand(f'{BotCommands.SearchCommand}', 'Search in Torrent'),

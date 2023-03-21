@@ -341,7 +341,8 @@ async def event_handler(client, query, pfunc):
     handler_dict[user_id] = True
     start_time = time()
     async def event_filter(_, __, event):
-         return bool(event.from_user.id == user_id and event.chat.id == query.message.chat.id and event.text)
+        return bool(event.from_user.id or event.sender_chat.id == user_id and
+                    event.chat.id == query.message.chat.id and event.text)
     handler = client.add_handler(MessageHandler(pfunc, create(event_filter)), group=-1)
     while handler_dict[user_id]:
         await sleep(0.5)
@@ -610,10 +611,10 @@ async def rssMonitor():
                     if not parse:
                         continue
                     if command := data['command']:
-                        feed_msg = f"/{command.replace('/', '')} {url}\n<b>Tag: </b>{data['tag']} <code>{user}</code>"
+                        feed_msg = f"/{command.replace('/', '')} {url}\n<b>Req By</b>: {data['tag']}\n<b>User ID</b>: <code>{user}</code>"
                     else:
-                        feed_msg = f"<b>Name: </b><code>{item_title.replace('>', '').replace('<', '')}</code>\n\n"
-                        feed_msg += f"<b>Link: </b><code>{url}</code>\n\n<b>Tag: </b>{data['tag']} <code>{user}</code>"
+                        feed_msg = f"<b>File Name</b>: <code>{item_title.replace('>', '').replace('<', '')}</code>\n\n"
+                        feed_msg += f"<b>Link</b>: <code>{url}</code>\n\n<b>Req By</b>: {data['tag']}\n<b>User ID</b>: <code>{user}</code>"
                     await sendRss(feed_msg)
                     feed_count += 1
                 async with rss_dict_lock:

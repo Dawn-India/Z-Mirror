@@ -1,11 +1,12 @@
 from asyncio import create_subprocess_exec, create_subprocess_shell, sleep
 from functools import partial
 from io import BytesIO
-from os import environ
+from os import environ, getcwd
 from time import time
 
 from aiofiles.os import path as aiopath
 from aiofiles.os import remove, rename
+from aioshutil import rmtree as aiormtree
 from dotenv import load_dotenv
 from pyrogram.filters import command, create, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
@@ -15,8 +16,7 @@ from bot import (DATABASE_URL, GLOBAL_EXTENSION_FILTER, IS_PREMIUM_USER,
                  aria2, aria2_options, aria2c_global, bot, categories,
                  config_dict, download_dict, extra_buttons, get_client,
                  list_drives, qbit_options, status_reply_dict_lock, user_data)
-from bot.helper.ext_utils.bot_utils import (new_thread,
-                                            get_readable_file_size,
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread,
                                             set_commands, setInterval,
                                             sync_to_async)
 from bot.helper.ext_utils.db_handler import DbManger
@@ -165,7 +165,7 @@ async def load_config():
     LOG_CHAT = '' if len(LOG_CHAT) == 0 else int(LOG_CHAT)
 
     STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
-    STATUS_LIMIT = '' if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
+    STATUS_LIMIT = 10 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
 
     USER_MAX_TASKS = environ.get('USER_MAX_TASKS', '')
     USER_MAX_TASKS = '' if len(USER_MAX_TASKS) == 0 else int(USER_MAX_TASKS)
@@ -307,6 +307,9 @@ async def load_config():
     SET_COMMANDS = environ.get('SET_COMMANDS', '')
     SET_COMMANDS = SET_COMMANDS.lower() == 'true'
 
+    REQUEST_LIMITS = environ.get('REQUEST_LIMITS', '')
+    REQUEST_LIMITS = '' if len(REQUEST_LIMITS) == 0 else max(int(REQUEST_LIMITS), 5)
+
     DM_MODE = environ.get('DM_MODE', '')
     DM_MODE = DM_MODE.lower() if DM_MODE.lower() in ['leech', 'mirror', 'all'] else ''
 
@@ -380,7 +383,7 @@ async def load_config():
 
     if await aiopath.exists('accounts.zip'):
         if await aiopath.exists('accounts'):
-            await (await create_subprocess_exec("rm", "-rf", "accounts")).wait()
+            await aiormtree('accounts')
         await (await create_subprocess_exec("7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json")).wait()
         await (await create_subprocess_exec("chmod", "-R", "777", "accounts")).wait()
         await remove("accounts.zip")
@@ -450,6 +453,7 @@ async def load_config():
                    'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                    'SET_COMMANDS': SET_COMMANDS,
                    'DISABLE_LEECH': DISABLE_LEECH,
+                   'REQUEST_LIMITS': REQUEST_LIMITS,
                    'DM_MODE': DM_MODE,
                    'DELETE_LINKS': DELETE_LINKS})
 
@@ -557,11 +561,11 @@ async def edit_variable(client, message, pre_message, key):
     elif key == 'RSS_DELAY':
         value = int(value)
         addJob(value)
-    elif key in ['DUMP_CHAT', 'RSS_CHAT_ID', 'LOG_CHAT']:
-        value = int(value)
     elif key == 'DOWNLOAD_DIR':
         if not value.endswith('/'):
             value = f'{value}/'
+    elif key in ['DUMP_CHAT', 'RSS_CHAT_ID', 'LOG_CHAT']:
+        value = int(value)
     elif key == 'STATUS_UPDATE_INTERVAL':
         value = int(value)
         if len(download_dict) != 0:
@@ -580,6 +584,8 @@ async def edit_variable(client, message, pre_message, key):
                 except Exception as e:
                     LOGGER.error(e)
         aria2_options['bt-stop-timeout'] = f'{value}'
+    elif key == 'REQUEST_LIMITS':
+        value = max(int(value), 5)
     elif key == 'LEECH_SPLIT_SIZE':
         value = min(int(value), MAX_SPLIT_SIZE)
     elif key == 'SERVER_PORT':
@@ -691,10 +697,10 @@ async def update_private_file(client, message, pre_message):
     elif doc := message.document:
         doc = message.document
         file_name = doc.file_name
-        await message.download(file_name=f'/usr/src/app/{file_name}')
+        await message.download(file_name=f'{getcwd()}/{file_name}')
         if file_name == 'accounts.zip':
             if await aiopath.exists('accounts'):
-                await (await create_subprocess_exec("rm", "-rf", "accounts")).wait()
+                await aiormtree('accounts')
             await (await create_subprocess_exec("7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json")).wait()
             await (await create_subprocess_exec("chmod", "-R", "777", "accounts")).wait()
         elif file_name == 'list_drives.txt':
@@ -780,8 +786,8 @@ async def event_handler(client, query, pfunc, rfunc, document=False):
     chat_id = query.message.chat.id
     handler_dict[chat_id] = True
     async def event_filter(_, __, event):
-        return bool(event.from_user.id == query.from_user.id and event.chat.id == chat_id and \
-                    (event.text or event.document and document))
+        return bool(event.from_user.id or event.sender_chat.id == query.from_user.id and event.chat.id == chat_id 
+                    and (event.text or event.document and document))
     handler = client.add_handler(MessageHandler(pfunc, filters=create(event_filter)), group=-1)
     start_time = time()
     while handler_dict[chat_id]:
@@ -803,10 +809,9 @@ async def edit_bot_settings(client, query):
     elif data[1] == 'fetch':
         handler_dict[message.chat.id] = False
         await query.answer()
-        await message.reply_to_message.delete()
-        await message.delete()
         await DbManger().load_configs()
         await load_config()
+        await editMessage(message,'Fetch config from database success!')
     elif data[1] == 'back':
         handler_dict[message.chat.id] = False
         await query.answer()
@@ -999,12 +1004,12 @@ async def edit_bot_settings(client, query):
         if await aiopath.exists(filename):
             await (await create_subprocess_shell(f"git add -f {filename} \
                                             && git commit -sm botsettings -q \
-                                            && git push origin {config_dict['UPSTREAM_BRANCH']} -q")).wait()
+                                            && git push origin {config_dict['UPSTREAM_BRANCH']} -qf")).wait()
         else:
             await (await create_subprocess_shell(f"git rm -r --cached {filename} \
                                             && git commit -sm botsettings -q \
-                                            && git push origin {config_dict['UPSTREAM_BRANCH']} -q")).wait()
-        await message.reply_to_mssage.delete()
+                                            && git push origin {config_dict['UPSTREAM_BRANCH']} -qf")).wait()
+        await message.reply_to_message.delete()
         await message.delete()
 
 async def bot_settings(client, message):
