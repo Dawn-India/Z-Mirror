@@ -4,8 +4,7 @@ from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
 from bot import LOGGER, aria2, bot, download_dict, download_dict_lock
-from bot.helper.ext_utils.bot_utils import (MirrorStatus, async_to_sync,
-                                            bt_selection_buttons,
+from bot.helper.ext_utils.bot_utils import (MirrorStatus, bt_selection_buttons,
                                             getDownloadByGid, sync_to_async)
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -118,7 +117,7 @@ async def get_confirm(client, query):
                     except:
                         pass
             try:
-                await async_to_sync(aria2.client.unpause, id_)
+                await sync_to_async(aria2.client.unpause, id_)
             except Exception as e:
                 LOGGER.error(f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
         await sendStatusMessage(message)

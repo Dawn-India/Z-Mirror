@@ -75,7 +75,7 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Store user settings including thumbnails in database
 - Store private files
 - Store RSS last recorded data
-- Store incomplete task notifier to get incomplete task messages after restart
+- Store incomplete task messages
 ### Torrents Search
 - Torrent search support
 - Search on torrents with Torrent Search API
@@ -89,7 +89,9 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Rss feed. Based on this repository [rss-chan](https://github.com/hyPnOtICDo0g/rss-chan)
 - Filter added and all functions have been improved
 ### Overall
-- Docker image support for linux `amd64, arm64/v8, arm/v7, s390x`
+- Docker image support for linux `amd64, arm64/v8, arm/v7`
+- Switch from sync to async
+- SWitch from python-telegram-bot to pyrogram
 - Edit variables and overwrite the private files while bot running
 - Update bot at startup and with restart command using `UPSTREAM_REPO`
 - Improve Telegraph. Based on [Sreeraj](https://github.com/SVR666) loaderX-bot.
@@ -118,7 +120,7 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Extract these filetypes
   > ZIP, RAR, TAR, 7z, ISO, WIM, CAB, GZIP, BZIP2, APM, ARJ, CHM, CPIO, CramFS, DEB, DMG, FAT, HFS, LZH, LZMA, LZMA2, MBR, MSI, MSLZ, NSIS, NTFS, RPM, SquashFS, UDF, VHD, XAR, Z, TAR.XZ
 - Direct links Supported:
-  > mediafire, letsupload.io, hxfile.co, antfiles, fembed.com, fembed.net, femax20.com, layarkacaxxi.icu, fcdn.stream, sbplay.org, naniplay.com, naniplay.nanime.in, naniplay.nanime.biz, sbembed.com, streamtape.com, streamsb.net, feurl.com, upload.ee, pixeldrain.com, racaty.net, 1fichier.com, 1drv.ms (Only works for file not folder or business account), uptobox.com and solidfiles.com, linkbox.to, shrdsk.me (sharedisk.io), akmfiles.com, wetransfer.com, mdisk.me (with ytdl), terabox.com (you need to add cookies txt with name) [terabox.txt](https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid) and almost every anonfiles based sites
+  > mediafire, letsupload.io, hxfile.co, antfiles, fembed.com, fembed.net, femax20.com, layarkacaxxi.icu, fcdn.stream, sbplay.org, naniplay.com, naniplay.nanime.in, naniplay.nanime.biz, sbembed.com, streamtape.com, streamsb.net, feurl.com, upload.ee, pixeldrain.com, racaty.net, 1fichier.com, 1drv.ms (Only works for file not folder or business account), uptobox.com and solidfiles.com, linkbox.to, shrdsk.me (sharedisk.io), akmfiles.com, wetransfer.com, mdisk.me (with ytdl), terabox.com (you need to add cookies txt with name) [terabox.txt](https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl) and almost every anonfiles based sites
 
 ### Extra
 - Category wise drive uploads - [Click Here](https://github.com/junedkh/jmdkh-mltb#multi-category-ids) for more info.
@@ -185,7 +187,7 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `IGNORE_PENDING_REQUESTS`: Ignore pending requests after restart. Default is `False`. `Bool`
 - `USE_SERVICE_ACCOUNTS`: Whether to use Service Accounts or not. For this to work see [Using Service Accounts](#generate-service-accounts-what-is-service-account) section below. Default is `False`. `Bool`
 - `INDEX_URL`: Refer to https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index. `Str`
-- `STATUS_LIMIT`: Limit the no. of tasks shown in status message with buttons. **NOTE**: Recommended limit is `4` tasks. `Int`
+- `STATUS_LIMIT`: Limit the no. of tasks shown in status message with buttons. Default is `10`. **NOTE**: Recommended limit is `4` tasks. `Int`
 - `STOP_DUPLICATE`: Bot will check file in Drive, if it is present in Drive, downloading or cloning will be stopped. (**NOTE**: File will be checked using filename not file hash, so this feature is not perfect yet). Default is `False`. `Bool`
 - `CMD_SUFFIX`: Commands index number. This number will added at the end all commands. `Str`|`Int`
 - `TORRENT_TIMEOUT`: Timeout of dead torrents downloading with qBittorrent and Aria2c in seconds. `Int`
@@ -256,9 +258,9 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `FSUB_IDS`: Fill chat_id of groups/channel you want to force subscribe. Separate them by space. `Int`
   - it will apply only for member
   - **Note**: Bot should be added in the filled chat_id as admin.
-- `USER_MAX_TASKS`: Maximum number of tasks for each group members at a time. `Int`
-- `ENABLE_RATE_LIMITER`: To enable request limit 1 request per 1 second. `Bool`
-  - it will not accept any command/callback of user for 1 minute.
+- `USER_MAX_TASKS`: Maximum number of tasks for each group member at a time. `Int`
+- `REQUEST_LIMITS`: Maximum number of requests for each group member. `Int`
+  - it will not accept any command/callback of user and it will mute that member for 1 minute.
 - `ENABLE_MESSAGE_FILTER`: If enabled then bot will not download files with captions or forwarded. `Bool`
 - `STOP_DUPLICATE_TASKS`: To enable stop duplicate task across multiple bots. `Bool`
   - **Note**: All bot must have added same database link.

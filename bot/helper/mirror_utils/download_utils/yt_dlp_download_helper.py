@@ -57,6 +57,8 @@ class YoutubeDLHelper:
         self.__eta = '-'
         self.__listener = listener
         self.__gid = ""
+        self.playlist_index = 0
+        self.playlist_count = 0
         self.__is_cancelled = False
         self.__downloading = False
         self.opts = {'progress_hooks': [self.__onDownloadProgress],
@@ -105,6 +107,10 @@ class YoutubeDLHelper:
                 chunk_size = downloadedBytes - self._last_downloaded
                 self._last_downloaded = downloadedBytes
                 self.__downloaded_bytes += chunk_size
+                try:
+                    self.playlist_index = d['info_dict']['playlist_index']
+                except:
+                    pass
             else:
                 if d.get('total_bytes'):
                     self.__size = d['total_bytes']
@@ -146,6 +152,8 @@ class YoutubeDLHelper:
                 if get_info:
                     raise e
                 return self.__onDownloadError(str(e))
+        if self.is_playlist:
+            self.playlist_count = result.get('playlist_count', 0)
         if 'entries' in result:
             self.name = name
             for entry in result['entries']:

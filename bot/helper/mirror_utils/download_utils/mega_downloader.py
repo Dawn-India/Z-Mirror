@@ -64,7 +64,7 @@ class MegaAppListener(MegaListener):
     def onRequestFinish(self, api, request, error):
         if str(error).lower() != "no error":
             self.error = error.copy()
-            LOGGER.error(self.error)
+            LOGGER.error(f'Mega onRequestFinishError: {self.error}')
             self.event_setter()
             return
         request_type = request.getType()

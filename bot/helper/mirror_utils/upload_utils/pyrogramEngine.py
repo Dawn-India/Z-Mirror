@@ -80,7 +80,7 @@ class TgUploader:
             if self.__listener.logMessage:
                 self.__sent_msg = await self.__listener.logMessage.copy(DUMP_CHAT)
             else:
-                msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>#Leech_Completed</b>!\n<b>#cc</b>: {self.__listener.tag}\n<b>#User_id</b>: {self.__listener.message.from_user.id}'
+                msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>#Leech_Completed</b>!\n<b>Done By</b>: {self.__listener.tag}\n<b>User ID</b>: <code>{self.__listener.message.from_user.id}</code>'
                 self.__sent_msg = await self.__listener.message._client.send_message(DUMP_CHAT, msg, disable_web_page_preview=True)
             if self.__listener.dmMessage:
                 self.__sent_DMmsg = self.__listener.dmMessage
@@ -207,13 +207,6 @@ class TgUploader:
                     if f_size < 2097152000 and not self.__sent_msg._client.me.is_bot:
                         LOGGER.info(f'Trying to upload file less than {get_readable_file_size(f_size)} fetching message for bot client')
                         self.__sent_msg = await bot.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
-                    if ((self.__listener.isSuperGroup or config_dict['DUMP_CHAT'])
-                        and self.__sent_msg._client.me.is_bot and not self.__sent_msg.chat.has_protected_content
-                        and not self.__button
-                    ):
-                        btn = ButtonMaker()
-                        btn.ibutton('Save This File', 'save', 'footer')
-                        self.__button = btn.build_menu(1)
                     if self.__last_msg_in_group:
                         group_lists = [x for v in self.__media_dict.values() for x in v.keys()]
                         if (match := re_match(r'.+(?=\.0*\d+$)|.+(?=\.part\d+\..+)', self.__up_path)) and match.group(0) not in group_lists:
@@ -257,7 +250,7 @@ class TgUploader:
             await self.__listener.onUploadError('Files Corrupted or unable to upload. Check logs!')
             return
         if config_dict['DUMP_CHAT']:
-            msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>#Leech_Completed</b>!\n<b>#cc</b>: {self.__listener.tag}\n<b>#User_id</b>: {self.__listener.message.from_user.id}'
+            msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>LeechCompleted</b>!\n<b>Done By</b>: {self.__listener.tag}\n<b>User ID</b>: <code>{self.__listener.message.from_user.id}</code>'
             await self.__sent_msg.reply(text=msg, quote=True)
         LOGGER.info(f"Leech Completed: {self.name}")
         size = get_readable_file_size(self.__size)
@@ -399,4 +392,4 @@ class TgUploader:
     async def cancel_download(self):
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
-        await self.__listener.onUploadError('your upload has been stopped!')
+        await self.__listener.onUploadError('Your upload has been stopped!')

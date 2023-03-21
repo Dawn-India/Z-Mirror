@@ -15,10 +15,17 @@ class YtDlpDownloadStatus:
         self.__gid = gid
         self.__listener = listener
         self.message = self.__listener.message
+        self.__isPlayList = self.__obj.is_playlist
         self.startTime = self.__listener.startTime
         self.mode = self.__listener.mode
         self.source = self.__listener.source
         self.engine = engine_
+
+    def playList(self):
+        if self.__isPlayList:
+            return f"{self.__obj.playlist_index} of {self.__obj.playlist_count}"
+        else:
+            return None
 
     def gid(self):
         return self.__gid

@@ -12,8 +12,8 @@ from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (auto_delete_message,
-                                                      deleteMessage,
-                                                      sendMessage,
+                                                      deleteMessage, isAdmin,
+                                                      request_limiter, sendMessage,
                                                       sendStatusMessage,
                                                       update_all_messages)
 
@@ -41,6 +41,8 @@ async def mirror_status(client, message):
 
 @new_task
 async def status_pages(client, query):
+    if not await isAdmin(query.message, query.from_user.id) and await request_limiter(query=query):
+        return
     await query.answer()
     data = query.data.split()
     if data[1] == "ref":

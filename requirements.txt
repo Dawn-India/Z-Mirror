@@ -7,7 +7,7 @@ aria2p
 asyncio
 beautifulsoup4
 bencoding
-cfscrape
+cloudscraper
 dnspython
 feedparser
 flask

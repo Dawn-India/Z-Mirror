@@ -327,16 +327,16 @@ class MirrorLeechListener:
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().rm_complete_task(self.message.link)
         lmsg = f'<b>File Name</b>: <code>{escape(name)}</code>'
-        lmsg += f'\n\n<b>#cc</b>: {self.tag}'
+        lmsg += f'\n<b>Req By</b>: {self.tag}'
         gmsg = f'Hey <b>{self.tag}</b>! Your job is done.'
         msg = f'\n\n<b>Size</b>: {size}'
         msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.startTime)}"
         msg += f"\n<b>Upload</b>: {self.mode}"
         buttons = ButtonMaker()
         if self.isLeech:
-            msg += f'\n<b>Total Files</b>: {folders}\n\n'
+            msg += f'\n<b>Total Files</b>: {folders}\n'
             if typ != 0:
-                msg += f'\n<b>Corrupted Files</b>: {typ}'
+                msg += f'\n<b>Corrupted Files</b>: {typ}\n'
             msg_ = '\n<b>Files has been sent in your DM.</b>'
             if not self.dmMessage:
                 if not files:
@@ -344,7 +344,7 @@ class MirrorLeechListener:
                     if self.logMessage:
                         await sendMessage(self.logMessage, lmsg + msg)
                 else:
-                    fmsg = ''
+                    fmsg = '\n'
                     for index, (link, name) in enumerate(files.items(), start=1):
                         fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                         if len(fmsg.encode() + msg.encode()) > 4000:
@@ -353,7 +353,7 @@ class MirrorLeechListener:
                             await sendMessage(self.message, lmsg + msg + fmsg)
                             await sleep(1)
                             fmsg = ''
-                    if fmsg != '':
+                    if fmsg != '\n':
                         if self.logMessage:
                             await sendMessage(self.logMessage, lmsg + msg + fmsg)
                         await sendMessage(self.message, lmsg + msg + fmsg)
@@ -364,23 +364,25 @@ class MirrorLeechListener:
                         await sendMessage(self.logMessage, lmsg + msg)
                 elif self.dmMessage and not config_dict['DUMP_CHAT']:
                     await sendMessage(self.dmMessage, lmsg + msg)
-                    await sendMessage( self.message, gmsg + msg + msg_)
+                    await sendMessage(self.message, gmsg + msg + msg_)
                     if self.logMessage:
                         await sendMessage(self.logMessage, lmsg + msg)
                 else:
-                    fmsg = ''
+                    fmsg = '\n'
                     for index, (link, name) in enumerate(files.items(), start=1):
                         fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                         if len(fmsg.encode() + msg.encode()) > 4000:
                             if self.logMessage:
                                 await sendMessage(self.logMessage, lmsg + msg + fmsg)
-                            await sendMessage(self.message, gmsg + msg + fmsg + msg_)
+                            await sendMessage(self.message, gmsg + msg + msg_)
+                            await sendMessage(self.dmMessage, gmsg + msg + fmsg)
                             await sleep(1)
                             fmsg = ''
-                    if fmsg != '':
+                    if fmsg != '\n':
                         if self.logMessage:
                             await sendMessage(self.logMessage, lmsg + msg + fmsg)
-                        await sendMessage(self.message, gmsg + msg + fmsg + msg_)
+                        await sendMessage(self.message, gmsg + msg + msg_)
+                        await sendMessage(self.dmMessage, gmsg + msg + fmsg)
             if self.seed:
                 if self.newDir:
                     await clean_target(self.newDir)
@@ -457,8 +459,8 @@ class MirrorLeechListener:
             count = len(download_dict)
             if self.uid in self.sameDir:
                 self.sameDir.remove(self.uid)
-        msg = f"{self.tag} your download has been stopped due to: {escape(error)}\n<b>Elapsed</b>: {get_readable_time(time() - self.startTime)}"
-        msg += f"\n<b>Upload</b>: {self.mode}"
+        msg = f"Sorry {self.tag}!\nYour download has been stopped.\n\n<b>Reason</b>: {escape(error)}"
+        msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.startTime)}\n<b>Upload</b>: {self.mode}"
         await sendMessage(self.message, msg, button)
         if self.logMessage:
             await sendMessage(self.logMessage, msg, button)

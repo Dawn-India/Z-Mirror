@@ -11,7 +11,8 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
-                                                      editMessage, sendMessage)
+                                                      editMessage, isAdmin,
+                                                      request_limiter, sendMessage)
 
 
 async def list_buttons(user_id, isRecursive=True):
@@ -63,7 +64,11 @@ async def drive_list(client, message):
         return await sendMessage(message, 'Send a search key along with command')
     if not message.from_user:
         message.from_user = await anno_checker(message)
+    if not message.from_user:
+        return
     user_id = message.from_user.id
+    if not await isAdmin(message, user_id) and await request_limiter(message):
+        return
     buttons = await list_buttons(user_id)
     await sendMessage(message, 'Choose list options:', buttons)
 
