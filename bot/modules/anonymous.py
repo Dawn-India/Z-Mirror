@@ -20,7 +20,7 @@ async def verifyAnno(client, query):
         LOGGER.info(f'Verification Success by ({user.username}) {user.id}')
         await deleteMessage(message)
     elif data[1] == 'admin':
-        await query.answer('You are not really admin')
+        await query.answer('You are not an admin')
     else:
         await query.answer()
         await editMessage(message, '<b>Cancel Verification</b>')

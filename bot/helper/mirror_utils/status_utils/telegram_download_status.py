@@ -12,22 +12,17 @@ class TelegramDownloadStatus:
         self.__gid = gid
         self.__listener = listener
         self.message = self.__listener.message
-        self.startTime = self.__listener.startTime
-        self.mode = self.__listener.mode
-        self.source = self.__listener.source
+        self.extra_details = self.__listener.extra_details
         self.engine = engine_
 
     def gid(self):
         return self.__gid
 
     def processed_bytes(self):
-        return self.__obj.downloaded_bytes
-
-    def size_raw(self):
-        return self.__obj.size
+        return get_readable_file_size(self.__obj.downloaded_bytes)
 
     def size(self):
-        return get_readable_file_size(self.size_raw())
+        return get_readable_file_size(self.__obj.size)
 
     def status(self):
         return MirrorStatus.STATUS_DOWNLOADING
@@ -41,33 +36,18 @@ class TelegramDownloadStatus:
     def progress(self):
         return f'{round(self.progress_raw(), 2)}%'
 
-    def speed_raw(self):
-        """
-        :return: Download speed in Bytes/Seconds
-        """
-        return self.__obj.download_speed
-
     def speed(self):
-        return f'{get_readable_file_size(self.speed_raw())}/s'
+        return f'{get_readable_file_size(self.__obj.download_speed)}/s'
+
+    def listener(self):
+        return self.__listener
 
     def eta(self):
         try:
-            seconds = (self.size_raw() - self.processed_bytes()) / self.speed_raw()
+            seconds = (self.__obj.size - self.__obj.downloaded_bytes) / self.__obj.download_speed
             return f'{get_readable_time(seconds)}'
         except:
             return '-'
 
     def download(self):
         return self.__obj
-    
-    def __source(self):
-        if (reply_to := self.message.reply_to_message) and reply_to.from_user and not reply_to.from_user.is_bot:
-            source = reply_to.from_user.username or reply_to.from_user.id
-        elif self.__listener.tag == 'Anonymous':
-            source = self.__listener.tag
-        else:
-            source = self.message.from_user.username or self.message.from_user.id
-        if self.__listener.isSuperGroup:
-            return f"<a href='{self.message.link}'>{source}</a>"
-        else:
-            return f"<i>{source}</i>"

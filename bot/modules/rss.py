@@ -1,23 +1,22 @@
+from feedparser import parse as feedparse
+from pyrogram.handlers import MessageHandler, CallbackQueryHandler
+from pyrogram.filters import command, regex, create
 from asyncio import Lock, sleep
 from datetime import datetime, timedelta
-from functools import partial
 from time import time
-
+from functools import partial
 from aiohttp import ClientSession
 from apscheduler.triggers.interval import IntervalTrigger
-from feedparser import parse as feedparse
-from pyrogram.filters import command, create, regex
-from pyrogram.handlers import CallbackQueryHandler, MessageHandler
+from re import split as re_split
 
-from bot import DATABASE_URL, LOGGER, bot, config_dict, rss_dict, scheduler
-from bot.helper.ext_utils.bot_utils import new_thread
-from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.ext_utils.exceptions import RssShutdownException
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot import scheduler, rss_dict, LOGGER, DATABASE_URL, config_dict, bot
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendRss
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (editMessage, sendMessage,
-                                                      sendRss)
+from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.ext_utils.bot_utils import new_thread
+from bot.helper.ext_utils.exceptions import RssShutdownException
 
 rss_dict_lock = Lock()
 handler_dict = {}
@@ -78,33 +77,29 @@ async def rssSub(client, message, pre_event):
         inf_lists = []
         exf_lists = []
         if len(args) > 2:
-            cmd = item.split(' c: ')
-            if len(cmd) > 1:
-                cmd = cmd[1].split(' inf: ')[0].split(' exf: ')[0].strip()
-            else:
-                cmd = None
-            inf = item.split(' inf: ')
-            if len(inf) > 1:
-                inf = inf[1].split(' exf: ')[0].split(' c: ')[0].strip()
+            arg = item.split(' c: ', 1)
+            cmd = re_split(' inf: | exf: | up: ', arg[1])[0].strip() if len(arg) > 1 else None
+            arg = item.split(' inf: ', 1)
+            inf = re_split(' c: | exf: | up: ', arg[1])[0].strip() if len(arg) > 1 else None
+            arg = item.split(' exf: ', 1)
+            exf = re_split(' c: | inf: | up: ', arg[1])[0].strip() if len(arg) > 1 else None
+            arg = item.split(' up: ', 1)
+            up = re_split(' c: | inf: | exf: ', arg[1])[0].strip() if len(arg) > 1 else None
+            if inf is not None:
                 filters_list = inf.split('|')
                 for x in filters_list:
                     y = x.split(' or ')
                     inf_lists.append(y)
-            else:
-                inf = None
-            exf = item.split(' exf: ')
-            if len(exf) > 1:
-                exf = exf[1].split(' inf: ')[0].split(' c: ')[0].strip()
+            if exf is not None:
                 filters_list = exf.split('|')
                 for x in filters_list:
                     y = x.split(' or ')
                     exf_lists.append(y)
-            else:
-                exf = None
         else:
             inf = None
             exf = None
             cmd = None
+            up = None
         try:
             async with ClientSession(trust_env=True) as session:
                 async with session.get(feed_link) as res:
@@ -121,15 +116,16 @@ async def rssSub(client, message, pre_event):
                 last_link = rss_d.entries[0]['link']
             msg += f"\nLink: <code>{last_link}</code>"
             msg += f"\n<b>Command: </b><code>{cmd}</code>"
-            msg += f"\n<b>Filters:-</b>\ninf: <code>{inf}</code>\nexf: <code>{exf}<code/>\n\n"
+            msg += f"\n<b>Filters:-</b>\ninf: <code>{inf}</code>\nexf: <code>{exf}<code/>"
+            msg += f"\nUpload Path: {up}\n\n"
             async with rss_dict_lock:
                 if rss_dict.get(user_id, False):
                     rss_dict[user_id][title] = {'link': feed_link, 'last_feed': last_link, 'last_title': last_title,
-                                     'inf': inf_lists, 'exf': exf_lists, 'paused': False, 'command': cmd, 'tag': tag}
+                                'inf': inf_lists, 'exf': exf_lists, 'paused': False, 'command': cmd, 'up_path': up, 'tag': tag}
                 else:
                     rss_dict[user_id] = {title: {'link': feed_link, 'last_feed': last_link, 'last_title': last_title,
-                                     'inf': inf_lists, 'exf': exf_lists, 'paused': False, 'command': cmd, 'tag': tag}}
-            LOGGER.info(f"Rss Feed Added: id: {user_id} - title: {title} - link: {feed_link} - c: {cmd} - inf: {inf} - exf: {exf}")
+                                'inf': inf_lists, 'exf': exf_lists, 'paused': False, 'command': cmd, 'up_path': up, 'tag': tag}}
+            LOGGER.info(f"Rss Feed Added: id: {user_id} - title: {title} - link: {feed_link} - c: {cmd} - inf: {inf} - exf: {exf} - up: {up}")
         except (IndexError, AttributeError) as e:
             emsg = f"The link: {feed_link} doesn't seem to be a RSS feed or it's region-blocked!"
             await sendMessage(message, emsg + '\nError: ' + str(e))
@@ -205,10 +201,11 @@ async def rssList(query, start, all_users=False):
                 for index, (title, data) in enumerate(list(titles.items())[start:5+start]):
                     list_feed += f"\n\n<b>Title:</b> <code>{title}</code>\n"
                     list_feed += f"<b>Feed Url:</b> <code>{data['link']}</code>\n"
-                    list_feed += f"<b>Command: </b> <code>{data['command']}</code>\n"
-                    list_feed += f"<b>Inf: </b> <code>{data['inf']}</code>\n"
-                    list_feed += f"<b>Exf: </b> <code>{data['exf']}</code>\n"
-                    list_feed += f"<b>Paused: </b> <code>{data['paused']}</code>\n"
+                    list_feed += f"<b>Command:</b> <code>{data['command']}</code>\n"
+                    list_feed += f"<b>Inf:</b> <code>{data['inf']}</code>\n"
+                    list_feed += f"<b>Exf:</b> <code>{data['exf']}</code>\n"
+                    list_feed += f"<b>Paused:</b> <code>{data['paused']}</code>\n"
+                    list_feed += f"<b>Upload Path:</b> <code>{data['up_path']}</code>\n"
                     list_feed += f"<b>User:</b> {data['tag'].lstrip('@')}"
                     index += 1
                     if index == 5:
@@ -219,10 +216,11 @@ async def rssList(query, start, all_users=False):
             keysCount = len(rss_dict.get(user_id, {}).keys())
             for title, data in list(rss_dict[user_id].items())[start:5+start]:
                 list_feed += f"\n\n<b>Title:</b> <code>{title}</code>\n<b>Feed Url: </b><code>{data['link']}</code>\n"
-                list_feed += f"<b>Command: </b> <code>{data['command']}</code>\n"
-                list_feed += f"<b>Inf: </b> <code>{data['inf']}</code>\n"
-                list_feed += f"<b>Exf: </b> <code>{data['exf']}</code>\n"
-                list_feed += f"<b>Paused: </b> <code>{data['paused']}</code>"
+                list_feed += f"<b>Command:</b> <code>{data['command']}</code>\n"
+                list_feed += f"<b>Inf:</b> <code>{data['inf']}</code>\n"
+                list_feed += f"<b>Exf:</b> <code>{data['exf']}</code>\n"
+                list_feed += f"<b>Paused:</b> <code>{data['paused']}</code>\n"
+                list_feed += f"<b>Upload Path:</b> <code>{data['up_path']}</code>"
     buttons.ibutton("Back", f"rss back {user_id}")
     buttons.ibutton("Close", f"rss close {user_id}")
     if keysCount > 5:
@@ -287,34 +285,31 @@ async def rssEdit(client, message, pre_event):
             continue
         inf_lists = []
         exf_lists = []
-        arg = item.split(' c: ')
-        if len(arg) > 1:
-            cmd = arg[1].split(' inf: ')[0].split(' exf: ')[0].strip()
-        else:
-            cmd = ''
-        arg = item.split(' inf: ')
-        if len(arg) > 1:
-            inf = arg[1].split(' exf: ')[0].split(' c: ')[0].strip()
-        else:
-            inf = ''
-        arg = item.split(' exf: ')
-        if len(arg) > 1:
-            exf = arg[1].split(' inf: ')[0].split(' c: ')[0].strip()
-        else:
-            exf = ''
+        arg = item.split(' c: ', 1)
+        cmd = re_split(' inf: | exf: | up: ', arg[1])[0].strip() if len(arg) > 1 else None
+        arg = item.split(' inf: ', 1)
+        inf = re_split(' c: | exf: | up: ', arg[1])[0].strip() if len(arg) > 1 else None
+        arg = item.split(' exf: ', 1)
+        exf = re_split(' c: | inf: | up: ', arg[1])[0].strip() if len(arg) > 1 else None
+        arg = item.split(' up: ', 1)
+        up = re_split(' c: | inf: | exf: ', arg[1])[0].strip() if len(arg) > 1 else None
         async with rss_dict_lock:
-            if cmd:
+            if up is not None:
+                if up.lower() == 'none':
+                    up = None
+                rss_dict[user_id][title]['up_path'] = up
+            if cmd is not None:
                 if cmd.lower() == 'none':
                     cmd = None
                 rss_dict[user_id][title]['command'] = cmd
-            if inf:
+            if inf is not None:
                 if inf.lower() != 'none':
                     filters_list = inf.split('|')
                     for x in filters_list:
                         y = x.split(' or ')
                         inf_lists.append(y)
                 rss_dict[user_id][title]['inf'] = inf_lists
-            if exf:
+            if exf is not None:
                 if exf.lower() != 'none':
                     filters_list = exf.split('|')
                     for x in filters_list:
@@ -341,8 +336,8 @@ async def event_handler(client, query, pfunc):
     handler_dict[user_id] = True
     start_time = time()
     async def event_filter(_, __, event):
-        return bool(event.from_user.id or event.sender_chat.id == user_id and
-                    event.chat.id == query.message.chat.id and event.text)
+         user = event.from_user or event.sender_chat
+         return bool(user.id == user_id and event.chat.id == query.message.chat.id and event.text)
     handler = client.add_handler(MessageHandler(pfunc, create(event_filter)), group=-1)
     while handler_dict[user_id]:
         await sleep(0.5)
@@ -376,10 +371,10 @@ async def rssListener(client, query):
         button = buttons.build_menu(2)
         msg = """
 Use this format to add feed url:
-Title1 link c: command (optional) inf: xx (optional) exf: xx (optional)
-Title2 link c: command inf: xx exf: xx
+Title1 link c: command (optional) inf: xx (optional) exf: xx (optional) up: rc (optional)
+Title2 link c: command inf: xx exf: xx up: gd
 
-Example: Title https://www.rss-url.com inf: 1080 or 720 or 144p|mkv or mp4|hevc exf: flv or web|xxx
+Example: Title https://www.rss-url.com inf: 1080 or 720 or 144p|mkv or mp4|hevc exf: flv or web|xxx up: mrcc:remote:path/subdir
 This filter will parse links that it's titles contains `(1080 or 720 or 144p) and (mkv or mp4) and hevc` and doesn't conyain (flv or web) and xxx` words. You can add whatever you want.
 
 Another example: inf:  1080  or 720p|.web. or .webrip.|hvec or x264. This will parse titles that contains ( 1080  or 720p) and (.web. or .webrip.) and (hvec or x264). I have added space before and after 1080 to avoid wrong matching. If this `10805695` number in title it will match 1080 if added 1080 without spaces after it.
@@ -448,8 +443,8 @@ Timeout: 60 sec.
             button = buttons.build_menu(2)
             msg = '''Send one or more rss titles with new filters or command seperated by new line.
 Examples:
-Title1 c: mirror exf: none inf: 1080 or 720
-Title2 c: none inf: none
+Title1 c: mirror exf: none inf: 1080 or 720 up: remote:path/subdir
+Title2 c: none inf: none up: none
 Note: Only what you provide will be edited, the rest will be the same like example 2: exf will stay same as it is.
 Timeout: 60 sec.
             '''
@@ -611,10 +606,12 @@ async def rssMonitor():
                     if not parse:
                         continue
                     if command := data['command']:
-                        feed_msg = f"/{command.replace('/', '')} {url}\n<b>Req By</b>: {data['tag']}\n<b>User ID</b>: <code>{user}</code>"
+                        up = f"up: {up_path}" if (up_path := data['up_path']) else ''
+                        feed_msg = f"/{command.replace('/', '')} {url} {up}"
                     else:
-                        feed_msg = f"<b>File Name</b>: <code>{item_title.replace('>', '').replace('<', '')}</code>\n\n"
-                        feed_msg += f"<b>Link</b>: <code>{url}</code>\n\n<b>Req By</b>: {data['tag']}\n<b>User ID</b>: <code>{user}</code>"
+                        feed_msg = f"<b>File Name: </b><code>{item_title.replace('>', '').replace('<', '')}</code>\n\n"
+                        feed_msg += f"<b>Link: </b><code>{url}</code>"
+                    feed_msg += f"\n<b>Added By: </b><code>{data['tag']}</code>\n<b>User ID: </b><code>{user}</code>"
                     await sendRss(feed_msg)
                     feed_count += 1
                 async with rss_dict_lock:
@@ -636,6 +633,7 @@ async def rssMonitor():
 def addJob(delay):
     scheduler.add_job(rssMonitor, trigger=IntervalTrigger(seconds=delay), id='0', name='RSS', misfire_grace_time=15,
                       max_instances=1, next_run_time=datetime.now()+timedelta(seconds=20), replace_existing=True)
+
 
 addJob(config_dict['RSS_DELAY'])
 scheduler.start()

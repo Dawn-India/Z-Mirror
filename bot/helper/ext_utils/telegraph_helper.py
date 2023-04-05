@@ -23,7 +23,7 @@ class TelegraphHelper:
                 author_url=self.author_url
             )
             self.access_token = self.telegraph.get_access_token()
-            LOGGER.info("Creating Telegraph Account")
+            LOGGER.info("Creating Telegraph Account...")
         except:
             LOGGER.error('Unable to create Telegraph account.')
             pass

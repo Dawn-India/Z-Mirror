@@ -11,6 +11,7 @@ cloudscraper
 dnspython
 feedparser
 flask
+gevent
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
@@ -24,7 +25,7 @@ pillow
 psutil
 pybase64
 pymongo
-pyrogram==2.0.73
+pyrogram
 python-dotenv
 python-magic
 qbittorrent-api

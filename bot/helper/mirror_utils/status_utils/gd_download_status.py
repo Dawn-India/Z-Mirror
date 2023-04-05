@@ -13,16 +13,11 @@ class GdDownloadStatus:
         self.__gid = gid
         self.__listener = listener
         self.message = self.__listener.message
-        self.startTime = self.__listener.startTime
-        self.mode = self.__listener.mode
-        self.source = self.__listener.source
+        self.extra_details = self.__listener.extra_details
         self.engine = engine_
 
     def processed_bytes(self):
-        return self.__obj.processed_bytes
-
-    def size_raw(self):
-        return self.__size
+        return get_readable_file_size(self.__obj.processed_bytes)
 
     def size(self):
         return get_readable_file_size(self.__size)
@@ -48,18 +43,12 @@ class GdDownloadStatus:
     def listener(self):
         return self.__listener
 
-    def speed_raw(self):
-        """
-        :return: Download speed in Bytes/Seconds
-        """
-        return self.__obj.speed()
-
     def speed(self):
-        return f'{get_readable_file_size(self.speed_raw())}/s'
+        return f'{get_readable_file_size(self.__obj.speed())}/s'
 
     def eta(self):
         try:
-            seconds = (self.__size - self.__obj.processed_bytes) / self.speed_raw()
+            seconds = (self.__size - self.__obj.processed_bytes) / self.__obj.speed()
             return f'{get_readable_time(seconds)}'
         except:
             return '-'
