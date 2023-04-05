@@ -5,31 +5,29 @@ from aiohttp import ClientSession
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot,
-                 categories, config_dict, user_data)
-from bot.helper.ext_utils.bot_utils import (check_user_tasks,
-                                            get_readable_file_size,
-                                            is_gdrive_link, is_url, new_task,
-                                            sync_to_async)
-from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.ext_utils.z_utils import extract_link
-from bot.helper.listener import MirrorLeechListener
+from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, categories,
+                 config_dict, user_data)
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
+                                            is_gdrive_link, is_rclone_path,
+                                            is_url, new_task, sync_to_async)
+from bot.helper.z_utils import none_admin_utils
+from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
+from bot.helper.mirror_utils.rclone_utils.list import RcloneList
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       delete_links,
-                                                      editMessage, forcesub,
-                                                      isAdmin, message_filter,
+                                                      editMessage, isAdmin,
                                                       open_category_btns,
-                                                      request_limiter,
                                                       sendDmMessage,
                                                       sendLogMessage,
                                                       sendMessage)
 
 listener_dict = {}
+
 
 async def _mdisk(link, name):
     key = link.split('/')[-1]
@@ -100,8 +98,8 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
             args = mssg.split(maxsplit=index)
             if len(args) > index:
                 x = args[index].strip()
-                if not x.startswith(("n:", "pswd:", "opt:")):
-                    link = re_split(r" opt: | pswd: | n: ", x)[0].strip()
+                if not x.startswith(('n:', 'pswd:', 'up:', 'rcf:', 'opt:')):
+                    link = re_split(r' opt: | pswd: | n: | rcf: | up: ', x)[0].strip()
 
     @new_task
     async def __run_multi():
@@ -124,13 +122,20 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     path = f'{DOWNLOAD_DIR}{message.id}{folder_name}'
 
     name = mssg.split(' n: ', 1)
-    name = re_split(' pswd: | opt: ', name[1])[0].strip() if len(name) > 1 else ''
+    name = re_split(' pswd: | opt: | up: | rcf: ', name[1])[0].strip() if len(name) > 1 else ''
 
     pswd = mssg.split(' pswd: ', 1)
-    pswd = re_split(' n: | opt: ', pswd[1])[0] if len(pswd) > 1 else None
+    pswd = re_split(' n: | opt: | up: | rcf: ', pswd[1])[0] if len(pswd) > 1 else None
 
     opt = mssg.split(' opt: ', 1)
-    opt = re_split(' n: | pswd: ', opt[1])[0].strip() if len(opt) > 1 else ''
+    opt = re_split(' n: | pswd: | up: | rcf: ', opt[1])[0].strip() if len(opt) > 1 else ''
+
+    rcf = mssg.split(' rcf: ', 1)
+    rcf = re_split(' n: | pswd: | up: | opt: ', rcf[1])[0].strip() if len(rcf) > 1 else None
+
+    up = mssg.split(' up: ', 1)
+    up = re_split(' n: | pswd: | rcf: | opt: ', up[1])[0].strip() if len(up) > 1 else None
+
 
     if sender_chat:= message.sender_chat:
         tag = sender_chat.title
@@ -160,56 +165,54 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
 
 <b>Quality Buttons:</b>
 Incase default quality added but you need to select quality for specific link or links with multi links feature.
-<code>/cmd</code> s link
-This perfix should be always before n:, pswd: and opt:
+<code>/{cmd}</code> s link
+This option should be always before n:, pswd: and opt:
 
 <b>Options Example:</b> opt: playliststart:^10|matchtitle:S13|writesubtitles:true|live_from_start:true|postprocessor_args:{fmg}|wait_for_video:(5, 100)
 
 <b>Multi links only by replying to first link:</b>
 <code>/{cmd}</code> 10(number of links)
-Number should be always before n:, pswd: and opt:
+Number should be always before n: , pswd: and opt:
 
 <b>Multi links within same upload directory only by replying to first link:</b>
-<code>/cmd</code> 10(number of links) m:folder_name
-Number and m:folder_name should be always before n:, pswd: and opt:
+<code>/{cmd}</code> 10(number of links) m:folder_name
+Number and m:folder_name should be always before n: , pswd: and opt: 
 
 <b>Options Note:</b> Add `^` before integer, some values must be integer and some string.
 Like playlist_items:10 works with string, so no need to add `^` before the number but playlistend works only with integer so you must add `^` before the number like example above.
 You can add tuple and dict also. Use double quotes inside dict.
 
+<b>Rclone Upload</b>:
+<code>/{cmd}</code> link up: <code>rcl</code> (To select config, remote and path)
+You can directly add the upload path. up: remote:dir/subdir
+If DEFAULT_UPLOAD is `rc` then you can pass up: `gd` to upload using gdrive tools to GDRIVE_ID.
+If DEFAULT_UPLOAD is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
+If you want to add path manually from your config (uploaded from usetting) add <code>mrcc:</code> before the path without space
+<code>/{cmd}</code> link up: <code>mrcc:</code>main:dump
+
+<b>Rclone Flags</b>:
+<code>/{cmd}</code> link up: path|rcl rcf: --buffer-size:8M|--drive-starred-only|key|key:value
+This will override all other flags except --exclude
+Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
+
 <b>NOTES:</b>
 1. When use cmd by reply don't add any option in link msg! Always add them after cmd msg!
 2. Options (<b>s, m: and multi</b>) should be added randomly before link and before any other option.
 3. Options (<b>n:, pswd: and opt:</b>) should be added randomly after the link if link along with the cmd or after cmd if by reply.
+4. You can always add video quality from yt-dlp api options.
 
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a>.
-        """.format_map({'cmd': BotCommands.YtdlCommand[0], 'fmg': '{"ffmpeg": ["-threads", "4"]}'})
+        """.format_map({'cmd': message.command[0], 'fmg': '{"ffmpeg": ["-threads", "4"]}'})
         await sendMessage(message, help_msg)
+        await delete_links(message)
         return
     if not message.from_user:
         message.from_user = await anno_checker(message)
     if not message.from_user:
         return
     user_id = message.from_user.id
-    if not await isAdmin(message):
-        if await message_filter(message, tag):
-            return
-        if await request_limiter(message):
-            return
-        if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS']:
-            raw_url = await extract_link(link)
-            exist = await DbManger().check_download(raw_url)
-            if exist:
-                _msg = f'<b>Download is already added by {exist["tag"]}</b>\n\nCheck the download status in @{exist["botname"]}\n\n<b>Link</b>: <code>{exist["_id"]}</code>'
-                await delete_links(message)
-                return await sendMessage(message, _msg)
-        if await forcesub(message, tag):
-            return
-        if (maxtask:= config_dict['USER_MAX_TASKS']) and await check_user_tasks(message.from_user.id, maxtask):
-            return await sendMessage(message, f"Your tasks limit exceeded for {maxtask} tasks")
-        if isLeech and config_dict['DISABLE_LEECH']:
-            await delete_links(message)
-            return await sendMessage(message, 'Locked!')
+    if not await isAdmin(message) and await none_admin_utils(link, message, tag, isLeech):
+        return
     if not isLeech and not drive_id and len(categories) > 1:
         drive_id, index_link = await open_category_btns(message)
     if not isLeech and not config_dict['GDRIVE_ID'] and not drive_id:
@@ -226,9 +229,17 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
     else:
         dmMessage = None
     logMessage = await sendLogMessage(message, link, tag)
+
+    if (up == 'rcl' or config_dict['RCLONE_PATH'] == 'rcl' and config_dict['DEFAULT_UPLOAD'] == 'rc') and not isLeech:
+        up = await RcloneList(client, message).get_rclone_path('rcu')
+        if not is_rclone_path(up):
+            await sendMessage(message, up)
+            return
+
     listener = MirrorLeechListener(message, isZip, isLeech=isLeech, pswd=pswd,
-                                tag=tag, sameDir=sameDir, raw_url=raw_url, drive_id=drive_id,
-                                index_link=index_link, dmMessage=dmMessage, logMessage=logMessage)
+                                   tag=tag, sameDir=sameDir, rcFlags=rcf, upPath=up,
+                                   raw_url=raw_url, drive_id=drive_id,
+                                   index_link=index_link, dmMessage=dmMessage, logMessage=logMessage)
     if 'mdisk.me' in link:
         name, link = await _mdisk(link, name)
     ydl = YoutubeDLHelper(listener)

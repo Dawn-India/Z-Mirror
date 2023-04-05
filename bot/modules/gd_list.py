@@ -3,14 +3,14 @@ from time import time
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import LOGGER, bot
+from bot import LOGGER, bot, config_dict
 from bot.helper.ext_utils.bot_utils import (get_readable_time, new_task,
                                             sync_to_async)
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (anno_checker,
+from bot.helper.telegram_helper.message_utils import (anno_checker, deleteMessage,
                                                       editMessage, isAdmin,
                                                       request_limiter, sendMessage)
 
@@ -25,7 +25,7 @@ async def list_buttons(user_id, isRecursive=True):
     return buttons.build_menu(2)
 
 async def _list_drive(key, message, item_type, isRecursive):
-    LOGGER.info(f"listing: {key}")
+    LOGGER.info(f"Searching for: {key}")
     start_time = time()
     gdrive = GoogleDriveHelper()
     msg, button = await sync_to_async(gdrive.drive_list, key, isRecursive=isRecursive, itemType=item_type)
@@ -36,6 +36,8 @@ async def _list_drive(key, message, item_type, isRecursive):
     else:
         msg = f'No result found for <i>{key}</i>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
         await editMessage(message, msg)
+    if config_dict['DELETE_LINKS']:
+        await deleteMessage(message.reply_to_message)
 
 @new_task
 async def select_type(client, query):
@@ -44,7 +46,7 @@ async def select_type(client, query):
     key = message.reply_to_message.text.split(maxsplit=1)[1].strip()
     data = query.data.split()
     if user_id != int(data[1]):
-        return await query.answer(text="Not Yours!", alert=True)
+        return await query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == 'rec':
         await query.answer()
         isRecursive = not bool(eval(data[3]))

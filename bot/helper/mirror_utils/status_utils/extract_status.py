@@ -1,9 +1,7 @@
 from time import time
 
-from bot import DOWNLOAD_DIR, LOGGER
-from bot.helper.ext_utils.bot_utils import (MirrorStatus, async_to_sync,
-                                            get_readable_file_size,
-                                            get_readable_time)
+from bot import LOGGER
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, MirrorStatus, get_readable_time, async_to_sync
 from bot.helper.ext_utils.fs_utils import get_path_size
 
 
@@ -13,23 +11,20 @@ class ExtractStatus:
         self.__size = size
         self.__gid = gid
         self.__listener = listener
-        self.__uid = self.__listener.uid
         self.__start_time = time()
         self.message = self.__listener.message
-        self.startTime = self.__listener.startTime
-        self.mode = self.__listener.mode
-        self.source = self.__listener.source
-        self.engine = 'p7zip'
+        self.extra_details = self.__listener.extra_details
+        self.engine = 'p7zip v16.02'
 
     def gid(self):
         return self.__gid
 
     def speed_raw(self):
-        return self.processed_bytes() / (time() - self.__start_time)
+        return self.processed_raw() / (time() - self.__start_time)
 
     def progress_raw(self):
         try:
-            return self.processed_bytes() / self.__size * 100
+            return self.processed_raw() / self.__size * 100
         except:
             return 0
 
@@ -42,15 +37,12 @@ class ExtractStatus:
     def name(self):
         return self.__name
 
-    def size_raw(self):
-        return self.__size
-
     def size(self):
         return get_readable_file_size(self.__size)
 
     def eta(self):
         try:
-            seconds = (self.size_raw() - self.processed_bytes()) / self.speed_raw()
+            seconds = (self.__size - self.processed_raw()) / self.speed_raw()
             return f'{get_readable_time(seconds)}'
         except:
             return '-'
@@ -59,10 +51,13 @@ class ExtractStatus:
         return MirrorStatus.STATUS_EXTRACTING
 
     def processed_bytes(self):
+        return get_readable_file_size(self.processed_raw())
+    
+    def processed_raw(self):
         if self.__listener.newDir:
-            return async_to_sync(get_path_size, f"{DOWNLOAD_DIR}{self.__uid}10000")
+            return async_to_sync(get_path_size, self.__listener.newDir)
         else:
-            return async_to_sync(get_path_size, f"{DOWNLOAD_DIR}{self.__uid}") - self.__size
+            return async_to_sync(get_path_size, self.__listener.dir) - self.__size
 
     def download(self):
         return self
@@ -71,4 +66,6 @@ class ExtractStatus:
         LOGGER.info(f'Cancelling Extract: {self.__name}')
         if self.__listener.suproc:
             self.__listener.suproc.kill()
+        else:
+            self.__listener.suproc = 'cancelled'
         await self.__listener.onUploadError('extracting stopped by user!')

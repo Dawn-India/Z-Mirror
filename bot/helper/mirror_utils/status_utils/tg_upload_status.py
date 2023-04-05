@@ -7,22 +7,16 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus,
 engine_ = f"pyrogram v{get_distribution('pyrogram').version}"
 
 class TgUploadStatus:
-    def __init__(self, obj, size, gid, listener):
+    def __init__(self, obj, size, gid, message, extra_details):
         self.__obj = obj
         self.__size = size
         self.__gid = gid
-        self.__listener = listener
-        self.message = self.__listener.message
-        self.startTime = self.__listener.startTime
-        self.mode = self.__listener.mode
-        self.source = self.__listener.source
+        self.message = message
+        self.extra_details = extra_details
         self.engine = engine_
 
     def processed_bytes(self):
-        return self.__obj.uploaded_bytes
-
-    def size_raw(self):
-        return self.__size
+        return get_readable_file_size(self.__obj.uploaded_bytes)
 
     def size(self):
         return get_readable_file_size(self.__size)
@@ -42,18 +36,12 @@ class TgUploadStatus:
     def progress(self):
         return f'{round(self.progress_raw(), 2)}%'
 
-    def speed_raw(self):
-        """
-        :return: Upload speed in Bytes/Seconds
-        """
-        return self.__obj.speed
-
     def speed(self):
-        return f'{get_readable_file_size(self.speed_raw())}/s'
+        return f'{get_readable_file_size(self.__obj.speed)}/s'
 
     def eta(self):
         try:
-            seconds = (self.__size - self.__obj.uploaded_bytes) / self.speed_raw()
+            seconds = (self.__size - self.__obj.uploaded_bytes) / self.__obj.speed
             return f'{get_readable_time(seconds)}'
         except ZeroDivisionError:
             return '-'

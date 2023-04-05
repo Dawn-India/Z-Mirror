@@ -1,3 +1,4 @@
+from asyncio import Event
 from random import SystemRandom
 from string import ascii_letters, digits
 
@@ -14,15 +15,16 @@ from bot.helper.telegram_helper.message_utils import (delete_links, sendMessage,
                                                       sendStatusMessage)
 
 
-async def add_gd_download(link, path, listener, newname, from_queue=False):
+async def add_gd_download(link, path, listener, newname):
     drive = GoogleDriveHelper()
-    res, size, name, files = await sync_to_async(drive.helper, link)
+    res, size, name, _ = await sync_to_async(drive.helper, link)
     if res != "":
         await sendMessage(listener.message, res)
+        await delete_links(listener.message)
         return
     if newname:
         name = newname
-    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech and listener.upPath == 'gd':
         LOGGER.info('Checking File/Folder if already in Drive...')
         if listener.isZip:
             gname = f"{name}.zip"
@@ -31,12 +33,13 @@ async def add_gd_download(link, path, listener, newname, from_queue=False):
                 gname = get_base_name(name)
             except:
                 gname = None
-        if gname:
+        if gname is not None:
             gmsg, button = await sync_to_async(drive.drive_list, gname, True)
             if gmsg:
-                await delete_links(listener.message)
                 msg = "File/Folder is already available in Drive.\nHere are the search results:"
-                return await sendMessage(listener.message, msg, button)
+                await sendMessage(listener.message, msg, button)
+                await delete_links(listener.message)
+                return
     limit_exceeded = ''
     if not limit_exceeded and (GDRIVE_LIMIT:= config_dict['GDRIVE_LIMIT']):
         limit = GDRIVE_LIMIT * 1024**3
@@ -53,11 +56,13 @@ async def add_gd_download(link, path, listener, newname, from_queue=False):
         if not acpt:
             limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
     if limit_exceeded:
+        await sendMessage(listener.message, f'{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}.')
         await delete_links(listener.message)
-        return await sendMessage(listener.message, f'{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}.')
+        return
     gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
     all_limit = config_dict['QUEUE_ALL']
     dl_limit = config_dict['QUEUE_DOWNLOAD']
+    from_queue = False
     if all_limit or dl_limit:
         added_to_queue = False
         async with queue_dict_lock:
@@ -65,14 +70,19 @@ async def add_gd_download(link, path, listener, newname, from_queue=False):
             up = len(non_queued_up)
             if (all_limit and dl + up >= all_limit and (not dl_limit or dl >= dl_limit)) or (dl_limit and dl >= dl_limit):
                 added_to_queue = True
-                queued_dl[listener.uid] = ['gd', link, path, listener, newname]
+                event = Event()
+                queued_dl[listener.uid] = event
         if added_to_queue:
             LOGGER.info(f"Added to Queue/Download: {name}")
             async with download_dict_lock:
                 download_dict[listener.uid] = QueueStatus(name, size, gid, listener, 'Dl')
             await listener.onDownloadStart()
             await sendStatusMessage(listener.message)
-            return
+            await event.wait()
+            async with download_dict_lock:
+                if listener.uid not in download_dict:
+                    return
+            from_queue = True
     drive = GoogleDriveHelper(name, path, size, listener)
     async with download_dict_lock:
         download_dict[listener.uid] = GdDownloadStatus(drive, size, listener, gid)

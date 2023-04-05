@@ -34,7 +34,7 @@ async def cancel_mirror(client, message):
             return
     elif len(msg) == 1:
         msg = f"Reply to an active Command message which was used to start the download" \
-              f" or send <code>/{BotCommands.CancelMirror[1]} GID</code> to cancel it!"
+              f" or send <code>/{BotCommands.CancelMirror} GID</code> to cancel it!"
         await sendMessage(message, msg)
         return
 
@@ -47,33 +47,27 @@ async def cancel_mirror(client, message):
 cancel_listener = {}
 
 @new_task
-async def cancel_all(status, info):
+async def cancel_all(status, info, listOfTasks):
     user_id = info[0]
     msg = info[1]
     tag = info[3]
-    await editMessage(msg, f"Canceling tasks for {user_id or 'All'} in {status}")
-    if dls:= await getAllDownload(status, user_id, False):
-        canceled = 0
-        cant_cancel = 0
-        for dl in dls:
-            try:
-                obj = dl.download()
-                await obj.cancel_download()
-                canceled += 1
-                await sleep(1)
-            except:
-                cant_cancel += 1
-                continue
-            await editMessage(msg, f"Canceling tasks for {user_id or 'All'} in {status} canceled {canceled}/{len(dls)}")
-        await sleep(1)
-        _msg = "Canceling task Done\n"
-        _msg += f"<b>Success</b>: {canceled}\n"
-        _msg += f"<b>Faild</b>: {cant_cancel}\n"
-        _msg += f"<b>Total</b>: {len(dls)}\n"
-        _msg += f"<b>#cancel_all</b> : {tag}"
-        await editMessage(msg, _msg)
-    else:
-        await editMessage(msg, f"{user_id} Don't have any active task!")
+    success = 0
+    failed = 0
+    _msg = f"<b>User id</b>: {user_id}\n" if user_id else "<b>Everyone</b>\n"
+    _msg += f"<b>Status</b>: {status}\n"
+    _msg += f"<b>Total</b>: {len(listOfTasks)}\n"
+    for dl in listOfTasks:
+        try:
+            obj = dl.download()
+            await obj.cancel_download()
+            success += 1
+            await sleep(1)
+        except:
+            failed += 1
+        new_msg = f"<b>Success</b>: {success}\n"
+        new_msg += f"<b>Failed</b>: {failed}\n"
+        new_msg += f"<b>#cancel_all</b> : {tag}"
+        await editMessage(msg, _msg+new_msg)
 
 @new_task
 async def cancell_all_buttons(client, message):
@@ -136,11 +130,11 @@ async def cancel_all_update(client, query):
         await query.answer()
         del cancel_listener[msg_id]
         return await editMessage(message, "Cancellation Listener Closed.", message)
-    if info[0] and not await getAllDownload(data[1], info[0]):
+    if not (listOfTasks := await getAllDownload(data[1], info[0])):
         return await query.answer(text=f"You don't have any active task in {data[1]}", show_alert=True)
-    await query.answer()
+    await query.answer(f"{len(listOfTasks)} will be cancelled in {data[1]}", show_alert=True)
     del cancel_listener[msg_id]
-    await cancel_all(data[1], info)
+    await cancel_all(data[1], info, listOfTasks)
 
 async def _auto_cancel(msg, msg_id):
     await sleep(30)

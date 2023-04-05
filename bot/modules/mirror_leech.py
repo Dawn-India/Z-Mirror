@@ -7,16 +7,15 @@ from aiofiles.os import path as aiopath
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
-from bot import (DATABASE_URL, DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot,
-                 categories, config_dict)
-from bot.helper.ext_utils.bot_utils import (check_user_tasks, get_content_type,
-                                            is_gdrive_link, is_magnet,
-                                            is_mega_link, is_share_link,
+from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, categories,
+                 config_dict)
+from bot.helper.ext_utils.bot_utils import (get_content_type, is_gdrive_link,
+                                            is_magnet, is_mega_link,
+                                            is_rclone_path, is_share_link,
                                             is_url, new_task, sync_to_async)
-from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from bot.helper.ext_utils.z_utils import extract_link
-from bot.helper.listener import MirrorLeechListener
+from bot.helper.z_utils import none_admin_utils
+from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
 from bot.helper.mirror_utils.download_utils.clonner import start_clone
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
@@ -24,15 +23,15 @@ from bot.helper.mirror_utils.download_utils.gd_downloader import add_gd_download
 from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
 from bot.helper.mirror_utils.download_utils.qbit_downloader import add_qb_torrent
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
+from bot.helper.mirror_utils.rclone_utils.list import RcloneList
+from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       delete_links,
-                                                      editMessage, forcesub,
-                                                      isAdmin, message_filter,
+                                                      editMessage, isAdmin,
                                                       open_category_btns,
-                                                      request_limiter,
                                                       sendDmMessage,
                                                       sendLogMessage,
                                                       sendMessage)
@@ -56,7 +55,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
 
     if len(message_args) > 1:
         index = 1
-        args = mesg[0].split(maxsplit=6)
+        args = mesg[0].split(maxsplit=5)
         args.pop(0)
         for x in args:
             x = x.strip()
@@ -101,8 +100,9 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             message_args = mesg[0].split(maxsplit=index)
             if len(message_args) > index:
                 x = message_args[index].strip()
-                if not x.startswith(('n:', 'pswd:')):
-                    link = re_split(r' pswd: | n: ', x)[0].strip()
+                if not x.startswith(('n:', 'pswd:', 'up:', 'rcf:')):
+                    link = re_split(r' pswd: | n: | up: | rcf: ', x)[0].strip()
+
         if len(folder_name) > 0:
             seed = False
             ratio = None
@@ -129,10 +129,17 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
     path = f'{DOWNLOAD_DIR}{message.id}{folder_name}'
 
     name = mesg[0].split(' n: ', 1)
-    name = name[1].split(' pswd: ')[0].strip() if len(name) > 1 else ''
+    name = re_split(' pswd: | rcf: | up: ', name[1])[0].strip() if len(name) > 1 else ''
 
     pswd = mesg[0].split(' pswd: ', 1)
-    pswd = pswd[1].split(' n: ')[0] if len(pswd) > 1 else None
+    pswd = re_split(' n: | rcf: | up: ', pswd[1])[0] if len(pswd) > 1 else None
+
+    rcf = mesg[0].split(' rcf: ', 1)
+    rcf = re_split(' n: | pswd: | up: ', rcf[1])[0].strip() if len(rcf) > 1 else None
+
+    up = mesg[0].split(' up: ', 1)
+    up = re_split(' n: | pswd: | rcf: ', up[1])[0].strip() if len(up) > 1 else None
+
     if len(mesg) > 1 and mesg[1].startswith('Tag: '):
         tag, id_ = mesg[1].split('Tag: ')[1].split()
         message.from_user = await client.get_users(id_)
@@ -147,6 +154,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
     else:
         tag = message.from_user.mention
 
+    file_ = None
     if reply_to := message.reply_to_message:
         file_ = reply_to.document or reply_to.photo or reply_to.video or reply_to.audio or \
                  reply_to.voice or reply_to.video_note or reply_to.sticker or reply_to.animation or None
@@ -165,53 +173,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                     link = reply_text
             elif reply_to.document and (file_.mime_type == 'application/x-bittorrent' or file_.file_name.endswith('.torrent')):
                 link = await reply_to.download()
-            elif not isClone:
-                if not message.from_user:
-                    message.from_user = await anno_checker(message)
-                if not message.from_user:
-                    return
-                if not await isAdmin(message):
-                    if await message_filter(message, tag):
-                        return
-                    if await request_limiter(message):
-                        return
-                    if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS']:
-                        raw_url = file_.file_unique_id
-                        exist = await DbManger().check_download(raw_url)
-                        if exist:
-                            _msg = f'<b>Download is already added by {exist["tag"]}</b>\n\nCheck the download status in @{exist["botname"]}\n\n<b>Link</b>: <code>{exist["_id"]}</code>'
-                            await delete_links(message)
-                            return await sendMessage(message, _msg)
-                    if await forcesub(message, tag):
-                        return
-                    if (maxtask:= config_dict['USER_MAX_TASKS']) and await check_user_tasks(message.from_user.id, maxtask):
-                        return await sendMessage(message, f"Your tasks limit exceeded for {maxtask} tasks")
-                    if isLeech and config_dict['DISABLE_LEECH']:
-                        await delete_links(message)
-                        return await sendMessage(message, 'Locked!')
-                if not isLeech and not drive_id and len(categories) > 1:
-                    drive_id, index_link = await open_category_btns(message)
-                if not isLeech and not config_dict['GDRIVE_ID'] and not drive_id:
-                    await sendMessage(message, 'GDRIVE_ID not Provided!')
-                    return
-                if not isLeech and drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
-                    return await sendMessage(message, "Google Drive id validation failed!!")
-                if (dmMode:=config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
-                    if isLeech and IS_PREMIUM_USER and not config_dict['DUMP_CHAT']:
-                        return await sendMessage(message, 'DM_MODE with User Session required DUMP_CHAT')
-                    dmMessage = await sendDmMessage(message, dmMode, isLeech)
-                    if dmMessage == 'BotNotStarted':
-                        return
-                else:
-                    dmMessage = None
-                logMessage = await sendLogMessage(message, link, tag)
-                listener = MirrorLeechListener(message,
-                                isZip, extract, isQbit, isLeech, isClone,
-                                pswd, tag, select, seed, sameDir,
-                                raw_url, drive_id, index_link, dmMessage, logMessage)
-                __run_multi()
-                await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name)
-                return
+                file_ = None
 
     if isClone and is_mega_link(link):
         msg_ = "Send Gdrive link along with command or by replying to the link by command\n"
@@ -223,16 +185,12 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
         msg_ += "\n<b>Multi links only by replying to first link:</b>\n<code>/cmd</code> 10(number of links)"
         return await sendMessage(message, msg_)
 
-    if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link):
+    if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) and not is_rclone_path(link) and file_ is None:
         help_msg = '''
 <code>/{cmd}</code> link n: newname pswd: xx(zip/unzip)
 
 <b>By replying to link/file:</b>
 <code>/{cmd}</code> n: newname pswd: xx(zip/unzip)
-
-<b>Multi links within same upload directory only by replying to first link/file:</b>
-<code>/{cmd}</code> 10(number of links/files) m:folder_name
-Number and m:folder_name should be always before n: or pswd:
 
 <b>Upload Custom Drive</b>
 <code>/{cmd}</code> <b>id:</b><code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b><code>https://anything.in/0:</code> link or by replying to file/link
@@ -251,11 +209,35 @@ This option should be always before n: or pswd:
 <b>Bittorrent seed</b>:
 <code>/{cmd}</code> <b>d</b> link or by replying to file/link
 To specify ratio and seed time add d:ratio:time. Ex: d:0.7:10 (ratio and time) or d:0.7 (only ratio) or d::10 (only time) where time in minutes.
-This options  should be always before n: or pswd:
+Those options should be always before n: or pswd:
 
 <b>Multi links only by replying to first link/file:</b>
 <code>/{cmd}</code> 10(number of links/files)
-Number should be always before |newname or pswd:
+Number should be always before n: or pswd:
+
+<b>Multi links within same upload directory only by replying to first link/file:</b>
+<code>/{cmd}</code> 10(number of links/files) m:folder_name
+Number and m:folder_name (folder_name without space) should be always before n: or pswd:
+
+<b>Rclone Download</b>:
+Treat rclone paths exactly like links
+<code>/{cmd}</code> main:dump/ubuntu.iso or <code>rcl</code> (To select config, remote and path)
+Users can add their own rclone from user settings
+If you want to add path manually from your config add <code>mrcc:</code> before the path without space
+<code>/{cmd}</code> <code>mrcc:</code>main:/dump/ubuntu.iso
+
+<b>Upload</b>:
+<code>/{cmd}</code> link up: <code>rcl</code> (To select rclone config, remote and path)
+You can directly add the upload path. up: remote:dir/subdir
+If DEFAULT_UPLOAD is `rc` then you can pass up: `gd` to upload using gdrive tools to GDRIVE_ID.
+If DEFAULT_UPLOAD is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
+If you want to add path manually from your config (uploaded from usetting) add <code>mrcc:</code> before the path without space
+<code>/{cmd}</code> link up: <code>mrcc:</code>main:dump
+
+<b>Rclone Flags</b>:
+<code>/{cmd}</code> link|path|rcl up: path|rcl rcf: --buffer-size:8M|--drive-starred-only|key|key:value
+This will override all other flags except --exclude
+Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
 
 <b>NOTES:</b>
 1. When use cmd by reply don't add any option in link msg! Always add them after cmd msg!
@@ -263,7 +245,7 @@ Number should be always before |newname or pswd:
 3. Options (<b>d, s, m: and multi</b>) should be added randomly before the link and before any other option.
 4. Commands that start with <b>qb</b> are ONLY for torrents.
 5. (n:) option doesn't work with torrents.
-'''.format_map({'cmd': BotCommands.MirrorCommand[0]})
+'''.format_map({'cmd': message.command[0]})
         await sendMessage(message, help_msg)
         await delete_links(message)
         return
@@ -271,25 +253,8 @@ Number should be always before |newname or pswd:
         message.from_user = await anno_checker(message)
     if not message.from_user:
         return
-    if not await isAdmin(message):
-        if await message_filter(message, tag):
-            return
-        if await request_limiter(message):
-            return
-        if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS']:
-            raw_url = await extract_link(link)
-            exist = await DbManger().check_download(raw_url)
-            if exist:
-                _msg = f'<b>Download is already added by {exist["tag"]}</b>\n\nCheck the download status in @{exist["botname"]}\n\n<b>Link</b>: <code>{exist["_id"]}</code>'
-                await delete_links(message)
-                return await sendMessage(message, _msg)
-        if await forcesub(message, tag):
-            return
-        if (maxtask:= config_dict['USER_MAX_TASKS']) and await check_user_tasks(message.from_user.id, maxtask):
-            return await sendMessage(message, f"Your tasks limit exceeded for {maxtask} tasks")
-        if isLeech and config_dict['DISABLE_LEECH']:
-            await delete_links(message)
-            return await sendMessage(message, 'Locked!')
+    if not await isAdmin(message) and await none_admin_utils(link, message, tag, isLeech, file_):
+        return
     if not isLeech and not drive_id and len(categories) > 1:
         drive_id, index_link = await open_category_btns(message)
     if not isLeech and not config_dict['GDRIVE_ID'] and not drive_id:
@@ -307,10 +272,11 @@ Number should be always before |newname or pswd:
         dmMessage = None
     logMessage = await sendLogMessage(message, link, tag)
 
-    LOGGER.info(link)
+    if link:
+        LOGGER.info(link)
 
-    if not is_mega_link(link) and not isQbit and not is_magnet(link) \
-       and not is_gdrive_link(link) and not link.endswith('.torrent'):
+    if not is_mega_link(link) and not isQbit and not is_magnet(link) and not is_rclone_path(link) \
+       and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await sync_to_async(get_content_type, link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
             process_msg = await sendMessage(message, f"Processing: <code>{link}</code>")
@@ -327,12 +293,35 @@ Number should be always before |newname or pswd:
             await process_msg.delete()
     __run_multi()
 
-    listener = MirrorLeechListener(message,
-                                isZip, extract, isQbit, isLeech, isClone,
-                                pswd, tag, select, seed, sameDir,
-                                raw_url, drive_id, index_link, dmMessage, logMessage)
+    if link == 'rcl':
+        link = await RcloneList(client, message).get_rclone_path('rcd')
+        if not is_rclone_path(link):
+            await sendMessage(message, link)
+            return
+    if (up == 'rcl' or config_dict['RCLONE_PATH'] == 'rcl' and config_dict['DEFAULT_UPLOAD'] == 'rc') and not isLeech:
+        up = await RcloneList(client, message).get_rclone_path('rcu')
+        if not is_rclone_path(up):
+            await sendMessage(message, up)
+            return
 
-    if is_gdrive_link(link):
+    listener = MirrorLeechListener(message, isZip, extract, isQbit,
+                isLeech, pswd, tag, select,
+                seed, sameDir, rcf, up, isClone, raw_url,
+                drive_id, index_link, dmMessage, logMessage)
+
+    if file_:
+        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name)
+    elif is_rclone_path(link):
+        if link.startswith('mrcc:'):
+            link = link.split('mrcc:', 1)[1]
+            config_path = f'rclone/{message.from_user.id}.conf'
+        else:
+            config_path = 'rclone.conf'
+        if not await aiopath.exists(config_path):
+            await sendMessage(message, f"Rclone Config: {config_path} not Exists!")
+            return
+        await RcloneTransferHelper(listener).add_download(link, config_path, f'{path}/', name)
+    elif is_gdrive_link(link):
         if not any([isZip, extract, isLeech, isClone]):
             gmsg = f"Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\n\n"
             gmsg += f"Use /{BotCommands.ZipMirrorCommand[0]} to make zip of Google Drive folder\n\n"

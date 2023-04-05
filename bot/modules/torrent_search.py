@@ -12,7 +12,7 @@ from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (anno_checker,
+from bot.helper.telegram_helper.message_utils import (anno_checker, deleteMessage,
                                                       editMessage, isAdmin,
                                                       request_limiter, sendMessage)
 
@@ -28,8 +28,8 @@ async def initiate_search_tools():
         globals()['PLUGINS'] = []
         src_plugins = eval(SEARCH_PLUGINS)
         if qb_plugins:
-            for plugin in qb_plugins:
-                await sync_to_async(qbclient.search_uninstall_plugin, names=plugin['name'])
+            names = [plugin['name'] for plugin in qb_plugins]
+            await sync_to_async(qbclient.search_uninstall_plugin, names=names)
         await sync_to_async(qbclient.search_install_plugin, src_plugins)
     elif qb_plugins:
         for plugin in qb_plugins:
@@ -77,6 +77,8 @@ async def __search(key, site, message, method):
                     search_results = await res.json()
             if 'error' in search_results or search_results['total'] == 0:
                 await editMessage(message, f"No result found for <i>{key}</i>\nTorrent Site:- <i>{SITES.get(site)}</i>")
+                if config_dict['DELETE_LINKS']:
+                    await deleteMessage(message.reply_to_message)
                 return
             msg = f"<b>Found {min(search_results['total'], TELEGRAPH_LIMIT)}</b>"
             if method == 'apitrend':
@@ -88,6 +90,8 @@ async def __search(key, site, message, method):
             search_results = search_results['data']
         except Exception as e:
             await editMessage(message, str(e))
+            if config_dict['DELETE_LINKS']:
+                await deleteMessage(message.reply_to_message)
             return
     else:
         LOGGER.info(f"PLUGINS Searching: {key} from {site}")
@@ -99,22 +103,25 @@ async def __search(key, site, message, method):
             status = result_status[0].status
             if status != 'Running':
                 break
-        dict_search_results = await sync_to_async(client.search_results, search_id=search_id)
+        dict_search_results = await sync_to_async(client.search_results, search_id=search_id, limit=TELEGRAPH_LIMIT)
         search_results = dict_search_results.results
         total_results = dict_search_results.total
         if total_results == 0:
             await editMessage(message, f"No result found for <i>{key}</i>\nTorrent Site:- <i>{site.capitalize()}</i>")
+            if config_dict['DELETE_LINKS']:
+                await deleteMessage(message.reply_to_message)
             return
         msg = f"<b>Found {min(total_results, TELEGRAPH_LIMIT)}</b>"
         msg += f" <b>result(s) for <i>{key}</i>\nTorrent Site:- <i>{site.capitalize()}</i></b>"
+        await sync_to_async(client.search_delete, search_id=search_id)
+        await sync_to_async(client.auth_log_out)
     link = await __getResult(search_results, key, message, method)
     buttons = ButtonMaker()
     buttons.ubutton("🔎 VIEW", link)
     button = buttons.build_menu(1)
     await editMessage(message, msg, button)
-    if not method.startswith('api'):
-        await sync_to_async(client.search_delete, search_id=search_id)
-    await sync_to_async(client.auth_log_out)
+    if config_dict['DELETE_LINKS']:
+        await deleteMessage(message.reply_to_message)
 
 async def __getResult(search_results, key, message, method):
     telegraph_content = []
@@ -247,7 +254,7 @@ async def torrentSearchUpdate(client, query):
     key = key[1].strip() if len(key) > 1 else None
     data = query.data.split()
     if user_id != int(data[1]):
-        await query.answer("Not Yours!", alert=True)
+        await query.answer("Not Yours!", show_alert=True)
     elif data[2].startswith('api'):
         await query.answer()
         button = __api_buttons(user_id, data[2])

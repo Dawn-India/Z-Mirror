@@ -10,11 +10,10 @@ def get_download(gid):
         return aria2.get_download(gid)
     except Exception as e:
         LOGGER.error(f'{e}: Aria2c, Error while getting torrent info')
-        return get_download(gid)
 
 engine_ = f"Aria2 v{aria2.client.get_version()['version']}"
 
-class AriaDownloadStatus:
+class Aria2Status:
 
     def __init__(self, gid, listener, seeding=False):
         self.__gid = gid
@@ -23,39 +22,25 @@ class AriaDownloadStatus:
         self.start_time = 0
         self.seeding = seeding
         self.message = listener.message
-        self.startTime = self.__listener.startTime
-        self.mode = self.__listener.mode
-        self.source = self.__listener.source
+        self.extra_details = self.__listener.extra_details
         self.engine = engine_
 
     def __update(self):
         if self.__download is None:
             self.__download = get_download(self.__gid)
-        elif self.__download.followed_by_ids:
-            self.__gid = self.__download.followed_by_ids[0]
-            self.__download = get_download(self.__gid)
         else:
             self.__download = self.__download.live
+        if self.__download.followed_by_ids:
+            self.__gid = self.__download.followed_by_ids[0]
+            self.__download = get_download(self.__gid)
 
     def progress(self):
-        """
-        Calculates the progress of the mirror (upload or download)
-        :return: returns progress in percentage
-        """
         return self.__download.progress_string()
 
-    def size_raw(self):
-        """
-        Gets total size of the mirror file/folder
-        :return: total size of mirror
-        """
-        return self.__download.total_length
-
     def processed_bytes(self):
-        return self.__download.completed_length
+        return self.__download.completed_length_string()
 
     def speed(self):
-        self.__update()
         return self.__download.download_speed_string()
 
     def name(self):
@@ -69,12 +54,14 @@ class AriaDownloadStatus:
 
     def status(self):
         self.__update()
-        download = self.__download
-        if download.is_waiting:
-            return MirrorStatus.STATUS_QUEUEDL
-        elif download.is_paused:
+        if self.__download.is_waiting:
+            if self.seeding:
+                return MirrorStatus.STATUS_QUEUEUP
+            else:
+                return MirrorStatus.STATUS_QUEUEDL
+        elif self.__download.is_paused:
             return MirrorStatus.STATUS_PAUSED
-        elif download.seeder and self.seeding:
+        elif self.__download.seeder and self.seeding:
             return MirrorStatus.STATUS_SEEDING
         else:
             return MirrorStatus.STATUS_DOWNLOADING

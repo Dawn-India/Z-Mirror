@@ -1,4 +1,5 @@
 from asyncio import create_subprocess_exec, create_subprocess_shell, sleep
+from collections import OrderedDict
 from functools import partial
 from io import BytesIO
 from os import environ, getcwd
@@ -21,6 +22,7 @@ from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread,
                                             sync_to_async)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.queued_starter import start_from_queued
+from bot.helper.mirror_utils.rclone_utils.serve import rclone_serve_booter
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -28,18 +30,18 @@ from bot.helper.telegram_helper.message_utils import (editMessage, sendFile,
                                                       sendMessage,
                                                       update_all_messages)
 from bot.modules.rss import addJob
-from bot.modules.search import initiate_search_tools
+from bot.modules.torrent_search import initiate_search_tools
 
 START = 0
 STATE = 'view'
 handler_dict = {}
-default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
+default_values = {'AUTO_DELETE_MESSAGE_DURATION': 120,
                   'DOWNLOAD_DIR': '/usr/src/app/downloads/',
                   'LEECH_SPLIT_SIZE': MAX_SPLIT_SIZE,
                   'RSS_DELAY': 900,
-                  'STATUS_UPDATE_INTERVAL': 10,
+                  'STATUS_UPDATE_INTERVAL': 15,
                   'SEARCH_LIMIT': 0,
-                  'UPSTREAM_BRANCH': 'master'}
+                  'UPSTREAM_BRANCH': 'main'}
 
 
 async def load_config():
@@ -75,6 +77,18 @@ async def load_config():
     if len(GDRIVE_ID) == 0:
         GDRIVE_ID = ''
 
+    RCLONE_PATH = environ.get('RCLONE_PATH', '')
+    if len(RCLONE_PATH) == 0:
+        RCLONE_PATH = ''
+
+    DEFAULT_UPLOAD = environ.get('DEFAULT_UPLOAD', '')
+    if DEFAULT_UPLOAD != 'rc':
+        DEFAULT_UPLOAD = 'gd'
+
+    RCLONE_FLAGS = environ.get('RCLONE_FLAGS', '')
+    if len(RCLONE_FLAGS) == 0:
+        RCLONE_FLAGS = ''
+
     AUTHORIZED_CHATS = environ.get('AUTHORIZED_CHATS', '')
     if len(AUTHORIZED_CHATS) != 0:
         aid = AUTHORIZED_CHATS.split()
@@ -93,6 +107,8 @@ async def load_config():
         GLOBAL_EXTENSION_FILTER.clear()
         GLOBAL_EXTENSION_FILTER.append('.aria2')
         for x in fx:
+            if x.strip().startswith('.'):
+                x = x.lstrip('.')
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
 
     MEGA_API_KEY = environ.get('MEGA_API_KEY', '')
@@ -135,7 +151,7 @@ async def load_config():
 
     STATUS_UPDATE_INTERVAL = environ.get('STATUS_UPDATE_INTERVAL', '')
     if len(STATUS_UPDATE_INTERVAL) == 0:
-        STATUS_UPDATE_INTERVAL = 10
+        STATUS_UPDATE_INTERVAL = 15
     else:
         STATUS_UPDATE_INTERVAL = int(STATUS_UPDATE_INTERVAL)
     if len(download_dict) != 0:
@@ -147,7 +163,7 @@ async def load_config():
 
     AUTO_DELETE_MESSAGE_DURATION = environ.get('AUTO_DELETE_MESSAGE_DURATION', '')
     if len(AUTO_DELETE_MESSAGE_DURATION) == 0:
-        AUTO_DELETE_MESSAGE_DURATION = 30
+        AUTO_DELETE_MESSAGE_DURATION = 120
     else:
         AUTO_DELETE_MESSAGE_DURATION = int(AUTO_DELETE_MESSAGE_DURATION)
 
@@ -161,14 +177,9 @@ async def load_config():
     DUMP_CHAT = environ.get('DUMP_CHAT', '')
     DUMP_CHAT = '' if len(DUMP_CHAT) == 0 else int(DUMP_CHAT)
 
-    LOG_CHAT = environ.get('LOG_CHAT', '')
-    LOG_CHAT = '' if len(LOG_CHAT) == 0 else int(LOG_CHAT)
 
     STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
-    STATUS_LIMIT = 10 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
-
-    USER_MAX_TASKS = environ.get('USER_MAX_TASKS', '')
-    USER_MAX_TASKS = '' if len(USER_MAX_TASKS) == 0 else int(USER_MAX_TASKS)
+    STATUS_LIMIT = 8 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
 
     RSS_CHAT_ID = environ.get('RSS_CHAT_ID', '')
     RSS_CHAT_ID = '' if len(RSS_CHAT_ID) == 0 else int(RSS_CHAT_ID)
@@ -244,15 +255,30 @@ async def load_config():
     MEDIA_GROUP = environ.get('MEDIA_GROUP', '')
     MEDIA_GROUP = MEDIA_GROUP.lower() == 'true'
 
-    SERVER_PORT = environ.get('SERVER_PORT', '')
-    SERVER_PORT = 80 if len(SERVER_PORT) == 0 else int(SERVER_PORT)
+    BASE_URL_PORT = environ.get('BASE_URL_PORT', '')
+    BASE_URL_PORT = 80 if len(BASE_URL_PORT) == 0 else int(BASE_URL_PORT)
+
+    RCLONE_SERVE_URL = environ.get('RCLONE_SERVE_URL', '')
+    if len(RCLONE_SERVE_URL) == 0:
+        RCLONE_SERVE_URL = ''
+
+    RCLONE_SERVE_PORT = environ.get('RCLONE_SERVE_PORT', '')
+    RCLONE_SERVE_PORT = 8080 if len(RCLONE_SERVE_PORT) == 0 else int(RCLONE_SERVE_PORT)
+
+    RCLONE_SERVE_USER = environ.get('RCLONE_SERVE_USER', '')
+    if len(RCLONE_SERVE_USER) == 0:
+        RCLONE_SERVE_USER = ''
+
+    RCLONE_SERVE_PASS = environ.get('RCLONE_SERVE_PASS', '')
+    if len(RCLONE_SERVE_PASS) == 0:
+        RCLONE_SERVE_PASS = ''
 
     await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
     BASE_URL = environ.get('BASE_URL', '').rstrip("/")
     if len(BASE_URL) == 0:
         BASE_URL = ''
     else:
-        await create_subprocess_shell(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}")
+        await create_subprocess_shell(f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent")
 
     UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
     if len(UPSTREAM_REPO) == 0:
@@ -260,7 +286,13 @@ async def load_config():
 
     UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
     if len(UPSTREAM_BRANCH) == 0:
-        UPSTREAM_BRANCH = 'master'
+        UPSTREAM_BRANCH = 'main'
+
+    LOG_CHAT = environ.get('LOG_CHAT', '')
+    LOG_CHAT = '' if len(LOG_CHAT) == 0 else int(LOG_CHAT)
+
+    USER_MAX_TASKS = environ.get('USER_MAX_TASKS', '')
+    USER_MAX_TASKS = '' if len(USER_MAX_TASKS) == 0 else int(USER_MAX_TASKS)
 
     STORAGE_THRESHOLD = environ.get('STORAGE_THRESHOLD', '')
     STORAGE_THRESHOLD = '' if len(STORAGE_THRESHOLD) == 0 else float(STORAGE_THRESHOLD)
@@ -390,77 +422,89 @@ async def load_config():
     if not await aiopath.exists('accounts'):
         USE_SERVICE_ACCOUNTS = False
 
-    config_dict.update({'AS_DOCUMENT': AS_DOCUMENT,
-                   'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
-                   'FSUB_IDS': FSUB_IDS,
-                   'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
-                   'BASE_URL': BASE_URL,
-                   'BOT_TOKEN': BOT_TOKEN,
-                   'CMD_SUFFIX': CMD_SUFFIX,
-                   'DATABASE_URL': DATABASE_URL,
-                   'DOWNLOAD_DIR': DOWNLOAD_DIR,
-                   'DUMP_CHAT': DUMP_CHAT,
-                   'LOG_CHAT': LOG_CHAT,
-                   'EQUAL_SPLITS': EQUAL_SPLITS,
-                   'EXTENSION_FILTER': EXTENSION_FILTER,
-                   'GDRIVE_ID': GDRIVE_ID,
-                   'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
-                   'INDEX_URL': INDEX_URL,
-                   'IS_TEAM_DRIVE': IS_TEAM_DRIVE,
-                   'LEECH_FILENAME_PREFIX': LEECH_FILENAME_PREFIX,
-                   'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
-                   'MEDIA_GROUP': MEDIA_GROUP,
-                   'MEGA_API_KEY': MEGA_API_KEY,
-                   'MEGA_EMAIL_ID': MEGA_EMAIL_ID,
-                   'MEGA_PASSWORD': MEGA_PASSWORD,
-                   'OWNER_ID': OWNER_ID,
-                   'QUEUE_ALL': QUEUE_ALL,
-                   'QUEUE_DOWNLOAD': QUEUE_DOWNLOAD,
-                   'QUEUE_UPLOAD': QUEUE_UPLOAD,
-                   'RSS_CHAT_ID': RSS_CHAT_ID,
-                   'RSS_DELAY': RSS_DELAY,
-                   'SEARCH_API_LINK': SEARCH_API_LINK,
-                   'SEARCH_LIMIT': SEARCH_LIMIT,
-                   'SEARCH_PLUGINS': SEARCH_PLUGINS,
-                   'SERVER_PORT': SERVER_PORT,
-                   'STATUS_LIMIT': STATUS_LIMIT,
-                   'USER_MAX_TASKS': USER_MAX_TASKS,
-                   'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
-                   'STOP_DUPLICATE': STOP_DUPLICATE,
-                   'SUDO_USERS': SUDO_USERS,
-                   'TELEGRAM_API': TELEGRAM_API,
-                   'TELEGRAM_HASH': TELEGRAM_HASH,
-                   'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
-                   'UPSTREAM_REPO': UPSTREAM_REPO,
-                   'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
-                   'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
-                   'USER_SESSION_STRING': USER_SESSION_STRING,
-                   'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
-                   'VIEW_LINK': VIEW_LINK,
-                   'WEB_PINCODE': WEB_PINCODE,
-                   'YT_DLP_QUALITY': YT_DLP_QUALITY,
-                   'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
-                   'TORRENT_LIMIT': TORRENT_LIMIT,
-                   'DIRECT_LIMIT': DIRECT_LIMIT,
-                   'YTDLP_LIMIT': YTDLP_LIMIT,
-                   'GDRIVE_LIMIT': GDRIVE_LIMIT,
-                   'CLONE_LIMIT': CLONE_LIMIT,
-                   'MEGA_LIMIT': MEGA_LIMIT,
-                   'LEECH_LIMIT': LEECH_LIMIT,
-                   'ENABLE_RATE_LIMIT': ENABLE_RATE_LIMIT,
-                   'ENABLE_MESSAGE_FILTER': ENABLE_MESSAGE_FILTER,
-                   'STOP_DUPLICATE_TASKS': STOP_DUPLICATE_TASKS,
-                   'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
-                   'SET_COMMANDS': SET_COMMANDS,
-                   'DISABLE_LEECH': DISABLE_LEECH,
-                   'REQUEST_LIMITS': REQUEST_LIMITS,
-                   'DM_MODE': DM_MODE,
-                   'DELETE_LINKS': DELETE_LINKS})
+    temp_dict = {
+    "AS_DOCUMENT": AS_DOCUMENT,
+    "AUTHORIZED_CHATS": AUTHORIZED_CHATS,
+    "AUTO_DELETE_MESSAGE_DURATION": AUTO_DELETE_MESSAGE_DURATION,
+    "BASE_URL": BASE_URL,
+    "BASE_URL_PORT": BASE_URL_PORT,
+    "BOT_TOKEN": BOT_TOKEN,
+    "CMD_SUFFIX": CMD_SUFFIX,
+    "DATABASE_URL": DATABASE_URL,
+    "DEFAULT_UPLOAD": DEFAULT_UPLOAD,
+    "DOWNLOAD_DIR": DOWNLOAD_DIR,
+    "DUMP_CHAT": DUMP_CHAT,
+    "EQUAL_SPLITS": EQUAL_SPLITS,
+    "EXTENSION_FILTER": EXTENSION_FILTER,
+    "GDRIVE_ID": GDRIVE_ID,
+    "INCOMPLETE_TASK_NOTIFIER": INCOMPLETE_TASK_NOTIFIER,
+    "INDEX_URL": INDEX_URL,
+    "IS_TEAM_DRIVE": IS_TEAM_DRIVE,
+    "LEECH_FILENAME_PREFIX": LEECH_FILENAME_PREFIX,
+    "LEECH_SPLIT_SIZE": LEECH_SPLIT_SIZE,
+    "MEDIA_GROUP": MEDIA_GROUP,
+    "MEGA_API_KEY": MEGA_API_KEY,
+    "MEGA_EMAIL_ID": MEGA_EMAIL_ID,
+    "MEGA_PASSWORD": MEGA_PASSWORD,
+    "OWNER_ID": OWNER_ID,
+    "QUEUE_ALL": QUEUE_ALL,
+    "QUEUE_DOWNLOAD": QUEUE_DOWNLOAD,
+    "QUEUE_UPLOAD": QUEUE_UPLOAD,
+    "RCLONE_FLAGS": RCLONE_FLAGS,
+    "RCLONE_PATH": RCLONE_PATH,
+    "RCLONE_SERVE_URL": RCLONE_SERVE_URL,
+    "RCLONE_SERVE_PORT": RCLONE_SERVE_PORT,
+    "RCLONE_SERVE_USER": RCLONE_SERVE_USER,
+    "RCLONE_SERVE_PASS": RCLONE_SERVE_PASS,
+    "RSS_CHAT_ID": RSS_CHAT_ID,
+    "RSS_DELAY": RSS_DELAY,
+    "SEARCH_API_LINK": SEARCH_API_LINK,
+    "SEARCH_LIMIT": SEARCH_LIMIT,
+    "SEARCH_PLUGINS": SEARCH_PLUGINS,
+    "STATUS_LIMIT": STATUS_LIMIT,
+    "STATUS_UPDATE_INTERVAL": STATUS_UPDATE_INTERVAL,
+    "STOP_DUPLICATE": STOP_DUPLICATE,
+    "SUDO_USERS": SUDO_USERS,
+    "TELEGRAM_API": TELEGRAM_API,
+    "TELEGRAM_HASH": TELEGRAM_HASH,
+    "TORRENT_TIMEOUT": TORRENT_TIMEOUT,
+    "UPSTREAM_REPO": UPSTREAM_REPO,
+    "UPSTREAM_BRANCH": UPSTREAM_BRANCH,
+    "UPTOBOX_TOKEN": UPTOBOX_TOKEN,
+    "USER_SESSION_STRING": USER_SESSION_STRING,
+    "USE_SERVICE_ACCOUNTS": USE_SERVICE_ACCOUNTS,
+    "VIEW_LINK": VIEW_LINK,
+    "WEB_PINCODE": WEB_PINCODE,
+    "YT_DLP_QUALITY": YT_DLP_QUALITY,
+    "USER_MAX_TASKS": USER_MAX_TASKS,
+    "FSUB_IDS": FSUB_IDS,
+    "LOG_CHAT": LOG_CHAT,
+    "STORAGE_THRESHOLD": STORAGE_THRESHOLD,
+    "TORRENT_LIMIT": TORRENT_LIMIT,
+    "DIRECT_LIMIT": DIRECT_LIMIT,
+    "YTDLP_LIMIT": YTDLP_LIMIT,
+    "GDRIVE_LIMIT": GDRIVE_LIMIT,
+    "CLONE_LIMIT": CLONE_LIMIT,
+    "MEGA_LIMIT": MEGA_LIMIT,
+    "LEECH_LIMIT": LEECH_LIMIT,
+    "ENABLE_RATE_LIMIT": ENABLE_RATE_LIMIT,
+    "ENABLE_MESSAGE_FILTER": ENABLE_MESSAGE_FILTER,
+    "STOP_DUPLICATE_TASKS": STOP_DUPLICATE_TASKS,
+    "DISABLE_DRIVE_LINK": DISABLE_DRIVE_LINK,
+    "SET_COMMANDS": SET_COMMANDS,
+    "DISABLE_LEECH": DISABLE_LEECH,
+    "REQUEST_LIMITS": REQUEST_LIMITS,
+    "DM_MODE": DM_MODE,
+    "DELETE_LINKS": DELETE_LINKS,
+}
+    temp_dict = OrderedDict(sorted(temp_dict.items()))
+    config_dict.update(temp_dict)
 
     if DATABASE_URL:
         await DbManger().update_config(config_dict)
     await initiate_search_tools()
     await start_from_queued()
+    await rclone_serve_booter()
 
 async def get_buttons(key=None, edit_type=None):
     buttons = ButtonMaker()
@@ -488,8 +532,10 @@ async def get_buttons(key=None, edit_type=None):
     elif key == 'private':
         buttons.ibutton('Back', "botset back")
         buttons.ibutton('Close', "botset close")
-        msg = f'Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, categories.txt, shorteners.txt, buttons.txt, cookies.txt, terabox.txt or .netrc.\nTimeout: 60 sec' \
-            '\nTo delete private file send the name of the file only as text message.\nTimeout: 60 sec'
+        msg = '''Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, cookies.txt, terabox.txt, categories.txt, shorteners.txt, buttons.txt, .netrc or any other file!
+To delete private file send only the file name as text message.
+Note: Changing .netrc will not take effect for aria2c until restart.
+Timeout: 60 sec'''
     elif key == 'aria':
         for k in list(aria2_options.keys())[START:10+START]:
             buttons.ibutton(k, f"botset editaria {k}")
@@ -521,7 +567,7 @@ async def get_buttons(key=None, edit_type=None):
         if key not in ['TELEGRAM_HASH', 'TELEGRAM_API', 'OWNER_ID', 'BOT_TOKEN']:
             buttons.ibutton('Default', f"botset resetvar {key}")
         buttons.ibutton('Close', "botset close")
-        if key in ['SUDO_USERS', 'CMD_SUFFIX', 'OWNER_ID', 'USER_SESSION_STRING', 'TELEGRAM_HASH', 
+        if key in ['SUDO_USERS', 'CMD_SUFFIX', 'OWNER_ID', 'USER_SESSION_STRING', 'TELEGRAM_HASH',
                    'TELEGRAM_API', 'AUTHORIZED_CHATS', 'DATABASE_URL', 'BOT_TOKEN', 'DOWNLOAD_DIR']:
             msg += 'Restart required for this edit to take effect!\n\n'
         msg += f'Send a valid value for {key}. Timeout: 60 sec'
@@ -550,20 +596,12 @@ async def update_buttons(message, key=None, edit_type=None):
 async def edit_variable(client, message, pre_message, key):
     handler_dict[message.chat.id] = False
     value = message.text
-    if key == 'DM_MODE':
-        value = value.lower() if value.lower() in ['leech', 'mirror', 'all'] else ''
-    elif value.lower() == 'true':
-        value = True
-    elif value.lower() == 'false':
-        value = False
-        if key == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
-            await DbManger().trunc_table('tasks')
-    elif key == 'RSS_DELAY':
+    if key == 'RSS_DELAY':
         value = int(value)
         addJob(value)
     elif key == 'DOWNLOAD_DIR':
         if not value.endswith('/'):
-            value = f'{value}/'
+            value += '/'
     elif key in ['DUMP_CHAT', 'RSS_CHAT_ID', 'LOG_CHAT']:
         value = int(value)
     elif key == 'STATUS_UPDATE_INTERVAL':
@@ -584,19 +622,24 @@ async def edit_variable(client, message, pre_message, key):
                 except Exception as e:
                     LOGGER.error(e)
         aria2_options['bt-stop-timeout'] = f'{value}'
+    elif key == 'DM_MODE':
+        value = value.lower() if value.lower() in ['leech', 'mirror', 'all'] else ''
     elif key == 'REQUEST_LIMITS':
         value = max(int(value), 5)
     elif key == 'LEECH_SPLIT_SIZE':
         value = min(int(value), MAX_SPLIT_SIZE)
-    elif key == 'SERVER_PORT':
+    elif key == 'BASE_URL_PORT':
         value = int(value)
-        await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
-        await create_subprocess_shell(f"gunicorn web.wserver:app --bind 0.0.0.0:{value}")
+        if config_dict['BASE_URL']:
+            await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
+            await create_subprocess_shell(f"gunicorn web.wserver:app --bind 0.0.0.0:{value} --worker-class gevent")
     elif key == 'EXTENSION_FILTER':
         fx = value.split()
         GLOBAL_EXTENSION_FILTER.clear()
         GLOBAL_EXTENSION_FILTER.append('.aria2')
         for x in fx:
+            if x.strip().startswith('.'):
+                x = x.lstrip('.')
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
     elif key == 'GDRIVE_ID':
         list_drives['Main'] = {"drive_id": value, "index_link": config_dict['INDEX_URL']}
@@ -609,6 +652,12 @@ async def edit_variable(client, message, pre_message, key):
         value = float(value)
     elif value.isdigit() and key != 'FSUB_IDS':
         value = int(value)
+    elif value.lower() == 'true':
+        value = True
+    elif value.lower() == 'false':
+        value = False
+        if key == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
+            await DbManger().trunc_table('tasks')
     config_dict[key] = value
     await update_buttons(pre_message, 'var')
     await message.delete()
@@ -618,6 +667,8 @@ async def edit_variable(client, message, pre_message, key):
         await initiate_search_tools()
     elif key in ['QUEUE_ALL', 'QUEUE_DOWNLOAD', 'QUEUE_UPLOAD']:
         await start_from_queued()
+    elif key in ['RCLONE_SERVE_URL', 'RCLONE_SERVE_PORT', 'RCLONE_SERVE_USER', 'RCLONE_SERVE_PASS']:
+        await rclone_serve_booter()
     elif key == 'SET_COMMANDS':
         await set_commands(client)
 
@@ -668,11 +719,11 @@ async def update_private_file(client, message, pre_message):
     handler_dict[message.chat.id] = False
     if not message.media and (file_name := message.text):
         fn = file_name.rsplit('.zip', 1)[0]
-        if await aiopath.isfile(fn):
+        if await aiopath.isfile(fn) and file_name != 'config.env':
             await remove(fn)
         if fn == 'accounts':
             if await aiopath.exists('accounts'):
-                await (await create_subprocess_exec("rm", "-rf", "accounts")).wait()
+                await aiormtree('accounts')
             config_dict['USE_SERVICE_ACCOUNTS'] = False
             if DATABASE_URL:
                 await DbManger().update_config({'USE_SERVICE_ACCOUNTS': False})
@@ -695,7 +746,6 @@ async def update_private_file(client, message, pre_message):
             SHORTENER_APIS.clear()
         await message.delete()
     elif doc := message.document:
-        doc = message.document
         file_name = doc.file_name
         await message.download(file_name=f'{getcwd()}/{file_name}')
         if file_name == 'accounts.zip':
@@ -767,7 +817,7 @@ async def update_private_file(client, message, pre_message):
             await (await create_subprocess_exec("cp", ".netrc", "/root/.netrc")).wait()
         elif file_name == 'config.env':
             load_dotenv('config.env', override=True)
-            load_config()
+            await load_config()
         if '@github.com' in config_dict['UPSTREAM_REPO']:
             buttons = ButtonMaker()
             msg = 'Push to UPSTREAM_REPO ?'
@@ -776,6 +826,8 @@ async def update_private_file(client, message, pre_message):
             await sendMessage(message, msg, buttons.build_menu(2))
         else:
             await message.delete()
+    if file_name == 'rclone.conf':
+        await rclone_serve_booter()
     await update_buttons(pre_message)
     if DATABASE_URL and file_name != 'config.env':
         await DbManger().update_private_file(file_name)
@@ -786,8 +838,8 @@ async def event_handler(client, query, pfunc, rfunc, document=False):
     chat_id = query.message.chat.id
     handler_dict[chat_id] = True
     async def event_filter(_, __, event):
-        return bool(event.from_user.id or event.sender_chat.id == query.from_user.id and event.chat.id == chat_id 
-                    and (event.text or event.document and document))
+        user = event.from_user or event.sender_chat
+        return bool(user.id == query.from_user.id and event.chat.id == chat_id and (event.text or event.document and document))
     handler = client.add_handler(MessageHandler(pfunc, filters=create(event_filter)), group=-1)
     start_time = time()
     while handler_dict[chat_id]:
@@ -850,10 +902,11 @@ async def edit_bot_settings(client, query):
                 await DbManger().update_aria2('bt-stop-timeout', '0')
         elif data[2] == 'BASE_URL':
             await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
-        elif data[2] == 'SERVER_PORT':
+        elif data[2] == 'BASE_URL_PORT':
             value = 80
-            await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
-            await create_subprocess_shell("gunicorn web.wserver:app --bind 0.0.0.0:80")
+            if config_dict['BASE_URL']:
+                await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
+                await create_subprocess_shell("gunicorn web.wserver:app --bind 0.0.0.0:80 --worker-class gevent")
         elif data[2] == 'GDRIVE_ID':
             if 'Main' in list_drives:
                 del list_drives['Main']
@@ -876,6 +929,8 @@ async def edit_bot_settings(client, query):
             await initiate_search_tools()
         elif data[2] in ['QUEUE_ALL', 'QUEUE_DOWNLOAD', 'QUEUE_UPLOAD']:
             await start_from_queued()
+        elif data[2] in ['RCLONE_SERVE_URL', 'RCLONE_SERVE_PORT', 'RCLONE_SERVE_USER', 'RCLONE_SERVE_PASS']:
+            await rclone_serve_booter()
     elif data[1] == 'resetaria':
         handler_dict[message.chat.id] = False
         aria2_defaults = await sync_to_async(aria2.client.get_global_option)
@@ -1003,12 +1058,12 @@ async def edit_bot_settings(client, query):
         filename = data[2].rsplit('.zip', 1)[0]
         if await aiopath.exists(filename):
             await (await create_subprocess_shell(f"git add -f {filename} \
-                                            && git commit -sm botsettings -q \
-                                            && git push origin {config_dict['UPSTREAM_BRANCH']} -qf")).wait()
+                                                   && git commit -sm botsettings -q \
+                                                   && git push origin {config_dict['UPSTREAM_BRANCH']} -qf")).wait()
         else:
             await (await create_subprocess_shell(f"git rm -r --cached {filename} \
-                                            && git commit -sm botsettings -q \
-                                            && git push origin {config_dict['UPSTREAM_BRANCH']} -qf")).wait()
+                                                   && git commit -sm botsettings -q \
+                                                   && git push origin {config_dict['UPSTREAM_BRANCH']} -qf")).wait()
         await message.reply_to_message.delete()
         await message.delete()
 

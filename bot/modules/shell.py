@@ -1,5 +1,6 @@
 from pyrogram.handlers import MessageHandler, EditedMessageHandler
 from pyrogram.filters import command
+
 from io import BytesIO
 
 from bot import LOGGER, bot
@@ -19,7 +20,7 @@ async def shell(client, message):
     stdout, stderr, _ = await cmd_exec(cmd, shell=True)
     reply = ''
     if len(stdout) != 0:
-        reply += f"<b><i>{stdout}</i></b>\n"
+        reply += f"<b>{stdout}</b>\n"
         LOGGER.info(f"Shell - {cmd} - {stdout}")
     if len(stderr) != 0:
         reply += f"*Stderr*\n<code>{stderr}</code>"

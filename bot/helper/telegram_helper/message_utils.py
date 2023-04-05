@@ -26,7 +26,6 @@ async def sendMessage(message, text, buttons=None):
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")
     except Exception as e:
         LOGGER.error(str(e))
-        return str(e)
 
 async def editMessage(message, text, buttons=None):
     try:
@@ -70,7 +69,6 @@ async def sendRss(text):
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")
     except Exception as e:
         LOGGER.error(str(e))
-        return str(e)
 
 async def deleteMessage(message):
     try:
@@ -313,7 +311,7 @@ async def request_limiter(message=None, query=None):
     current_time = time()
     if userid in warned_users:
         time_between = current_time - warned_users[userid]['time']
-        if time_between > 60:
+        if time_between > 69:
             warned_users[userid]['warn'] = 0
         elif time_between < 3:
             warned_users[userid]['warn'] += 1
@@ -327,6 +325,6 @@ async def request_limiter(message=None, query=None):
         return True
     if warned_users[userid]['warn'] >= LIMITS-1:
         if query:
-            await query.answer("Spam detected! I will mute you for 60 seconds.", show_alert=True)
+            await query.answer("Oops, Spam detected! I will mute you for 69 seconds.", show_alert=True)
         else:
-            await sendMessage(message, "Spam detected! I will mute you for 60 seconds.")
+            await sendMessage(message, "Oops, Spam detected! I will mute you for 69 seconds.")
