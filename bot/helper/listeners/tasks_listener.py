@@ -357,7 +357,7 @@ class MirrorLeechListener:
                     if self.logMessage:
                         await sendMessage(self.logMessage, lmsg + msg)
                 else:
-                    fmsg = '\n'
+                    fmsg = ''
                     for index, (link, name) in enumerate(files.items(), start=1):
                         fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                         if len(fmsg.encode() + msg.encode()) > 4000:
@@ -366,7 +366,7 @@ class MirrorLeechListener:
                             await sendMessage(self.message, lmsg + msg + fmsg)
                             await sleep(1)
                             fmsg = ''
-                    if fmsg != '\n':
+                    if fmsg != '':
                         if self.logMessage:
                             await sendMessage(self.logMessage, lmsg + msg + fmsg)
                         await sendMessage(self.message, lmsg + msg + fmsg)
@@ -381,7 +381,7 @@ class MirrorLeechListener:
                     if self.logMessage:
                         await sendMessage(self.logMessage, lmsg + msg)
                 else:
-                    fmsg = '\n'
+                    fmsg = ''
                     for index, (link, name) in enumerate(files.items(), start=1):
                         fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                         if len(fmsg.encode() + msg.encode()) > 4000:
@@ -391,7 +391,7 @@ class MirrorLeechListener:
                             await sendMessage(self.dmMessage, gmsg + msg + fmsg)
                             await sleep(1)
                             fmsg = ''
-                    if fmsg != '\n':
+                    if fmsg != '':
                         if self.logMessage:
                             await sendMessage(self.logMessage, lmsg + msg + fmsg)
                         await sendMessage(self.message, gmsg + msg + msg_)
