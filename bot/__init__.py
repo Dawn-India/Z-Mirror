@@ -29,7 +29,7 @@ setdefaulttimeout(600)
 
 botStartTime = time()
 
-basicConfig(format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
+basicConfig(format='%(asctime)s | %(name)s | %(levelname)s | %(message)s | [%(module)s:%(lineno)d]',
                     handlers=[FileHandler('Z_Logs.txt'), StreamHandler()],
                     level=INFO)
 
