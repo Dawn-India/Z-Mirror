@@ -148,8 +148,9 @@ async def sendDmMessage(message, dmMode, isLeech=False):
     except (UserIsBlocked, PeerIdInvalid) as e:
         buttons = ButtonMaker()
         buttons.ubutton("Start", f"https://t.me/{message._client.me.username}?start=start")
-        user = message.from_user.first_name
-        await sendMessage(message, f"Dear {user}!\nYou need to START me in DM.\nSo I can send all files there.\n\n<b>Start and try again!</b>\nThank You.", buttons.build_menu(1))
+        user = message.from_user.username if message.from_user.username is not None else message.from_user.first_name
+        await sendMessage(message, f"Dear <b><i><a href='https://t.me/{user}'>{user}</a>!</i></b>\nYou need to START me in DM. \
+\nSo I can send all files there.\n\n<b>Start and try again!</b>\nThank You.", buttons.build_menu(1))
         await delete_links(message)
         return 'BotNotStarted'
     except RPCError as e:
@@ -172,7 +173,8 @@ async def sendLogMessage(message, link, tag):
         msg = ''
         if isSuperGroup:
             msg+=f'\n\n<b><a href="{message.link}">Source Link</a></b>: '
-        msg += f'<code>{link}</code>\n\n<b>Added by</b>: {tag}\n<b>User ID</b>: <code>{message.from_user.id}</code>'
+        msg += f'<code>{link}</code>\n\n<b>Added by</b>: {tag} \
+\n<b>User ID</b>: <code>{message.from_user.id}</code>'
         return await message._client.send_message(log_chat, msg, disable_web_page_preview=True)
     except FloodWait as r:
         LOGGER.warning(str(r))
@@ -223,7 +225,8 @@ async def forcesub( message, tag):
         btn = ButtonMaker()
         for key, value in join_button.items():
             btn.ubutton(key, value)
-        return await sendMessage(message, f'Dear {tag}!\nPlease join our channel to use me!\n\n<b>Join And Try Again!</b>\nThank You.', btn.build_menu(2))
+        return await sendMessage(message, f'Dear {tag}!\nPlease join our channel to use me! \
+\n\n<b>Join And Try Again!</b>\nThank You.', btn.build_menu(2))
 
 async def message_filter(message, tag):
     if not config_dict['ENABLE_MESSAGE_FILTER']:
@@ -232,13 +235,16 @@ async def message_filter(message, tag):
     if message.reply_to_message:
         if message.reply_to_message.forward_date:
             await deleteMessage(message.reply_to_message)
-            _msg = "You can't mirror or leech forward messages to this bot.\n\nRemove it and try again\nThank you."
+            _msg = "You can't mirror or leech forward messages to this bot. \
+\n\nRemove it and try again\nThank you."
         elif message.reply_to_message.caption:
             await deleteMessage(message.reply_to_message)
-            _msg = "You can't mirror or leech with captions text to this bot.\n\nRemove it and try again\nThank you."
+            _msg = "You can't mirror or leech with captions text to this bot. \
+\n\nRemove it and try again\nThank you."
     elif message.forward_date:
         await deleteMessage(message)
-        _msg = "You can't mirror or leech forward messages to this bot.\n\nRemove it and try again\nThank you."
+        _msg = "You can't mirror or leech forward messages to this bot. \
+\n\nRemove it and try again\nThank you."
     if _msg:
         message.id = None
         return await sendMessage(message, f"{tag} {_msg}")
@@ -256,7 +262,8 @@ async def anno_checker(message):
     buttons.ibutton('Cancel', f'verify no {msg_id}')
     user = None
     btn_listener[msg_id] = user
-    await sendMessage(message, f'{message.sender_chat.type.name} Verification\nIf you hit Verify! Your username and id will expose in bot logs!', buttons.build_menu(2))
+    await sendMessage(message, f'{message.sender_chat.type.name} Verification \
+\nIf you hit Verify! Your username and id will expose in bot logs!', buttons.build_menu(2))
     start_time = time()
     while time() - start_time <= 7:
         await sleep(0.5)
@@ -272,7 +279,8 @@ async def open_category_btns(message):
     buttons = ButtonMaker()
     for _name in categories.keys():
         buttons.ibutton(f'{_name}', f'scat {user_id} {msg_id} {_name}')
-    prompt = await sendMessage(message,'<b>Select the category where you want to upload</b>', buttons.build_menu(2))
+    prompt = await sendMessage(message,'<b>Select the category \
+where you want to upload</b>', buttons.build_menu(2))
     btn_listener[msg_id] = [None, None]
     start_time = time()
     while time() - start_time <= 30:

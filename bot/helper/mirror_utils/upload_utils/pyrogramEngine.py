@@ -250,7 +250,7 @@ class TgUploader:
         if self.__listener.seed and not self.__listener.newDir:
             await clean_unwanted(self.__path)
         if self.__total_files == 0:
-            await self.__listener.onUploadError("No files to upload. In case you have filled EXTENSION_FILTER, then check if all files have those extensions or not.")
+            await self.__listener.onUploadError("No files to upload.\nIn case you have filled EXTENSION_FILTER,\nthen check if all files have those extensions or not.")
             return
         if self.__total_files <= self.__corrupted:
             await self.__listener.onUploadError('Files Corrupted or unable to upload. Check logs!')

@@ -46,29 +46,28 @@ async def __onDownloadStarted(api, gid):
                 LOGGER.warning(f"onDownloadStart: {gid}. STOP_DUPLICATE didn't pass since download completed earlier!")
                 return
             listener = dl.listener()
-            if listener.isLeech or listener.select or listener.upPath != 'gd':
-                return
-            download = await sync_to_async(api.get_download, gid)
-            if not download.is_torrent:
-                await sleep(3)
-                download = download.live
-            LOGGER.info('Checking File/Folder if already in Drive...')
-            sname = download.name
-            if listener.isZip:
-                sname = f"{sname}.zip"
-            elif listener.extract:
-                try:
-                    sname = get_base_name(sname)
-                except:
-                    sname = None
-            if sname is not None:
-                smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, sname, True)
-                if smsg:
-                    smsg = 'File/Folder already available in Drive.\nHere are the search results:'
-                    await listener.onDownloadError(smsg, button)
-                    await sync_to_async(api.remove, [download], force=True, files=True)
-                    await delete_links(listener.message)
-                    return
+            if not listener.isLeech and not listener.select and listener.upPath == 'gd':
+                download = await sync_to_async(api.get_download, gid)
+                if not download.is_torrent:
+                    await sleep(3)
+                    download = download.live
+                LOGGER.info('Checking File/Folder if already in Drive...')
+                sname = download.name
+                if listener.isZip:
+                    sname = f"{sname}.zip"
+                elif listener.extract:
+                    try:
+                        sname = get_base_name(sname)
+                    except:
+                        sname = None
+                if sname is not None:
+                    smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, sname, True)
+                    if smsg:
+                        smsg = 'File/Folder already available in Drive.\nHere are the search results:'
+                        await listener.onDownloadError(smsg, button)
+                        await sync_to_async(api.remove, [download], force=True, files=True)
+                        await delete_links(listener.message)
+                        return
     if any([(DIRECT_LIMIT:= config_dict['DIRECT_LIMIT']),
             (TORRENT_LIMIT:= config_dict['TORRENT_LIMIT']),
             (LEECH_LIMIT:= config_dict['LEECH_LIMIT']),

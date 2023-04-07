@@ -116,7 +116,7 @@ def get_readable_message():
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
         tag = download.message.from_user.username if download.message.from_user.username is not None else download.message.from_user.first_name
         if config_dict['DM_MODE']:
-            msg += f"Hey <a href='https://telegram.me/{tag}'>{tag}</a>, \
+            msg += f"Hey <a href='https://t.me/{tag}'>{tag}</a>, \
 Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.link}'>{download.extra_details['mode']}</a>]"
         else:
             msg += f"\n<b>{download.status()}:</b> <code>{escape(f'{download.name()}')}</code>"
