@@ -980,12 +980,17 @@ async def edit_bot_settings(client, query):
         rfunc = partial(update_buttons, message)
         await event_handler(client, query, pfunc, rfunc, True)
     elif data[1] == 'editvar' and STATE == 'edit':
-        handler_dict[message.chat.id] = False
-        await query.answer()
-        await update_buttons(message, data[2], data[1])
-        pfunc = partial(edit_variable, pre_message=message, key=data[2])
-        rfunc = partial(update_buttons, message, 'var')
-        await event_handler(client, query, pfunc, rfunc)
+        value = config_dict[data[2]]
+        if value and data[2] in ['OWNER_ID'] and not await CustomFilters.owner(client, query):
+            value = 'Only owner can edit this!'
+            await query.answer(f'{value}', show_alert=True)
+        else:
+            handler_dict[message.chat.id] = False
+            await query.answer()
+            await update_buttons(message, data[2], data[1])
+            pfunc = partial(edit_variable, pre_message=message, key=data[2])
+            rfunc = partial(update_buttons, message, 'var')
+            await event_handler(client, query, pfunc, rfunc)
     elif data[1] == 'editvar' and STATE == 'view':
         value = config_dict[data[2]]
         if value and data[2] in ['DATABASE_URL', 'TELEGRAM_API', 'TELEGRAM_HASH', 'UPSTREAM_REPO',
