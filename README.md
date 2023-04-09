@@ -482,8 +482,8 @@ help - All cmds with description
 
 ## Bittorrent Seed
 
-- Add `d:ratio:time` perfix along with leech or mirror cmd.
-- Using `d` perfix alone will lead to use global options for aria2c or qbittorrent.
+- Add `d:ratio:time` prefix along with leech or mirror cmd.
+- Using `d` prefix alone will lead to use global options for aria2c or qbittorrent.
 
 ### Qbittorrent
 

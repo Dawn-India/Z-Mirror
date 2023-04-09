@@ -34,10 +34,10 @@ getLogger("pyrogram").setLevel(ERROR)
 
 class TgUploader:
 
-    def __init__(self, name=None, path=None, size=0, listener=None):
+    def __init__(self, name=None, path=None, listener=None):
         self.name = name
-        self.uploaded_bytes = 0
         self._last_uploaded = 0
+        self.__processed_bytes = 0
         self.__listener = listener
         self.__path = path
         self.__start_time = time()
@@ -47,7 +47,6 @@ class TgUploader:
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__is_corrupted = False
-        self.__size = size
         self.__media_dict = {'videos': {}, 'documents': {}}
         self.__last_msg_in_group = False
         self.__up_path = ''
@@ -62,14 +61,16 @@ class TgUploader:
                 bot.stop_transmission()
         chunk_size = current - self._last_uploaded
         self._last_uploaded = current
-        self.uploaded_bytes += chunk_size
+        self.__processed_bytes += chunk_size
 
     async def __user_settings(self):
         user_id = self.__listener.message.from_user.id
         user_dict = user_data.get(user_id, {})
         self.__as_doc = user_dict.get('as_doc') or config_dict['AS_DOCUMENT']
-        self.__media_group = user_dict.get('media_group') or config_dict['MEDIA_GROUP']
-        self.__lprefix = user_dict.get('lprefix') or config_dict['LEECH_FILENAME_PREFIX']
+        self.__media_group = user_dict.get(
+            'media_group') or config_dict['MEDIA_GROUP']
+        self.__lprefix = user_dict.get(
+            'lprefix') or config_dict['LEECH_FILENAME_PREFIX']
         if not await aiopath.exists(self.__thumb):
             self.__thumb = None
 
@@ -161,9 +162,11 @@ class TgUploader:
         self.__sent_msg = msgs[0].reply_to_message
         for msg in msgs:
             if key == 'videos':
-                input_media = InputMediaVideo(media=msg.video.file_id, caption=msg.caption)
+                input_media = InputMediaVideo(
+                    media=msg.video.file_id, caption=msg.caption)
             else:
-                input_media = InputMediaDocument(media=msg.document.file_id, caption=msg.caption)
+                input_media = InputMediaDocument(
+                    media=msg.document.file_id, caption=msg.caption)
             rlist.append(input_media)
         return rlist
 
@@ -184,14 +187,16 @@ class TgUploader:
         if self.__sent_DMmsg:
             await sleep(0.5)
             try:
-                grouped_media = await self.__get_input_media(subkey, key, msgs_list)
+                if IS_PREMIUM_USER:
+                    grouped_media = await self.__get_input_media(subkey, key, msgs_list)
                 dm_msgs_list = await self.__sent_DMmsg.reply_media_group(media=grouped_media, quote=True)
                 self.__sent_DMmsg = dm_msgs_list[-1]
             except Exception as err:
-                LOGGER.error(f"Error while sending media group in dm {err.__class__.__name__}")
+                LOGGER.error(
+                    f"Error while sending media group in dm {err.__class__.__name__}")
                 self.__sent_DMmsg = None
 
-    async def upload(self, o_files, m_size):
+    async def upload(self, o_files, m_size, size):
         await self.__msg_to_reply()
         await self.__user_settings()
         for dirpath, _, files in sorted(await sync_to_async(walk, self.__path)):
@@ -201,20 +206,21 @@ class TgUploader:
                     await aioremove(self.__up_path)
                     continue
                 try:
-                    self.__up_path = ospath.join(dirpath, file_)
                     f_size = await aiopath.getsize(self.__up_path)
                     if self.__listener.seed and file_ in o_files and f_size in m_size:
                         continue
                     self.__total_files += 1
                     if f_size == 0:
-                        LOGGER.error(f"{self.__up_path} size is zero, telegram don't upload zero size files")
+                        LOGGER.error(
+                            f"{self.__up_path} size is zero, telegram don't upload zero size files")
                         self.__corrupted += 1
                         continue
                     if self.__is_cancelled:
                         return
                     cap_mono = await self.__prepare_file(file_, dirpath)
                     if self.__last_msg_in_group:
-                        group_lists = [x for v in self.__media_dict.values() for x in v.keys()]
+                        group_lists = [x for v in self.__media_dict.values()
+                                       for x in v.keys()]
                         if (match := re_match(r'.+(?=\.0*\d+$)|.+(?=\.part\d+\..+)', self.__up_path)) and match.group(0) not in group_lists:
                             for key, value in list(self.__media_dict.items()):
                                 for subkey, msgs in list(value.items()):
@@ -230,7 +236,8 @@ class TgUploader:
                     await sleep(1)
                 except Exception as err:
                     if isinstance(err, RetryError):
-                        LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
+                        LOGGER.info(
+                            f"Total Attempts: {err.last_attempt.attempt_number}")
                     else:
                         LOGGER.error(f"{err}. Path: {self.__up_path}")
                     if self.__is_cancelled:
@@ -259,7 +266,7 @@ class TgUploader:
             msg = f'<b>File Name</b>: <code>{escape(self.name)}</code>\n\n<b>LeechCompleted</b>!\n<b>Done By</b>: {self.__listener.tag}\n<b>User ID</b>: <code>{self.__listener.message.from_user.id}</code>'
             await self.__sent_msg.reply(text=msg, quote=True, disable_web_page_preview=True)
         LOGGER.info(f"Leech Completed: {self.name}")
-        await self.__listener.onUploadComplete(None, self.__size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
+        await self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
 
     async def __send_dm(self):
         try:
@@ -270,7 +277,10 @@ class TgUploader:
                 reply_to_message_id=self.__sent_DMmsg.id
             )
         except Exception as err:
-            LOGGER.error(f"Error while sending dm {err.__class__.__name__}")
+            if isinstance(err, RPCError):
+                LOGGER.error(f"Error while sending dm {err.NAME}: {err.MESSAGE}")
+            else:
+                LOGGER.error(f"Error while sending dm {err.__class__.__name__}")
             self.__sent_DMmsg = None
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
@@ -314,7 +324,8 @@ class TgUploader:
                     if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("splited_files_z"):
                         dirpath = f"{dirpath}/copied_z"
                         await makedirs(dirpath, exist_ok=True)
-                        new_path = ospath.join(dirpath, f"{file_.rsplit('.', 1)[0]}.mp4")
+                        new_path = ospath.join(
+                            dirpath, f"{file_.rsplit('.', 1)[0]}.mp4")
                         self.__up_path = await copy(self.__up_path, new_path)
                     else:
                         new_path = f"{self.__up_path.rsplit('.', 1)[0]}.mp4"
@@ -333,7 +344,7 @@ class TgUploader:
                                                                     progress=self.__upload_progress)
             elif is_audio:
                 key = 'audios'
-                duration , artist, title = await get_media_info(self.__up_path)
+                duration, artist, title = await get_media_info(self.__up_path)
                 self.__sent_msg = await self.__sent_msg.reply_audio(audio=self.__up_path,
                                                                     quote=True,
                                                                     caption=cap_mono,
@@ -390,9 +401,13 @@ class TgUploader:
     @property
     def speed(self):
         try:
-            return self.uploaded_bytes / (time() - self.__start_time)
+            return self.__processed_bytes / (time() - self.__start_time)
         except:
             return 0
+
+    @property
+    def processed_bytes(self):
+        return self.__processed_bytes
 
     async def cancel_download(self):
         self.__is_cancelled = True

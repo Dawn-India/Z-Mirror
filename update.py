@@ -4,13 +4,13 @@ from subprocess import run as srun
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-if ospath.exists('log.txt'):
-    with open('log.txt', 'r+') as f:
+if ospath.exists('Z_Logs.txt'):
+    with open('Z_Logs.txt', 'r+') as f:
         f.truncate(0)
 
-basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[FileHandler('log.txt'), StreamHandler()],
-                    level=INFO)
+basicConfig(format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
+            handlers=[FileHandler('Z_Logs.txt'), StreamHandler()],
+            level=INFO)
 
 load_dotenv('config.env', override=True)
 
@@ -35,14 +35,15 @@ if len(DATABASE_URL) == 0:
 if DATABASE_URL:
     conn = MongoClient(DATABASE_URL)
     db = conn.z
-    if config_dict := db.settings.config.find_one({'_id': bot_id}):  #retrun config dict (all env vars)
+    # retrun config dict (all env vars)
+    if config_dict := db.settings.config.find_one({'_id': bot_id}):
         environ['UPSTREAM_REPO'] = config_dict['UPSTREAM_REPO']
         environ['UPSTREAM_BRANCH'] = config_dict['UPSTREAM_BRANCH']
     conn.close()
 
 UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
 if len(UPSTREAM_REPO) == 0:
-   UPSTREAM_REPO = None
+    UPSTREAM_REPO = None
 
 UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
 if len(UPSTREAM_BRANCH) == 0:

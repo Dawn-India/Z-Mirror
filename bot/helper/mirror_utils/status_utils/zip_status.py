@@ -59,7 +59,7 @@ class ZipStatus:
             return async_to_sync(get_path_size, self.__listener.dir) - self.__size
 
     def processed_bytes(self):
-            return get_readable_file_size(self.processed_raw())
+        return get_readable_file_size(self.processed_raw())
 
     def download(self):
         return self

@@ -18,7 +18,7 @@ from bot import (DATABASE_URL, INCOMPLETE_TASK_NOTIFIER, LOGGER,
 from bot.helper.listeners.aria2_listener import start_aria2_listener
 
 from .helper.ext_utils.bot_utils import (cmd_exec, get_readable_file_size,
-                                         get_readable_time, set_commands,
+                                         get_readable_time, new_thread, set_commands,
                                          sync_to_async)
 from .helper.ext_utils.db_handler import DbManger
 from .helper.ext_utils.fs_utils import clean_all, exit_clean_up, start_cleanup
@@ -86,10 +86,11 @@ async def stats(client, message):
             f'<b>Total Upload:</b> <code>{sent}</code>\n<b>Total Download:</b> <code>{recv}</code>\n'
     await sendMessage(message, stats)
 
+
 async def start(client, message):
     if config_dict['DM_MODE']:
         start_string = 'Bot Started.\n' \
-                    'Now I will send your files or links here.\n'
+            'Now I will send your files or links here.\n'
     else:
         start_string = 'Hey, Welcome dear. \n' \
                        'I can Mirror all your links To Google Drive! \n' \
@@ -99,14 +100,14 @@ async def start(client, message):
                        'Thank You!'
     await sendMessage(message, start_string)
 
+
 async def restart(client, message):
     restart_message = await sendMessage(message, "Restarting...")
     if scheduler.running:
         scheduler.shutdown(wait=False)
-    for interval in [Interval, QbInterval]:
+    for interval in [QbInterval, Interval]:
         if interval:
             interval[0].cancel()
-            interval.clear()
     await sync_to_async(clean_all)
     proc1 = await create_subprocess_exec('pkill', '-9', '-f', 'gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone')
     proc2 = await create_subprocess_exec('python3', 'update.py')
@@ -115,6 +116,7 @@ async def restart(client, message):
         await f.write(f"{restart_message.chat.id}\n{restart_message.id}\n")
     osexecl(executable, executable, "-m", "bot")
 
+@new_thread
 async def ping(client, message):
     start_time = int(round(time() * 1000))
     reply = await sendMessage(message, "Starting Ping")
@@ -172,19 +174,19 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.RssCommand}: RSS Menu.
 '''
 
+
 async def bot_help(client, message):
     await sendMessage(message, help_string)
 
+
 async def restart_notification():
-    chat_id = None
-    msg_id = None
     if await aiopath.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
     else:
         chat_id, msg_id = 0, 0
 
-    async def send_incompelete_task_message(chat_id, msg_id, cid, msg):
+    async def send_incompelete_task_message(cid, msg):
         try:
             if msg.startswith('Restarted Successfully!'):
                 await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text='Restarted Successfully!')
@@ -192,23 +194,26 @@ async def restart_notification():
                 await aioremove(".restartmsg")
             else:
                 await bot.send_message(chat_id=cid, text=msg, disable_web_page_preview=True,
-                                        disable_notification=True)
+                                       disable_notification=True)
         except Exception as e:
             LOGGER.error(e)
-
-    if INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
-        if notifier_dict := await DbManger().get_incomplete_tasks():
+    if DATABASE_URL:
+        if INCOMPLETE_TASK_NOTIFIER and (notifier_dict := await DbManger().get_incomplete_tasks()):
             for cid, data in notifier_dict.items():
-                msg = 'Restarted Successfully!' if chat_id is not None and cid == chat_id else 'Bot Restarted!'
+                msg = 'Restarted Successfully!' if cid == chat_id else 'Bot Restarted!'
                 for tag, links in data.items():
                     msg += f"\n\n👤 {tag} Do your tasks again. \n"
                     for index, link in enumerate(links, start=1):
                         msg += f" {index}: {link} \n"
                         if len(msg.encode()) > 4000:
-                            await send_incompelete_task_message(chat_id, msg_id, cid, msg)
+                            await send_incompelete_task_message(cid, msg)
                             msg = ''
                 if msg:
-                    await send_incompelete_task_message(chat_id, msg_id, cid, msg)
+                    await send_incompelete_task_message(cid, msg)
+
+        if STOP_DUPLICATE_TASKS:
+            await DbManger().clear_download_links()
+
 
     if await aiopath.isfile(".restartmsg"):
         try:
@@ -217,16 +222,22 @@ async def restart_notification():
             pass
         await aioremove(".restartmsg")
 
+
 async def main():
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), set_commands(bot))
 
-    bot.add_handler(MessageHandler(start, filters=command(BotCommands.StartCommand)))
-    bot.add_handler(MessageHandler(log, filters=command(BotCommands.LogCommand) & CustomFilters.sudo))
-    bot.add_handler(MessageHandler(restart, filters=command(BotCommands.RestartCommand) & CustomFilters.sudo))
-    bot.add_handler(MessageHandler(ping, filters=command(BotCommands.PingCommand)))
-    bot.add_handler(MessageHandler(bot_help, filters=command(BotCommands.HelpCommand)))
-    bot.add_handler(MessageHandler(stats, filters=command(BotCommands.StatsCommand)))
-    sleep(1)
+    bot.add_handler(MessageHandler(
+        start, filters=command(BotCommands.StartCommand)))
+    bot.add_handler(MessageHandler(log, filters=command(
+        BotCommands.LogCommand) & CustomFilters.sudo))
+    bot.add_handler(MessageHandler(restart, filters=command(
+        BotCommands.RestartCommand) & CustomFilters.sudo))
+    bot.add_handler(MessageHandler(ping, filters=command(
+        BotCommands.PingCommand) & CustomFilters.authorized))
+    bot.add_handler(MessageHandler(bot_help, filters=command(
+        BotCommands.HelpCommand) & CustomFilters.authorized))
+    bot.add_handler(MessageHandler(stats, filters=command(
+        BotCommands.StatsCommand) & CustomFilters.authorized))
     LOGGER.info("Bot Started Successfully!")
     signal(SIGINT, exit_clean_up)
 

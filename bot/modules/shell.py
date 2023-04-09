@@ -1,13 +1,13 @@
-from pyrogram.handlers import MessageHandler, EditedMessageHandler
-from pyrogram.filters import command
-
 from io import BytesIO
 
+from pyrogram.filters import command
+from pyrogram.handlers import EditedMessageHandler, MessageHandler
+
 from bot import LOGGER, bot
-from bot.helper.telegram_helper.message_utils import sendMessage, sendFile
 from bot.helper.ext_utils.bot_utils import cmd_exec, new_task
-from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.message_utils import sendFile, sendMessage
 
 
 @new_task
@@ -35,5 +35,7 @@ async def shell(client, message):
         await sendMessage(message, 'No Reply')
 
 
-bot.add_handler(MessageHandler(shell, filters=command(BotCommands.ShellCommand) & CustomFilters.owner))
-bot.add_handler(EditedMessageHandler(shell, filters=command(BotCommands.ShellCommand) & CustomFilters.owner))
+bot.add_handler(MessageHandler(shell, filters=command(
+    BotCommands.ShellCommand) & CustomFilters.owner))
+bot.add_handler(EditedMessageHandler(shell, filters=command(
+    BotCommands.ShellCommand) & CustomFilters.owner))

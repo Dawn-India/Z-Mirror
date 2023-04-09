@@ -6,13 +6,13 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus,
 
 engine_ = f"MegaSDK v{MegaApi('test').getVersion()}"
 
+
 class MegaDownloadStatus:
 
-    def __init__(self, obj, listener):
-        self.__listener = listener
+    def __init__(self, obj, message, extra_details):
         self.__obj = obj
-        self.message = self.__listener.message
-        self.extra_details = self.__listener.extra_details
+        self.message = message
+        self.extra_details = extra_details
         self.engine = engine_
 
     def name(self):
@@ -35,7 +35,8 @@ class MegaDownloadStatus:
 
     def eta(self):
         try:
-            seconds = (self.__obj.size - self.__obj.downloaded_bytes) / self.__obj.speed
+            seconds = (self.__obj.size -
+                       self.__obj.downloaded_bytes) / self.__obj.speed
             return f'{get_readable_time(seconds)}'
         except ZeroDivisionError:
             return '-'

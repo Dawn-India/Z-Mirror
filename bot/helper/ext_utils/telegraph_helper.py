@@ -1,7 +1,6 @@
-from asyncio import sleep
-from random import SystemRandom
 from string import ascii_letters
-
+from random import SystemRandom
+from asyncio import sleep
 from telegraph.aio import Telegraph
 from telegraph.exceptions import RetryAfterError
 
@@ -30,28 +29,30 @@ class TelegraphHelper:
 
     async def create_page(self, title, content):
         try:
-           return await self.telegraph.create_page(
-                title = title,
+            return await self.telegraph.create_page(
+                title=title,
                 author_name=self.author_name,
                 author_url=self.author_url,
                 html_content=content
-           )
+            )
         except RetryAfterError as st:
-            LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
+            LOGGER.warning(
+                f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
             await sleep(st.retry_after)
             return await self.create_page(title, content)
 
     async def edit_page(self, path, title, content):
         try:
             return await self.telegraph.edit_page(
-                path = path,
-                title = title,
+                path=path,
+                title=title,
                 author_name=self.author_name,
                 author_url=self.author_url,
                 html_content=content
             )
         except RetryAfterError as st:
-            LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
+            LOGGER.warning(
+                f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
             await sleep(st.retry_after)
             return await self.edit_page(path, title, content)
 
@@ -59,11 +60,11 @@ class TelegraphHelper:
         nxt_page = 1
         prev_page = 0
         num_of_path = len(path)
-        for content in telegraph_content :
-            if nxt_page == 1 :
+        for content in telegraph_content:
+            if nxt_page == 1:
                 content += f'<b><a href="https://graph.org/{path[nxt_page]}">Next</a></b>'
                 nxt_page += 1
-            else :
+            else:
                 if prev_page <= num_of_path:
                     content += f'<b><a href="https://graph.org/{path[prev_page]}">Prev</a></b>'
                     prev_page += 1
@@ -71,8 +72,8 @@ class TelegraphHelper:
                     content += f'<b> | <a href="https://graph.org/{path[nxt_page]}">Next</a></b>'
                     nxt_page += 1
             await self.edit_page(
-                path = path[prev_page],
-                title = 'Z Torrent Search',
+                path=path[prev_page],
+                title='Z Torrent Search',
                 content=content
             )
         return
@@ -82,8 +83,10 @@ class TelegraphHelper:
         try:
             return await self.telegraph.revoke_access_token()
         except Exception as e:
-            LOGGER.error(f'Failed Revoking telegraph access token due to : {e}')
+            LOGGER.error(
+                f'Failed Revoking telegraph access token due to : {e}')
 
 
-telegraph = TelegraphHelper('Z-Mirror', 'https://github.com/Dawn-India/Z-Mirror')
+telegraph = TelegraphHelper(
+    'Z-Mirror', 'https://github.com/Dawn-India/Z-Mirror')
 bot_loop.run_until_complete(telegraph.create_account())

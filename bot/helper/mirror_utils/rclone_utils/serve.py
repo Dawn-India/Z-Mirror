@@ -1,11 +1,13 @@
 from asyncio import create_subprocess_exec
-from aiofiles.os import path as aiopath
-from aiofiles import open as aiopen
 from configparser import ConfigParser
 
-from bot import config_dict, bot_loop
+from aiofiles import open as aiopen
+from aiofiles.os import path as aiopath
+
+from bot import bot_loop, config_dict
 
 RcloneServe = []
+
 
 async def rclone_serve_booter():
     if not config_dict['RCLONE_SERVE_URL'] or not await aiopath.exists('rclone.conf'):
@@ -21,7 +23,8 @@ async def rclone_serve_booter():
         contents = await f.read()
         config.read_string(contents)
     if not config.has_section('combine'):
-        upstreams = ' '.join(f'{remote}={remote}:' for remote in config.sections())
+        upstreams = ' '.join(
+            f'{remote}={remote}:' for remote in config.sections())
         config.add_section('combine')
         config.set('combine', 'type', 'combine')
         config.set('combine', 'upstreams', upstreams)
@@ -34,9 +37,9 @@ async def rclone_serve_booter():
         except:
             pass
     cmd = ["rclone", "serve", "http", "--config", "rclone.conf", "--no-modtime",
-            "combine:", "--addr", f":{config_dict['RCLONE_SERVE_PORT']}",
-            "--vfs-cache-mode", "full", "--vfs-cache-max-age", "1m0s",
-            "--buffer-size", "64M"]
+           "combine:", "--addr", f":{config_dict['RCLONE_SERVE_PORT']}",
+           "--vfs-cache-mode", "full", "--vfs-cache-max-age", "1m0s",
+           "--buffer-size", "64M"]
     if (user := config_dict['RCLONE_SERVE_USER']) and (pswd := config_dict['RCLONE_SERVE_PASS']):
         cmd.extend(("--user", user, "--pass", pswd))
     rcs = await create_subprocess_exec(*cmd)

@@ -1,20 +1,14 @@
-from asyncio import Event, Lock
+from asyncio import Lock
 from logging import ERROR, getLogger
 from time import time
 
-from bot import (IS_PREMIUM_USER, LOGGER, bot, config_dict, download_dict,
-                 download_dict_lock, non_queued_dl, non_queued_up,
-                 queue_dict_lock, queued_dl, user)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
-                                            sync_to_async)
-from bot.helper.ext_utils.fs_utils import check_storage_threshold
+from bot import (IS_PREMIUM_USER, LOGGER, bot, download_dict,
+                 download_dict_lock, non_queued_dl, queue_dict_lock, user)
+from bot.helper.ext_utils.task_manager import is_queued, limit_checker, stop_duplicate_check
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import (delete_links,
-                                                      sendMessage,
+from bot.helper.mirror_utils.status_utils.telegram_status import TelegramStatus
+from bot.helper.telegram_helper.message_utils import (delete_links, sendMessage,
                                                       sendStatusMessage)
-
-from ..status_utils.telegram_download_status import TelegramDownloadStatus
 
 global_lock = Lock()
 GLOBAL_GID = set()
@@ -25,26 +19,28 @@ class TelegramDownloadHelper:
 
     def __init__(self, listener):
         self.name = ""
-        self.size = 0
-        self.progress = 0
-        self.downloaded_bytes = 0
+        self.__processed_bytes = 0
         self.__start_time = time()
         self.__listener = listener
         self.__id = ""
         self.__is_cancelled = False
 
     @property
-    def download_speed(self):
-        return self.downloaded_bytes / (time() - self.__start_time)
+    def speed(self):
+        return self.__processed_bytes / (time() - self.__start_time)
+
+    @property
+    def processed_bytes(self):
+        return self.__processed_bytes
 
     async def __onDownloadStart(self, name, size, file_id, from_queue):
         async with global_lock:
             GLOBAL_GID.add(file_id)
         self.name = name
-        self.size = size
         self.__id = file_id
         async with download_dict_lock:
-            download_dict[self.__listener.uid] = TelegramDownloadStatus(self, self.__listener, file_id[:12])
+            download_dict[self.__listener.uid] = TelegramStatus(
+                self, size, self.__listener.message, file_id[:12], 'dl', self.__listener.extra_details)
         async with queue_dict_lock:
             non_queued_dl.add(self.__listener.uid)
         if not from_queue:
@@ -60,11 +56,7 @@ class TelegramDownloadHelper:
                 user.stop_transmission()
             else:
                 bot.stop_transmission()
-        self.downloaded_bytes = current
-        try:
-            self.progress = current / self.size * 100
-        except:
-            pass
+        self.__processed_bytes = current
 
     async def __onDownloadError(self, error):
         async with global_lock:
@@ -89,7 +81,7 @@ class TelegramDownloadHelper:
             LOGGER.error(str(e))
             await self.__onDownloadError(str(e))
             return
-        if download:
+        if download is not None:
             await self.__onDownloadComplete()
         elif not self.__is_cancelled:
             await self.__onDownloadError('Internal error occurred')
@@ -100,60 +92,48 @@ class TelegramDownloadHelper:
                 await sendMessage(message, 'Use SuperGroup to download with User!')
                 return
             message = await user.get_messages(chat_id=message.chat.id, message_ids=message.id)
-        if (media := message.document or message.photo or message.video or message.audio or message.voice
-            or message.video_note or message.sticker or message.animation or None):
+
+        media = message.document or message.photo or message.video or message.audio or \
+            message.voice or message.video_note or message.sticker or message.animation or None
+        if media is not None:
+
             async with global_lock:
                 download = media.file_unique_id not in GLOBAL_GID
+
             if download:
                 if filename == "":
-                    name = media.file_name if hasattr(media, 'file_name') else 'None'
+                    name = media.file_name if hasattr(
+                        media, 'file_name') else 'None'
                 else:
                     name = filename
                     path = path + name
                 size = media.file_size
                 gid = media.file_unique_id
-                if config_dict['STOP_DUPLICATE'] and not self.__listener.isLeech and self.__listener.upPath == 'gd':
-                    LOGGER.info('Checking File/Folder if already in Drive...')
-                    smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, name, True, True)
-                    if smsg:
-                        msg = "File/Folder is already available in Drive.\nHere are the search results:"
-                        await sendMessage(self.__listener.message, msg, button)
-                        await delete_links(self.__listener.message)
-                        return
-                if STORAGE_THRESHOLD:= config_dict['STORAGE_THRESHOLD']:
-                    limit = STORAGE_THRESHOLD * 1024**3
-                    arch = any([self.__listener.isZip, self.__listener.extract])
-                    acpt = await sync_to_async(check_storage_threshold, size, limit, arch)
-                    if not acpt:
-                        await delete_links(__listener.message)
-                        msg = f'You must leave {get_readable_file_size(limit)} free storage.'
-                        msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-                        await sendMessage(self.__listener.message, msg)
-                        await delete_links(self.__listener.message)
-                        return
-                all_limit = config_dict['QUEUE_ALL']
-                dl_limit = config_dict['QUEUE_DOWNLOAD']
-                from_queue = False
-                if all_limit or dl_limit:
-                    added_to_queue = False
-                    async with queue_dict_lock:
-                        dl = len(non_queued_dl)
-                        up = len(non_queued_up)
-                        if (all_limit and dl + up >= all_limit and (not dl_limit or dl >= dl_limit)) or (dl_limit and dl >= dl_limit):
-                            added_to_queue = True
-                            event = Event()
-                            queued_dl[self.__listener.uid] = event
-                    if added_to_queue:
-                        LOGGER.info(f"Added to Queue/Download: {name}")
-                        async with download_dict_lock:
-                            download_dict[self.__listener.uid] = QueueStatus(name, size, gid, self.__listener, 'Dl')
-                        await self.__listener.onDownloadStart()
-                        await sendStatusMessage(self.__listener.message)
-                        await event.wait()
-                        async with download_dict_lock:
-                            if self.__listener.uid not in download_dict:
-                                return
-                        from_queue = True
+
+                msg, button = await stop_duplicate_check(name, self.__listener)
+                if msg:
+                    await sendMessage(self.__listener.message, msg, button)
+                    await delete_links(self.__listener.message)
+                    return
+                if limit_exceeded := await limit_checker(size, self.__listener):
+                    await sendMessage(self.__listener.message, limit_exceeded)
+                    await delete_links(self.__listener.message)
+                    return
+                added_to_queue, event = await is_queued(self.__listener.uid)
+                if added_to_queue:
+                    LOGGER.info(f"Added to Queue/Download: {name}")
+                    async with download_dict_lock:
+                        download_dict[self.__listener.uid] = QueueStatus(
+                            name, size, gid, self.__listener, 'dl')
+                    await self.__listener.onDownloadStart()
+                    await sendStatusMessage(self.__listener.message)
+                    await event.wait()
+                    async with download_dict_lock:
+                        if self.__listener.uid not in download_dict:
+                            return
+                    from_queue = True
+                else:
+                    from_queue = False
                 await self.__onDownloadStart(name, size, gid, from_queue)
                 await self.__download(message, path)
             else:
@@ -162,5 +142,6 @@ class TelegramDownloadHelper:
             await self.__onDownloadError('No document in the replied message')
 
     async def cancel_download(self):
-        LOGGER.info(f'Cancelling download on user request: {self.__id}')
         self.__is_cancelled = True
+        LOGGER.info(
+            f'Cancelling download on user request: name: {self.name} id: {self.__id}')

@@ -23,20 +23,20 @@ async def select(client, message):
     if len(msg) > 1:
         gid = msg[1]
         dl = await getDownloadByGid(gid)
-        if not dl:
+        if dl is None:
             await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
             return
     elif reply_to_id := message.reply_to_message_id:
         async with download_dict_lock:
             dl = download_dict.get(reply_to_id, None)
-        if not dl:
+        if dl is None:
             await sendMessage(message, "This is not an active task!")
             return
     elif len(msg) == 1:
         msg = ("Reply to an active /{cmd} which was used to start the qb-download or add gid along with cmd\n\n"
-             + "This command mainly for selection incase you decided to select files from already added torrent. "
-             + "But you can always use /{mir} with arg `s` to select files before download start."
-             .format_map({'cmd': BotCommands.BtSelectCommand,'mir': BotCommands.MirrorCommand[0]}))
+               + "This command mainly for selection incase you decided to select files from already added torrent. "
+               + "But you can always use /{mir} with arg `s` to select files before download start."
+               .format_map({'cmd': BotCommands.BtSelectCommand, 'mir': BotCommands.MirrorCommand[0]}))
         await sendMessage(message, msg)
         return
 
@@ -61,7 +61,8 @@ async def select(client, message):
             try:
                 await sync_to_async(aria2.client.force_pause, id_)
             except Exception as e:
-                LOGGER.error(f"{e} Error in pause, this mostly happens after abuse aria2")
+                LOGGER.error(
+                    f"{e} Error in pause, this mostly happens after abuse aria2")
         listener.select = True
     except:
         await sendMessage(message, "This is not a bittorrent task!")
@@ -72,12 +73,13 @@ async def select(client, message):
         "\n<b><i>Your download will not start automatically</i></b>"
     await sendMessage(message, msg, SBUTTONS)
 
+
 async def get_confirm(client, query):
     user_id = query.from_user.id
     data = query.data.split()
     message = query.message
     dl = await getDownloadByGid(data[2])
-    if not dl:
+    if dl is None:
         await query.answer("This task has been cancelled!", show_alert=True)
         await message.delete()
         return
@@ -102,11 +104,11 @@ async def get_confirm(client, query):
                 if f.priority == 0:
                     f_paths = [f"{path}/{f.name}", f"{path}/{f.name}.!qB"]
                     for f_path in f_paths:
-                       if await aiopath.exists(f_path):
-                           try:
-                               await aioremove(f_path)
-                           except:
-                               pass
+                        if await aiopath.exists(f_path):
+                            try:
+                                await aioremove(f_path)
+                            except:
+                                pass
             await sync_to_async(client.torrents_resume, torrent_hashes=id_)
         else:
             res = await sync_to_async(aria2.client.get_files, id_)
@@ -119,7 +121,8 @@ async def get_confirm(client, query):
             try:
                 await sync_to_async(aria2.client.unpause, id_)
             except Exception as e:
-                LOGGER.error(f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
+                LOGGER.error(
+                    f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
         await sendStatusMessage(message)
         await message.delete()
     elif data[1] == "rm":
@@ -129,5 +132,6 @@ async def get_confirm(client, query):
         await query.message.delete()
 
 
-bot.add_handler(MessageHandler(select, filters=command(BotCommands.BtSelectCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(select, filters=command(
+    BotCommands.BtSelectCommand) & CustomFilters.authorized))
 bot.add_handler(CallbackQueryHandler(get_confirm, filters=regex("^btsel")))
