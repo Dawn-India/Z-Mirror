@@ -3,7 +3,7 @@ from collections import OrderedDict
 from faulthandler import enable as faulthandler_enable
 from logging import (INFO, FileHandler, StreamHandler, basicConfig, error,
                      getLogger, info, warning)
-from os import environ, path, remove, getcwd
+from os import environ, path, remove
 from socket import setdefaulttimeout
 from subprocess import Popen, run
 from threading import Thread
@@ -559,7 +559,7 @@ def aria2c_init():
             if dl.followed_by_ids:
                 dl = dl.api.get_download(dl.followed_by_ids[0])
                 dl = dl.live
-            sleep(3)
+            sleep(2)
         if dl.remove(True, True):
             info('Aria2c started!')
     except Exception as e:

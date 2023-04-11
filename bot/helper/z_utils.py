@@ -1,7 +1,9 @@
 from hashlib import sha1
 from os import path, remove
 from re import search
+
 from bencoding import bdecode, bencode
+
 from bot import DATABASE_URL, LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import check_user_tasks, is_gdrive_link, is_magnet
 from bot.helper.ext_utils.db_handler import DbManger
@@ -10,11 +12,12 @@ from bot.helper.telegram_helper.message_utils import (delete_links, forcesub,
                                                       message_filter,
                                                       request_limiter,
                                                       sendMessage)
+
+
 async def extract_link(link, shouldDel=False):
     try:
         if link and is_magnet(link):
-            raw_link = search(
-                r'(?<=xt=urn:(btih|btmh):)[a-zA-Z0-9]+', link).group(0).lower()
+            raw_link = search(r'(?<=xt=urn:(btih|btmh):)[a-zA-Z0-9]+', link).group(0).lower()
         elif is_gdrive_link(link):
             raw_link = GoogleDriveHelper.getIdFromUrl(link)
         elif path.exists(link):
@@ -29,6 +32,8 @@ async def extract_link(link, shouldDel=False):
         LOGGER.error(e)
         raw_link = link
     return raw_link
+
+
 async def none_admin_utils(link, message, tag, isLeech, file_=None):
     if filtered := await message_filter(message, tag):
         return filtered
@@ -47,7 +52,7 @@ async def none_admin_utils(link, message, tag, isLeech, file_=None):
         return notSub
     if (maxtask := config_dict['USER_MAX_TASKS']) and await check_user_tasks(message.from_user.id, maxtask):
         await delete_links(message)
-        return await sendMessage(message, f"{tag} Your tasks limit exceeded for {maxtask} tasks")
+        return await sendMessage(message, f"{tag}, Your tasks limit exceeded for {maxtask} tasks")
     if isLeech and config_dict['DISABLE_LEECH']:
         await delete_links(message)
         return await sendMessage(message, f'{tag} Sorry, Leech Disabled!')

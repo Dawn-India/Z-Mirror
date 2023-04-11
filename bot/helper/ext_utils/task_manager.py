@@ -2,10 +2,8 @@ from asyncio import Event
 
 from bot import (LOGGER, config_dict, non_queued_dl, non_queued_up,
                  queue_dict_lock, queued_dl, queued_up)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
-                                            sync_to_async)
-from bot.helper.ext_utils.fs_utils import (check_storage_threshold,
-                                           get_base_name)
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
+from bot.helper.ext_utils.fs_utils import check_storage_threshold, get_base_name
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 
 

@@ -116,13 +116,14 @@ def get_readable_message():
     tasks = len(download_dict)
     globals()['PAGES'] = (tasks + STATUS_LIMIT - 1) // STATUS_LIMIT
     if PAGE_NO > PAGES:
-        globals()['STATUS_START'] -= STATUS_LIMIT
-        globals()['PAGE_NO'] -= 1
+        globals()['STATUS_START'] = STATUS_LIMIT * (PAGES - 1)
+        globals()['PAGE_NO'] = PAGES
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
         tag = download.message.from_user.username if download.message.from_user.username is not None else download.message.from_user.first_name
+        tag = f"<a href='https://t.me/{tag}'>{tag}</a>,"
         if config_dict['DM_MODE']:
-            msg += f"Hey <a href='https://t.me/{tag}'>{tag}</a>, \
-Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.link}'>{download.extra_details['mode']}</a>]"
+            msg += f"Hey {tag}, Please wait!\n<b>{download.status()}</b> "
+            msg += f"Your Task [<a href='{download.message.link}'>{download.extra_details['mode']}</a>]"
         else:
             msg += f"\n<b>{download.status()}:</b> <code>{escape(f'{download.name()}')}</code>"
         if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_CONVERTING,
@@ -155,7 +156,7 @@ Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.l
                     pass
             if not config_dict['DM_MODE']:
                 msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.extra_details['mode']}</a>"
-                msg += f" | <b>By</b>: <a href='https://telegram.me/{tag}'>{tag}</a>"
+                msg += f" | <b>By</b>: {tag}"
             if hasattr(download, 'seeders_num'):
                 try:
                     msg += f"\n<b>Seeders</b>: {download.seeders_num()}"
@@ -197,14 +198,15 @@ Please wait!\n<b>{download.status()}</b> Your Task [<a href='{download.message.l
                 up_speed += float(spd.split('M')[0]) * 1048576
     if tasks > STATUS_LIMIT:
         buttons = ButtonMaker()
-        buttons.ibutton("PREV", "status pre")
+        buttons.ibutton("⫷", "status pre")
         buttons.ibutton(f"{PAGE_NO}/{PAGES}", "status ref")
-        buttons.ibutton("NEXT", "status nex")
+        buttons.ibutton("⫸", "status nex")
         button = buttons.build_menu(3)
-    msg += "___________________________"
-    msg += f"\n<b>FREE</b>: {get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)}"
-    msg += f" | <b>UPTM</b>: {get_readable_time(time() - botStartTime)}"
-    msg += f"\n<b>DL</b>: {get_readable_file_size(dl_speed)}/s | <b>UL</b>: {get_readable_file_size(up_speed)}/s"
+    msg += "_____________________________"
+    msg += f"\n<b>FREE</b>: <code>{get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)}</code>"
+    msg += f" | <b>UPTM</b>: <code>{get_readable_time(time() - botStartTime)}</code>"
+    msg += f"\n<b>DL</b>: <code>{get_readable_file_size(dl_speed)}/s</code>"
+    msg += f" | <b>UL</b>: <code>{get_readable_file_size(up_speed)}/s</code>"
     return msg, button
 
 
