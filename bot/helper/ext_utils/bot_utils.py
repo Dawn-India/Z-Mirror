@@ -120,7 +120,7 @@ def get_readable_message():
         globals()['PAGE_NO'] = PAGES
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
         tag = download.message.from_user.username if download.message.from_user.username is not None else download.message.from_user.first_name
-        tag = f"<a href='https://t.me/{tag}'>{tag}</a>,"
+        tag = f"<a href='https://t.me/{tag}'>{tag}</a>"
         if config_dict['DM_MODE']:
             msg += f"Hey {tag}, Please wait!\n<b>{download.status()}</b> "
             msg += f"Your Task [<a href='{download.message.link}'>{download.extra_details['mode']}</a>]"
