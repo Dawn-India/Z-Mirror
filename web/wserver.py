@@ -331,13 +331,6 @@ rawindexpage = '''
     </script>
 </body>
 
-<footer style="height: 30%;">
-    <iframe data-aa="1856195"
-        src="//acceptable.a-ads.com/1856195?size=Adaptive&background_color=0d1117&title_color=ffffff&link_color=ffffff"
-        style="border:0px; padding:0; width:100%; height:100%; overflow:hidden; background-color: transparent;">
-    </iframe>
-</footer>
-
 </html>
 '''
 stlye1 = '''
