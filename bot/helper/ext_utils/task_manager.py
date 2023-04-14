@@ -1,3 +1,4 @@
+import os
 from asyncio import Event
 
 from bot import (LOGGER, config_dict, non_queued_dl, non_queued_up,
@@ -15,15 +16,17 @@ async def stop_duplicate_check(name, listener):
     ):
         return False, None
     LOGGER.info(f'Checking File/Folder if already in Drive: {name}')
-    if listener.isZip:
-        name = f"{name}.zip"
-    elif listener.extract:
+    base_name, ext = os.path.splitext(name)
+    if listener.extract:
         try:
-            name = get_base_name(name)
+            base_name = get_base_name(base_name)
         except:
-            name = None
-    if name is not None:
-        smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, name, stopDup=True)
+            base_name = None
+    if base_name is not None:
+        if ext == '':
+            ext = '.zip'
+        name_with_ext = base_name + ext
+        smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, name_with_ext, stopDup=True)
         if smsg:
             msg = "File/Folder is already available in Drive.\nHere are the search results:"
             return msg, button

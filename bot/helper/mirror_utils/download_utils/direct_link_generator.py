@@ -8,6 +8,7 @@ from https://github.com/AvinashReddy3108/PaperplaneExtended . I hereby take no c
 than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtended/commits/master/userbot/modules/direct_links.py
 for original authorship. """
 
+import tenacity
 from base64 import standard_b64encode
 from http.cookiejar import MozillaCookieJar
 from json import loads
@@ -120,6 +121,7 @@ def yandex_disk(url: str) -> str:
             "ERROR: File not found/Download limit reached")
 
 
+@tenacity.retry(wait=tenacity.wait_fixed(5), stop=tenacity.stop_after_attempt(3))
 def uptobox(url: str) -> str:
     """ Uptobox direct link generator
     based on https://github.com/jovanzers/WinTenCermin and https://github.com/sinoobie/noobie-mirror """
@@ -132,7 +134,7 @@ def uptobox(url: str) -> str:
     cget = create_scraper().request
     try:
         file_id = findall(r'\bhttps?://.*uptobox\.com/(\w+)', url)[0]
-        if UPTOBOX_TOKEN := config_dict['UPTOBOX_TOKEN']:
+        if UPTOBOX_TOKEN := config_dict.get('UPTOBOX_TOKEN'):
             file_link = f'https://uptobox.com/api/link?token={UPTOBOX_TOKEN}&file_code={file_id}'
         else:
             file_link = f'https://uptobox.com/api/link?file_code={file_id}'

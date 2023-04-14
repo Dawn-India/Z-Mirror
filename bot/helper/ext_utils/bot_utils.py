@@ -30,8 +30,8 @@ class MirrorStatus:
     STATUS_UPLOADING = "Uploading"
     STATUS_DOWNLOADING = "Downloading"
     STATUS_CLONING = "Cloneing"
-    STATUS_QUEUEDL = "QueueDl"
-    STATUS_QUEUEUP = "QueueUl"
+    STATUS_QUEUEDL = "Queue Dn"
+    STATUS_QUEUEUP = "Queue Up"
     STATUS_PAUSED = "Paused"
     STATUS_ARCHIVING = "Archiving"
     STATUS_EXTRACTING = "Extracting"
@@ -40,6 +40,15 @@ class MirrorStatus:
     STATUS_SEEDING = "Seeding"
     STATUS_CONVERTING = "Converting"
 
+status_labels = {
+    MirrorStatus.STATUS_DOWNLOADING: "Downloaded",
+    MirrorStatus.STATUS_UPLOADING: "Uploaded",
+    MirrorStatus.STATUS_CLONING: "Cloned",
+    MirrorStatus.STATUS_ARCHIVING: "Archived",
+    MirrorStatus.STATUS_EXTRACTING: "Extracted",
+    MirrorStatus.STATUS_SPLITTING: "Splitted",
+    MirrorStatus.STATUS_CHECKING: "Checked",
+}
 
 class setInterval:
     def __init__(self, interval, action):
@@ -130,20 +139,8 @@ def get_readable_message():
                                      MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP, 
                                      MirrorStatus.STATUS_PAUSED]:
             msg += f"\n{get_progress_bar_string(download.progress())} {download.progress()}"
-            if download.status() == MirrorStatus.STATUS_DOWNLOADING:
-                msg += f"\n<b>Downloaded:</b> "
-            elif download.status() == MirrorStatus.STATUS_UPLOADING:
-                msg += f"\n<b>Uploaded:</b> "
-            elif download.status() == MirrorStatus.STATUS_CLONING:
-                msg += f"\n<b>Cloned:</b> "
-            elif download.status() == MirrorStatus.STATUS_ARCHIVING:
-                msg += f"\n<b>Archived:</b> "
-            elif download.status() == MirrorStatus.STATUS_EXTRACTING:
-                msg += f"\n<b>Extracted:</b> "
-            elif download.status() == MirrorStatus.STATUS_SPLITTING:
-                msg += f"\n<b>Splitted:</b> "
-            elif download.status() == MirrorStatus.STATUS_CHECKING:
-                msg += f"\n<b>Checked:</b> "
+            status_label = status_labels.get(download.status(), "")
+            msg += f"\n<b>{status_label}:</b> "
             msg += f"<code>{download.processed_bytes()}</code> of <code>{download.size()}</code>"
             msg += f"\n<b>Speed</b>: <code>{download.speed()}</code> | "
             msg += f"<b>Elapsed:</b> <code>{get_readable_time(time() - download.extra_details['startTime'])}</code>"
@@ -174,28 +171,24 @@ def get_readable_message():
         msg += f"\n⚠️ <code>/{BotCommands.CancelMirror[0]} {download.gid()}</code>\n\n"
     if len(msg) == 0:
         return None, None
+    def convert_speed_to_bytes_per_second(spd):
+        if 'K' in spd:
+            return float(spd.split('K')[0]) * 1024
+        elif 'M' in spd:
+            return float(spd.split('M')[0]) * 1048576
+        else:
+            return 0
+
     dl_speed = 0
     up_speed = 0
     for download in download_dict.values():
         tstatus = download.status()
+        spd = download.speed() if tstatus != MirrorStatus.STATUS_SEEDING else download.upload_speed()
+        speed_in_bytes_per_second = convert_speed_to_bytes_per_second(spd)
         if tstatus == MirrorStatus.STATUS_DOWNLOADING:
-            spd = download.speed()
-            if 'K' in spd:
-                dl_speed += float(spd.split('K')[0]) * 1024
-            elif 'M' in spd:
-                dl_speed += float(spd.split('M')[0]) * 1048576
-        elif tstatus == MirrorStatus.STATUS_UPLOADING:
-            spd = download.speed()
-            if 'K' in spd:
-                up_speed += float(spd.split('K')[0]) * 1024
-            elif 'M' in spd:
-                up_speed += float(spd.split('M')[0]) * 1048576
-        elif tstatus == MirrorStatus.STATUS_SEEDING:
-            spd = download.upload_speed()
-            if 'K' in spd:
-                up_speed += float(spd.split('K')[0]) * 1024
-            elif 'M' in spd:
-                up_speed += float(spd.split('M')[0]) * 1048576
+            dl_speed += speed_in_bytes_per_second
+        elif tstatus == MirrorStatus.STATUS_UPLOADING or tstatus == MirrorStatus.STATUS_SEEDING:
+            up_speed += speed_in_bytes_per_second
     if tasks > STATUS_LIMIT:
         buttons = ButtonMaker()
         buttons.ibutton("⫷", "status pre")
@@ -219,26 +212,21 @@ def extra_btns(buttons):
 
 async def turn_page(data):
     STATUS_LIMIT = config_dict['STATUS_LIMIT']
-    global STATUS_START, PAGE_NO
+    global STATUS_START, PAGE_NO, PAGES
     async with download_dict_lock:
-        if data[1] == "nex":
-            if PAGE_NO == PAGES:
-                STATUS_START = 0
-                PAGE_NO = 1
-            else:
-                STATUS_START += STATUS_LIMIT
-                PAGE_NO += 1
-        elif data[1] == "pre":
-            if PAGE_NO == 1:
-                STATUS_START = STATUS_LIMIT * (PAGES - 1)
-                PAGE_NO = PAGES
-            else:
-                STATUS_START -= STATUS_LIMIT
-                PAGE_NO -= 1
+        if data[1] == "nex" and PAGE_NO == PAGES:
+            PAGE_NO = 1
+        elif data[1] == "nex" and PAGE_NO < PAGES:
+            PAGE_NO += 1
+        elif data[1] == "pre" and PAGE_NO == 1:
+            PAGE_NO = PAGES
+        elif data[1] == "pre" and PAGE_NO > 1:
+            PAGE_NO -= 1
+        STATUS_START = (PAGE_NO - 1) * STATUS_LIMIT
 
 
 async def check_user_tasks(user_id, maxtask):
-    if tasks := await getAllDownload(MirrorStatus.STATUS_DOWNLOADING, user_id):
+    if tasks := await getAllDownload([MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_QUEUEDL], user_id):
         return len(tasks) >= maxtask
 
 

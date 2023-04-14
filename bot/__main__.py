@@ -18,7 +18,7 @@ from bot import (DATABASE_URL, INCOMPLETE_TASK_NOTIFIER, LOGGER,
 from bot.helper.listeners.aria2_listener import start_aria2_listener
 
 from .helper.ext_utils.bot_utils import (cmd_exec, get_readable_file_size,
-                                         get_readable_time, new_thread, set_commands,
+                                         get_readable_time, set_commands,
                                          sync_to_async)
 from .helper.ext_utils.db_handler import DbManger
 from .helper.ext_utils.fs_utils import clean_all, exit_clean_up, start_cleanup
@@ -116,7 +116,6 @@ async def restart(client, message):
         await f.write(f"{restart_message.chat.id}\n{restart_message.id}\n")
     osexecl(executable, executable, "-m", "bot")
 
-@new_thread
 async def ping(client, message):
     start_time = int(round(time() * 1000))
     reply = await sendMessage(message, "Starting Ping")
