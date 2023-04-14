@@ -6,7 +6,7 @@ data*
 *.json
 *.pickle
 .netrc
-log.txt
+Z_Logs.txt
 accounts/*
 Thumbnails/*
 rclone/*
