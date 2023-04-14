@@ -9,13 +9,12 @@ than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtend
 for original authorship. """
 
 import tenacity
-from base64 import standard_b64encode
 from http.cookiejar import MozillaCookieJar
 from json import loads
 from os import path
 from re import findall, match, search, sub
 from time import sleep
-from urllib.parse import quote, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 from uuid import uuid4
 from bs4 import BeautifulSoup
 from cloudscraper import create_scraper
@@ -270,21 +269,34 @@ def sbembed(link: str) -> str:
 
 
 def onedrive(link: str) -> str:
-    """ Onedrive direct link generator
-    Based on https://github.com/UsergeTeam/Userge """
-    link_without_query = urlparse(link)._replace(query=None).geturl()
-    direct_link_encoded = str(standard_b64encode(
-        bytes(link_without_query, "utf-8")), "utf-8")
-    direct_link1 = f"https://api.onedrive.com/v1.0/shares/u!{direct_link_encoded}/root/content"
     cget = create_scraper().request
     try:
-        resp = cget('head', direct_link1)
+        link = cget('get', link).url
+        parsed_link = urlparse(link)
+        link_data = parse_qs(parsed_link.query)
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-    if resp.status_code != 302:
-        raise DirectDownloadLinkException(
-            "ERROR: Unauthorized link, the link may be private")
-    return resp.next.url
+    if not link_data:
+        raise DirectDownloadLinkException("ERROR: Unable to find link_data")
+    folder_id = link_data.get('resid')
+    if not folder_id:
+        raise DirectDownloadLinkException('ERROR: folder id not found')
+    folder_id = folder_id[0]
+    authkey = link_data.get('authkey')
+    if not authkey:
+        raise DirectDownloadLinkException('ERROR: authkey not found')
+    authkey = authkey[0]
+    boundary = uuid4()
+    headers = {'content-type': f'multipart/form-data;boundary={boundary}'}
+    data = f'--{boundary}\r\nContent-Disposition: form-data;name=data\r\nPrefer: Migration=EnableRedirect;FailOnMigratedFiles\r\nX-HTTP-Method-Override: GET\r\nContent-Type: application/json\r\n\r\n--{boundary}--'
+    try:
+        resp = cget(
+            'get', f'https://api.onedrive.com/v1.0/drives/{folder_id.split("!", 1)[0]}/items/{folder_id}?$select=id,@content.downloadUrl&ump=1&authKey={authkey}', headers=headers, data=data).json()
+    except Exception as e:
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+    if "@content.downloadUrl" not in resp:
+        raise DirectDownloadLinkException('ERROR: Direct link not found')
+    return resp['@content.downloadUrl']
 
 
 def pixeldrain(url: str) -> str:
