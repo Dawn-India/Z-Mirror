@@ -91,6 +91,8 @@ class MirrorLeechListener:
             mode = 'Leech'
         elif self.isClone:
             mode = 'Clone'
+        elif self.upPath != 'gd':
+            mode = 'Rclone'
         else:
             mode = 'Drive'
         if self.isZip:

@@ -3,9 +3,9 @@ from collections import OrderedDict
 from faulthandler import enable as faulthandler_enable
 from logging import (INFO, FileHandler, StreamHandler, basicConfig, error,
                      getLogger, info, warning)
-from os import environ, path, remove
+from os import environ, path as ospath, remove
 from socket import setdefaulttimeout
-from subprocess import Popen, run
+from subprocess import Popen, run as zrun
 from threading import Thread
 from time import sleep, time
 
@@ -468,7 +468,7 @@ if GDRIVE_ID:
     list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
     categories['Root'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
 
-if path.exists('list_drives.txt'):
+if ospath.exists('list_drives.txt'):
     with open('list_drives.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
@@ -484,7 +484,7 @@ if path.exists('list_drives.txt'):
                 tempdict['index_link'] = ''
             list_drives[name] = tempdict
 
-if path.exists('buttons.txt'):
+if ospath.exists('buttons.txt'):
     with open('buttons.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
@@ -494,7 +494,7 @@ if path.exists('buttons.txt'):
             if len(temp) == 2:
                 extra_buttons[temp[0].replace("_", " ")] = temp[1]
 
-if path.exists('shorteners.txt'):
+if ospath.exists('shorteners.txt'):
     with open('shorteners.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
@@ -503,7 +503,7 @@ if path.exists('shorteners.txt'):
                 SHORTENERES.append(temp[0])
                 SHORTENER_APIS.append(temp[1])
 
-if path.exists('categories.txt'):
+if ospath.exists('categories.txt'):
     with open('categories.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
@@ -524,21 +524,21 @@ if BASE_URL:
         f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent", shell=True)
 
 info("Starting qBittorrent-Nox")
-run(["qbittorrent-nox", "-d", "--profile=."])
-if not path.exists('.netrc'):
+zrun(["qbittorrent-nox", "-d", "--profile=."])
+if not ospath.exists('.netrc'):
     with open('.netrc', 'w'):
-       pass
-run(["chmod", "600", ".netrc"])
-run(["cp", ".netrc", "/root/.netrc"])
-run(["chmod", "+x", "aria.sh"])
-run("./aria.sh", shell=True)
-if path.exists('accounts.zip'):
-    if path.exists('accounts'):
-        run(["rm", "-rf", "accounts"])
-    run(["7z", "x", "-o.", "-bd", "-aoa", "accounts.zip", "accounts/*.json"])
-    run(["chmod", "-R", "777", "accounts"])
-    remove('accounts.zip')
-if not path.exists('accounts'):
+        pass
+zrun(["chmod", "600", ".netrc"])
+zrun(["cp", ".netrc", "/root/.netrc"])
+zrun(["chmod", "+x", "aria.sh"])
+zrun("./aria.sh", shell=True)
+if ospath.exists('accounts.zip'):
+    if ospath.exists('accounts'):
+        zrun(["rm", "-rf", "accounts"])
+    zrun(["7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json"])
+    zrun(["chmod", "-R", "777", "accounts"])
+    osremove('accounts.zip')
+if not ospath.exists('accounts'):
     config_dict['USE_SERVICE_ACCOUNTS'] = False
 sleep(0.5)
 

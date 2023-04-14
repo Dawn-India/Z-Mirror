@@ -421,7 +421,7 @@ async def load_config():
     if await aiopath.exists('accounts.zip'):
         if await aiopath.exists('accounts'):
             await aiormtree('accounts')
-        await (await create_subprocess_exec("7z", "x", "-o.", "-bd", "-aoa", "accounts.zip", "accounts/*.json")).wait()
+        await (await create_subprocess_exec("7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json")).wait()
         await (await create_subprocess_exec("chmod", "-R", "777", "accounts")).wait()
         await remove("accounts.zip")
     if not await aiopath.exists('accounts'):
@@ -773,7 +773,7 @@ async def update_private_file(client, message, pre_message):
                 await aiormtree('accounts')
             if await aiopath.exists('rclone_sa'):
                 await aiormtree('rclone_sa')
-            await (await create_subprocess_exec("7z", "x", "-o.", "-aoa", "-bd", "accounts.zip", "accounts/*.json")).wait()
+            await (await create_subprocess_exec("7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json")).wait()
             await (await create_subprocess_exec("chmod", "-R", "777", "accounts")).wait()
         elif file_name == 'list_drives.txt':
             list_drives.clear()

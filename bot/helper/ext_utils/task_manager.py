@@ -120,7 +120,7 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
             if size > limit:
                 limit_exceeded = f'Clone limit is {get_readable_file_size(limit)}.'
     elif isMega:
-        if MEGA_LIMIT:= config_dict['MEGA_LIMIT']:
+        if MEGA_LIMIT := config_dict['MEGA_LIMIT']:
             limit = MEGA_LIMIT * 1024**3
             if size > limit:
                 limit_exceeded = f'Mega limit is {get_readable_file_size(limit)}'
