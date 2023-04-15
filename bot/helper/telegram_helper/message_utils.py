@@ -20,7 +20,7 @@ async def sendMessage(message, text, buttons=None):
                                    disable_notification=True, reply_markup=buttons)
     except FloodWait as f:
         LOGGER.warning(str(f))
-        await sleep(f.value * 1.5)
+        await sleep(f.value * 1.2)
         return await sendMessage(message, text, buttons)
     except RPCError as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")
@@ -33,7 +33,7 @@ async def editMessage(message, text, buttons=None):
         await message.edit(text=text, disable_web_page_preview=True, reply_markup=buttons)
     except FloodWait as f:
         LOGGER.warning(str(f))
-        await sleep(f.value * 1.5)
+        await sleep(f.value * 1.2)
         return await editMessage(message, text, buttons)
     except RPCError as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")
@@ -47,7 +47,7 @@ async def sendFile(message, file, caption=None):
         return await message.reply_document(document=file, quote=True, caption=caption, disable_notification=True)
     except FloodWait as f:
         LOGGER.warning(str(f))
-        await sleep(f.value * 1.5)
+        await sleep(f.value * 1.2)
         return await sendFile(message, file, caption)
     except RPCError as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")
@@ -66,7 +66,7 @@ async def sendRss(text):
                                           disable_notification=True)
     except FloodWait as f:
         LOGGER.warning(str(f))
-        await sleep(f.value * 1.5)
+        await sleep(f.value * 1.2)
         return await sendRss(text)
     except RPCError as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")
@@ -79,8 +79,8 @@ async def deleteMessage(message):
         await message.delete()
     except RPCError as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")
-    except:
-        pass
+    except Exception as e:
+        LOGGER.error(str(e))
 
 
 async def auto_delete_message(cmd_message=None, bot_message=None):
@@ -152,7 +152,7 @@ async def sendDmMessage(message, dmMode, isLeech=False):
         return await message._client.send_message(message.from_user.id, disable_notification=True, text=message.link)
     except FloodWait as r:
         LOGGER.warning(str(r))
-        await sleep(r.value * 1.5)
+        await sleep(r.value * 1.2)
         return sendDmMessage(message, dmMode, isLeech)
     except (UserIsBlocked, PeerIdInvalid) as e:
         buttons = ButtonMaker()
@@ -189,7 +189,7 @@ async def sendLogMessage(message, link, tag):
         return await message._client.send_message(log_chat, msg, disable_web_page_preview=True)
     except FloodWait as r:
         LOGGER.warning(str(r))
-        await sleep(r.value * 1.5)
+        await sleep(r.value * 1.2)
         return await sendLogMessage(message, link, tag)
     except RPCError as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")

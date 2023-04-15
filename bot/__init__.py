@@ -176,21 +176,18 @@ if len(USER_SESSION_STRING) != 0:
     user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
                     parse_mode=enums.ParseMode.HTML, no_updates=True, max_concurrent_transmissions=1000).start()
     if user.me.is_bot:
-        log_warning(
+        warning(
             "You added bot string for USER_SESSION_STRING this is not allowed! Exiting now")
         user.stop()
         exit(1)
     else:
         IS_PREMIUM_USER = user.me.is_premium
 
-MEGA_API_KEY = environ.get('MEGA_API_KEY', '')
-if len(MEGA_API_KEY) == 0:
-    MEGA_API_KEY = ''
-
-MEGA_EMAIL_ID = environ.get('MEGA_EMAIL_ID', '')
+MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
 MEGA_PASSWORD = environ.get('MEGA_PASSWORD', '')
-if len(MEGA_EMAIL_ID) == 0 or len(MEGA_PASSWORD) == 0:
-    MEGA_EMAIL_ID = ''
+if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
+    warning('MEGA Credentials not provided!')
+    MEGA_EMAIL = ''
     MEGA_PASSWORD = ''
 
 UPTOBOX_TOKEN = environ.get('UPTOBOX_TOKEN', '')
@@ -408,8 +405,7 @@ config_dict = {
     "LEECH_FILENAME_PREFIX": LEECH_FILENAME_PREFIX,
     "LEECH_SPLIT_SIZE": LEECH_SPLIT_SIZE,
     "MEDIA_GROUP": MEDIA_GROUP,
-    "MEGA_API_KEY": MEGA_API_KEY,
-    "MEGA_EMAIL_ID": MEGA_EMAIL_ID,
+    "MEGA_EMAIL": MEGA_EMAIL,
     "MEGA_PASSWORD": MEGA_PASSWORD,
     "OWNER_ID": OWNER_ID,
     "QUEUE_ALL": QUEUE_ALL,
@@ -537,7 +533,7 @@ if ospath.exists('accounts.zip'):
         zrun(["rm", "-rf", "accounts"])
     zrun(["7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json"])
     zrun(["chmod", "-R", "777", "accounts"])
-    osremove('accounts.zip')
+    remove('accounts.zip')
 if not ospath.exists('accounts'):
     config_dict['USE_SERVICE_ACCOUNTS'] = False
 sleep(0.5)

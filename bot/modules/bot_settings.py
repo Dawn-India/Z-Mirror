@@ -112,14 +112,11 @@ async def load_config():
                 x = x.lstrip('.')
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
 
-    MEGA_API_KEY = environ.get('MEGA_API_KEY', '')
-    if len(MEGA_API_KEY) == 0:
-        MEGA_API_KEY = ''
 
-    MEGA_EMAIL_ID = environ.get('MEGA_EMAIL_ID', '')
+    MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
     MEGA_PASSWORD = environ.get('MEGA_PASSWORD', '')
-    if len(MEGA_EMAIL_ID) == 0 or len(MEGA_PASSWORD) == 0:
-        MEGA_EMAIL_ID = ''
+    if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
+        MEGA_EMAIL = ''
         MEGA_PASSWORD = ''
 
     UPTOBOX_TOKEN = environ.get('UPTOBOX_TOKEN', '')
@@ -448,8 +445,7 @@ async def load_config():
         "LEECH_FILENAME_PREFIX": LEECH_FILENAME_PREFIX,
         "LEECH_SPLIT_SIZE": LEECH_SPLIT_SIZE,
         "MEDIA_GROUP": MEDIA_GROUP,
-        "MEGA_API_KEY": MEGA_API_KEY,
-        "MEGA_EMAIL_ID": MEGA_EMAIL_ID,
+        "MEGA_EMAIL": MEGA_EMAIL,
         "MEGA_PASSWORD": MEGA_PASSWORD,
         "OWNER_ID": OWNER_ID,
         "QUEUE_ALL": QUEUE_ALL,
@@ -1023,7 +1019,7 @@ async def edit_bot_settings(client, query):
     elif data[1] == 'editvar' and STATE == 'view':
         value = config_dict[data[2]]
         if value and data[2] in ['DATABASE_URL', 'TELEGRAM_API', 'TELEGRAM_HASH', 'UPSTREAM_REPO',
-                                 'USER_SESSION_STRING', 'MEGA_API_KEY', 'MEGA_PASSWORD',
+                                 'USER_SESSION_STRING', 'MEGA_PASSWORD',
                                  'UPTOBOX_TOKEN'] and not await CustomFilters.owner(client, query):
             value = 'Only owner can see this!'
         elif len(str(value)) > 200:

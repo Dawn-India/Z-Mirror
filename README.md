@@ -249,8 +249,7 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 
 ### MEGA
 
-- `MEGA_API_KEY`: Mega.nz API key to mirror mega.nz links. Get it from [Mega SDK Page](https://mega.nz/sdk). `Int`
-- `MEGA_EMAIL_ID`: E-Mail ID used to sign up on mega.nz for using premium account. `Str`
+- `MEGA_EMAIL`: E-Mail ID used to sign up on mega.nz for using premium account. `Str`
 - `MEGA_PASSWORD`: Password for mega.nz account. `Str`
 
 ### Queue System
@@ -439,7 +438,6 @@ qbleech - or /ql Leech torrent using qBittorrent
 qbzipleech - or /qzl Leech torrent using qb and upload as zip
 qbunzipleech - or /quzl Leech torrent using qb and extract
 clone - Copy file/folder to Drive
-count - Count file/folder from Drive
 ytdl - or /y Mirror yt-dlp supported link
 ytdlzip - or /yz Mirror yt-dlp supported link as zip
 ytdlleech - or /yl Leech through yt-dlp supported link

@@ -102,4 +102,3 @@ Choose files then press Done Selecting button to start downloading. \
     finally:
         if await aiopath.exists(link):
             await aioremove(link)
-        await sync_to_async(client.auth_log_out)

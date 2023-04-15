@@ -4,6 +4,7 @@ from aiofiles.os import path as aiopath
 from aiofiles.os import remove as aioremove
 from bot import LOGGER, aria2, config_dict, download_dict, download_dict_lock
 from bot.helper.ext_utils.bot_utils import (bt_selection_buttons,
+                                            get_telegraph_list,
                                             getDownloadByGid, new_thread,
                                             sync_to_async)
 from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name
@@ -52,19 +53,20 @@ async def __onDownloadStarted(api, gid):
                     await sleep(3)
                     download = download.live
                 LOGGER.info('Checking File/Folder if already in Drive...')
-                sname = download.name
+                name = download.name
                 if listener.isZip:
-                    sname = f"{sname}.zip"
+                    name = f"{name}.zip"
                 elif listener.extract:
                     try:
-                        sname = get_base_name(sname)
+                        name = get_base_name(name)
                     except:
-                        sname = None
-                if sname is not None:
-                    smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, sname, True)
-                    if smsg:
-                        smsg = 'File/Folder already available in Drive.\nHere are the search results:'
-                        await listener.onDownloadError(smsg, button)
+                        name = None
+                if name is not None:
+                    telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, True)
+                    if telegraph_content:
+                        msg = f"File/Folder is already available in Drive.\nHere are {contents_no} list results:"
+                        button = await get_telegraph_list(telegraph_content)
+                        await listener.onDownloadError(msg, button)
                         await sync_to_async(api.remove, [download], force=True, files=True)
                         await delete_links(listener.message)
                         return
