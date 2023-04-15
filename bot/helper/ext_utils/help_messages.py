@@ -1,9 +1,15 @@
 YT_HELP_MESSAGE = """
+
 <b>Send link along with command line:</b>
 <code>/{cmd}</code> s link n: newname pswd: xx(zip) opt: x:y|x1:y1
 
 <b>By replying to link:</b>
 <code>/{cmd}</code> n: newname pswd: xx(zip) opt: x:y|x1:y1
+
+<b>Upload Custom Drive</b>
+<code>/{cmd}</code> <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code> link or by replying to file/link
+drive_id must be folder id and index must be url else it will not accept
+This options  should be always before n: or pswd:
 
 <b>Quality Buttons:</b>
 Incase default quality added but you need to select quality for specific link or links with multi links feature.
@@ -44,16 +50,19 @@ Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
 4. You can always add video quality from yt-dlp api options.
 
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a>.
+
+<b>Powered By @Z_Mirror</b>
 """
 
 MIRROR_HELP_MESSAGE = """
+
 <code>/{cmd}</code> link n: newname pswd: xx(zip/unzip)
 
 <b>By replying to link/file:</b>
 <code>/{cmd}</code> n: newname pswd: xx(zip/unzip)
 
 <b>Upload Custom Drive</b>
-<code>/{cmd}</code> <b>id:</b><code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b><code>https://anything.in/0:</code> link or by replying to file/link
+<code>/{cmd}</code> <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code> link or by replying to file/link
 drive_id must be folder id and index must be url else it will not accept
 This options  should be always before n: or pswd:
 
@@ -105,10 +114,13 @@ Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
 3. Options (<b>d, s, m: and multi</b>) should be added randomly before the link and before any other option.
 4. Commands that start with <b>qb</b> are ONLY for torrents.
 5. (n:) option doesn't work with torrents.
+
+<b>Powered By @Z_Mirror</b>
 """
 
 
 RSS_HELP_MESSAGE = """
+
 Use this format to add feed url:
 Title1 link (required)
 Title2 link c: cmd inf: xx exf: xx opt: options like(up, rcf, pswd) (optional)
@@ -130,14 +142,28 @@ Filter Notes:
 3. You can add `or` and `|` as much as you want."
 4. Take look on title if it has static special character after or before the qualities or extensions or whatever and use them in filter to avoid wrong match.
 Timeout: 60 sec.
+
+<b>Powered By @Z_Mirror</b>
 """
 
 CLONE_HELP_MESSAGE = """
-Send Gdrive link along with <code>/{cmd}</code> [LINK]
-Or reply to the link by <code>/{cmd}</code>
 
-<b>Multi links only by replying to first link:</b>
-<code>/{cmd}</code> 69(number of links)
+Send Gdrive|Gdot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along with command or by replying to the link/rc_path by command
+<b>Multi links only by replying to first gdlink or rclone_path:</b>
+<code>/{cmd}</code> 69(number of links/pathies)
+<b>Gdrive:</b>
+<code>/{cmd}</code> gdrivelink
+
+<b>Upload Custom Drive</b>
+<code>/{cmd}</code> <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code> link or by replying to link
+drive_id must be folder id and index must be url else it will not accept
+
+<b>Rclone:</b>
+<code>/{cmd}</code> rcl or rclone_path up: rcl or rclone_path rcf: flagkey:flagvalue|flagkey|flagkey:flagvalue
+Notes:
+if up: not specified then rclone destination will be the RCLONE_PATH from config.env
+
+<b>Powered By @Z_Mirror</b>
 """
 
 CAT_SEL_HELP_MESSAGE = """
@@ -148,4 +174,6 @@ But you can always use /{mir} with to select category before download start.
 <b>Upload Custom Drive</b>
 <code>/{cmd}</code> <b>id:</b><code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b><code>https://anything.in/0:</code> gid or by replying to active download
 drive_id must be folder id and index must be url else it will not accept
+
+<b>Powered By @Z_Mirror</b>
 """

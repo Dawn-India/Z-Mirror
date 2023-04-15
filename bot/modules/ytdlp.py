@@ -1,13 +1,13 @@
 from asyncio import sleep
 from re import split as re_split
-
+from aiofiles.os import path as aiopath
 from aiohttp import ClientSession
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
 from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, categories,
                  config_dict, user_data)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, is_gdrive_link,
                                             is_rclone_path, is_url, new_task,
                                             sync_to_async)
 from bot.helper.ext_utils.help_messages import YT_HELP_MESSAGE
@@ -83,27 +83,14 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
                     if not sameDir:
                         sameDir = set()
                     sameDir.add(message.id)
-            elif x.startswith('id:'):
-                index += 1
-                drive_id = x.split(':', 1)
-                if len(drive_id) > 1:
-                    drive_id = drive_id[1]
-                    if is_gdrive_link(drive_id):
-                        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
-            elif x.startswith('index:'):
-                index += 1
-                index_link = x.split(':', 1)
-                if len(index_link) > 1 and is_url(index_link[1]):
-                    index_link = index_link[1]
             else:
                 break
         if multi == 0:
             args = mssg.split(maxsplit=index)
             if len(args) > index:
                 x = args[index].strip()
-                if not x.startswith(('n:', 'pswd:', 'up:', 'rcf:', 'opt:')):
-                    link = re_split(r' opt: | pswd: | n: | rcf: | up: ', x)[
-                        0].strip()
+                if not x.startswith(('n:', 'pswd:', 'up:', 'rcf:', 'opt:', 'id:', 'index:')):
+                    link = re_split(r' opt: | pswd: | n: | rcf: | up: | id: | index: ', x)[0].strip()
 
     @new_task
     async def __run_multi():
@@ -126,26 +113,42 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     path = f'{DOWNLOAD_DIR}{message.id}{folder_name}'
 
     name = mssg.split(' n: ', 1)
-    name = re_split(' pswd: | opt: | up: | rcf: ', name[1])[
+    name = re_split(' pswd: | opt: | up: | rcf: | index: | id: ', name[1])[
         0].strip() if len(name) > 1 else ''
 
     pswd = mssg.split(' pswd: ', 1)
-    pswd = re_split(' n: | opt: | up: | rcf: ', pswd[1])[
+    pswd = re_split(' n: | opt: | up: | rcf: | index: | id: ', pswd[1])[
         0] if len(pswd) > 1 else None
 
     opt = mssg.split(' opt: ', 1)
-    opt = re_split(' n: | pswd: | up: | rcf: ', opt[1])[
+    opt = re_split(' n: | pswd: | up: | rcf: | index: | id: ', opt[1])[
         0].strip() if len(opt) > 1 else ''
 
     rcf = mssg.split(' rcf: ', 1)
-    rcf = re_split(' n: | pswd: | up: | opt: ', rcf[1])[
+    rcf = re_split(' n: | pswd: | up: | opt: | index: | id: ', rcf[1])[
         0].strip() if len(rcf) > 1 else None
 
     up = mssg.split(' up: ', 1)
     up = re_split(' n: | pswd: | rcf: | opt: ', up[1])[
         0].strip() if len(up) > 1 else None
 
-    if username := message.from_user.username:
+    drive_id = mssg.split(' id: ', 1)
+    drive_id = re_split(' n: | pswd: | rcf: | opt: | index: ', drive_id[1])[
+        0].strip() if len(drive_id) > 1 else None
+    if drive_id and is_gdrive_link(drive_id):
+        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
+
+    index_link = mssg.split(' index: ', 1)
+    index_link = re_split(' n: | pswd: | rcf: | opt: | id: ', index_link[1])[
+        0].strip() if len(index_link) > 1 else None
+    if index_link and not index_link.startswith(('http://', 'https://')):
+        index_link = None
+    if index_link and not index_link.endswith('/'):
+        index_link += '/'
+
+    if sender_chat := message.sender_chat:
+        tag = sender_chat.title
+    elif username := message.from_user.username:
         tag = f"@{username}"
     else:
         tag = message.from_user.mention
@@ -173,13 +176,6 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     user_id = message.from_user.id
     if not await isAdmin(message) and await none_admin_utils(link, message, tag, isLeech):
         return
-    if not isLeech and not drive_id and len(categories) > 1:
-        drive_id, index_link = await open_category_btns(message)
-    if not isLeech and not config_dict['GDRIVE_ID'] and not drive_id:
-        await sendMessage(message, 'GDRIVE_ID not Provided!')
-        return
-    if not isLeech and drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
-        return await sendMessage(message, "Google Drive id validation failed!!")
     if (dmMode := config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
         if isLeech and IS_PREMIUM_USER and not config_dict['DUMP_CHAT']:
             return await sendMessage(message, 'DM_MODE and User Session need DUMP_CHAT')
@@ -190,7 +186,31 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
         dmMessage = None
     logMessage = await sendLogMessage(message, link, tag)
 
-    if (up == 'rcl' or config_dict['RCLONE_PATH'] == 'rcl' and config_dict['DEFAULT_UPLOAD'] == 'rc') and not isLeech:
+    if not isLeech:
+        if config_dict['DEFAULT_UPLOAD'] == 'rc' and up is None or up == 'rc':
+            up = config_dict['RCLONE_PATH']
+        if up is None and config_dict['DEFAULT_UPLOAD'] == 'gd':
+            up = 'gd'
+            if not drive_id and len(categories) > 1:
+                drive_id, index_link = await open_category_btns(message)
+            if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
+                return await sendMessage(message, "Google Drive id validation failed!!")
+        if up == 'gd' and not config_dict['GDRIVE_ID'] and not drive_id:
+            await sendMessage(message, 'GDRIVE_ID not Provided!')
+            return
+        elif not up:
+            await sendMessage(message, 'No Rclone Destination!')
+            return
+        elif up not in ['rcl', 'gd']:
+            if up.startswith('mrcc:'):
+                config_path = f'rclone/{message.from_user.id}.conf'
+            else:
+                config_path = 'rclone.conf'
+            if not await aiopath.exists(config_path):
+                await sendMessage(message, f"Rclone Config: {config_path} not Exists!")
+                return
+
+    if up == 'rcl' and not isLeech:
         up = await RcloneList(client, message).get_rclone_path('rcu')
         if not is_rclone_path(up):
             await sendMessage(message, up)

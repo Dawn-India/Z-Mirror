@@ -3,7 +3,8 @@ from asyncio import Event
 
 from bot import (LOGGER, config_dict, non_queued_dl, non_queued_up,
                  queue_dict_lock, queued_dl, queued_up)
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, get_telegraph_list,
+                                            sync_to_async)
 from bot.helper.ext_utils.fs_utils import check_storage_threshold, get_base_name
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 
@@ -13,6 +14,7 @@ async def stop_duplicate_check(name, listener):
         not config_dict['STOP_DUPLICATE']
         or listener.isLeech
         or listener.upPath != 'gd'
+        or listener.select
     ):
         return False, None
     LOGGER.info(f'Checking File/Folder if already in Drive: {name}')
@@ -21,14 +23,12 @@ async def stop_duplicate_check(name, listener):
         try:
             base_name = get_base_name(base_name)
         except:
-            base_name = None
-    if base_name is not None:
-        if ext == '':
-            ext = '.zip'
-        name_with_ext = base_name + ext
-        smsg, button = await sync_to_async(GoogleDriveHelper().drive_list, name_with_ext, stopDup=True)
-        if smsg:
-            msg = "File/Folder is already available in Drive.\nHere are the search results:"
+            name = None
+    if name is not None:
+        telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, stopDup=True)
+        if telegraph_content:
+            msg = f"File/Folder is already available in Drive.\nHere are {contents_no} list results:"
+            button = await get_telegraph_list(telegraph_content)
             return msg, button
     return False, None
 

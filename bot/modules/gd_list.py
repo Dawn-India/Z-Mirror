@@ -3,8 +3,8 @@ from time import time
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import LOGGER, bot, config_dict
-from bot.helper.ext_utils.bot_utils import (get_readable_time, new_task,
+from bot import LOGGER, bot
+from bot.helper.ext_utils.bot_utils import (get_readable_time, get_telegraph_list, new_task,
                                             sync_to_async)
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -30,10 +30,15 @@ async def _list_drive(key, message, item_type, isRecursive):
     LOGGER.info(f"Searching for: {key}")
     start_time = time()
     gdrive = GoogleDriveHelper()
-    msg, button = await sync_to_async(gdrive.drive_list, key, isRecursive=isRecursive, itemType=item_type)
+    telegraph_content, contents_no = await sync_to_async(gdrive.drive_list, key, isRecursive=isRecursive, itemType=item_type)
     Elapsed = get_readable_time(time() - start_time)
-    if button:
-        msg = f'{msg}\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
+    if telegraph_content:
+        try:
+            button = await get_telegraph_list(telegraph_content)
+        except Exception as e:
+            await editMessage(message, e)
+            return
+        msg = f'<b>Found {contents_no} result for <i>{key}</i></b>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
         await editMessage(message, msg, button)
     else:
         msg = f'No result found for <i>{key}</i>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'

@@ -1,18 +1,20 @@
-from re import match
-from time import time
-from html import escape
-from psutil import virtual_memory, cpu_percent, disk_usage
-from requests import head as rhead
-from urllib.request import urlopen
 from asyncio import (create_subprocess_exec, create_subprocess_shell,
                      run_coroutine_threadsafe, sleep)
 from asyncio.subprocess import PIPE
-from pyrogram.types import BotCommand
-from functools import partial, wraps
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial, wraps
+from html import escape
+from re import match
+from time import time
+from urllib.request import urlopen
 
-from bot import (download_dict, download_dict_lock, botStartTime,
-                 user_data, config_dict, bot_loop, extra_buttons)
+from psutil import cpu_percent, disk_usage, virtual_memory
+from pyrogram.types import BotCommand
+from requests import head as rhead
+
+from bot import (bot_loop, botStartTime, config_dict, download_dict,
+                 download_dict_lock, extra_buttons, user_data)
+from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
@@ -107,6 +109,16 @@ def bt_selection_buttons(id_, isCanCncl=True):
         buttons.ibutton("Cancel", f"btsel rm {gid} {id_}")
     buttons.ibutton("Done Selecting", f"btsel done {gid} {id_}")
     return buttons.build_menu(2)
+
+
+async def get_telegraph_list(telegraph_content):
+    path = [(await telegraph.create_page(title='Z Drive Search', content=content))["path"] for content in telegraph_content]
+    if len(path) > 1:
+        await telegraph.edit_telegraph(path, telegraph_content)
+    buttons = ButtonMaker()
+    buttons.ubutton("🔎 VIEW", f"https://graph.org/{path[0]}", 'header')
+    buttons = extra_btns(buttons)
+    return buttons.build_menu(1)
 
 
 def get_progress_bar_string(pct):

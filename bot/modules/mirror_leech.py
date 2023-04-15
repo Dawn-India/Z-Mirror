@@ -6,18 +6,16 @@ from aiofiles.os import path as aiopath
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
-from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, categories,
-                 config_dict)
+from bot import IS_PREMIUM_USER, LOGGER, bot, categories, config_dict
 from bot.helper.ext_utils.bot_utils import (get_content_type, is_gdrive_link,
                                             is_magnet, is_mega_link,
-                                            is_rclone_path, is_share_link,
-                                            is_url, new_task, sync_to_async)
+                                            is_rclone_path, is_url, new_task,
+                                            sync_to_async)
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE
 from bot.helper.z_utils import none_admin_utils
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
-from bot.helper.mirror_utils.download_utils.clonner import start_clone
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.download_utils.gd_download import add_gd_download
 from bot.helper.mirror_utils.download_utils.mega_download import add_mega_download
@@ -38,7 +36,7 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
 
 
 @new_task
-async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=False, isLeech=False, sameDir={}, isClone=False):
+async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=False, isLeech=False, sameDir={}):
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     ratio = None
@@ -82,26 +80,14 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                     if not sameDir:
                         sameDir = set()
                     sameDir.add(message.id)
-            elif x.startswith('id:'):
-                index += 1
-                drive_id = x.split(':', 1)
-                if len(drive_id) > 1:
-                    drive_id = drive_id[1]
-                    if is_gdrive_link(drive_id):
-                        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
-            elif x.startswith('index:'):
-                index += 1
-                index_link = x.split(':', 1)
-                if len(index_link) > 1 and is_url(index_link[1]):
-                    index_link = index_link[1]
             else:
                 break
         if multi == 0:
             message_args = mesg[0].split(maxsplit=index)
             if len(message_args) > index:
                 x = message_args[index].strip()
-                if not x.startswith(('n:', 'pswd:', 'up:', 'rcf:')):
-                    link = re_split(r' pswd: | n: | up: | rcf: ', x)[0].strip()
+                if not x.startswith(('n:', 'pswd:', 'up:', 'rcf:', 'id:', 'index:')):
+                    link = re_split(r' pswd: | n: | up: | rcf: | id: | index: ', x)[0].strip()
 
         if len(folder_name) > 0:
             seed = False
@@ -125,24 +111,39 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             nextmsg.sender_chat = message.sender_chat
         await sleep(4)
         _mirror_leech(client, nextmsg, isZip, extract,
-                      isQbit, isLeech, sameDir, isClone)
+                      isQbit, isLeech, sameDir)
 
-    path = f'{DOWNLOAD_DIR}{message.id}{folder_name}'
+    path = f'{config_dict["DOWNLOAD_DIR"]}{message.id}{folder_name}'
 
     name = mesg[0].split(' n: ', 1)
-    name = re_split(' pswd: | rcf: | up: ', name[1])[
+    name = re_split(' pswd: | rcf: | up: | id: | index: ', name[1])[
         0].strip() if len(name) > 1 else ''
 
     pswd = mesg[0].split(' pswd: ', 1)
-    pswd = re_split(' n: | rcf: | up: ', pswd[1])[0] if len(pswd) > 1 else None
+    pswd = re_split(' n: | rcf: | up: | id: | index: ', pswd[1])[
+        0] if len(pswd) > 1 else None
 
     rcf = mesg[0].split(' rcf: ', 1)
-    rcf = re_split(' n: | pswd: | up: ', rcf[1])[
+    rcf = re_split(' n: | pswd: | up: | id: | index: ', rcf[1])[
         0].strip() if len(rcf) > 1 else None
 
     up = mesg[0].split(' up: ', 1)
-    up = re_split(' n: | pswd: | rcf: ', up[1])[
+    up = re_split(' n: | pswd: | rcf: | id: | index: ', up[1])[
         0].strip() if len(up) > 1 else None
+
+    drive_id = mesg[0].split(' id: ', 1)
+    drive_id = re_split(' rcf: | index: | up: | n: | pswd: ', drive_id[1])[
+        0].strip() if len(drive_id) > 1 else None
+    if drive_id and is_gdrive_link(drive_id):
+        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
+
+    index_link = mesg[0].split(' index: ', 1)
+    index_link = re_split(' rcf: | id: | up: | n: | pswd: ', index_link[1])[
+        0].strip() if len(index_link) > 1 else None
+    if index_link and not index_link.startswith(('http://', 'https://')):
+        index_link = None
+    if index_link and not index_link.endswith('/'):
+        index_link += '/'
 
     if len(mesg) > 1 and mesg[1].startswith('Tag: '):
         tag, id_ = mesg[1].split('Tag: ')[1].split()
@@ -178,16 +179,6 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                 link = await reply_to.download()
                 file_ = None
 
-    if isClone and is_mega_link(link):
-        await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
-        await delete_links(message)
-        return
-
-    if isClone and not is_gdrive_link(link) and not is_share_link(link):
-        await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
-        await delete_links(message)
-        return
-
     if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) and not is_rclone_path(link) and file_ is None:
         await sendMessage(message, MIRROR_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
         await delete_links(message)
@@ -198,13 +189,6 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
         return
     if not await isAdmin(message) and await none_admin_utils(link, message, tag, isLeech, file_):
         return
-    if not isLeech and not drive_id and len(categories) > 1:
-        drive_id, index_link = await open_category_btns(message)
-    if not isLeech and not config_dict['GDRIVE_ID'] and not drive_id:
-        await sendMessage(message, 'GDRIVE_ID not Provided!')
-        return
-    if not isLeech and drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
-        return await sendMessage(message, "Google Drive id validation failed!!")
     if (dmMode := config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
         if isLeech and IS_PREMIUM_USER and not config_dict['DUMP_CHAT']:
             return await sendMessage(message, 'DM_MODE and User Session need DUMP_CHAT')
@@ -229,6 +213,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                 await editMessage(process_msg, f"Generated link: <code>{link}</code>")
             except DirectDownloadLinkException as e:
                 LOGGER.info(str(e))
+                await delete_links(message)
                 if str(e).startswith('ERROR:'):
                     await editMessage(process_msg, str(e))
                     __run_multi()
@@ -236,12 +221,36 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             await process_msg.delete()
     __run_multi()
 
+    if not isLeech:
+        if config_dict['DEFAULT_UPLOAD'] == 'rc' and up is None or up == 'rc':
+            up = config_dict['RCLONE_PATH']
+        if up is None and config_dict['DEFAULT_UPLOAD'] == 'gd':
+            up = 'gd'
+            if not drive_id and len(categories) > 1:
+                drive_id, index_link = await open_category_btns(message)
+            if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
+                return await sendMessage(message, "Google Drive id validation failed!!")
+        if up == 'gd' and not config_dict['GDRIVE_ID'] and not drive_id:
+            await sendMessage(message, 'GDRIVE_ID not Provided!')
+            return
+        elif not up:
+            await sendMessage(message, 'No Rclone Destination!')
+            return
+        elif up not in ['rcl', 'gd']:
+            if up.startswith('mrcc:'):
+                config_path = f'rclone/{message.from_user.id}.conf'
+            else:
+                config_path = 'rclone.conf'
+            if not await aiopath.exists(config_path):
+                await sendMessage(message, f"Rclone Config: {config_path} not Exists!")
+                return
+
     if link == 'rcl':
         link = await RcloneList(client, message).get_rclone_path('rcd')
         if not is_rclone_path(link):
             await sendMessage(message, link)
             return
-    if (up == 'rcl' or config_dict['RCLONE_PATH'] == 'rcl' and config_dict['DEFAULT_UPLOAD'] == 'rc') and not isLeech:
+    if up == 'rcl' and not isLeech:
         up = await RcloneList(client, message).get_rclone_path('rcu')
         if not is_rclone_path(up):
             await sendMessage(message, up)
@@ -249,7 +258,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
 
     listener = MirrorLeechListener(message, isZip, extract, isQbit,
                                    isLeech, pswd, tag, select,
-                                   seed, sameDir, rcf, up, isClone, raw_url,
+                                   seed, sameDir, rcf, up, False, raw_url,
                                    drive_id, index_link, dmMessage, logMessage)
 
     if file_ is not None:
@@ -265,14 +274,12 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             return
         await add_rclone_download(link, config_path, f'{path}/', name, listener)
     elif is_gdrive_link(link):
-        if not any([isZip, extract, isLeech, isClone]):
+        if not any([isZip, extract, isLeech]):
             gmsg = f"Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\n\n"
             gmsg += f"Use /{BotCommands.ZipMirrorCommand[0]} to make zip of Google Drive folder\n\n"
             gmsg += f"Use /{BotCommands.UnzipMirrorCommand[0]} to extracts Google Drive archive folder/file"
             await delete_links(message)
             await sendMessage(message, gmsg)
-        elif isClone:
-            await start_clone(link, listener)
         else:
             await add_gd_download(link, path, listener, name)
     elif is_mega_link(link):
@@ -335,9 +342,6 @@ async def qb_unzip_leech(client, message):
 async def qb_zip_leech(client, message):
     _mirror_leech(client, message, True, isQbit=True, isLeech=True)
 
-async def cloneNode(client, message):
-    _mirror_leech(client, message, isClone=True)
-
 
 bot.add_handler(MessageHandler(mirror, filters=command(
     BotCommands.MirrorCommand) & CustomFilters.authorized))
@@ -363,5 +367,3 @@ bot.add_handler(MessageHandler(qb_unzip_leech, filters=command(
     BotCommands.QbUnzipLeechCommand) & CustomFilters.authorized))
 bot.add_handler(MessageHandler(qb_zip_leech, filters=command(
     BotCommands.QbZipLeechCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(cloneNode, filters=command(
-    BotCommands.CloneCommand) & CustomFilters.authorized))
