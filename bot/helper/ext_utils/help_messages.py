@@ -7,9 +7,9 @@ YT_HELP_MESSAGE = """
 <code>/{cmd}</code> n: newname pswd: xx(zip) opt: x:y|x1:y1
 
 <b>Upload Custom Drive</b>
-<code>/{cmd}</code> <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code> link or by replying to file/link
+<code>/{cmd}</code> link or by replying to file/link <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code>
 drive_id must be folder id and index must be url else it will not accept
-This options  should be always before n: or pswd:
+This options should be always after n: or pswd:
 
 <b>Quality Buttons:</b>
 Incase default quality added but you need to select quality for specific link or links with multi links feature.
@@ -62,9 +62,9 @@ MIRROR_HELP_MESSAGE = """
 <code>/{cmd}</code> n: newname pswd: xx(zip/unzip)
 
 <b>Upload Custom Drive</b>
-<code>/{cmd}</code> <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code> link or by replying to file/link
+<code>/{cmd}</code> link or by replying to file/link <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code>
 drive_id must be folder id and index must be url else it will not accept
-This options  should be always before n: or pswd:
+This options should be always after n: or pswd:
 
 <b>Direct link authorization:</b>
 <code>/{cmd}</code> link n: newname pswd: xx(zip/unzip)

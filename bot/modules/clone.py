@@ -22,7 +22,7 @@ from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
-from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
+from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
 from bot.helper.mirror_utils.status_utils.rclone_status import RcloneStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -183,8 +183,8 @@ async def gdcloneNode(message, link, tag, drive_id, index_link, dmMessage, logMe
         else:
             gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
             async with download_dict_lock:
-                download_dict[message.id] = CloneStatus(
-                    drive, size, message, gid, listener.extra_details)
+                download_dict[message.id] = GdriveStatus(
+                    drive, size, message, gid, 'cl', listener.extra_details)
             await sendStatusMessage(message)
             link, size, mime_type, files, folders, dir_id = await sync_to_async(drive.clone, link, listener.drive_id or config_dict['GDRIVE_ID'])
         if not link:
