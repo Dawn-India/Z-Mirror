@@ -27,10 +27,10 @@ from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.message_utils import (editMessage, sendFile,
                                                    sendMessage)
 from .modules import (anonymous, authorize, bot_settings, cancel_mirror,
-                      category_select, clone, eval, gd_delete, gd_list,
-                      leech_del, mirror_leech, rmdb, rss, shell,
-                      status, torrent_search, torrent_select, users_settings,
-                      ytdlp)
+                      category_select, clone, eval, gd_count, gd_delete,
+                      gd_list, leech_del, mirror_leech, rmdb, rss,
+                      shell, status, torrent_search,
+                      torrent_select, users_settings, ytdlp)
 
 start_aria2_listener()
 

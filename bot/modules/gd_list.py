@@ -3,7 +3,7 @@ from time import time
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import LOGGER, bot
+from bot import LOGGER, bot, config_dict
 from bot.helper.ext_utils.bot_utils import (get_readable_time, get_telegraph_list, new_task,
                                             sync_to_async)
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper

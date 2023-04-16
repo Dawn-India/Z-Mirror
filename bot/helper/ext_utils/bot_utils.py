@@ -238,7 +238,7 @@ async def turn_page(data):
 
 
 async def check_user_tasks(user_id, maxtask):
-    if tasks := await getAllDownload([MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_QUEUEDL], user_id):
+    if tasks := await getAllDownload(MirrorStatus.STATUS_DOWNLOADING, user_id):
         return len(tasks) >= maxtask
 
 
