@@ -107,6 +107,13 @@ class TgUploader:
             self.__sent_msg = self.__listener.dmMessage
         else:
             self.__sent_msg = self.__listener.message
+        if self.__sent_msg is None:
+            await self.__listener.onUploadError('Cannot find the message to reply')
+            return
+        if ((self.__listener.isSuperGroup or config_dict['DUMP_CHAT']) and not IS_PREMIUM_USER and not self.__sent_msg.chat.has_protected_content):
+            btn = ButtonMaker()
+            btn.ibutton('Save This File', 'save', 'footer')
+            self.__button = btn.build_menu(1)
 
     async def __prepare_file(self, file_, dirpath):
         if self.__lprefix:
