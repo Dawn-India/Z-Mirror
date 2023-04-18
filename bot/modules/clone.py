@@ -17,7 +17,7 @@ from bot.helper.ext_utils.bot_utils import (cmd_exec, get_telegraph_list,
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import CLONE_HELP_MESSAGE
 from bot.helper.ext_utils.task_manager import limit_checker
-from bot.helper.z_utils import none_admin_utils
+from bot.helper.z_utils import none_admin_utils, stop_duplicate_tasks
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
@@ -29,7 +29,8 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       delete_links,
-                                                      deleteMessage, editMessage, isAdmin,
+                                                      deleteMessage,
+                                                      editMessage, isAdmin,
                                                       open_category_btns,
                                                       sendDmMessage,
                                                       sendLogMessage,
@@ -37,7 +38,7 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       sendStatusMessage)
 
 
-async def rcloneNode(client, message, link, dst_path, rcf, tag, dmMessage, logMessage):
+async def rcloneNode(client, message, rcf, listener):
     if link == 'rcl':
         link = await RcloneList(client, message).get_rclone_path('rcd')
         if not is_rclone_path(link):
@@ -95,8 +96,6 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag, dmMessage, logMe
         name = src_path.rsplit('/', 1)[-1]
         mime_type = rstat['MimeType']
 
-    listener = MirrorLeechListener(
-        message, tag=tag, isClone=True, dmMessage=dmMessage, logMessage=logMessage)
     await listener.onDownloadStart()
 
     RCTransfer = RcloneTransferHelper(listener, name)
@@ -135,7 +134,7 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag, dmMessage, logMe
     await listener.onUploadComplete(link, size, files, folders, mime_type, name, destination)
 
 
-async def gdcloneNode(message, link, tag, drive_id, index_link, dmMessage, logMessage):
+async def gdcloneNode(message, link, listener):
     if is_share_link(link):
         process_msg = await sendMessage(message, f"Processing: <code>{link}</code>")
         try:
@@ -149,7 +148,7 @@ async def gdcloneNode(message, link, tag, drive_id, index_link, dmMessage, logMe
                 await delete_links(message)
                 return
         await deleteMessage(process_msg)
-            
+
     if is_gdrive_link(link):
         gd = GoogleDriveHelper()
         name, mime_type, size, files, _ = await sync_to_async(gd.count, link)
@@ -167,8 +166,7 @@ async def gdcloneNode(message, link, tag, drive_id, index_link, dmMessage, logMe
                 await sendMessage(message, msg, button)
                 await delete_links(message)
                 return
-        listener = MirrorLeechListener(message, tag=tag, isClone=True, drive_id=drive_id,
-                                       index_link=index_link, dmMessage=dmMessage, logMessage=logMessage)
+
         if limit_exceeded := await limit_checker(size, listener):
             await sendMessage(listener.message, limit_exceeded)
             await delete_links(listener.message)
@@ -202,6 +200,7 @@ async def clone(client, message):
     args = text.split(maxsplit=1)
     link = ''
     multi = 0
+    raw_url = None
     if len(args) > 1:
         link = args[1].strip()
         if not link.startswith(('up:', 'rcf:', 'id:', 'index:')):
@@ -274,8 +273,12 @@ async def clone(client, message):
         message.from_user = await anno_checker(message)
     if not message.from_user:
         return
-    if not await isAdmin(message) and await none_admin_utils(link, message, tag, False):
-        return
+    if not await isAdmin(message):
+        raw_url = await stop_duplicate_tasks(message, link)
+        if raw_url == 'duplicate_tasks':
+            return
+        if await none_admin_utils(message, tag, False):
+            return
     if (dmMode := config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
         dmMessage = await sendDmMessage(message, dmMode, False)
         if dmMessage == 'BotNotStarted':
@@ -284,7 +287,6 @@ async def clone(client, message):
         dmMessage = None
 
     logMessage = await sendLogMessage(message, link, tag)
-
     if is_rclone_path(link):
         if not await aiopath.exists('rclone.conf') and not await aiopath.exists(f'rclone/{message.from_user.id}.conf'):
             await sendMessage(message, 'Rclone Config Not exists!')
@@ -294,7 +296,9 @@ async def clone(client, message):
             await sendMessage(message, 'Destinantion not specified!')
             await delete_links(message)
             return
-        await rcloneNode(client, message, link, dst_path, rcf, tag, dmMessage, logMessage)
+        listener = MirrorLeechListener(message, tag=tag, isClone=True, drive_id=drive_id,
+                                    index_link=index_link, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
+        await rcloneNode(client, message, link, listener)
     else:
         if not drive_id and len(categories) > 1:
             drive_id, index_link = await open_category_btns(message)
@@ -306,7 +310,9 @@ async def clone(client, message):
             await sendMessage(message, 'GDRIVE_ID not Provided!')
             await delete_links(message)
             return
-        await gdcloneNode(message, link, tag, drive_id, index_link, dmMessage, logMessage)
+        listener = MirrorLeechListener(message, tag=tag, isClone=True, drive_id=drive_id,
+                                    index_link=index_link, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
+        await gdcloneNode(message, link, listener)
 
 
 bot.add_handler(MessageHandler(clone, filters=command(

@@ -34,19 +34,25 @@ async def extract_link(link, shouldDel=False):
     return raw_link
 
 
-async def none_admin_utils(link, message, tag, isLeech, file_=None):
-    if filtered := await message_filter(message, tag):
-        return filtered
-    if limited := await request_limiter(message):
-        await delete_links(message)
-        return limited
+async def stop_duplicate_tasks(message, link, file_=None):
     if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS']:
         raw_url = file_.file_unique_id if file_ else await extract_link(link)
         exist = await DbManger().check_download(raw_url)
         if exist:
             _msg = f'<b>Download is already added by {exist["tag"]}</b>\n\nCheck the download status in @{exist["botname"]}\n\n<b>Link</b>: <code>{exist["_id"]}</code>'
             await delete_links(message)
-            return await sendMessage(message, _msg)
+            await sendMessage(message, _msg)
+            return 'duplicate_tasks'
+        return raw_url
+
+
+async def none_admin_utils(message, tag, isLeech):
+    if filtered := await message_filter(message, tag):
+        return filtered
+    if limited := await request_limiter(message):
+        await delete_links(message)
+        return limited
+
     if notSub := await forcesub(message, tag):
         await delete_links(message)
         return notSub
