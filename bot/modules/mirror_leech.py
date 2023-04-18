@@ -13,7 +13,7 @@ from bot.helper.ext_utils.bot_utils import (get_content_type, is_gdrive_link,
                                             sync_to_async)
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE
-from bot.helper.z_utils import none_admin_utils
+from bot.helper.z_utils import none_admin_utils, stop_duplicate_tasks
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
@@ -187,8 +187,12 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
         message.from_user = await anno_checker(message)
     if not message.from_user:
         return
-    if not await isAdmin(message) and await none_admin_utils(link, message, tag, isLeech, file_):
-        return
+    if not await isAdmin(message):
+        raw_url = await stop_duplicate_tasks(message, link, file_)
+        if raw_url == 'duplicate_tasks':
+            return
+        if await none_admin_utils(message, tag, isLeech):
+            return
     if (dmMode := config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
         if isLeech and IS_PREMIUM_USER and not config_dict['DUMP_CHAT']:
             return await sendMessage(message, 'DM_MODE and User Session need DUMP_CHAT')

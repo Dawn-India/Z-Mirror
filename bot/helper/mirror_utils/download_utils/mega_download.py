@@ -17,7 +17,6 @@ from bot.helper.telegram_helper.message_utils import (delete_links,
                                                       sendMessage,
                                                       sendStatusMessage)
 
-DumpSession = None
 
 
 class MegaAppListener(MegaListener):

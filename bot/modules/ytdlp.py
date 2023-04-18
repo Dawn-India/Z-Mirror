@@ -13,7 +13,7 @@ from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
                                             is_gdrive_link, is_rclone_path,
                                             is_url, new_task, sync_to_async)
 from bot.helper.ext_utils.help_messages import YT_HELP_MESSAGE
-from bot.helper.z_utils import none_admin_utils
+from bot.helper.z_utils import none_admin_utils, stop_duplicate_tasks
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.mirror_utils.download_utils.yt_dlp_download import YoutubeDLHelper
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
@@ -186,8 +186,12 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     if not message.from_user:
         return
     user_id = message.from_user.id
-    if not await isAdmin(message) and await none_admin_utils(link, message, tag, isLeech):
-        return
+    if not await isAdmin(message):
+        raw_url = await stop_duplicate_tasks(message, link)
+        if raw_url == 'duplicate_tasks':
+            return
+        if await none_admin_utils(message, tag, isLeech):
+            return
     if (dmMode := config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
         if isLeech and IS_PREMIUM_USER and not config_dict['DUMP_CHAT']:
             return await sendMessage(message, 'DM_MODE and User Session need DUMP_CHAT')
