@@ -1,6 +1,8 @@
 from asyncio import Lock, sleep
 from datetime import datetime, timedelta
 from functools import partial
+from html import escape
+from io import BytesIO
 from re import split as re_split
 from time import time
 
@@ -10,7 +12,8 @@ from feedparser import parse as feedparse
 from pyrogram.filters import command, create, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import DATABASE_URL, LOGGER, bot, config_dict, rss_dict, scheduler
+from bot import (DATABASE_URL, LOGGER, bot, bot_name, config_dict, rss_dict,
+                 scheduler)
 from bot.helper.ext_utils.bot_utils import new_thread
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.exceptions import RssShutdownException
@@ -18,8 +21,8 @@ from bot.helper.ext_utils.help_messages import RSS_HELP_MESSAGE
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (editMessage, sendMessage,
-                                                      sendRss)
+from bot.helper.telegram_helper.message_utils import (editMessage, sendFile,
+                                                      sendMessage, sendRss)
 
 rss_dict_lock = Lock()
 handler_dict = {}
@@ -272,9 +275,15 @@ async def rssGet(client, message, pre_event):
                         link = rss_d.entries[item_num]['links'][1]['href']
                     except IndexError:
                         link = rss_d.entries[item_num]['link']
-                    item_info += f"<b>Name: </b><code>{rss_d.entries[item_num]['title'].replace('>', '').replace('<', '')}</code>\n"
+                    item_info += f"<b>Name: </b><code>{escape(rss_d.entries[item_num]['title'])}</code>\n"
                     item_info += f"<b>Link: </b><code>{link}</code>\n\n"
-                await editMessage(msg, item_info)
+                if len(item_info.encode()) > 4000:
+                    with BytesIO(str.encode(item_info)) as ofile:
+                        ofile.name = 'rss.txt'
+                        await sendFile(msg, ofile)
+                    await editMessage(msg, f'<b>{count}</b> item(s) from {title} send in text file')
+                else:
+                    await editMessage(msg, item_info)
             except IndexError as e:
                 LOGGER.error(str(e))
                 await editMessage(msg, "Parse depth exceeded. Try again with a lower value.")
@@ -283,7 +292,7 @@ async def rssGet(client, message, pre_event):
                 await editMessage(msg, str(e))
     except Exception as e:
         LOGGER.error(str(e))
-        await sendMessage(message, f"Enter a vaild value!. {e}")
+        await sendMessage(message, f"Enter a valid value!. {e}")
     await updateRssMenu(pre_event)
 
 
@@ -298,7 +307,7 @@ async def rssEdit(client, message, pre_event):
             await sendMessage(message, f'{item}. Wrong Input format. Read help message before editing!')
             continue
         elif not rss_dict[user_id].get(title, False):
-            await sendMessage(message, "Enter a vaild title. Title not found!")
+            await sendMessage(message, "Enter a valid title. Title not found!")
             continue
         inf_lists = []
         exf_lists = []
@@ -527,7 +536,7 @@ Timeout: 60 sec.
             buttons.ibutton("Back", f"rss back {user_id}")
             buttons.ibutton("Close", f"rss close {user_id}")
             button = buttons.build_menu(2)
-            msg = 'Send one or more user_id seperated by space to delete their resources.\nTimeout: 60 sec.'
+            msg = 'Send one or more user_id separated by space to delete their resources.\nTimeout: 60 sec.'
             await editMessage(message, msg, button)
             pfunc = partial(rssDelete, pre_event=query)
             await event_handler(client, query, pfunc)
@@ -617,7 +626,7 @@ async def rssMonitor():
                         continue
                     if command := data['command']:
                         options = opt if (opt := data['options']) else ''
-                        feed_msg = f"/{command.replace('/', '')} {url} {options}"
+                        feed_msg = f"/{command.replace('/', '')}@{bot_name} {url} {options}"
                     else:
                         feed_msg = f"<b>File Name: </b><code>{item_title.replace('>', '').replace('<', '')}</code>\n\n"
                         feed_msg += f"<b>Link: </b><code>{url}</code>"

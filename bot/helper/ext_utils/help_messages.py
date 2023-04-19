@@ -148,14 +148,15 @@ Timeout: 60 sec.
 
 CLONE_HELP_MESSAGE = """
 
-Send Gdrive|Gdot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along with command or by replying to the link/rc_path by command
+Send Gdrive|Gdtot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along with command or by replying to the link/rc_path by command
+
 <b>Multi links only by replying to first gdlink or rclone_path:</b>
 <code>/{cmd}</code> 69(number of links/pathies)
 <b>Gdrive:</b>
 <code>/{cmd}</code> gdrivelink
 
 <b>Upload Custom Drive</b>
-<code>/{cmd}</code> <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code> link or by replying to link
+<code>/{cmd}</code> link or by replying to link <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code>
 drive_id must be folder id and index must be url else it will not accept
 
 <b>Rclone:</b>
@@ -167,6 +168,7 @@ if up: not specified then rclone destination will be the RCLONE_PATH from config
 """
 
 CAT_SEL_HELP_MESSAGE = """
+
 Reply to an active /{cmd} which was used to start the download or add gid along with /{cmd}
 This command mainly for change category incase you decided to change category from already added download.
 But you can always use /{mir} with to select category before download start.

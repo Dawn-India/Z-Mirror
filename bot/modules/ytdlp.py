@@ -184,19 +184,23 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     if not message.from_user:
         message.from_user = await anno_checker(message)
     if not message.from_user:
+        await delete_links(message)
         return
     user_id = message.from_user.id
     if not await isAdmin(message):
         raw_url = await stop_duplicate_tasks(message, link)
         if raw_url == 'duplicate_tasks':
+            await delete_links(message)
             return
         if await none_admin_utils(message, tag, isLeech):
             return
     if (dmMode := config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
         if isLeech and IS_PREMIUM_USER and not config_dict['DUMP_CHAT']:
+            await delete_links(message)
             return await sendMessage(message, 'DM_MODE and User Session need DUMP_CHAT')
         dmMessage = await sendDmMessage(message, dmMode, isLeech)
         if dmMessage == 'BotNotStarted':
+            await delete_links(message)
             return
     else:
         dmMessage = None

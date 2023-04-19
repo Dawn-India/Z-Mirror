@@ -52,7 +52,6 @@ async def none_admin_utils(message, tag, isLeech):
     if limited := await request_limiter(message):
         await delete_links(message)
         return limited
-
     if notSub := await forcesub(message, tag):
         await delete_links(message)
         return notSub

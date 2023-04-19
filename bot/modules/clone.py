@@ -135,7 +135,7 @@ async def rcloneNode(client, message, rcf, listener):
 
 
 async def gdcloneNode(message, link, listener):
-    if is_share_link(link):
+    if not is_gdrive_link(link) and is_share_link(link):
         process_msg = await sendMessage(message, f"Processing: <code>{link}</code>")
         try:
             link = await sync_to_async(direct_link_generator, link)
@@ -196,24 +196,39 @@ async def gdcloneNode(message, link, listener):
 
 @new_task
 async def clone(client, message):
-    text = message.text
-    args = text.split(maxsplit=1)
+    mesg = message.text.split('\n')
+    message_args = mesg[0].split(maxsplit=1)
     link = ''
+    select = False
     multi = 0
     raw_url = None
-    if len(args) > 1:
-        link = args[1].strip()
-        if not link.startswith(('up:', 'rcf:', 'id:', 'index:')):
-            link = re_split(r' up: | rcf: | id: | index: ', link)[0].strip()
-        if link.isdigit():
-            multi = int(link)
-            link = ''
-        elif sender_chat := message.sender_chat:
-            tag = sender_chat.title
-        elif username := message.from_user.username:
-            tag = f"@{username}"
-        else:
-            tag = message.from_user.mention
+    if len(message_args) > 1:
+        index = 1
+        args = mesg[0].split(maxsplit=2)
+        args.pop(0)
+        for x in args:
+            x = x.strip()
+            if x == 's':
+                select = True
+                index += 1
+            elif x.isdigit():
+                multi = int(x)
+                mi = index
+            else:
+                break
+        if multi == 0:
+            message_args = mesg[0].split(maxsplit=index)
+            if len(message_args) > index:
+                x = message_args[index].strip()
+                if not x.startswith(('up:', 'rcf:', 'id:', 'index:')):
+                    link = re_split(r' up: | rcf: | id: | index: ', x)[0].strip()
+
+    if sender_chat := message.sender_chat:
+        tag = sender_chat.title
+    elif username := message.from_user.username:
+        tag = f"@{username}"
+    else:
+        tag = message.from_user.mention
     if reply_to := message.reply_to_message:
         if len(link) == 0:
             link = reply_to.text.split('\n', 1)[0].strip()
@@ -225,21 +240,21 @@ async def clone(client, message):
             else:
                 tag = reply_to.from_user.mention
 
-    rcf = text.split(' rcf: ', 1)
+    rcf = mesg[0].split(' rcf: ', 1)
     rcf = re_split(' up: | id: | index: ', rcf[1])[
         0].strip() if len(rcf) > 1 else None
 
-    dst_path = text.split(' up: ', 1)
+    dst_path = mesg[0].split(' up: ', 1)
     dst_path = re_split(' rcf: | id: | index: ', dst_path[1])[
         0].strip() if len(dst_path) > 1 else None
 
-    drive_id = text.split(' id: ', 1)
+    drive_id = mesg[0].split(' id: ', 1)
     drive_id = re_split(' rcf: | up: | index: ', drive_id[1])[
         0].strip() if len(drive_id) > 1 else None
     if drive_id and is_gdrive_link(drive_id):
         drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
 
-    index_link = text.split(' index: ', 1)
+    index_link = mesg[0].split(' index: ', 1)
     index_link = re_split(' rcf: | up: | id: ', index_link[1])[
         0].strip() if len(index_link) > 1 else None
     if index_link and not index_link.startswith(('http://', 'https://')):
@@ -253,8 +268,9 @@ async def clone(client, message):
             return
         await sleep(4)
         nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=message.reply_to_message_id + 1)
-        args[1] = f"{multi - 1}"
-        nextmsg = await sendMessage(nextmsg, " ".join(args))
+        msg = message.text.split(maxsplit=mi+1)
+        msg[mi] = f"{multi - 1}"
+        nextmsg = await sendMessage(nextmsg, " ".join(msg))
         nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
         if message.sender_chat:
             nextmsg.sender_chat = message.sender_chat
@@ -272,16 +288,19 @@ async def clone(client, message):
     if not message.from_user:
         message.from_user = await anno_checker(message)
     if not message.from_user:
+        await delete_links(message)
         return
     if not await isAdmin(message):
         raw_url = await stop_duplicate_tasks(message, link)
         if raw_url == 'duplicate_tasks':
+            await delete_links(message)
             return
         if await none_admin_utils(message, tag, False):
             return
     if (dmMode := config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
         dmMessage = await sendDmMessage(message, dmMode, False)
         if dmMessage == 'BotNotStarted':
+            await delete_links(message)
             return
     else:
         dmMessage = None
@@ -296,8 +315,8 @@ async def clone(client, message):
             await sendMessage(message, 'Destinantion not specified!')
             await delete_links(message)
             return
-        listener = MirrorLeechListener(message, tag=tag, isClone=True, drive_id=drive_id,
-                                    index_link=index_link, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
+        listener = MirrorLeechListener(message, tag=tag, select=select, isClone=True, drive_id=drive_id,
+                                       index_link=index_link, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
         await rcloneNode(client, message, link, listener)
     else:
         if not drive_id and len(categories) > 1:
@@ -310,8 +329,8 @@ async def clone(client, message):
             await sendMessage(message, 'GDRIVE_ID not Provided!')
             await delete_links(message)
             return
-        listener = MirrorLeechListener(message, tag=tag, isClone=True, drive_id=drive_id,
-                                    index_link=index_link, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
+        listener = MirrorLeechListener(message, tag=tag, select=select, isClone=True, drive_id=drive_id,
+                                       index_link=index_link, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
         await gdcloneNode(message, link, listener)
 
 
