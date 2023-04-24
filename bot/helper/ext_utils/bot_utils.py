@@ -122,11 +122,12 @@ async def get_telegraph_list(telegraph_content):
 
 
 def get_progress_bar_string(pct):
-    pct = float(pct.strip('%'))
+    if isinstance(pct, str):
+        pct = float(pct.strip('%'))
     p = min(max(pct, 0), 100)
-    cFull = int(p // 8)
+    cFull = int(p // 10)
     p_str = '⬢' * cFull
-    p_str += '⬡' * (12 - cFull)
+    p_str += '⬡' * (10 - cFull)
     return f"{p_str}"
 
 
