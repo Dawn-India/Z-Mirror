@@ -2,7 +2,7 @@ from asyncio import create_subprocess_exec, gather
 from os import execl as osexecl
 from signal import SIGINT, signal
 from sys import executable
-from time import time, sleep
+from time import time, sleep, monotonic
 
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
@@ -19,7 +19,7 @@ from bot.helper.listeners.aria2_listener import start_aria2_listener
 
 from .helper.ext_utils.bot_utils import (cmd_exec, get_readable_file_size,
                                          get_readable_time, set_commands,
-                                         sync_to_async)
+                                         sync_to_async, get_progress_bar_string)
 from .helper.ext_utils.db_handler import DbManger
 from .helper.ext_utils.fs_utils import clean_all, exit_clean_up, start_cleanup
 from .helper.telegram_helper.bot_commands import BotCommands
@@ -33,19 +33,6 @@ from .modules import (anonymous, authorize, bot_settings, cancel_mirror,
                       torrent_select, users_settings, ytdlp)
 
 start_aria2_listener()
-
-def progress_bar(percentage):
-    p_used = '⬢'
-    p_total = '⬡'
-    if isinstance(percentage, str):
-        return 'NaN'
-    try:
-        percentage=int(percentage)
-    except:
-        percentage = 0
-    return ''.join(
-        p_used if i <= percentage // 10 else p_total for i in range(1, 11)
-    )
 
 async def stats(client, message):
     sysTime = get_readable_time(time() - boot_time())
@@ -66,38 +53,37 @@ async def stats(client, message):
         last_commit = last_commit[0]
     else:
         last_commit = 'No UPSTREAM_REPO'
-    stats = f'<b><i><u>Bot Statistics</u></i></b>\n\n'\
-            f'<code>CPU  :{progress_bar(cpuUsage)} {cpuUsage}%</code>\n' \
-            f'<code>RAM  :{progress_bar(mem_p)} {mem_p}%</code>\n' \
-            f'<code>SWAP :{progress_bar(swap.percent)} {swap.percent}%</code>\n' \
-            f'<code>DISK :{progress_bar(disk)} {disk}%</code>\n\n' \
+
+    stats = f'<b><i><u>Z Bot Statistics</u></i></b>\n\n'\
             f'<b>Updated:</b> {last_commit}\n' \
-            f'<b>SYS Uptime:</b> <code>{sysTime}</code>\n' \
-            f'<b>BOT Uptime:</b> <code>{botTime}</code>\n\n' \
+            f'<b>SYS UPTM:</b> <code>{sysTime}</code>\n' \
+            f'<b>BOT UPTM:</b> <code>{botTime}</code>\n\n' \
+            f'<b>CPU:</b> <code>{get_progress_bar_string(cpuUsage)} {cpuUsage}%</code>\n' \
             f'<b>CPU Total Core(s):</b> <code>{cpu_count(logical=True)}</code>\n' \
             f'<b>P-Core(s):</b> <code>{cpu_count(logical=False)}</code> | <b>V-Core(s):</b> <code>{v_core}</code>\n' \
             f'<b>Frequency:</b> <code>{cpu_freq(percpu=False).current} Mhz</code>\n\n' \
+            f'<b>RAM:</b> <code>{get_progress_bar_string(mem_p)} {mem_p}%</code>\n' \
             f'<b>RAM In Use:</b> <code>{get_readable_file_size(memory.used)}</code> [{mem_p}%]\n' \
             f'<b>Total:</b> <code>{get_readable_file_size(memory.total)}</code> | <b>Free:</b> <code>{get_readable_file_size(memory.available)}</code>\n\n' \
+            f'<b>SWAP:</b> <code>{get_progress_bar_string(swap.percent)} {swap.percent}%</code>\n' \
             f'<b>SWAP In Use:</b> <code>{get_readable_file_size(swap.used)}</code> [{swap.percent}%]\n' \
             f'<b>Allocated</b> <code>{get_readable_file_size(swap.total)}</code> | <b>Free:</b> <code>{get_readable_file_size(swap.free)}</code>\n\n' \
+            f'<b>DISK:</b> <code>{get_progress_bar_string(disk)} {disk}%</code>\n' \
             f'<b>Drive In Use:</b> <code>{used}</code> [{disk}%]\n' \
             f'<b>Total:</b> <code>{total}</code> | <b>Free:</b> <code>{free}</code>\n\n' \
-            f'<b>Total Upload:</b> <code>{sent}</code>\n<b>Total Download:</b> <code>{recv}</code>\n'
+            f'<b>UL:</b> <code>{sent}</code> | <b>DL:</b> <code>{recv}</code>\n'
     await sendMessage(message, stats)
 
 
 async def start(client, message):
     if config_dict['DM_MODE']:
         start_string = 'Bot Started.\n' \
-            'Now I will send your files or links here.\n'
+                       'Now I can send your stuff here.\n' \
+                       'Use me here: @Z_Mirror'
     else:
-        start_string = 'Hey, Welcome dear. \n' \
-                       'I can Mirror all your links To Google Drive! \n' \
-                       'Unfortunately you are not authorized!\n' \
-                       'Please deploy your own BOT!' \
-                       'Created With Love by @Z_Mirror . \n' \
-                       'Thank You!'
+        start_string = 'Sorry, you cant use me here!\n' \
+                       'Join @Z_Mirror to use me.\n' \
+                       'Thank You'
     await sendMessage(message, start_string)
 
 
@@ -117,10 +103,11 @@ async def restart(client, message):
     osexecl(executable, executable, "-m", "bot")
 
 async def ping(client, message):
-    start_time = int(round(time() * 1000))
+    start_time = monotonic()
     reply = await sendMessage(message, "Starting Ping")
-    end_time = int(round(time() * 1000))
-    await editMessage(reply, f'{end_time - start_time} ms')
+    end_time = monotonic()
+    ping_time = int((end_time - start_time) * 1000)
+    await editMessage(reply, f'{ping_time} ms')
 
 async def log(client, message):
     await sendFile(message, 'Z_Logs.txt')
