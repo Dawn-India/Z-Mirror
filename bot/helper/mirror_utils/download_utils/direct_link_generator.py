@@ -120,7 +120,7 @@ def yandex_disk(url: str) -> str:
             "ERROR: File not found/Download limit reached")
 
 
-@tenacity.retry(wait=tenacity.wait_fixed(5), stop=tenacity.stop_after_attempt(3))
+@tenacity.retry(wait=tenacity.wait_fixed(600), stop=tenacity.stop_after_attempt(2))
 def uptobox(url: str) -> str:
     """ Uptobox direct link generator
     based on https://github.com/jovanzers/WinTenCermin and https://github.com/sinoobie/noobie-mirror """
