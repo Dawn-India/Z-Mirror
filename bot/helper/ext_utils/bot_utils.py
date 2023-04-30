@@ -7,13 +7,15 @@ from html import escape
 from re import match
 from time import time
 from urllib.request import urlopen
+from uuid import uuid4
 
 from psutil import cpu_percent, disk_usage, virtual_memory
 from pyrogram.types import BotCommand
 from requests import head as rhead
 
-from bot import (bot_loop, botStartTime, config_dict, download_dict,
+from bot import (bot_loop, bot_name, botStartTime, config_dict, download_dict,
                  download_dict_lock, extra_buttons, user_data)
+from bot.helper.ext_utils.shortener import short_url
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -216,13 +218,6 @@ def get_readable_message():
     return msg, button
 
 
-def extra_btns(buttons):
-    if extra_buttons:
-        for btn_name, btn_url in extra_buttons.items():
-            buttons.ubutton(btn_name, btn_url)
-    return buttons
-
-
 async def turn_page(data):
     STATUS_LIMIT = config_dict['STATUS_LIMIT']
     global STATUS_START, PAGE_NO, PAGES
@@ -236,11 +231,6 @@ async def turn_page(data):
         elif data[1] == "pre" and PAGE_NO > 1:
             PAGE_NO -= 1
         STATUS_START = (PAGE_NO - 1) * STATUS_LIMIT
-
-
-async def check_user_tasks(user_id, maxtask):
-    if tasks := await getAllDownload(MirrorStatus.STATUS_DOWNLOADING, user_id):
-        return len(tasks) >= maxtask
 
 
 def get_readable_time(seconds):
@@ -305,6 +295,40 @@ def update_user_ldata(id_, key, value):
         return
     user_data.setdefault(id_, {})
     user_data[id_][key] = value
+
+
+def extra_btns(buttons):
+    if extra_buttons:
+        for btn_name, btn_url in extra_buttons.items():
+            buttons.ubutton(btn_name, btn_url)
+    return buttons
+
+
+async def check_user_tasks(user_id, maxtask):
+    downloading_tasks = await getAllDownload(MirrorStatus.STATUS_DOWNLOADING, user_id)
+    uploading_tasks = await getAllDownload(MirrorStatus.STATUS_UPLOADING, user_id)
+    total_tasks = downloading_tasks + uploading_tasks
+    return len(total_tasks) >= maxtask
+
+
+def checking_access(user_id, button=None):
+    if not config_dict['TOKEN_TIMEOUT']:
+        return None, button
+    user_data.setdefault(user_id, {})
+    data = user_data[user_id]
+    expire = data.get('time')
+    isExpired = (expire is None or expire is not None and (time() - expire) > config_dict['TOKEN_TIMEOUT'])
+    if isExpired:
+        token = data['token'] if expire is None and 'token' in data else str(uuid4())
+        if expire is not None:
+            del data['time']
+        data['token'] = token
+        user_data[user_id].update(data)
+        if button is None:
+            button = ButtonMaker()
+        button.ubutton('Get New Token', short_url(f'https://telegram.me/{bot_name}?start={token}'))
+        return 'Your <b>Token</b> is expired. Get a new one.', button
+    return None, button
 
 
 async def cmd_exec(cmd, shell=False):

@@ -5,12 +5,12 @@ from re import search
 from bencoding import bdecode, bencode
 
 from bot import DATABASE_URL, LOGGER, config_dict
-from bot.helper.ext_utils.bot_utils import check_user_tasks, is_gdrive_link, is_magnet
+from bot.helper.ext_utils.bot_utils import (check_user_tasks, checking_access,
+                                            is_gdrive_link, is_magnet)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import (delete_links, forcesub,
                                                       message_filter,
-                                                      request_limiter,
                                                       sendMessage)
 
 
@@ -39,25 +39,31 @@ async def stop_duplicate_tasks(message, link, file_=None):
         raw_url = file_.file_unique_id if file_ else await extract_link(link)
         exist = await DbManger().check_download(raw_url)
         if exist:
-            _msg = f'<b>Download is already added by {exist["tag"]}</b>\n\nCheck the download status in @{exist["botname"]}\n\n<b>Link</b>: <code>{exist["_id"]}</code>'
+            _msg = f'<b>Download is already added by {exist["tag"]}</b>\n'
+            _msg += f'Check the download status in @{exist["botname"]}\n\n'
+            _msg += f'<b>Link</b>: <code>{exist["_id"]}</code>'
             await delete_links(message)
             await sendMessage(message, _msg)
             return 'duplicate_tasks'
         return raw_url
 
 
-async def none_admin_utils(message, tag, isLeech):
-    if filtered := await message_filter(message, tag):
-        return filtered
-    if limited := await request_limiter(message):
-        await delete_links(message)
-        return limited
-    if notSub := await forcesub(message, tag):
-        await delete_links(message)
-        return notSub
+async def none_admin_utils(message, isLeech=False):
+    msg = []
+    if filtered := await message_filter(message):
+        msg.append(filtered)
+    button = None
+    if message.chat.type != message.chat.type.PRIVATE:
+        token_msg, button = checking_access(message.from_user.id, button)
+        if token_msg is not None:
+            msg.append(token_msg)
+            if ids := config_dict['FSUB_IDS']:
+                _msg, button = await forcesub(message, ids, button)
+                if _msg:
+                    msg.append(_msg)
     if (maxtask := config_dict['USER_MAX_TASKS']) and await check_user_tasks(message.from_user.id, maxtask):
-        await delete_links(message)
-        return await sendMessage(message, f"{tag}, Your tasks limit exceeded for {maxtask} tasks")
+        msg.append(f"Your tasks limit exceeded for {maxtask} tasks.")
     if isLeech and config_dict['DISABLE_LEECH']:
-        await delete_links(message)
-        return await sendMessage(message, f'{tag} Sorry, Leech Disabled!')
+        msg.append('Leech is disabled on this bot.\nUse other bots.')
+    await delete_links(message)
+    return msg, button

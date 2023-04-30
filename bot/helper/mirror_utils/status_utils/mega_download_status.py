@@ -40,7 +40,7 @@ class MegaDownloadStatus:
         try:
             seconds = (self.__size - self.__obj.downloaded_bytes) / \
                 self.__obj.speed
-            return f'{get_readable_time(seconds)}'
+            return get_readable_time(seconds)
         except ZeroDivisionError:
             return '-'
 

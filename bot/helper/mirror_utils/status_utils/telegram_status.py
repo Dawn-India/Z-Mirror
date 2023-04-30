@@ -4,7 +4,7 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus,
                                             get_readable_file_size,
                                             get_readable_time)
 
-engine_ = f"pyrogram v{get_distribution('pyrogram').version}"
+engine_ = f"Pyro v{get_distribution('pyrogram').version}"
 
 
 class TelegramStatus:
@@ -45,7 +45,7 @@ class TelegramStatus:
         try:
             seconds = (self.__size - self.__obj.processed_bytes) / \
                 self.__obj.speed
-            return f'{get_readable_time(seconds)}'
+            return get_readable_time(seconds)
         except:
             return '-'
 

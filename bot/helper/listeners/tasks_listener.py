@@ -7,11 +7,10 @@ from urllib.parse import quote as url_quote
 from aiofiles.os import listdir, makedirs, path as aiopath, remove as aioremove
 from aioshutil import move
 
-from bot import (bot, DATABASE_URL, DOWNLOAD_DIR, LOGGER, MAX_SPLIT_SIZE,
-                 SHORTENERES, Interval, aria2, config_dict, download_dict,
-                 download_dict_lock, non_queued_dl, non_queued_up,
-                 queue_dict_lock, queued_dl, queued_up, status_reply_dict_lock,
-                 user_data)
+from bot import (DATABASE_URL, DOWNLOAD_DIR, LOGGER, MAX_SPLIT_SIZE, Interval,
+                 aria2, config_dict, download_dict, download_dict_lock,
+                 non_queued_dl, non_queued_up, queue_dict_lock, queued_dl,
+                 queued_up, status_reply_dict_lock, user_data)
 from bot.helper.ext_utils.bot_utils import (extra_btns, get_readable_file_size,
                                             get_readable_time, sync_to_async)
 from bot.helper.ext_utils.db_handler import DbManger
@@ -21,7 +20,6 @@ from bot.helper.ext_utils.fs_utils import (clean_download, clean_target,
                                            is_archive, is_archive_split,
                                            is_first_archive_split)
 from bot.helper.ext_utils.leech_utils import split_file
-from bot.helper.ext_utils.shortener import short_url
 from bot.helper.ext_utils.task_manager import start_from_queued
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
@@ -36,6 +34,7 @@ from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import (delete_all_messages,
                                                       delete_links,
+                                                      send_to_chat,
                                                       sendMessage,
                                                       update_all_messages)
 
@@ -117,6 +116,8 @@ class MirrorLeechListener:
             self.extra_details['source'] = f"<i>{source}</i>"
 
     async def onDownloadStart(self):
+        if self.dmMessage == 'BotStarted':
+            self.dmMessage = await send_to_chat(self.message._client, self.message.from_user.id, self.message.link)
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS'] and self.raw_url:
             await DbManger().add_download_url(self.raw_url, self.tag)
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
@@ -368,6 +369,8 @@ class MirrorLeechListener:
         msg = f'\n\n<b>Size</b>: {get_readable_file_size(size)}'
         msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<b>Upload</b>: {self.extra_details['mode']}"
+        _msg = f'\n\nPath: <code>{rclonePath}</code>' if rclonePath is not None else ''
+        msg_ = '\n\n<b>Links has been sent in your DM.</b>'
         buttons = ButtonMaker()
         if self.isLeech:
             msg += f'\n<b>Total Files</b>: {folders}\n'
@@ -398,7 +401,7 @@ class MirrorLeechListener:
                     await sendMessage(self.message, gmsg + msg + msg_)
                     if self.logMessage:
                         await sendMessage(self.logMessage, lmsg + msg)
-                elif self.dmMessage and not config_dict['DUMP_CHAT']:
+                elif self.dmMessage and not config_dict['DUMP_CHAT_ID']:
                     await sendMessage(self.dmMessage, lmsg + msg)
                     await sendMessage(self.message, gmsg + msg + msg_)
                     if self.logMessage:
@@ -434,21 +437,17 @@ class MirrorLeechListener:
             if link or rclonePath and config_dict['RCLONE_SERVE_URL']:
                 buttons = ButtonMaker()
                 if link:
-                    d_link = await sync_to_async(short_url, link)
                     if link.startswith("https://drive.google.com/") and not config_dict['DISABLE_DRIVE_LINK']:
-                        buttons.ubutton("♻️ Drive Link", d_link)
+                        buttons.ubutton("♻️ Drive Link", link)
                     elif not link.startswith("https://drive.google.com/"):
-                        buttons.ubutton("☁️ Cloud Link", d_link)
-                else:
-                    msg += f'\n\nPath: <code>{rclonePath}</code>'
+                        buttons.ubutton("☁️ Cloud Link", link)
                 if rclonePath and (RCLONE_SERVE_URL := config_dict['RCLONE_SERVE_URL']):
                     remote, path = rclonePath.split(':', 1)
                     url_path = url_quote(f'{path}')
                     share_url = f'{RCLONE_SERVE_URL}/{remote}/{url_path}'
                     if mime_type == "Folder":
                         share_url += '/'
-                    d_share_url = await sync_to_async(short_url, share_url)
-                    buttons.ubutton("🔗 Rclone Link", d_share_url)
+                    buttons.ubutton("🔗 Rclone Link", share_url)
                 elif not rclonePath:
                     INDEX_URL = self.index_link if self.drive_id else config_dict['INDEX_URL']
                     if INDEX_URL:
@@ -456,38 +455,30 @@ class MirrorLeechListener:
                         share_url = f'{INDEX_URL}/{url_path}'
                         if mime_type == "Folder":
                             share_url += '/'
-                            d_share_url = await sync_to_async(short_url, share_url)
-                            buttons.ubutton("📁 Direct Link", d_share_url)
+                            buttons.ubutton("📁 Direct Link", share_url)
                         else:
-                            d_share_url = await sync_to_async(short_url, share_url)
-                            buttons.ubutton("🔗 Direct Link", d_share_url)
-                            if config_dict['VIEW_LINK']:
+                            buttons.ubutton("🔗 Direct Link", share_url)
+                            if mime_type.startswith(('image', 'video', 'audio')):
                                 share_urls = f'{INDEX_URL}/{url_path}?a=view'
-                                d_share_urls = await sync_to_async(short_url, share_urls)
-                                buttons.ubutton("🌐 View Link", d_share_urls)
+                                buttons.ubutton("🌐 View Link", share_urls)
                 buttons = extra_btns(buttons)
                 if self.dmMessage:
-                    await sendMessage(self.dmMessage, lmsg + msg, buttons.build_menu(2))
-                    msg_ = '\n\n<b>Links has been sent in your DM.</b>'
+                    await sendMessage(self.dmMessage, lmsg + msg + _msg, buttons.build_menu(2))
                     await sendMessage(self.message, gmsg + msg + msg_)
                 else:
-                    await sendMessage(self.message, lmsg + msg, buttons.build_menu(2))
+                    await sendMessage(self.message, lmsg + msg + _msg, buttons.build_menu(2))
                 if self.logMessage:
                     if link.startswith("https://drive.google.com/") and config_dict['DISABLE_DRIVE_LINK']:
-                        buttons.ubutton("♻️ Drive Link", d_link, 'header')
-                    if ospath.exists('shorteners.txt'):
-                        if link.startswith("https://drive.google.com/") and INDEX_URL:
-                            buttons.ubutton("🔗 Direct Link(No Shortener)", share_url)
-                        if link.startswith("https://drive.google.com/"):
-                            buttons.ubutton("♻️ Drive Link(No Shortener)", link)
-                        else:
-                            buttons.ubutton("☁️ Cloud Link(No Shortener)", link)
-                    await sendMessage(self.logMessage, lmsg + msg, buttons.build_menu(1))
+                        buttons.ubutton("♻️ Drive Link", link, 'header')
+                    await sendMessage(self.logMessage, lmsg + msg + _msg, buttons.build_menu(2))
             else:
-                msg += f'\n\nPath: <code>{rclonePath}</code>'
-                await sendMessage(self.message, gmsg + msg)
+                if self.dmMessage:
+                    await sendMessage(self.message, gmsg + msg + msg_)
+                    await sendMessage(self.dmMessage, lmsg + msg + _msg)
+                else:
+                    await sendMessage(self.message, lmsg + msg + _msg + msg_)
                 if self.logMessage:
-                    await sendMessage(self.logMessage, lmsg + msg)
+                    await sendMessage(self.logMessage, lmsg + msg + _msg)
             if self.seed and not self.isClone:
                 if self.isZip:
                     await clean_target(f"{self.dir}/{name}")

@@ -3,8 +3,9 @@ from time import time
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import LOGGER, bot, config_dict
-from bot.helper.ext_utils.bot_utils import (get_readable_time, get_telegraph_list, new_task,
+from bot import LOGGER, bot
+from bot.helper.ext_utils.bot_utils import (checking_access, get_readable_time,
+                                            get_telegraph_list, new_task,
                                             sync_to_async)
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -12,7 +13,8 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker, deleteMessage,
                                                       editMessage, isAdmin,
-                                                      request_limiter, sendMessage)
+                                                      request_limiter,
+                                                      sendMessage)
 
 
 async def list_buttons(user_id, isRecursive=True):
@@ -78,8 +80,14 @@ async def drive_list(client, message):
     if not message.from_user:
         return
     user_id = message.from_user.id
-    if not await isAdmin(message, user_id) and await request_limiter(message):
-        return
+    if not await isAdmin(message, user_id):
+        if await request_limiter(message):
+            return
+        if message.chat.type != message.chat.type.PRIVATE:
+            msg, btn = checking_access(user_id)
+            if msg is not None:
+                await sendMessage(message, msg, btn.build_menu(1))
+                return
     buttons = await list_buttons(user_id)
     await sendMessage(message, 'Choose list options:', buttons)
 

@@ -2,13 +2,13 @@ from asyncio import sleep
 from datetime import datetime, timedelta, timezone
 from time import time
 
-from pyrogram.errors import (FloodWait, PeerIdInvalid, RPCError, UserIsBlocked,
+from pyrogram.errors import (FloodWait, PeerIdInvalid, RPCError,
                              UserNotParticipant)
 from pyrogram.types import ChatPermissions
 
-from bot import (LOGGER, Interval, bot, btn_listener, categories, config_dict,
-                 download_dict_lock, status_reply_dict, status_reply_dict_lock,
-                 user)
+from bot import (LOGGER, Interval, bot, bot_name, cached_dict, categories_dict,
+                 config_dict, download_dict_lock, status_reply_dict,
+                 status_reply_dict_lock, user)
 from bot.helper.ext_utils.bot_utils import (get_readable_message, setInterval,
                                             get_readable_file_size, sync_to_async)
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -141,27 +141,35 @@ async def sendStatusMessage(msg):
             Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
 
-async def sendDmMessage(message, dmMode, isLeech=False):
+async def user_info(client, userId):
+    return await client.get_users(userId)
+
+
+async def isBot_canDm(message, dmMode, isLeech=False, button=None):
     if dmMode not in ['leech', 'mirror', 'all']:
-        return
+        return None, button
     if dmMode == 'mirror' and isLeech:
-        return
+        return None, button
     if dmMode == 'leech' and not isLeech:
-        return
+        return None, button
+    user = await user_info(message._client, message.from_user.id)
+    if user.status == user.status.LONG_AGO:
+        if button is None:
+            button = ButtonMaker()
+        _msg = "You need to <b>Start</b> me in <b>DM</b>."
+        button.ubutton("Start Me", f"https://t.me/{bot_name}?start=start", 'header')
+        return _msg, button
+    return 'BotStarted', button
+
+
+async def send_to_chat(client, chatId, text, buttons=None):
     try:
-        return await message._client.send_message(message.from_user.id, disable_notification=True, text=message.link)
-    except FloodWait as r:
-        LOGGER.warning(str(r))
-        await sleep(r.value * 1.2)
-        return sendDmMessage(message, dmMode, isLeech)
-    except (UserIsBlocked, PeerIdInvalid) as e:
-        buttons = ButtonMaker()
-        buttons.ubutton("Start", f"https://t.me/{message._client.me.username}?start=start")
-        user = message.from_user.username if message.from_user.username is not None else message.from_user.first_name
-        await sendMessage(message, f"Dear <b>@{user}</b>!\nYou need to START me in DM. \
-\nSo I can send all files there.\n\n<b>Start and try again!</b>\nThank You.", buttons.build_menu(1))
-        await delete_links(message)
-        return 'BotNotStarted'
+        return await client.send_message(chatId, text=text, disable_web_page_preview=True,
+                                         disable_notification=True, reply_markup=buttons)
+    except FloodWait as f:
+        LOGGER.error(f"{f.NAME}: {f.MESSAGE}")
+        await sleep(f.value * 1.2)
+        return await send_to_chat(client, chatId, text, buttons)
     except RPCError as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE}")
     except Exception as e:
@@ -169,7 +177,7 @@ async def sendDmMessage(message, dmMode, isLeech=False):
 
 
 async def sendLogMessage(message, link, tag):
-    if not (log_chat := config_dict['LOG_CHAT']):
+    if not (log_chat := config_dict['LOG_CHAT_ID']):
         return
     try:
         isSuperGroup = message.chat.type in [
@@ -184,8 +192,8 @@ async def sendLogMessage(message, link, tag):
         msg = ''
         if isSuperGroup:
             msg+=f'\n\n<b><a href="{message.link}">Source Link</a></b>: '
-        msg += f'<code>{link}</code>\n\n<b>Added by</b>: {tag} \
-\n<b>User ID</b>: <code>{message.from_user.id}</code>'
+        msg += f'<code>{link}</code>\n\n<b>Added by</b>: {tag}\n'
+        msg += f'<b>User ID</b>: <code>{message.from_user.id}</code>'
         return await message._client.send_message(log_chat, msg, disable_web_page_preview=True)
     except FloodWait as r:
         LOGGER.warning(str(r))
@@ -207,15 +215,16 @@ async def isAdmin(message, user_id=None):
     return member.status in [member.status.ADMINISTRATOR, member.status.OWNER]
 
 
-async def forcesub(message, tag):
-    if not (FSUB_IDS := config_dict['FSUB_IDS']):
-        return
+async def forcesub(message, ids, button=None):
     join_button = {}
-    for channel_id in FSUB_IDS.split():
+    _msg = ''
+    for channel_id in ids.split():
         if channel_id.startswith('-100'):
             channel_id = int(channel_id)
         elif channel_id.startswith('@'):
             channel_id = channel_id.replace('@', '')
+        else:
+            continue
         try:
             chat = await message._client.get_chat(channel_id)
         except PeerIdInvalid as e:
@@ -234,34 +243,37 @@ async def forcesub(message, tag):
         except Exception as e:
             LOGGER.error(f'{e} for {channel_id}')
     if join_button:
-        await delete_links(message)
-        btn = ButtonMaker()
+        if button is None:
+            button = ButtonMaker()
+        _msg = f"You need to join our channel to use me."
         for key, value in join_button.items():
-            btn.ubutton(key, value)
-        return await sendMessage(message, f'Dear {tag}!\nPlease join our channel to use me! \
-\n\n<b>Join And Try Again!</b>\nThank You.', btn.build_menu(2))
+            button.ubutton(f'{key}', value, 'footer')
+    return _msg, button
 
 
-async def message_filter(message, tag):
+async def message_filter(message):
     if not config_dict['ENABLE_MESSAGE_FILTER']:
         return
     _msg = ''
-    if message.reply_to_message:
-        if message.reply_to_message.forward_date:
-            await deleteMessage(message.reply_to_message)
-            _msg = "You can't mirror or leech forward messages to this bot. \
-\n\nRemove it and try again\nThank you."
-        elif message.reply_to_message.caption:
-            await deleteMessage(message.reply_to_message)
-            _msg = "You can't mirror or leech with captions text to this bot. \
-\n\nRemove it and try again\nThank you."
+    if reply_to := message.reply_to_message:
+        if reply_to.forward_date:
+            await deleteMessage(reply_to)
+            _msg = "You can't mirror or leech forward messages."
+        elif reply_to.reply_markup:
+            await deleteMessage(reply_to)
+            _msg = "You can't mirror or leech messages with buttons."
+        elif reply_to.caption:
+            await deleteMessage(reply_to)
+            _msg = "You can't mirror or leech with captions text."
+    elif message.reply_markup:
+        await deleteMessage(message)
+        _msg = "You can't mirror or leech messages with buttons."
     elif message.forward_date:
         await deleteMessage(message)
-        _msg = "You can't mirror or leech forward messages to this bot. \
-\n\nRemove it and try again\nThank you."
+        _msg = "You can't mirror or leech forward messages."
     if _msg:
         message.id = None
-        return await sendMessage(message, f"{tag} {_msg}")
+        return _msg
 
 async def delete_links(message):
     if config_dict['DELETE_LINKS']:
@@ -276,16 +288,15 @@ async def anno_checker(message):
     buttons.ibutton('Verify', f'verify admin {msg_id}')
     buttons.ibutton('Cancel', f'verify no {msg_id}')
     user = None
-    btn_listener[msg_id] = user
-    await sendMessage(message, f'{message.sender_chat.type.name} Verification \
-\nIf you hit Verify! Your username and id will expose in bot logs!', buttons.build_menu(2))
+    cached_dict[msg_id] = user
+    await sendMessage(message, f'{message.sender_chat.type.name} Verification\nIf you hit Verify! Your username and id will expose in bot logs!', buttons.build_menu(2))
     start_time = time()
     while time() - start_time <= 7:
         await sleep(0.5)
-        if btn_listener[msg_id]:
+        if cached_dict[msg_id]:
             break
-    user = btn_listener[msg_id]
-    del btn_listener[msg_id]
+    user = cached_dict[msg_id]
+    del cached_dict[msg_id]
     return user
 
 
@@ -293,19 +304,19 @@ async def open_category_btns(message):
     user_id = message.from_user.id
     msg_id = message.id
     buttons = ButtonMaker()
-    for _name in categories.keys():
+    for _name in categories_dict.keys():
         buttons.ibutton(f'{_name}', f'scat {user_id} {msg_id} {_name}')
     prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>', buttons.build_menu(2))
-    btn_listener[msg_id] = [None, None]
+    cached_dict[msg_id] = [None, None]
     start_time = time()
     while time() - start_time <= 30:
         await sleep(0.5)
-        if btn_listener[msg_id][0]:
+        if cached_dict[msg_id][0]:
             break
-    drive_id = btn_listener[msg_id][0]
-    index_link = btn_listener[msg_id][1]
+    drive_id = cached_dict[msg_id][0]
+    index_link = cached_dict[msg_id][1]
     await deleteMessage(prompt)
-    del btn_listener[msg_id]
+    del cached_dict[msg_id]
     return drive_id, index_link
 
 

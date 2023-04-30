@@ -18,12 +18,11 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from tenacity import (RetryError, retry, retry_if_exception_type,
                       stop_after_attempt, wait_exponential)
 
-from bot import GLOBAL_EXTENSION_FILTER, SHORTENERES, config_dict, list_drives
+from bot import GLOBAL_EXTENSION_FILTER, config_dict, list_drives_dict
 from bot.helper.ext_utils.bot_utils import (async_to_sync,
                                             get_readable_file_size,
                                             setInterval)
 from bot.helper.ext_utils.fs_utils import get_mime_type
-from bot.helper.ext_utils.shortener import short_url
 
 LOGGER = getLogger(__name__)
 getLogger('googleapiclient.discovery').setLevel(ERROR)
@@ -41,9 +40,9 @@ class GoogleDriveHelper:
         self.__total_bytes = 0
         self.__total_files = 0
         self.__total_folders = 0
+        self.__processed_bytes = 0
         self.__total_time = 0
         self.__start_time = 0
-        self.__processed_bytes = 0
         self.__alt_auth = False
         self.__is_uploading = False
         self.__is_downloading = False
@@ -59,7 +58,6 @@ class GoogleDriveHelper:
         self.__service = self.__authorize()
         self.__file_processed_bytes = 0
         self.name = name
-        self.transferred_size = 0
 
     @property
     def speed(self):
@@ -74,7 +72,7 @@ class GoogleDriveHelper:
 
     def __authorize(self):
         credentials = None
-        if config_dict['USE_SERVICE_ACCOUNTS'] and not self.__alt_auth:
+        if config_dict['USE_SERVICE_ACCOUNTS']:
             json_files = listdir("accounts")
             self.__sa_number = len(json_files)
             self.__sa_index = randrange(self.__sa_number)
@@ -89,9 +87,18 @@ class GoogleDriveHelper:
                 credentials = pload(f)
         else:
             LOGGER.error('token.pickle not found!')
-            return
         return build('drive', 'v3', credentials=credentials, cache_discovery=False)
 
+    def __alt_authorize(self):
+        if not self.__alt_auth:
+            self.__alt_auth = True
+            if ospath.exists('token.pickle'):
+                LOGGER.info("Authorize with token.pickle")
+                with open('token.pickle', 'rb') as f:
+                    credentials = pload(f)
+                return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+            else:
+                LOGGER.error('token.pickle not found!')
 
     def __switchServiceAccount(self):
         if self.__sa_index == self.__sa_number - 1:
@@ -177,16 +184,15 @@ class GoogleDriveHelper:
             LOGGER.info(f"Delete Result: {msg}")
         except HttpError as err:
             if "File not found" in str(err) or "insufficientFilePermissions" in str(err):
-                self.__alt_auth = True
-                token_service = self.__authorize()
+                token_service = self.__alt_authorize()
                 if token_service is not None:
                     LOGGER.error('File not found. Trying with token.pickle...')
                     self.__service = token_service
                     return self.deletefile(link)
-            LOGGER.error(f"Delete Result: {msg}")
-            msg = err
-        finally:
-            return msg
+                err = "File not found or insufficientFilePermissions!"
+            LOGGER.error(f"Delete Result: {err}")
+            msg = str(err)
+        return msg
 
     def upload(self, file_name, size, gdrive_id):
         self.__is_uploading = True
@@ -233,8 +239,8 @@ class GoogleDriveHelper:
                 return
             elif self.__is_errored:
                 return
-        async_to_sync(self.__listener.onUploadComplete, link, size, self.__total_files,
-                      self.__total_folders, mime_type, file_name, drive_id=dir_id)
+            async_to_sync(self.__listener.onUploadComplete, link, size, self.__total_files,
+                        self.__total_folders, mime_type, file_name, drive_id=dir_id)
 
     def __upload_dir(self, input_directory, dest_id):
         list_dirs = listdir(input_directory)
@@ -410,12 +416,12 @@ class GoogleDriveHelper:
                 msg = "User rate limit exceeded."
             elif "File not found" in err:
                 if not self.__alt_auth:
-                    self.__alt_auth = True
-                    token_service = self.__authorize()
+                    token_service = self.__alt_authorize()
                     if token_service is not None:
-                        LOGGER.error('File not found. Trying with token.pickle...')
+                        LOGGER.error(
+                            'File not found. Trying with token.pickle...')
                         self.__service = token_service
-                        return self.clone(link, gdrive_id)
+                        return self.clone(link)
                 msg = "File not found."
             else:
                 msg = f"Error.\n{err}"
@@ -553,10 +559,11 @@ class GoogleDriveHelper:
         contents_no = 0
         telegraph_content = []
         Title = False
-        if len(list_drives) > 1:
-            self.__alt_auth = True
-            token_service = self.__authorize()
-        for drive_name, drive_dict in list_drives.items():
+        if len(list_drives_dict) > 1:
+            token_service = self.__alt_authorize()
+            if token_service is not None:
+                self.__service = token_service
+        for drive_name, drive_dict in list_drives_dict.items():
             dir_id = drive_dict['drive_id']
             index_url = drive_dict['index_link']
             isRecur = False if isRecursive and len(
@@ -576,53 +583,36 @@ class GoogleDriveHelper:
             for file in response.get('files', []):
                 mime_type = file.get('mimeType')
                 if mime_type == "application/vnd.google-apps.folder":
-                    if SHORTENERES:
-                        msg += f"📁 .<code>{file.get('name').replace(' ', '-').replace('.', ',')}<br>(folder)</code><br>"
-                    else:
-                        msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>"
-                    if not config_dict['DISABLE_DRIVE_LINK']:
-                        furl = short_url(
-                            f"https://drive.google.com/drive/folders/{file.get('id')}")
-                        msg += f"<b><a href={furl}>Drive Link</a></b>"
+                    furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
+                    msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>"
+                    msg += f"<b><a href={furl}>Drive Link</a></b>"
                     if index_url:
                         if isRecur:
                             url_path = "/".join([rquote(n, safe='')
                                                 for n in self.__get_recursive_list(file, dir_id)])
                         else:
                             url_path = rquote(f'{file.get("name")}', safe='')
-                        url = short_url(f'{index_url}/{url_path}/')
-                        msg += f' 📁 <b>| <a href={url}>Index Link</a></b>'
+                        url = f'{index_url}/{url_path}/'
+                        msg += f' <b>| <a href="{url}">Index Link</a></b>'
                 elif mime_type == 'application/vnd.google-apps.shortcut':
-                    if not config_dict['DISABLE_DRIVE_LINK']:
-                        furl = short_url(
-                            f"https://drive.google.com/drive/folders/{file.get('id')}")
-                        if SHORTENERES:
-                            msg += f"⁍<a href={furl}>{file.get('name').replace(' ', '-').replace('.', ',')}" \
-                                f"</a> (shortcut)"
-                        else:
-                            msg += f"⁍<a href={furl}>{file.get('name')}" \
-                                   f"</a> (shortcut)"
+                    furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
+                    msg += f"⁍<a href='https://drive.google.com/drive/folders/{file.get('id')}'>{file.get('name')}" \
+                        f"</a> (shortcut)"
                 else:
-                    if SHORTENERES:
-                        msg += f"📄 <code>{file.get('name').replace(' ', '-').replace('.', ',')}<br>({get_readable_file_size(int(file.get('size', 0)))})</code><br>"
-                    else:
-                        msg += f"📄 <code>{file.get('name')}<br>({get_readable_file_size(int(file.get('size', 0)))})</code><br>"
-                    if not config_dict['DISABLE_DRIVE_LINK']:
-                        furl = short_url(
-                            f"https://drive.google.com/uc?id={file.get('id')}&export=download")
-                        msg += f"<b><a href={furl}>Drive Link</a></b>"
+                    furl = f"https://drive.google.com/uc?id={file.get('id')}&export=download"
+                    msg += f"📄 <code>{file.get('name')}<br>({get_readable_file_size(int(file.get('size', 0)))})</code><br>"
+                    msg += f"<b><a href={furl}>Drive Link</a></b>"
                     if index_url:
                         if isRecur:
                             url_path = "/".join(rquote(n, safe='')
                                                 for n in self.__get_recursive_list(file, dir_id))
                         else:
                             url_path = rquote(f'{file.get("name")}')
-                        url = short_url(f'{index_url}/{url_path}')
-                        msg += f' <b>| 🚀 <a href={url}>Index Link</a></b>'
-                        if config_dict['VIEW_LINK']:
+                        url = f'{index_url}/{url_path}'
+                        msg += f' <b>| <a href="{url}">Index Link</a></b>'
+                        if mime_type.startswith(('image', 'video', 'audio')):
                             urlv = f'{index_url}/{url_path}?a=view'
-                            urlv = short_url(urlv)
-                            msg += f' <b>| 💻 <a href={urlv}>View Link</a></b>'
+                            msg += f' <b>| <a href="{urlv}">View Link</a></b>'
                 msg += '<br><br>'
                 contents_no += 1
                 if len(msg.encode('utf-8')) > 39000:
@@ -652,10 +642,10 @@ class GoogleDriveHelper:
             err = str(err).replace('>', '').replace('<', '')
             if "File not found" in err:
                 if not self.__alt_auth:
-                    self.__alt_auth = True
-                    token_service = self.__authorize()
+                    token_service = self.__alt_authorize()
                     if token_service is not None:
-                        LOGGER.error('File not found. Trying with token.pickle...')
+                        LOGGER.error(
+                            'File not found. Trying with token.pickle...')
                         self.__service = token_service
                         return self.count(link)
                 msg = "File not found."
@@ -722,10 +712,10 @@ class GoogleDriveHelper:
                 err = "Download Quota Exceeded."
             elif "File not found" in err:
                 if not self.__alt_auth:
-                    self.__alt_auth = True
-                    token_service = self.__authorize()
+                    token_service = self.__alt_authorize()
                     if token_service is not None:
-                        LOGGER.error('File not found. Trying with token.pickle...')
+                        LOGGER.error(
+                            'File not found. Trying with token.pickle...')
                         self.__service = token_service
                         self.__updater.cancel()
                         return self.download(link)
@@ -736,7 +726,7 @@ class GoogleDriveHelper:
             self.__updater.cancel()
             if self.__is_cancelled:
                 return
-        async_to_sync(self.__listener.onDownloadComplete)
+            async_to_sync(self.__listener.onDownloadComplete)
 
     def __download_folder(self, folder_id, path, folder_name):
         folder_name = folder_name.replace('/', '')
@@ -750,7 +740,8 @@ class GoogleDriveHelper:
         for item in result:
             file_id = item['id']
             filename = item['name']
-            if shortcut_details := item.get('shortcutDetails'):
+            shortcut_details = item.get('shortcutDetails')
+            if shortcut_details is not None:
                 file_id = shortcut_details['targetId']
                 mime_type = shortcut_details['targetMimeType']
             else:

@@ -39,7 +39,7 @@ class DbManger:
         # User Data
         if await self.__db.users[bot_id].find_one():
             rows = self.__db.users[bot_id].find({})
-            # return a dict ==> {_id, is_sudo, is_auth, as_doc, thumb, yt_ql, media_group, equal_splits, split_size, rclone}
+            # return a dict ==> {_id, is_sudo, is_auth, as_doc, thumb, yt_opt, media_group, equal_splits, split_size, rclone}
             async for row in rows:
                 uid = row['_id']
                 del row['_id']
@@ -122,6 +122,10 @@ class DbManger:
             del data['thumb']
         if data.get('rclone'):
             del data['rclone']
+        if data.get('token'):
+            del data['token']
+        if data.get('time'):
+            del data['time']
         await self.__db.users[bot_id].replace_one({'_id': user_id}, data, upsert=True)
         self.__conn.close
 

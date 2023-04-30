@@ -8,7 +8,8 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus, bt_selection_buttons,
                                             getDownloadByGid, sync_to_async)
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (anno_checker,
+from bot.helper.telegram_helper.message_utils import (anno_checker, isAdmin,
+                                                      request_limiter,
                                                       sendMessage,
                                                       sendStatusMessage)
 
@@ -19,6 +20,8 @@ async def select(client, message):
     if not message.from_user:
         return
     user_id = message.from_user.id
+    if not await isAdmin(message, user_id) and await request_limiter(message):
+        return
     msg = message.text.split()
     if len(msg) > 1:
         gid = msg[1]
@@ -55,14 +58,16 @@ async def select(client, message):
         if listener.isQbit:
             id_ = dl.hash()
             client = dl.client()
-            await sync_to_async(client.torrents_pause, torrent_hashes=id_)
+            if not dl.queued:
+                await sync_to_async(client.torrents_pause, torrent_hashes=id_)
         else:
             id_ = dl.gid()
-            try:
-                await sync_to_async(aria2.client.force_pause, id_)
-            except Exception as e:
-                LOGGER.error(
-                    f"{e} Error in pause, this mostly happens after abuse aria2")
+            if not dl.queued:
+                try:
+                    await sync_to_async(aria2.client.force_pause, id_)
+                except Exception as e:
+                    LOGGER.error(
+                        f"{e} Error in pause, this mostly happens after abuse aria2")
         listener.select = True
     except:
         await sendMessage(message, "This is not a bittorrent task!")
@@ -109,7 +114,8 @@ async def get_confirm(client, query):
                                 await aioremove(f_path)
                             except:
                                 pass
-            await sync_to_async(client.torrents_resume, torrent_hashes=id_)
+            if not dl.queued:
+                await sync_to_async(client.torrents_resume, torrent_hashes=id_)
         else:
             res = await sync_to_async(aria2.client.get_files, id_)
             for f in res:
@@ -118,18 +124,19 @@ async def get_confirm(client, query):
                         await aioremove(f['path'])
                     except:
                         pass
-            try:
-                await sync_to_async(aria2.client.unpause, id_)
-            except Exception as e:
-                LOGGER.error(
-                    f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
+            if not dl.queued:
+                try:
+                    await sync_to_async(aria2.client.unpause, id_)
+                except Exception as e:
+                    LOGGER.error(
+                        f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
         await sendStatusMessage(message)
         await message.delete()
     elif data[1] == "rm":
         await query.answer()
         obj = dl.download()
         await obj.cancel_download()
-        await query.message.delete()
+        await message.delete()
 
 
 bot.add_handler(MessageHandler(select, filters=command(
