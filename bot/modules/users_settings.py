@@ -15,7 +15,7 @@ from PIL import Image
 from pyrogram.filters import command, create, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import (DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, bot,
+from bot import (TOKEN_TIMEOUT, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, bot,
                  config_dict, user_data)
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread, get_readable_time,
                                             sync_to_async, update_user_ldata)
@@ -99,7 +99,7 @@ Media Group: <b>{media_group}</b>
 YT-DLP Options: <b><code>{escape(ytopt)}</code></b>
 Rclone Config: <b>{rccmsg}</b>
 
-<b>Timeout</b>: {config_dict["AUTO_DELETE_MESSAGE_DURATION"]}"""
+<b>Timeout</b>: {TOKEN_TIMEOUT}"""
     return text, buttons.build_menu(1)
     
 
