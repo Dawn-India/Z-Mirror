@@ -30,6 +30,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       delete_links,
                                                       deleteMessage,
+                                                      auto_delete_message,
                                                       editMessage, isAdmin,
                                                       isBot_canDm,
                                                       open_category_btns,
