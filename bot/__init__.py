@@ -37,9 +37,8 @@ load_dotenv('config.env', override=True)
 Interval = []
 QbInterval = []
 QbTorrents = {}
-list_drives = {}
-SHORTENERES = []
-SHORTENER_APIS = []
+list_drives_dict = {}
+shorteneres_list = []
 extra_buttons = {}
 GLOBAL_EXTENSION_FILTER = ['.aria2']
 user_data = {}
@@ -47,7 +46,7 @@ aria2_options = {}
 qbit_options = {}
 queued_dl = {}
 queued_up = {}
-categories = {}
+categories_dict = {}
 non_queued_dl = set()
 non_queued_up = set()
 
@@ -65,7 +64,7 @@ qb_listener_lock = Lock()
 status_reply_dict = {}
 download_dict = {}
 rss_dict = {}
-btn_listener = {}
+cached_dict = {}
 
 BOT_TOKEN = environ.get('BOT_TOKEN', '')
 if len(BOT_TOKEN) == 0:
@@ -230,15 +229,15 @@ if len(AUTO_DELETE_MESSAGE_DURATION) == 0:
 else:
     AUTO_DELETE_MESSAGE_DURATION = int(AUTO_DELETE_MESSAGE_DURATION)
 
-YT_DLP_QUALITY = environ.get('YT_DLP_QUALITY', '')
-if len(YT_DLP_QUALITY) == 0:
-    YT_DLP_QUALITY = ''
+YT_DLP_OPTIONS = environ.get('YT_DLP_OPTIONS', '')
+if len(YT_DLP_OPTIONS) == 0:
+    YT_DLP_OPTIONS = ''
 
 SEARCH_LIMIT = environ.get('SEARCH_LIMIT', '')
 SEARCH_LIMIT = 0 if len(SEARCH_LIMIT) == 0 else int(SEARCH_LIMIT)
 
-DUMP_CHAT = environ.get('DUMP_CHAT', '')
-DUMP_CHAT = '' if len(DUMP_CHAT) == 0 else int(DUMP_CHAT)
+DUMP_CHAT_ID = environ.get('DUMP_CHAT_ID', '')
+DUMP_CHAT_ID = '' if len(DUMP_CHAT_ID) == 0 else int(DUMP_CHAT_ID)
 
 STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
 STATUS_LIMIT = 5 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
@@ -268,9 +267,6 @@ INCOMPLETE_TASK_NOTIFIER = INCOMPLETE_TASK_NOTIFIER.lower() == 'true'
 
 STOP_DUPLICATE = environ.get('STOP_DUPLICATE', '')
 STOP_DUPLICATE = STOP_DUPLICATE.lower() == 'true'
-
-VIEW_LINK = environ.get('VIEW_LINK', '')
-VIEW_LINK = VIEW_LINK.lower() == 'true'
 
 IS_TEAM_DRIVE = environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
@@ -323,8 +319,13 @@ RCLONE_SERVE_PASS = environ.get('RCLONE_SERVE_PASS', '')
 if len(RCLONE_SERVE_PASS) == 0:
     RCLONE_SERVE_PASS = ''
 
-LOG_CHAT = environ.get('LOG_CHAT', '')
-LOG_CHAT = '' if len(LOG_CHAT) == 0 else int(LOG_CHAT)
+LOG_CHAT_ID = environ.get('LOG_CHAT_ID', '')
+if LOG_CHAT_ID.startswith('-100'):
+    LOG_CHAT_ID = int(LOG_CHAT_ID)
+elif LOG_CHAT_ID.startswith('@'):
+    LOG_CHAT_ID = LOG_CHAT_ID.removeprefix('@')
+else:
+    LOG_CHAT_ID = ''
 
 USER_MAX_TASKS = environ.get('USER_MAX_TASKS', '')
 USER_MAX_TASKS = '' if len(USER_MAX_TASKS) == 0 else int(USER_MAX_TASKS)
@@ -370,8 +371,10 @@ SET_COMMANDS = environ.get('SET_COMMANDS', '')
 SET_COMMANDS = SET_COMMANDS.lower() == 'true'
 
 REQUEST_LIMITS = environ.get('REQUEST_LIMITS', '')
-REQUEST_LIMITS = '' if len(
-    REQUEST_LIMITS) == 0 else max(int(REQUEST_LIMITS), 5)
+if REQUEST_LIMITS.isdigit():
+    REQUEST_LIMITS = max(int(REQUEST_LIMITS), 5)
+else:
+    REQUEST_LIMITS = ''
 
 DM_MODE = environ.get('DM_MODE', '')
 DM_MODE = DM_MODE.lower() if DM_MODE.lower() in [
@@ -379,6 +382,12 @@ DM_MODE = DM_MODE.lower() if DM_MODE.lower() in [
 
 DELETE_LINKS = environ.get('DELETE_LINKS', '')
 DELETE_LINKS = DELETE_LINKS.lower() == 'true'
+
+TOKEN_TIMEOUT = environ.get('TOKEN_TIMEOUT', '')
+if TOKEN_TIMEOUT.isdigit():
+    TOKEN_TIMEOUT = int(TOKEN_TIMEOUT)
+else:
+    TOKEN_TIMEOUT = ''
 
 FSUB_IDS = environ.get('FSUB_IDS', '')
 if len(FSUB_IDS) == 0:
@@ -395,7 +404,7 @@ config_dict = {
     "DATABASE_URL": DATABASE_URL,
     "DEFAULT_UPLOAD": DEFAULT_UPLOAD,
     "DOWNLOAD_DIR": DOWNLOAD_DIR,
-    "DUMP_CHAT": DUMP_CHAT,
+    "DUMP_CHAT_ID": DUMP_CHAT_ID,
     "EQUAL_SPLITS": EQUAL_SPLITS,
     "EXTENSION_FILTER": EXTENSION_FILTER,
     "GDRIVE_ID": GDRIVE_ID,
@@ -434,11 +443,10 @@ config_dict = {
     "UPTOBOX_TOKEN": UPTOBOX_TOKEN,
     "USER_SESSION_STRING": USER_SESSION_STRING,
     "USE_SERVICE_ACCOUNTS": USE_SERVICE_ACCOUNTS,
-    "VIEW_LINK": VIEW_LINK,
     "WEB_PINCODE": WEB_PINCODE,
-    "YT_DLP_QUALITY": YT_DLP_QUALITY,
+    "YT_DLP_OPTIONS": YT_DLP_OPTIONS,
     "USER_MAX_TASKS": USER_MAX_TASKS,
-    "LOG_CHAT": LOG_CHAT,
+    "LOG_CHAT_ID": LOG_CHAT_ID,
     "FSUB_IDS": FSUB_IDS,
     "STORAGE_THRESHOLD": STORAGE_THRESHOLD,
     "TORRENT_LIMIT": TORRENT_LIMIT,
@@ -456,13 +464,14 @@ config_dict = {
     "REQUEST_LIMITS": REQUEST_LIMITS,
     "DM_MODE": DM_MODE,
     "DELETE_LINKS": DELETE_LINKS,
+    "TOKEN_TIMEOUT": TOKEN_TIMEOUT
 }
 
 config_dict = OrderedDict(sorted(config_dict.items()))
 
 if GDRIVE_ID:
-    list_drives['Main'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
-    categories['Root'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
+    list_drives_dict['Main'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
+    categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
 
 if ospath.exists('list_drives.txt'):
     with open('list_drives.txt', 'r+') as f:
@@ -478,7 +487,7 @@ if ospath.exists('list_drives.txt'):
                 tempdict['index_link'] = temp[2]
             else:
                 tempdict['index_link'] = ''
-            list_drives[name] = tempdict
+            list_drives_dict[name] = tempdict
 
 if ospath.exists('buttons.txt'):
     with open('buttons.txt', 'r+') as f:
@@ -496,8 +505,7 @@ if ospath.exists('shorteners.txt'):
         for line in lines:
             temp = line.strip().split()
             if len(temp) == 2:
-                SHORTENERES.append(temp[0])
-                SHORTENER_APIS.append(temp[1])
+                shorteneres_list.append({'domain': temp[0],'api_key': temp[1]})
 
 if ospath.exists('categories.txt'):
     with open('categories.txt', 'r+') as f:
@@ -513,7 +521,7 @@ if ospath.exists('categories.txt'):
                 tempdict['index_link'] = temp[2]
             else:
                 tempdict['index_link'] = ''
-            categories[name] = tempdict
+            categories_dict[name] = tempdict
 
 if BASE_URL:
     Popen(

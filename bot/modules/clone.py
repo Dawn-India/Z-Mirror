@@ -8,7 +8,7 @@ from aiofiles.os import path as aiopath
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
-from bot import (LOGGER, bot, categories, config_dict, download_dict,
+from bot import (LOGGER, bot, categories_dict, config_dict, download_dict,
                  download_dict_lock)
 from bot.helper.ext_utils.bot_utils import (cmd_exec, get_telegraph_list,
                                             is_gdrive_link, is_rclone_path,
@@ -31,8 +31,9 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       delete_links,
                                                       deleteMessage,
                                                       editMessage, isAdmin,
+                                                      isBot_canDm,
                                                       open_category_btns,
-                                                      sendDmMessage,
+                                                      request_limiter,
                                                       sendLogMessage,
                                                       sendMessage,
                                                       sendStatusMessage)
@@ -290,20 +291,37 @@ async def clone(client, message):
     if not message.from_user:
         await delete_links(message)
         return
+    error_msg = []
+    error_button = None
     if not await isAdmin(message):
+        if await request_limiter(message):
+            await delete_links(message)
+            return
         raw_url = await stop_duplicate_tasks(message, link)
         if raw_url == 'duplicate_tasks':
             await delete_links(message)
             return
-        if await none_admin_utils(message, tag, False):
-            return
+        none_admin_msg, error_button = await none_admin_utils(message)
+        if none_admin_msg:
+            error_msg.extend(none_admin_msg)
     if (dmMode := config_dict['DM_MODE']) and message.chat.type == message.chat.type.SUPERGROUP:
-        dmMessage = await sendDmMessage(message, dmMode, False)
-        if dmMessage == 'BotNotStarted':
-            await delete_links(message)
-            return
+        dmMessage, error_button = await isBot_canDm(message, dmMode, button=error_button)
+        if dmMessage is not None and dmMessage != 'BotStarted':
+            error_msg.append(dmMessage)
     else:
         dmMessage = None
+    if error_msg:
+        final_msg = f'Hey, <b>{tag}</b>,\n'
+        for __i, __msg in enumerate(error_msg, 1):
+            final_msg += f'\n<b>{__i}</b>: {__msg}\n'
+        final_msg += f'\n<b>Thank You</b>'
+        final_msg += f'\n<b>Timeout</b>: {config_dict["AUTO_DELETE_MESSAGE_DURATION"]}'
+        if error_button is not None:
+            error_button = error_button.build_menu(2)
+        await delete_links(message)
+        reply_message = await sendMessage(message, final_msg, error_button)
+        await auto_delete_message(message, reply_message)
+        return
 
     logMessage = await sendLogMessage(message, link, tag)
     if is_rclone_path(link):
@@ -319,7 +337,7 @@ async def clone(client, message):
                                        index_link=index_link, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
         await rcloneNode(client, message, link, dst_path, rcf, listener)
     else:
-        if not drive_id and len(categories) > 1:
+        if not drive_id and len(categories_dict) > 1:
             drive_id, index_link = await open_category_btns(message)
         if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
             await sendMessage(message, "Google Drive id validation failed!!")

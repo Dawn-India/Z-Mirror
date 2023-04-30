@@ -1,23 +1,19 @@
-from asyncio import Event, wait_for, wrap_future
+from asyncio import wait_for, Event, wrap_future
+from aiofiles.os import path as aiopath
+from aiofiles import open as aiopen
 from configparser import ConfigParser
+from pyrogram.handlers import CallbackQueryHandler
+from pyrogram.filters import regex, user
 from functools import partial
 from json import loads
 from time import time
 
-from aiofiles import open as aiopen
-from aiofiles.os import path as aiopath
-from pyrogram.filters import regex, user
-from pyrogram.handlers import CallbackQueryHandler
-
 from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import (cmd_exec, get_readable_file_size,
-                                            get_readable_time, new_task,
-                                            new_thread)
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
+from bot.helper.ext_utils.bot_utils import cmd_exec, new_thread, get_readable_file_size, new_task, get_readable_time
 
 LIST_LIMIT = 6
-TIMEOUT = 240
 
 
 @new_task
@@ -47,6 +43,8 @@ async def path_updates(client, query, obj):
         else:
             await obj.back_from_path()
     elif data[1] == 're':
+        # some remotes has space
+        data = query.data.split(maxsplit=2)
         obj.remote = data[2]
         await obj.get_path()
     elif data[1] == 'pa':
@@ -94,6 +92,7 @@ class RcloneList:
         self.__sections = []
         self.__reply_to = None
         self.__time = time()
+        self.__timeout = 240
         self.remote = ''
         self.is_cancelled = False
         self.query_proc = False
@@ -113,7 +112,7 @@ class RcloneList:
         handler = self.__client.add_handler(CallbackQueryHandler(
             pfunc, filters=regex('^rcq') & user(self.__user_id)), group=-1)
         try:
-            await wait_for(self.event.wait(), timeout=240)
+            await wait_for(self.event.wait(), timeout=self.__timeout)
         except:
             self.path = ''
             self.remote = 'Timed Out. Task has been cancelled!'
@@ -175,7 +174,7 @@ class RcloneList:
             msg += f' | Page: {int(page)}/{pages} | Page Step: {self.page_step}'
         msg += f'\n\nItem Type: {self.item_type}\nConfig Path: {self.config_path}'
         msg += f'\nCurrent Path: <code>{self.remote}{self.path}</code>'
-        msg += f'\nTimeout: {get_readable_time(TIMEOUT-(time()-self.__time))}'
+        msg += f'\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
         await self.__send_list_message(msg, button)
 
     async def get_path(self, itype=''):
@@ -220,7 +219,7 @@ class RcloneList:
                 ('\nTransfer Type: <i>Download</i>' if self.list_status ==
                  'rcd' else '\nTransfer Type: <i>Upload</i>')
             msg += f'\nConfig Path: {self.config_path}'
-            msg += f'\nTimeout: {get_readable_time(TIMEOUT-(time()-self.__time))}'
+            msg += f'\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
             buttons = ButtonMaker()
             for remote in self.__sections:
                 buttons.ibutton(remote, f'rcq re {remote}:')
@@ -235,7 +234,7 @@ class RcloneList:
             msg = 'Choose Rclone config:' + \
                 ('\nTransfer Type: Download' if self.list_status ==
                  'rcd' else '\nTransfer Type: Upload')
-            msg += f'\nTimeout: {get_readable_time(TIMEOUT-(time()-self.__time))}'
+            msg += f'\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
             buttons = ButtonMaker()
             buttons.ibutton('Owner Config', 'rcq owner')
             buttons.ibutton('My Config', 'rcq user')

@@ -6,17 +6,18 @@ from cloudscraper import create_scraper
 from urllib.parse import quote
 from urllib3 import disable_warnings
 
-from bot import LOGGER, SHORTENER_APIS, SHORTENERES
+from bot import LOGGER, shorteneres_list
 
 
 def short_url(longurl, attempt=0):
-    if not SHORTENERES and not SHORTENER_APIS:
+    if not shorteneres_list:
         return longurl
     if attempt >= 4:
         return longurl
-    i = 0 if len(SHORTENERES) == 1 else randrange(len(SHORTENERES))
-    _shortener = SHORTENERES[i].strip()
-    _shortener_api = SHORTENER_APIS[i].strip()
+    i = 0 if len(shorteneres_list) == 1 else randrange(len(shorteneres_list))
+    _shorten_dict = shorteneres_list[i]
+    _shortener = _shorten_dict['domain']
+    _shortener_api =  _shorten_dict['api_key']
     cget = create_scraper().request
     disable_warnings()
     try:
