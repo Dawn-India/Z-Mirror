@@ -3,7 +3,7 @@ from time import time
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import LOGGER, bot
+from bot import LOGGER, bot, config_dict
 from bot.helper.ext_utils.bot_utils import (checking_access, get_readable_time,
                                             get_telegraph_list, new_task,
                                             sync_to_async)
@@ -13,6 +13,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker, deleteMessage,
                                                       editMessage, isAdmin,
+                                                      auto_delete_message,
                                                       request_limiter,
                                                       sendMessage)
 
@@ -79,6 +80,22 @@ async def drive_list(client, message):
         message.from_user = await anno_checker(message)
     if not message.from_user:
         return
+    if sender_chat := message.sender_chat:
+        tag = sender_chat.title
+    elif username := message.from_user.username:
+        tag = f"@{username}"
+    else:
+        tag = message.from_user.mention
+    if reply_to := message.reply_to_message:
+        if len(link) == 0:
+            link = reply_to.text.split('\n', 1)[0].strip()
+        if sender_chat := reply_to.sender_chat:
+            tag = sender_chat.title
+        elif not reply_to.from_user.is_bot:
+            if username := reply_to.from_user.username:
+                tag = f"@{username}"
+            else:
+                tag = reply_to.from_user.mention
     user_id = message.from_user.id
     if not await isAdmin(message, user_id):
         if await request_limiter(message):
@@ -86,7 +103,10 @@ async def drive_list(client, message):
         if message.chat.type != message.chat.type.PRIVATE:
             msg, btn = checking_access(user_id)
             if msg is not None:
-                await sendMessage(message, msg, btn.build_menu(1))
+                msg += f'\n\n<b>User</b>: {tag}'
+                msg += f'\n<b>Timeout</b>: {config_dict["AUTO_DELETE_MESSAGE_DURATION"]}'
+                reply_message = await sendMessage(message, msg, btn.build_menu(1))
+                await auto_delete_message(message, reply_message)
                 return
     buttons = await list_buttons(user_id)
     await sendMessage(message, 'Choose list options:', buttons)
