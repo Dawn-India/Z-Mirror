@@ -369,7 +369,7 @@ class MirrorLeechListener:
         msg = f'\n\n<b>Size</b>: {get_readable_file_size(size)}'
         msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<b>Upload</b>: {self.extra_details['mode']}"
-        _msg = f'\n\nPath: <code>{rclonePath}</code>' if rclonePath is not None else ''
+        _msg = '' if rclonePath is '' else f'\n\n<b>Path</b>: <code>{rclonePath}</code>'
         msg_ = '\n\n<b>Links has been sent in your DM.</b>'
         buttons = ButtonMaker()
         if self.isLeech:
