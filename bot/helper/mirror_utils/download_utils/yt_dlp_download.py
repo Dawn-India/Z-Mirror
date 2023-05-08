@@ -66,7 +66,7 @@ class YoutubeDLHelper:
                      'allow_playlist_files': True,
                      'overwrites': True,
                      'writethumbnail': True,
-                     'trim_file_name': 220}
+                     'trim_file_name': 230}
 
     @property
     def download_speed(self):
@@ -224,17 +224,22 @@ class YoutubeDLHelper:
         if self.__is_cancelled:
             return
 
+        base_name, ext = ospath.splitext(self.name)
+        trim_name = self.name if self.is_playlist else base_name
+        if len(trim_name.encode()) > 200:
+            self.name = self.name[:200] if self.is_playlist else f'{base_name[:200]}{ext}'
+            base_name = ospath.splitext(self.name)[0]
+
         if self.is_playlist:
             self.opts['outtmpl'] = {'default': f"{path}/{self.name}/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s",
                                     'thumbnail': f"{path}/yt-dlp-thumb/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s"}
         elif not options:
             self.opts['outtmpl'] = {'default': f"{path}/{self.name}",
-                                    'thumbnail': f"{path}/yt-dlp-thumb/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s"}
+                                    'thumbnail': f"{path}/yt-dlp-thumb/{base_name}.%(ext)s"}
         else:
-            pure_name = ospath.splitext(self.name)[0]
-            self.opts['outtmpl'] = {'default': f"{path}/{pure_name}/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s",
-                                    'thumbnail': f"{path}/yt-dlp-thumb/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s"}
-            self.name = pure_name
+            self.opts['outtmpl'] = {'default': f"{path}/{base_name}/{self.name}",
+                                    'thumbnail': f"{path}/yt-dlp-thumb/{base_name}.%(ext)s"}
+            self.name = base_name
 
         if self.__listener.isLeech:
             self.opts['postprocessors'].append({'format': 'jpg', 'key': 'FFmpegThumbnailsConvertor', 'when': 'before_dl'})
@@ -283,7 +288,10 @@ class YoutubeDLHelper:
         for opt in options:
             key, value = map(str.strip, opt.split(':', 1))
             if value.startswith('^'):
-                value = float(value.split('^')[1])
+                if '.' in value:
+                    value = float(value.split('^')[1])
+                else:
+                    value = int(value.split('^')[1])
             elif value.lower() == 'true':
                 value = True
             elif value.lower() == 'false':

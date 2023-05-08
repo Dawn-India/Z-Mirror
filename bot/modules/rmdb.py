@@ -11,7 +11,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage
 
 
 @new_task
-async def rmdbNode(client, message):
+async def rmdbNode(_, message):
     if DATABASE_URL and not config_dict['STOP_DUPLICATE_TASKS']:
         return await sendMessage(message, 'STOP_DUPLICATE_TASKS feature is not enabled')
     mesg = message.text.split('\n')

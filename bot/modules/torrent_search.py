@@ -223,7 +223,7 @@ async def __plugin_buttons(user_id):
     return buttons.build_menu(2)
 
 
-async def torrentSearch(client, message):
+async def torrentSearch(_, message):
     if not message.from_user:
         message.from_user = await anno_checker(message)
     if not message.from_user:
@@ -284,7 +284,7 @@ async def torrentSearch(client, message):
 
 
 @new_task
-async def torrentSearchUpdate(client, query):
+async def torrentSearchUpdate(_, query):
     user_id = query.from_user.id
     message = query.message
     key = message.reply_to_message.text.split(maxsplit=1)

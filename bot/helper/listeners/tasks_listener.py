@@ -151,7 +151,7 @@ class MirrorLeechListener:
             await self.onUploadError('Downloaded! Waiting for other tasks...')
             return
         if name == "None" or self.isQbit or not await aiopath.exists(f"{self.dir}/{name}"):
-            name = (await listdir(self.dir))[-1]
+            name = (await listdir(self.dir))[0]
         m_path = f"{self.dir}/{name}"
         size = await get_path_size(m_path)
         async with queue_dict_lock:
@@ -369,7 +369,7 @@ class MirrorLeechListener:
         msg = f'\n\n<b>Size</b>: {get_readable_file_size(size)}'
         msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<b>Upload</b>: {self.extra_details['mode']}"
-        _msg = '' if rclonePath is '' else f'\n\n<b>Path</b>: <code>{rclonePath}</code>'
+        _msg = '' if rclonePath == '' else f'\n\n<b>Path</b>: <code>{rclonePath}</code>'
         msg_ = '\n\n<b>Links has been sent in your DM.</b>'
         buttons = ButtonMaker()
         if self.isLeech:

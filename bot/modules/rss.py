@@ -59,12 +59,12 @@ async def updateRssMenu(query):
     await editMessage(query.message, msg, button)
 
 
-async def getRssMenu(client, message):
+async def getRssMenu(_, message):
     msg, button = await rssMenu(message)
     await sendMessage(message, msg, button)
 
 
-async def rssSub(client, message, pre_event):
+async def rssSub(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     if username := message.from_user.username:
@@ -250,7 +250,7 @@ async def rssList(query, start, all_users=False):
     await editMessage(query.message, list_feed, button)
 
 
-async def rssGet(client, message, pre_event):
+async def rssGet(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     args = message.text.split()
@@ -296,7 +296,7 @@ async def rssGet(client, message, pre_event):
     await updateRssMenu(pre_event)
 
 
-async def rssEdit(client, message, pre_event):
+async def rssEdit(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     items = message.text.split('\n')
@@ -351,7 +351,7 @@ async def rssEdit(client, message, pre_event):
     await updateRssMenu(pre_event)
 
 
-async def rssDelete(client, message, pre_event):
+async def rssDelete(_, message, pre_event):
     handler_dict[message.from_user.id] = False
     users = message.text.split()
     for user in users:

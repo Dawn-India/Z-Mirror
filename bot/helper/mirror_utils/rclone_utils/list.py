@@ -17,7 +17,7 @@ LIST_LIMIT = 6
 
 
 @new_task
-async def path_updates(client, query, obj):
+async def path_updates(_, query, obj):
     await query.answer()
     message = query.message
     data = query.data.split()
