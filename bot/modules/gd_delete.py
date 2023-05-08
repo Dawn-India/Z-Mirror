@@ -12,7 +12,7 @@ from bot.helper.telegram_helper.message_utils import (auto_delete_message,
 
 
 @new_task
-async def deletefile(client, message):
+async def deletefile(_, message):
     args = message.text.split()
     if len(args) > 1:
         link = args[1]

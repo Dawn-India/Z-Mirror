@@ -34,7 +34,7 @@ from .modules import (anonymous, authorize, bot_settings, cancel_mirror,
 
 start_aria2_listener()
 
-async def stats(client, message):
+async def stats(_, message):
     sysTime = get_readable_time(time() - boot_time())
     botTime = get_readable_time(time() - botStartTime)
     total, used, free, disk= disk_usage('/')
@@ -75,7 +75,7 @@ async def stats(client, message):
     await sendMessage(message, stats)
 
 
-async def start(client, message):
+async def start(_, message):
     if len(message.command) > 1:
         userid = message.from_user.id
         input_token = message.command[1]
@@ -101,7 +101,7 @@ async def start(client, message):
     await sendMessage(message, start_string)
 
 
-async def restart(client, message):
+async def restart(_, message):
     restart_message = await sendMessage(message, "Restarting...")
     if scheduler.running:
         scheduler.shutdown(wait=False)
@@ -116,14 +116,14 @@ async def restart(client, message):
         await f.write(f"{restart_message.chat.id}\n{restart_message.id}\n")
     osexecl(executable, executable, "-m", "bot")
 
-async def ping(client, message):
+async def ping(_, message):
     start_time = monotonic()
     reply = await sendMessage(message, "Starting Ping")
     end_time = monotonic()
     ping_time = int((end_time - start_time) * 1000)
     await editMessage(reply, f'{ping_time} ms')
 
-async def log(client, message):
+async def log(_, message):
     await sendFile(message, 'Z_Logs.txt')
 
 help_string = f'''
@@ -204,7 +204,7 @@ help_string = f'''
 '''
 
 
-async def bot_help(client, message):
+async def bot_help(_, message):
     await sendMessage(message, help_string)
 
 

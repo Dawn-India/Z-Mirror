@@ -329,7 +329,7 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
         0].strip() if len(rcf) > 1 else None
 
     up = mssg.split(' up: ', 1)
-    up = re_split(' n: | pswd: | rcf: | opt: ', up[1])[
+    up = re_split(' n: | pswd: | rcf: | opt: | index: | id: ', up[1])[
         0].strip() if len(up) > 1 else None
 
     drive_id = mssg.split(' id: ', 1)
@@ -448,14 +448,16 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
     if 'mdisk.me' in link:
         name, link = await _mdisk(link, name)
 
-    options = {'usenetrc': True,
-               'cookiefile': 'cookies.txt', 'playlist_items': '0'}
+    options = {'usenetrc': True, 'cookiefile': 'cookies.txt'}
     if opt:
         yt_opt = opt.split('|')
         for ytopt in yt_opt:
             key, value = map(str.strip, ytopt.split(':', 1))
             if value.startswith('^'):
-                value = float(value.split('^')[1])
+                if '.' in value:
+                    value = float(value.split('^')[1])
+                else:
+                    value = int(value.split('^')[1])
             elif value.lower() == 'true':
                 value = True
             elif value.lower() == 'false':
@@ -463,6 +465,8 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}):
             elif value.startswith(('{', '[', '(')) and value.endswith(('}', ']', ')')):
                 value = eval(value)
             options[key] = value
+
+        options['playlist_items'] = '0'
 
     try:
         result = await sync_to_async(extract_info, link, options)

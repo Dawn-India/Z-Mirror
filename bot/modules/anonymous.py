@@ -6,7 +6,7 @@ from bot.helper.telegram_helper.message_utils import (deleteMessage,
                                                       editMessage, isAdmin)
 
 
-async def verifyAnno(client, query):
+async def verifyAnno(_, query):
     message = query.message
     data = query.data.split()
     msg_id = int(data[2])

@@ -278,7 +278,7 @@ async def clone(client, message):
             nextmsg.sender_chat = message.sender_chat
         nextmsg.from_user = message.from_user
         await sleep(4)
-        await clone(client, nextmsg)
+        clone(client, nextmsg)
 
     __run_multi()
 

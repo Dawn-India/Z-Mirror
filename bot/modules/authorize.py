@@ -9,7 +9,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage
 
 
-async def authorize(client, message):
+async def authorize(_, message):
     msg = message.text.split()
     if len(msg) > 1:
         id_ = int(msg[1].strip())
@@ -27,7 +27,7 @@ async def authorize(client, message):
     await sendMessage(message, msg)
 
 
-async def unauthorize(client, message):
+async def unauthorize(_, message):
     msg = message.text.split()
     if len(msg) > 1:
         id_ = int(msg[1].strip())
@@ -45,7 +45,7 @@ async def unauthorize(client, message):
     await sendMessage(message, msg)
 
 
-async def addSudo(client, message):
+async def addSudo(_, message):
     id_ = ""
     msg = message.text.split()
     if len(msg) > 1:
@@ -65,7 +65,7 @@ async def addSudo(client, message):
     await sendMessage(message, msg)
 
 
-async def removeSudo(client, message):
+async def removeSudo(_, message):
     id_ = ""
     msg = message.text.split()
     if len(msg) > 1:

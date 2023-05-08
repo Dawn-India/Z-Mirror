@@ -44,12 +44,12 @@ async def send(msg, message):
 
 
 @new_task
-async def evaluate(client, message):
+async def evaluate(_, message):
     await send(await sync_to_async(do, eval, message), message)
 
 
 @new_task
-async def execute(client, message):
+async def execute(_, message):
     await send(await sync_to_async(do, exec, message), message)
 
 
@@ -103,7 +103,7 @@ def do(func, message):
             return result
 
 
-async def clear(client, message):
+async def clear(_, message):
     log_input(message)
     global namespaces
     if message.chat.id in namespaces:

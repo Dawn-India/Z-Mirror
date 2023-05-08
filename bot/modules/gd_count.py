@@ -14,7 +14,7 @@ from bot.helper.telegram_helper.message_utils import deleteMessage, sendMessage
 
 
 @new_task
-async def countNode(client, message):
+async def countNode(_, message):
     args = message.text.split()
     link = ''
     if len(args) > 1:
