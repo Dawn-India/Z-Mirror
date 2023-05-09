@@ -38,7 +38,7 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Embed original thumbnail and add it for leech
 - All supported audio formats
 
-### Leech
+### TG Download/Upload
 
 - Leech support(Upload to Telegram)
 - Splitting
@@ -49,6 +49,8 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Upload all files to specific superGroup/channel.
 - Leech Split size and equal split size settings for each user
 - Ability to leech splitted file parts in media group. Setting for each user
+- Download using premium account if available
+- Download restricted messages (document or link) by tg private/public/super links
 
 ### Google
 
@@ -388,34 +390,34 @@ sudo docker stop id
 
 **NOTE**: If you want to use ports other than 80 and 8080 for torrent file selection and rclone serve respectively, change it in [docker-compose.yml](docker-compose.yml) also.
 
-- Install docker-compose
+- Install docker compose
 
 ```
-sudo apt install docker-compose
+sudo apt install docker compose
 ```
 
 - Build and run Docker image:
 
 ```
-sudo docker-compose up --build
+sudo docker compose up --build
 ```
 
 - To stop the running image:
 
 ```
-sudo docker-compose stop
+sudo docker compose stop
 ```
 
 - To run the image:
 
 ```
-sudo docker-compose start
+sudo docker compose start
 ```
 
 - To get latest log from already running image (after mounting the folder):
 
 ```
-sudo docker-compose up
+sudo docker compose up
 ```
 
 - Tutorial video from Tortoolkit repo for docker-compose and checking ports
