@@ -104,7 +104,6 @@ async def drive_list(_, message):
             msg, btn = checking_access(user_id)
             if msg is not None:
                 msg += f'\n\n<b>User</b>: {tag}'
-                msg += f'\n<b>Timeout</b>: {config_dict["AUTO_DELETE_MESSAGE_DURATION"]}'
                 reply_message = await sendMessage(message, msg, btn.build_menu(1))
                 await auto_delete_message(message, reply_message)
                 return

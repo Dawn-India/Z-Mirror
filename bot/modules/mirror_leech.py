@@ -185,7 +185,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             reply_to.voice or reply_to.video_note or reply_to.sticker or reply_to.animation or None
         if sender_chat := reply_to.sender_chat:
             tag = sender_chat.title
-        elif not reply_to.from_user.is_bot:
+        elif (re_user := reply_to.from_user) and not re_user.is_bot:
             if username := reply_to.from_user.username:
                 tag = f"@{username}"
             else:
@@ -201,14 +201,18 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                 file_ = None
 
     if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) and not is_rclone_path(link) and file_ is None:
-        await sendMessage(message, MIRROR_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
+        reply_message = await sendMessage(message, MIRROR_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
+        await auto_delete_message(message, reply_message)
         await delete_links(message)
         return
+
     if not message.from_user:
         message.from_user = await anno_checker(message)
+
     if not message.from_user:
         await delete_links(message)
         return
+
     error_msg = []
     error_button = None
     if not await isAdmin(message):
@@ -235,7 +239,6 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
         for __i, __msg in enumerate(error_msg, 1):
             final_msg += f'\n<b>{__i}</b>: {__msg}\n'
         final_msg += f'\n<b>Thank You</b>'
-        final_msg += f'\n<b>Timeout</b>: {config_dict["AUTO_DELETE_MESSAGE_DURATION"]}'
         if error_button is not None:
             error_button = error_button.build_menu(2)
         await delete_links(message)
@@ -321,8 +324,9 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             gmsg = f"Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\n\n"
             gmsg += f"Use /{BotCommands.ZipMirrorCommand[0]} to make zip of Google Drive folder\n\n"
             gmsg += f"Use /{BotCommands.UnzipMirrorCommand[0]} to extracts Google Drive archive folder/file"
+            reply_message = await sendMessage(message, gmsg)
+            await auto_delete_message(message, reply_message)
             await delete_links(message)
-            await sendMessage(message, gmsg)
         else:
             await add_gd_download(link, path, listener, name)
     elif is_mega_link(link):

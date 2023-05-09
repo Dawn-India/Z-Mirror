@@ -97,9 +97,7 @@ Thumbnail: <b>{thumbmsg}</b>
 Media Group: <b>{media_group}</b>
 
 YT-DLP Options: <b><code>{escape(ytopt)}</code></b>
-Rclone Config: <b>{rccmsg}</b>
-
-<b>Timeout</b>: {config_dict["AUTO_DELETE_MESSAGE_DURATION"]}"""
+Rclone Config: <b>{rccmsg}</b>"""
     return text, buttons.build_menu(1)
     
 

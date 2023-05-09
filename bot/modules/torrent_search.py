@@ -253,7 +253,6 @@ async def torrentSearch(_, message):
             msg, buttons = checking_access(user_id, buttons)
             if msg is not None:
                 msg += f'\n\n<b>User</b>: {tag}'
-                msg += f'\n<b>Timeout</b>: {config_dict["AUTO_DELETE_MESSAGE_DURATION"]}'
                 reply_message = await sendMessage(message, msg, buttons.build_menu(1))
                 await auto_delete_message(message, reply_message)
                 return

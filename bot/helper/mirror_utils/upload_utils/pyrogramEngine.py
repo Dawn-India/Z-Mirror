@@ -282,13 +282,13 @@ class TgUploader:
 
     async def __switching_client(self, f_size):
         if f_size > 2097152000 and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot:
-            LOGGER.info(
-                f'Trying to upload file greater than {get_readable_file_size(f_size)} fetching message for user client')
-            self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+            LOGGER.info(f'Upload using user_session: size {get_readable_file_size(f_size)}')
+            if self.__sent_msg is not None:
+                self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
         if f_size < 2097152000 and not self.__sent_msg._client.me.is_bot:
-            LOGGER.info(
-                f'Trying to upload file less than {get_readable_file_size(f_size)} fetching message for bot client')
-            self.__sent_msg = await bot.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+            LOGGER.info(f'Upload using bot_session: size {get_readable_file_size(f_size)}')
+            if self.__sent_msg is not None:
+                self.__sent_msg = await bot.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
 
     async def __send_dm(self):
         try:
