@@ -27,7 +27,7 @@ async def shell(_, message):
         LOGGER.error(f"Shell - {cmd} - {stderr}")
     if len(reply) > 3000:
         with BytesIO(str.encode(reply)) as out_file:
-            out_file.name = "shell_output.txt"
+            out_file.name = "Z_Shell.txt"
             await sendFile(message, out_file)
     elif len(reply) != 0:
         await sendMessage(message, reply)

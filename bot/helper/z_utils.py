@@ -10,6 +10,7 @@ from bot.helper.ext_utils.bot_utils import (check_user_tasks, checking_access,
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import (delete_links, forcesub,
+                                                      auto_delete_message,
                                                       message_filter,
                                                       sendMessage)
 
@@ -42,8 +43,9 @@ async def stop_duplicate_tasks(message, link, file_=None):
             _msg = f'<b>Download is already added by {exist["tag"]}</b>\n'
             _msg += f'Check the download status in @{exist["botname"]}\n\n'
             _msg += f'<b>Link</b>: <code>{exist["_id"]}</code>'
+            reply_message = await sendMessage(message, _msg)
+            await auto_delete_message(message, reply_message)
             await delete_links(message)
-            await sendMessage(message, _msg)
             return 'duplicate_tasks'
         return raw_url
 

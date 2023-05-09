@@ -193,7 +193,8 @@ async def gdcloneNode(message, link, listener):
         LOGGER.info(f'Cloning Done: {name}')
         await listener.onUploadComplete(link, size, files, folders, mime_type, name, drive_id=dir_id)
     else:
-        await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
+        reply_message = await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
+        await auto_delete_message(message, reply_message)
 
 
 @new_task
@@ -283,7 +284,8 @@ async def clone(client, message):
     __run_multi()
 
     if not link:
-        await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
+        reply_message = await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
+        await auto_delete_message(message, reply_message)
         await delete_links(message)
         return
 
@@ -316,7 +318,6 @@ async def clone(client, message):
         for __i, __msg in enumerate(error_msg, 1):
             final_msg += f'\n<b>{__i}</b>: {__msg}\n'
         final_msg += f'\n<b>Thank You</b>'
-        final_msg += f'\n<b>Timeout</b>: {config_dict["AUTO_DELETE_MESSAGE_DURATION"]}'
         if error_button is not None:
             error_button = error_button.build_menu(2)
         await delete_links(message)

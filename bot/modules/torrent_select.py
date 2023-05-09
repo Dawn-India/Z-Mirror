@@ -4,12 +4,14 @@ from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
 from bot import LOGGER, aria2, bot, download_dict, download_dict_lock
+from bot.helper.ext_utils.help_messages import TOE_SEL_HELP_MESSAGE
 from bot.helper.ext_utils.bot_utils import (MirrorStatus, bt_selection_buttons,
                                             getDownloadByGid, sync_to_async)
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker, isAdmin,
                                                       request_limiter,
+                                                      auto_delete_message,
                                                       sendMessage,
                                                       sendStatusMessage)
 
@@ -36,11 +38,8 @@ async def select(client, message):
             await sendMessage(message, "This is not an active task!")
             return
     elif len(msg) == 1:
-        msg = ("Reply to an active /{cmd} which was used to start the qb-download or add gid along with cmd\n\n"
-               + "This command mainly for selection incase you decided to select files from already added torrent. "
-               + "But you can always use /{mir} with arg `s` to select files before download start."
-               .format_map({'cmd': BotCommands.BtSelectCommand, 'mir': BotCommands.MirrorCommand[0]}))
-        await sendMessage(message, msg)
+        reply_message = await sendMessage(message, TOE_SEL_HELP_MESSAGE.format_map({'cmd': BotCommands.BtSelectCommand, 'mir': BotCommands.MirrorCommand[0]}))
+        await auto_delete_message(message, reply_message)
         return
 
     if not await CustomFilters.sudo(client, message) and dl.message.from_user.id != user_id:

@@ -25,7 +25,7 @@ from .helper.ext_utils.fs_utils import clean_all, exit_clean_up, start_cleanup
 from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.message_utils import (editMessage, sendFile,
-                                                   sendMessage)
+                                                   sendMessage, auto_delete_message)
 from .modules import (anonymous, authorize, bot_settings, cancel_mirror,
                       category_select, clone, eval, gd_count, gd_delete,
                       gd_list, leech_del, mirror_leech, rmdb, rss,
@@ -83,12 +83,12 @@ async def start(_, message):
             return await sendMessage(message, 'This token is not yours!\n\nKindly generate your own.')
         data = user_data[userid]
         if 'token' not in data or data['token'] != input_token:
-            return await sendMessage(message, 'Token already expired\n\nKindly generate a new one.')
+            return await sendMessage(message, 'Token already used!\n\nKindly generate a new one.')
         data['token'] = str(uuid4())
         data['time'] = time()
         user_data[userid].update(data)
         msg = 'Token refreshed successfully!\n\n'
-        msg += f'Validity: {config_dict["TOKEN_TIMEOUT"]}s'
+        msg += f'Validity: {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}'
         return await sendMessage(message, msg)
     elif config_dict['DM_MODE']:
         start_string = 'Bot Started.\n' \
@@ -205,7 +205,8 @@ help_string = f'''
 
 
 async def bot_help(_, message):
-    await sendMessage(message, help_string)
+    reply_message = await sendMessage(message, help_string)
+    await auto_delete_message(message, reply_message)
 
 
 async def restart_notification():

@@ -140,21 +140,29 @@ def get_readable_message():
     button = None
     STATUS_LIMIT = config_dict['STATUS_LIMIT']
     tasks = len(download_dict)
+
     globals()['PAGES'] = (tasks + STATUS_LIMIT - 1) // STATUS_LIMIT
     if PAGE_NO > PAGES and PAGES != 0:
         globals()['STATUS_START'] = STATUS_LIMIT * (PAGES - 1)
         globals()['PAGE_NO'] = PAGES
+
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
-        tag = download.message.from_user.username if download.message.from_user.username is not None else {escape(download.message.from_user.first_name)}
-        tag = f"<a href='https://t.me/{tag}'>{tag}</a>"
+
+        tag = download.message.from_user.mention
+
+        if reply_to := download.message.reply_to_message:
+            tag = reply_to.from_user.mention
+
         if config_dict['DM_MODE']:
-            msg += f"Hey {tag}, Please wait!\n<b>{download.status()}</b> "
+            msg += f"Hey <b><i>{tag}</b></i>, Please wait!\n<b>{download.status()}</b> "
             msg += f"Your Task [<a href='{download.message.link}'>{download.extra_details['mode']}</a>]"
         else:
             msg += f"\n<b>{download.status()}:</b> <code>{escape(f'{download.name()}')}</code>"
+
         if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_CONVERTING,
                                      MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP, 
                                      MirrorStatus.STATUS_PAUSED]:
+
             msg += f"\n{get_progress_bar_string(download.progress())} {download.progress()}"
             status_label = status_labels.get(download.status(), "")
             msg += f"\n<b>{status_label}:</b> "
@@ -162,21 +170,25 @@ def get_readable_message():
             msg += f"\n<b>Speed</b>: <code>{download.speed()}</code> | "
             msg += f"<b>Elapsed:</b> <code>{get_readable_time(time() - download.extra_details['startTime'])}</code>"
             msg += f"\n<b>ETA</b>: <code>{download.eta()}</code> | <b>Eng</b>: <code>{download.engine}</code>"
+
             if hasattr(download, 'playList'):
                 try:
                     if playlist:=download.playList():
                         msg += f"\n<b>Playlist Downloaded</b>: {playlist}"
                 except:
                     pass
+
             if not config_dict['DM_MODE']:
                 msg += f"\n<b>Task</b>: <a href='{download.message.link}'>{download.extra_details['mode']}</a>"
                 msg += f" | <b>By</b>: {tag}"
+
             if hasattr(download, 'seeders_num'):
                 try:
                     msg += f"\n<b>Seeders</b>: {download.seeders_num()}"
                     msg += f" | <b>Leechers</b>: {download.leechers_num()}"
                 except:
                     pass
+
         elif download.status() == MirrorStatus.STATUS_SEEDING:
             msg += f"\n<b>Size</b>: {download.size()}"
             msg += f"\n<b>Speed</b>: {download.upload_speed()}"
@@ -186,8 +198,10 @@ def get_readable_message():
         else:
             msg += f"\n<b>Size</b>: {download.size()}"
         msg += f"\n⚠️ <code>/{BotCommands.CancelMirror[0]} {download.gid()}</code>\n\n"
+
     if len(msg) == 0:
         return None, None
+
     def convert_speed_to_bytes_per_second(spd):
         if 'K' in spd:
             return float(spd.split('K')[0]) * 1024
@@ -206,6 +220,7 @@ def get_readable_message():
             dl_speed += speed_in_bytes_per_second
         elif tstatus == MirrorStatus.STATUS_UPLOADING or tstatus == MirrorStatus.STATUS_SEEDING:
             up_speed += speed_in_bytes_per_second
+
     if tasks > STATUS_LIMIT:
         buttons = ButtonMaker()
         buttons.ibutton("⫷", "status pre")
