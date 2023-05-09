@@ -76,6 +76,7 @@ async def stats(_, message):
 
 
 async def start(_, message):
+    token_timeout = config_dict['TOKEN_TIMEOUT']
     if len(message.command) > 1:
         userid = message.from_user.id
         input_token = message.command[1]
@@ -87,8 +88,9 @@ async def start(_, message):
         data['token'] = str(uuid4())
         data['time'] = time()
         user_data[userid].update(data)
+        time_str = format_validity_time(token_timeout)
         msg = 'Token refreshed successfully!\n\n'
-        msg += f'Validity: {config_dict["TOKEN_TIMEOUT"]}s'
+        msg += f'Validity: {time_str}s'
         return await sendMessage(message, msg)
     elif config_dict['DM_MODE']:
         start_string = 'Bot Started.\n' \
@@ -100,6 +102,27 @@ async def start(_, message):
                        'Thank You'
     await sendMessage(message, start_string)
 
+def format_validity_time(validity_time):
+    days = validity_time // (24 * 3600)
+    validity_time = validity_time % (24 * 3600)
+    hours = validity_time // 3600
+    validity_time %= 3600
+    minutes = validity_time // 60
+    validity_time %= 60
+    seconds = validity_time
+    time_str = ''
+    if days > 0:
+        suffix = 's' if days > 1 else ''
+        time_str += f"{days} day{suffix} "
+    if hours > 0:
+        suffix = 's' if hours > 1 else ''
+        time_str += f"{hours} hour{suffix} "
+    if minutes > 0:
+        suffix = 's' if minutes > 1 else ''
+        time_str += f"{minutes} minute{suffix} "
+    suffix = 's' if seconds > 1 else ''
+    time_str += f"{seconds} second{suffix}"
+    return time_str
 
 async def restart(_, message):
     restart_message = await sendMessage(message, "Restarting...")
