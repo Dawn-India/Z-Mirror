@@ -8,9 +8,8 @@ if ospath.exists('Z_Logs.txt'):
     with open('Z_Logs.txt', 'r+') as f:
         f.truncate(0)
 
-basicConfig(format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
-            handlers=[FileHandler('Z_Logs.txt'), StreamHandler()],
-            level=INFO)
+basicConfig(format='%(levelname)s | From %(name)s -> %(module)s line no: %(lineno)d | %(message)s',
+                    handlers=[FileHandler('Z_Logs.txt'), StreamHandler()], level=INFO)
 
 load_dotenv('config.env', override=True)
 

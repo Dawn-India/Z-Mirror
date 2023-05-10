@@ -281,14 +281,12 @@ class TgUploader:
         await self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
 
     async def __switching_client(self, f_size):
-        if f_size > 2097152000 and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot:
-            LOGGER.info(f'Upload using user_session: size {get_readable_file_size(f_size)}')
-            if self.__sent_msg is not None:
-                self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
         if f_size < 2097152000 and not self.__sent_msg._client.me.is_bot:
-            LOGGER.info(f'Upload using bot_session: size {get_readable_file_size(f_size)}')
-            if self.__sent_msg is not None:
-                self.__sent_msg = await bot.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+            LOGGER.info(f'Upload using BOT_SESSION: size {get_readable_file_size(f_size)}')
+            self.__sent_msg = await bot.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+        if f_size > 2097152000 and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot:
+            LOGGER.info(f'Upload using USER_SESSION: size {get_readable_file_size(f_size)}')
+            self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
 
     async def __send_dm(self):
         try:
@@ -300,11 +298,9 @@ class TgUploader:
             )
         except Exception as err:
             if isinstance(err, RPCError):
-                LOGGER.error(
-                    f"Error while sending dm {err.NAME}: {err.MESSAGE}")
+                LOGGER.error(f"Error while sending dm {err.NAME}: {err.MESSAGE}")
             else:
-                LOGGER.error(
-                    f"Error while sending dm {err.__class__.__name__}")
+                LOGGER.error(f"Error while sending dm {err.__class__.__name__}")
             self.__sent_DMmsg = None
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
