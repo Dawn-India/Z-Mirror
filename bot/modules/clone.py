@@ -332,7 +332,7 @@ async def clone(client, message):
             await delete_links(message)
             return
         if not config_dict['RCLONE_PATH'] and not dst_path:
-            await sendMessage(message, 'Destinantion not specified!')
+            await sendMessage(message, 'Destination not specified!')
             await delete_links(message)
             return
         listener = MirrorLeechListener(message, tag=tag, select=select, isClone=True, drive_id=drive_id,
