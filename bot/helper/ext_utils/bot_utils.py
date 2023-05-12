@@ -218,7 +218,10 @@ def get_readable_message():
         speed_in_bytes_per_second = convert_speed_to_bytes_per_second(spd)
         if tstatus == MirrorStatus.STATUS_DOWNLOADING:
             dl_speed += speed_in_bytes_per_second
-        elif tstatus == MirrorStatus.STATUS_UPLOADING or tstatus == MirrorStatus.STATUS_SEEDING:
+        elif tstatus in [
+            MirrorStatus.STATUS_UPLOADING,
+            MirrorStatus.STATUS_SEEDING,
+        ]:
             up_speed += speed_in_bytes_per_second
 
     if tasks > STATUS_LIMIT:
