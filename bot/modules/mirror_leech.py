@@ -51,7 +51,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
     auth = ''
     reply_to = None
     file_ = None
-    force_user = False
+    session = ''
 
     if len(message_args) > 1:
         index = 1
@@ -165,7 +165,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
 
     if link and is_telegram_link(link):
         try:
-            reply_to, force_user = await get_tg_link_content(link)
+            reply_to, session = await get_tg_link_content(link)
         except Exception as e:
             await sendMessage(message, f'ERROR: {e}')
             return
@@ -175,7 +175,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             reply_text = reply_to.text.split('\n', 1)[0].strip()
             if reply_text and is_telegram_link(reply_text):
                 try:
-                    reply_to, force_user = await get_tg_link_content(reply_text)
+                    reply_to, session = await get_tg_link_content(reply_text)
                 except Exception as e:
                     await sendMessage(message, f'ERROR: {e}')
                     return
@@ -305,7 +305,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                                    drive_id, index_link, dmMessage, logMessage)
 
     if file_ is not None:
-        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, force_user)
+        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
     elif is_rclone_path(link):
         if link.startswith('mrcc:'):
             link = link.split('mrcc:', 1)[1]

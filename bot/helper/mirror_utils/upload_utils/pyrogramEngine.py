@@ -61,7 +61,8 @@ class TgUploader:
         if self.__is_cancelled:
             if IS_PREMIUM_USER:
                 user.stop_transmission()
-            bot.stop_transmission()
+            else:
+                bot.stop_transmission()
         chunk_size = current - self.__last_uploaded
         self.__last_uploaded = current
         self.__processed_bytes += chunk_size
