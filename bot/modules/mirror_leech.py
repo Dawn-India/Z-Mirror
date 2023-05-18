@@ -305,7 +305,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
                                    drive_id, index_link, dmMessage, logMessage)
 
     if file_ is not None:
-        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
+        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name)
     elif is_rclone_path(link):
         if link.startswith('mrcc:'):
             link = link.split('mrcc:', 1)[1]
