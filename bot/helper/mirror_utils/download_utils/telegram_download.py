@@ -54,8 +54,7 @@ class TelegramDownloadHelper:
         if self.__is_cancelled:
             if IS_PREMIUM_USER:
                 user.stop_transmission()
-            else:
-                bot.stop_transmission()
+            bot.stop_transmission()
         self.__processed_bytes = current
 
     async def __onDownloadError(self, error):
@@ -86,13 +85,7 @@ class TelegramDownloadHelper:
         elif not self.__is_cancelled:
             await self.__onDownloadError('Internal error occurred')
 
-    async def add_download(self, message, path, filename, session):
-        if IS_PREMIUM_USER and session != 'bot' or session == 'user':
-            if not self.__listener.isSuperGroup and session != 'user':
-                await sendMessage(message, 'Use SuperGroup to download with User!')
-                return
-            message = await user.get_messages(chat_id=message.chat.id, message_ids=message.id)
-
+    async def add_download(self, message, path, filename):
         media = message.document or message.photo or message.video or message.audio or \
             message.voice or message.video_note or message.sticker or message.animation or None
         if media is not None:
