@@ -406,6 +406,6 @@ async def set_commands(client):
         BotCommand(f'{BotCommands.CancelAllCommand[0]}', f'Cancel all tasks which added by you or {BotCommands.CancelAllCommand[1]} to in bots.'),
         BotCommand(f'{BotCommands.ListCommand}', 'Search in Drive'),
         BotCommand(f'{BotCommands.SearchCommand}', 'Search in Torrent'),
-        BotCommand(f'{BotCommands.UserSetCommand}', 'Users settings'),
+        BotCommand(f'{BotCommands.UserSetCommand[0]}', f'or {BotCommands.UserSetCommand[1]} Users settings'),
         BotCommand(f'{BotCommands.HelpCommand}', 'Get detailed help'),
             ])
