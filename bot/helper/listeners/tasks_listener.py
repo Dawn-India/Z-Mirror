@@ -365,7 +365,7 @@ class MirrorLeechListener:
         LOGGER.info(f'Done Uploading {name}')
         lmsg = f'<b>File Name</b>: <code>{escape(name)}</code>'
         lmsg += f'\n<b>Req By</b>: {self.tag}'
-        gmsg = f'Hey <b>{self.tag}</b>! Your job is done.'
+        gmsg = f'Hey <b>{self.tag}</b>!\nYour job is done.'
         msg = f'\n\n<b>Size</b>: {get_readable_file_size(size)}'
         msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<b>Upload</b>: {self.extra_details['mode']}"

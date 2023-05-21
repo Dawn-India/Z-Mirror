@@ -22,7 +22,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 
 THREADPOOL = ThreadPoolExecutor(max_workers=1000)
 
-MAGNET_REGEX = r'magnet:\?xt=urn:(btih|btmh):[a-zA-Z0-9]*\s*'
+MAGNET_REGEX = r'^magnet:\?.*xt=urn:(btih|btmh):[a-zA-Z0-9]*\s*'
 
 URL_REGEX = r'^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$'
 
@@ -45,16 +45,6 @@ class MirrorStatus:
     STATUS_CHECKING = "CheckingUp"
     STATUS_SEEDING = "Seeding"
     STATUS_CONVERTING = "Converting"
-
-status_labels = {
-    MirrorStatus.STATUS_DOWNLOADING: "Downloaded",
-    MirrorStatus.STATUS_UPLOADING: "Uploaded",
-    MirrorStatus.STATUS_CLONING: "Cloned",
-    MirrorStatus.STATUS_ARCHIVING: "Archived",
-    MirrorStatus.STATUS_EXTRACTING: "Extracted",
-    MirrorStatus.STATUS_SPLITTING: "Splitted",
-    MirrorStatus.STATUS_CHECKING: "Checked",
-}
 
 class setInterval:
     def __init__(self, interval, action):
@@ -154,8 +144,8 @@ def get_readable_message():
             tag = reply_to.from_user.mention
 
         if config_dict['DM_MODE']:
-            msg += f"Hey <b><i>{tag}</b></i>, Please wait!\n<b>{download.status()}</b> "
-            msg += f"Your Task [<a href='{download.message.link}'>{download.extra_details['mode']}</a>]"
+            msg += f"User <b><i>{tag}</b></i> "
+            msg += f"Task [<a href='{download.message.link}'>{download.extra_details['mode']}</a>]"
         else:
             msg += f"\n<b>{download.status()}:</b> <code>{escape(f'{download.name()}')}</code>"
 
@@ -164,12 +154,12 @@ def get_readable_message():
                                      MirrorStatus.STATUS_PAUSED]:
 
             msg += f"\n{get_progress_bar_string(download.progress())} {download.progress()}"
-            status_label = status_labels.get(download.status(), "")
-            msg += f"\n<b>{status_label}:</b> "
+            msg += f"\n<b>{download.status()}:</b> "
             msg += f"<code>{download.processed_bytes()}</code> of <code>{download.size()}</code>"
             msg += f"\n<b>Speed</b>: <code>{download.speed()}</code> | "
             msg += f"<b>Elapsed:</b> <code>{get_readable_time(time() - download.extra_details['startTime'])}</code>"
-            msg += f"\n<b>ETA</b>: <code>{download.eta()}</code> | <b>Eng</b>: <code>{download.engine}</code>"
+            msg += f"\n<b>ETA</b>: <code>{download.eta()}</code> | "
+            msg += f"<b>Eng</b>: <code>{download.engine}</code>"
 
             if hasattr(download, 'playList'):
                 try:
@@ -228,7 +218,7 @@ def get_readable_message():
         buttons.ibutton("⫸", "status nex")
         button = buttons.build_menu(3)
     msg += "_____________________________"
-    msg += f"\n<b>FREE</b>: <code>{get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)}</code>"
+    msg += f"\n<b>DISK</b>: <code>{get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)}</code>"
     msg += f" | <b>UPTM</b>: <code>{get_readable_time(time() - botStartTime)}</code>"
     msg += f"\n<b>DL</b>: <code>{get_readable_file_size(dl_speed)}/s</code>"
     msg += f" | <b>UL</b>: <code>{get_readable_file_size(up_speed)}/s</code>"
