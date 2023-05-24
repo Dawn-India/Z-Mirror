@@ -4,7 +4,7 @@ from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
 from bot import LOGGER, aria2, bot, download_dict, download_dict_lock
-from bot.helper.ext_utils.help_messages import TOE_SEL_HELP_MESSAGE
+from bot.helper.ext_utils.help_messages import TOR_SEL_HELP_MESSAGE
 from bot.helper.ext_utils.bot_utils import (MirrorStatus, bt_selection_buttons,
                                             getDownloadByGid, sync_to_async)
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -38,7 +38,7 @@ async def select(client, message):
             await sendMessage(message, "This is not an active task!")
             return
     elif len(msg) == 1:
-        reply_message = await sendMessage(message, TOE_SEL_HELP_MESSAGE.format_map({'cmd': BotCommands.BtSelectCommand, 'mir': BotCommands.MirrorCommand[0]}))
+        reply_message = await sendMessage(message, TOR_SEL_HELP_MESSAGE.format_map({'cmd': BotCommands.BtSelectCommand, 'mir': BotCommands.MirrorCommand[0]}))
         await auto_delete_message(message, reply_message)
         return
 

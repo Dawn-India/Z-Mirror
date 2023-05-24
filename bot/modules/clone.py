@@ -232,16 +232,8 @@ async def clone(client, message):
         tag = f"@{username}"
     else:
         tag = message.from_user.mention
-    if reply_to := message.reply_to_message:
-        if len(link) == 0:
-            link = reply_to.text.split('\n', 1)[0].strip()
-        if sender_chat := reply_to.sender_chat:
-            tag = sender_chat.title
-        elif not reply_to.from_user.is_bot:
-            if username := reply_to.from_user.username:
-                tag = f"@{username}"
-            else:
-                tag = reply_to.from_user.mention
+    if len(link) == 0 and (reply_to := message.reply_to_message) and reply_to.text is not None:
+        link = reply_to.text.split('\n', 1)[0].strip()
 
     rcf = mesg[0].split(' rcf: ', 1)
     rcf = re_split(' up: | id: | index: ', rcf[1])[
