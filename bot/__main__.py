@@ -35,6 +35,15 @@ from .modules import (anonymous, authorize, bot_settings, cancel_mirror,
 start_aria2_listener()
 
 async def stats(_, message):
+    if await aiopath.exists('.git'):
+        last_commit = (await cmd_exec("git log -1 --date=short --pretty=format:'%cr'", True))[0]
+        version = (await cmd_exec("git describe --abbrev=0 --tags", True))[0]
+        change_log = (await cmd_exec("git log -1 --pretty=format:'%s'", True))[0]
+    else:
+        last_commit = 'No UPSTREAM_REPO'
+        version = 'N/A'
+        change_log = 'N/A'
+
     sysTime = get_readable_time(time() - boot_time())
     botTime = get_readable_time(time() - botStartTime)
     total, used, free, disk= disk_usage('/')
@@ -48,20 +57,29 @@ async def stats(_, message):
     memory = virtual_memory()
     swap = swap_memory()
     mem_p = memory.percent
-    if await aiopath.exists('.git'):
-        last_commit = await cmd_exec("git log -1 --date=short --pretty=format:'%cr \n<b>Version: </b> %cd'", True)
-        last_commit = last_commit[0]
-    else:
-        last_commit = 'No UPSTREAM_REPO'
 
-    stats = f'<b><i><u>Z Bot Statistics</u></i></b>\n\n'\
-            f'<b>Updated:</b> {last_commit}\n' \
+    DIR = 'Unlimited' if config_dict['DIRECT_LIMIT'] == '' else config_dict['DIRECT_LIMIT']
+    YTD = 'Unlimited' if config_dict['YTDLP_LIMIT'] == '' else config_dict['YTDLP_LIMIT']
+    GDL = 'Unlimited' if config_dict['GDRIVE_LIMIT'] == '' else config_dict['GDRIVE_LIMIT']
+    TOR = 'Unlimited' if config_dict['TORRENT_LIMIT'] == '' else config_dict['TORRENT_LIMIT']
+    CLL = 'Unlimited' if config_dict['CLONE_LIMIT'] == '' else config_dict['CLONE_LIMIT']
+    MGA = 'Unlimited' if config_dict['MEGA_LIMIT'] == '' else config_dict['MEGA_LIMIT']
+    TGL = 'Unlimited' if config_dict['LEECH_LIMIT'] == '' else config_dict['LEECH_LIMIT']
+    UMT = 'Unlimited' if config_dict['USER_MAX_TASKS'] == '' else config_dict['USER_MAX_TASKS']
+    BMT = 'Unlimited' if config_dict['QUEUE_ALL'] == '' else config_dict['QUEUE_ALL']
+
+    stats = f'<b><i><u>Zee Bot Statistics</u></i></b>\n\n'\
+            f'<b><i><u>Repo Info</u></i></b>\n' \
+            f'<b>Updated:</b> <code>{last_commit}</code>\n' \
+            f'<b>Version:</b> <code>{version}</code>\n' \
+            f'<b>Change Log:</b> <code>{change_log}</code>\n\n' \
+            f'<b><i><u>Bot Info</u></i></b>\n' \
             f'<b>SYS UPTM:</b> <code>{sysTime}</code>\n' \
             f'<b>BOT UPTM:</b> <code>{botTime}</code>\n\n' \
             f'<b>CPU:</b> <code>{get_progress_bar_string(cpuUsage)} {cpuUsage}%</code>\n' \
             f'<b>CPU Total Core(s):</b> <code>{cpu_count(logical=True)}</code>\n' \
             f'<b>P-Core(s):</b> <code>{cpu_count(logical=False)}</code> | <b>V-Core(s):</b> <code>{v_core}</code>\n' \
-            f'<b>Frequency:</b> <code>{cpu_freq(percpu=False).current} Mhz</code>\n\n' \
+            f'<b>Frequency:</b> <code>{cpu_freq(percpu=False).current / 1000:.2f} GHz</code>\n\n' \
             f'<b>RAM:</b> <code>{get_progress_bar_string(mem_p)} {mem_p}%</code>\n' \
             f'<b>RAM In Use:</b> <code>{get_readable_file_size(memory.used)}</code> [{mem_p}%]\n' \
             f'<b>Total:</b> <code>{get_readable_file_size(memory.total)}</code> | <b>Free:</b> <code>{get_readable_file_size(memory.available)}</code>\n\n' \
@@ -71,8 +89,19 @@ async def stats(_, message):
             f'<b>DISK:</b> <code>{get_progress_bar_string(disk)} {disk}%</code>\n' \
             f'<b>Drive In Use:</b> <code>{used}</code> [{disk}%]\n' \
             f'<b>Total:</b> <code>{total}</code> | <b>Free:</b> <code>{free}</code>\n\n' \
-            f'<b>UL:</b> <code>{sent}</code> | <b>DL:</b> <code>{recv}</code>\n'
-    await sendMessage(message, stats)
+            f'<b>UL:</b> <code>{sent}</code> | <b>DL:</b> <code>{recv}</code>\n\n' \
+            f'<b><i><u>Bot Limits</u></i></b>\n' \
+            f'<code>Torrent   : {TOR}</code> <b>GB</b>\n' \
+            f'<code>G-Drive   : {GDL}</code> <b>GB</b>\n' \
+            f'<code>Yt-Dlp    : {YTD}</code> <b>GB</b>\n' \
+            f'<code>Direct    : {DIR}</code> <b>GB</b>\n' \
+            f'<code>Clone     : {CLL}</code> <b>GB</b>\n' \
+            f'<code>Leech     : {TGL}</code> <b>GB</b>\n' \
+            f'<code>MEGA      : {MGA}</code> <b>GB</b>\n' \
+            f'<code>User Tasks: {UMT}</code>\n' \
+            f'<code>Bot Tasks : {BMT}</code>'
+    reply_message = await sendMessage(message, stats)
+    await auto_delete_message(message, reply_message)
 
 
 async def start(_, message):
@@ -268,7 +297,7 @@ async def main():
         BotCommands.HelpCommand) & CustomFilters.authorized))
     bot.add_handler(MessageHandler(stats, filters=command(
         BotCommands.StatsCommand) & CustomFilters.authorized))
-    LOGGER.info("Bot Started Successfully!")
+    LOGGER.info("Congratulations, Bot Started Successfully!")
     signal(SIGINT, exit_clean_up)
 
 bot.loop.run_until_complete(main())
