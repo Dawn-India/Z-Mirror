@@ -253,7 +253,7 @@ async def _mdisk(link, name):
 
 
 @new_task
-async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}, bulk=[]):
+async def _ytdl(client, message, isZip=False, isLeech=False, sameDir=None, bulk=[]):
     mssg = message.text
     qual = ''
     select = False
@@ -285,9 +285,6 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}, bulk=[]
                 index += 1
                 if len(marg) > 1:
                     folder_name = f'/{marg[1]}'
-                    if not sameDir:
-                        sameDir = set()
-                    sameDir.add(message.id)
             elif x == 'b':
                 is_bulk = True
                 bi = index
@@ -311,9 +308,9 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}, bulk=[]
                         0].strip()
                     
         if len(folder_name) > 0 and not is_bulk:
-            if not sameDir:
-                sameDir = set()
-            sameDir.add(message.id)
+            if sameDir is None:
+                sameDir = {'total': multi, 'tasks': set()}
+            sameDir['tasks'].add(message.id)
 
     if is_bulk:
         bulk = await extract_bulk_links(message, bulk_start, bulk_end)
@@ -341,13 +338,13 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir={}, bulk=[]
         ymsg[mi] = f'{multi - 1}'
         if len(bulk) != 0:
             ymsg[index] = bulk[0]
-            nextmsg = await sendMessage(message, " ".join(msg))
+            nextmsg = await sendMessage(message, " ".join(ymsg))
         else:
             nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=message.reply_to_message_id + 1)
             nextmsg = await sendMessage(nextmsg, ' '.join(ymsg))
             nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
         if len(folder_name) > 0:
-            sameDir.add(nextmsg.id)
+            sameDir['tasks'].add(nextmsg.id)
         nextmsg.from_user = message.from_user
         if message.sender_chat:
             nextmsg.sender_chat = message.sender_chat

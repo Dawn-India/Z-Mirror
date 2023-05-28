@@ -38,7 +38,7 @@ from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 
 @new_task
-async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=False, isLeech=False, sameDir={}, bulk=[]):
+async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=False, isLeech=False, sameDir=None, bulk=[]):
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
     ratio = None
@@ -118,6 +118,10 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
             seed = False
             ratio = None
             seed_time = None
+            if not is_bulk:
+                if sameDir is None:
+                    sameDir = {'total': multi, 'tasks': set()}
+                sameDir['tasks'].add(message.id)
 
     if is_bulk:
         bulk = await extract_bulk_links(message, bulk_start, bulk_end)
@@ -155,7 +159,7 @@ async def _mirror_leech(client, message, isZip=False, extract=False, isQbit=Fals
 
         nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
         if len(folder_name) > 0:
-            sameDir.add(nextmsg.id)
+            sameDir['tasks'].add(nextmsg.id)
         nextmsg.from_user = message.from_user
         if message.sender_chat:
             nextmsg.sender_chat = message.sender_chat
