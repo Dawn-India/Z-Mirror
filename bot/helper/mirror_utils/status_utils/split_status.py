@@ -14,7 +14,7 @@ class SplitStatus:
         self.__start_time = time()
         self.message = listener.message
         self.extra_details = self.__listener.extra_details
-        self.engine = "FFmpeg v5.1.1"
+        self.engine = "FFmpeg v4.4.2"
 
     def gid(self):
         return self.__gid
