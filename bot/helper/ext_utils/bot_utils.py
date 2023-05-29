@@ -180,7 +180,12 @@ def get_readable_message():
             msg += f" | <b>Time</b> » {download.seeding_time()}"
         else:
             msg += f"\n» <b>Size</b> » {download.size()}"
-        msg += f"\n» <b>Task</b> » <a href='{download.message.link}'>{download.extra_details['mode']}</a>"
+
+        if config_dict['DELETE_LINKS']:
+            msg += f"\n» <b>Task</b> » {download.extra_details['mode']}"
+        else:
+            msg += f"\n» <b>Task</b> » <a href='{download.message.link}'>{download.extra_details['mode']}</a>"
+
         msg += f" | <b>By</b> » {tag}"
         msg += f"\n⚠️ <code>/{BotCommands.CancelMirror[0]} {download.gid()}</code>\n\n"
 
