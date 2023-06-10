@@ -9,7 +9,7 @@ from sys import exit as sexit
 
 from .exceptions import NotSupportedExtractionArchive
 from bot import aria2, LOGGER, DOWNLOAD_DIR, get_client, GLOBAL_EXTENSION_FILTER
-from bot.helper.ext_utils.bot_utils import sync_to_async, async_to_sync
+from bot.helper.ext_utils.bot_utils import sync_to_async, cmd_exec, async_to_sync
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
 
@@ -146,6 +146,25 @@ def get_mime_type(file_path):
     mime_type = mime.from_file(file_path)
     mime_type = mime_type or "text/plain"
     return mime_type
+
+
+async def join_files(path):
+    files = await listdir(path)
+    results = []
+    for file_ in files:
+        if re_search(r"\.0+2$", file_) and await sync_to_async(get_mime_type, f'{path}/{file_}') == 'application/octet-stream':
+            final_name = file_.rsplit('.', 1)[0]
+            cmd = f'cat {path}/{final_name}.* > {path}/{final_name}'
+            _, stderr, code = await cmd_exec(cmd, True)
+            if code != 0:
+                LOGGER.error(f'Failed to join {final_name}, stderr: {stderr}')
+            else:
+                results.append(final_name)
+    if results:
+        for res in results:
+            for file_ in files:
+                if re_search(fr"{res}\.0[0-9]+$", file_):
+                    await aioremove(f'{path}/{file_}')
 
 
 def check_storage_threshold(size, threshold, arch=False, alloc=False):

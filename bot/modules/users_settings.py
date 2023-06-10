@@ -88,6 +88,8 @@ async def get_user_settings(from_user):
 
     text = f"""<u>User Settings of {name}</u>
 
+TG Premium Status: {IS_PREMIUM_USER}
+
 Leech Type: <b>{ltype}</b>
 Leech Prefix: <code>{escape(lprefix)}</code>
 Leech Split Size: <b>{split_size}</b>
@@ -100,7 +102,7 @@ YT-DLP Options: <b><code>{escape(ytopt)}</code></b>
 Rclone Config: <b>{rccmsg}</b>"""
     return text, buttons.build_menu(1)
     
-
+@new_thread
 async def update_user_settings(query):
     msg, button = await get_user_settings(query.from_user)
     await editMessage(query.message, msg, button)
@@ -111,7 +113,7 @@ async def user_settings(_, message):
     reply_message = await sendMessage(message, msg, button)
     await auto_delete_message(message, reply_message)
 
-
+@new_thread
 async def set_yt_options(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
@@ -122,7 +124,7 @@ async def set_yt_options(_, message, pre_event):
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
 
-
+@new_thread
 async def set_prefix(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
@@ -134,7 +136,7 @@ async def set_prefix(_, message, pre_event):
             await DbManger().update_user_data(user_id)
     await update_user_settings(pre_event)
 
-
+@new_thread
 async def set_thumb(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
@@ -151,7 +153,7 @@ async def set_thumb(_, message, pre_event):
     if DATABASE_URL:
         await DbManger().update_user_doc(user_id, 'thumb', des_dir)
 
-
+@new_thread
 async def add_rclone(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
@@ -166,7 +168,7 @@ async def add_rclone(_, message, pre_event):
     if DATABASE_URL:
         await DbManger().update_user_doc(user_id, 'rclone', des_dir)
 
-
+@new_thread
 async def leech_split_size(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
@@ -177,7 +179,7 @@ async def leech_split_size(_, message, pre_event):
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
 
-
+@new_thread
 async def event_handler(client, query, pfunc, photo=False, document=False):
     user_id = query.from_user.id
     handler_dict[user_id] = True
@@ -292,7 +294,7 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
         buttons.ibutton("Back", f"userset {user_id} back")
         buttons.ibutton("Close", f"userset {user_id} close")
         __msg = "Send Leech split size don't add unit, the default unit is <b>GB</b>\n"
-        __msg += f"\nExamples:\n1 for 1GB\n0.5 for 512mb\n\nIS_PREMIUM_USER: {IS_PREMIUM_USER}. Timeout: 60 sec"
+        __msg += f"\nExamples:\n1 for 1GB\n0.5 for 512mb\n\nTimeout: 60 sec"
         await editMessage(message, __msg, buttons.build_menu(1))
         pfunc = partial(leech_split_size, pre_event=query)
         await event_handler(client, query, pfunc)
@@ -407,7 +409,7 @@ Check all available formatting options <a href="https://core.telegram.org/bots/a
         await message.reply_to_message.delete()
         await message.delete()
 
-
+@new_thread
 async def send_users_settings(_, message):
     text = message.text.split(maxsplit=1)
     userid = text[1] if len(text) > 1 else None

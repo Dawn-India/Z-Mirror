@@ -111,7 +111,7 @@ class RcloneTransferHelper:
         elif return_code != -9:
             error = (await self.__proc.stderr.read()).decode().strip()
             if not error and remote_type == 'drive' and config_dict['USE_SERVICE_ACCOUNTS']:
-                error = "Mostly your service accounts don't have acces to this drive!" 
+                error = "Mostly your service accounts don't have access to this drive!"
             LOGGER.error(error)
 
             if self.__sa_number != 0 and remote_type == 'drive' and 'RATE_LIMIT_EXCEEDED' in error and config_dict['USE_SERVICE_ACCOUNTS']:
@@ -196,7 +196,7 @@ class RcloneTransferHelper:
         elif return_code != 0:
             error = (await self.__proc.stderr.read()).decode().strip()
             if not error and remote_type == 'drive' and config_dict['USE_SERVICE_ACCOUNTS']:
-                error = "Mostly your service accounts don't have acces to this drive!" 
+                error = "Mostly your service accounts don't have access to this drive!"
             LOGGER.error(error)
             if self.__sa_number != 0 and remote_type == 'drive' and 'RATE_LIMIT_EXCEEDED' in error and config_dict['USE_SERVICE_ACCOUNTS']:
                 if self.__sa_count < self.__sa_number:
@@ -295,7 +295,7 @@ class RcloneTransferHelper:
 
         try:
             src_remote_opts, dst_remote_opt = await gather(self.__get_remote_options(config_path, src_remote),
-                                                            self.__get_remote_options(config_path, dst_remote))
+                                                           self.__get_remote_options(config_path, dst_remote))
         except Exception as err:
             await self.__listener.onUploadError(str(err))
             return None, None

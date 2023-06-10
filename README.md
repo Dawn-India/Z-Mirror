@@ -153,6 +153,8 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - View Link button. Extra button to open index link in broswer instead of direct download for file
 - Queueing System for all tasks
 - Ability to zip/unzip multi links in same directory. Mostly helpful in unziping tg file parts
+- Bulk download from telegram txt file or text message contains links seperated by new line
+- Join splitted files that have splitted before by split linux pkg
 - Almost all repository functions have been improved and many other details can't mention all of them
 - Many bugs have been fixed
 - Mirror direct download links, Torrent, Mega.nz and Telegram files to Google Drive
@@ -465,23 +467,13 @@ sudo docker image prune -a
 
 ```
 mirror - or /m Mirror
-zipmirror - or /zm Mirror and upload as zip
-unzipmirror - or /uzm Mirror and extract files
 qbmirror - or /qbm Mirror torrent using qBittorrent
-qbzipmirror - or /qbzm Mirror torrent using qb and upload as zip
-qbunzipmirror - or /qbuzm Mirror torrent using qb and extract files
 leech - or /l Leech
-zipleech - or /zl Leech and upload as zip
-unzipleech - or /uzl Leech and extract files
 qbleech - or /qbl Leech torrent using qBittorrent
-qbzipleech - or /qbzl Leech torrent using qb and upload as zip
-qbunzipleech - or /qbuzl Leech torrent using qb and extract
 clone - Copy file/folder to Drive
 count - Count file/folder from Drive
 ytdl - or /yt Mirror yt-dlp supported link
-ytdlzip - or /ytz Mirror yt-dlp supported link as zip
 ytdlleech - or /ytl Leech through yt-dlp supported link
-ytdlzipleech - or /ytzl Leech yt-dlp support link as zip
 usetting - User settings
 bsettings - Bot settings
 status - Get Mirror Status message
@@ -560,8 +552,7 @@ python3 generate_drive_token.py
 
 ## Bittorrent Seed
 
-- Add `d:ratio:time` prefix along with leech or mirror cmd.
-- Using `d` prefix alone will lead to use global options for aria2c or qbittorrent.
+- Using `-d` argument alone will lead to use global options for aria2c or qbittorrent.
 
 ### Qbittorrent
 

@@ -12,8 +12,7 @@ from feedparser import parse as feedparse
 from pyrogram.filters import command, create, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import (DATABASE_URL, LOGGER, bot, bot_name, config_dict, rss_dict,
-                 scheduler)
+from bot import DATABASE_URL, LOGGER, bot, config_dict, rss_dict, scheduler
 from bot.helper.ext_utils.bot_utils import new_thread
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.exceptions import RssShutdownException
@@ -83,24 +82,18 @@ async def rssSub(_, message, pre_event):
             await sendMessage(message, f"This title {title} already subscribed! Choose another title!")
             continue
         feed_link = args[1].strip()
-        if feed_link.startswith(('inf:', 'exf:', 'opt:', 'c:')):
+        if feed_link.startswith(('-inf', '-exf', '-c')):
             await sendMessage(message, f'Wrong input in line {index}! Re-add only the mentioned line correctly! Read the example!')
             continue
         inf_lists = []
         exf_lists = []
         if len(args) > 2:
-            arg = item.split(' c: ', 1)
-            cmd = re_split(' inf: | exf: | opt: ', arg[1])[
-                0].strip() if len(arg) > 1 else None
-            arg = item.split(' inf: ', 1)
-            inf = re_split(' c: | exf: | opt: ', arg[1])[
-                0].strip() if len(arg) > 1 else None
-            arg = item.split(' exf: ', 1)
-            exf = re_split(' c: | inf: | opt: ', arg[1])[
-                0].strip() if len(arg) > 1 else None
-            arg = item.split(' opt: ', 1)
-            opt = re_split(' c: | inf: | exf: ', arg[1])[
-                0].strip() if len(arg) > 1 else None
+            arg = item.split(' -c ', 1)
+            cmd = re_split(' -inf | -exf ', arg[1])[0].strip() if len(arg) > 1 else None
+            arg = item.split(' -inf ', 1)
+            inf = re_split(' -c | -exf ', arg[1])[0].strip() if len(arg) > 1 else None
+            arg = item.split(' -exf ', 1)
+            exf = re_split(' -c | -inf ', arg[1])[0].strip() if len(arg) > 1 else None
             if inf is not None:
                 filters_list = inf.split('|')
                 for x in filters_list:
@@ -115,7 +108,6 @@ async def rssSub(_, message, pre_event):
             inf = None
             exf = None
             cmd = None
-            opt = None
         try:
             async with ClientSession(trust_env=True) as session:
                 async with session.get(feed_link) as res:
@@ -133,16 +125,15 @@ async def rssSub(_, message, pre_event):
             msg += f"\nLink: <code>{last_link}</code>"
             msg += f"\n<b>Command: </b><code>{cmd}</code>"
             msg += f"\n<b>Filters:-</b>\ninf: <code>{inf}</code>\nexf: <code>{exf}<code/>"
-            msg += f"\nOptions: {opt}\n\n"
             async with rss_dict_lock:
                 if rss_dict.get(user_id, False):
                     rss_dict[user_id][title] = {'link': feed_link, 'last_feed': last_link, 'last_title': last_title,
-                                                'inf': inf_lists, 'exf': exf_lists, 'paused': False, 'command': cmd, 'options': opt, 'tag': tag}
+                                                'inf': inf_lists, 'exf': exf_lists, 'paused': False, 'command': cmd, 'tag': tag}
                 else:
                     rss_dict[user_id] = {title: {'link': feed_link, 'last_feed': last_link, 'last_title': last_title,
-                                                 'inf': inf_lists, 'exf': exf_lists, 'paused': False, 'command': cmd, 'options': opt, 'tag': tag}}
+                                                 'inf': inf_lists, 'exf': exf_lists, 'paused': False, 'command': cmd, 'tag': tag}}
             LOGGER.info(
-                f"Rss Feed Added: id: {user_id} - title: {title} - link: {feed_link} - c: {cmd} - inf: {inf} - exf: {exf} - opt: {opt}")
+                f"Rss Feed Added: id: {user_id} - title: {title} - link: {feed_link} - c: {cmd} - inf: {inf} - exf: {exf}")
         except (IndexError, AttributeError) as e:
             emsg = f"The link: {feed_link} doesn't seem to be a RSS feed or it's region-blocked!"
             await sendMessage(message, emsg + '\nError: ' + str(e))
@@ -225,7 +216,6 @@ async def rssList(query, start, all_users=False):
                     list_feed += f"<b>Inf:</b> <code>{data['inf']}</code>\n"
                     list_feed += f"<b>Exf:</b> <code>{data['exf']}</code>\n"
                     list_feed += f"<b>Paused:</b> <code>{data['paused']}</code>\n"
-                    list_feed += f"<b>Options:</b> <code>{data['options']}</code>\n"
                     list_feed += f"<b>User:</b> {data['tag'].lstrip('@')}"
                     index += 1
                     if index == 5:
@@ -240,7 +230,6 @@ async def rssList(query, start, all_users=False):
                 list_feed += f"<b>Inf:</b> <code>{data['inf']}</code>\n"
                 list_feed += f"<b>Exf:</b> <code>{data['exf']}</code>\n"
                 list_feed += f"<b>Paused:</b> <code>{data['paused']}</code>\n"
-                list_feed += f"<b>Options:</b> <code>{data['options']}</code>"
     buttons.ibutton("Back", f"rss back {user_id}")
     buttons.ibutton("Close", f"rss close {user_id}")
     if keysCount > 5:
@@ -314,23 +303,13 @@ async def rssEdit(_, message, pre_event):
             continue
         inf_lists = []
         exf_lists = []
-        arg = item.split(' c: ', 1)
-        cmd = re_split(' inf: | exf: | opt: ', arg[1])[
-            0].strip() if len(arg) > 1 else None
-        arg = item.split(' inf: ', 1)
-        inf = re_split(' c: | exf: | opt: ', arg[1])[
-            0].strip() if len(arg) > 1 else None
-        arg = item.split(' exf: ', 1)
-        exf = re_split(' c: | inf: | opt: ', arg[1])[
-            0].strip() if len(arg) > 1 else None
-        arg = item.split(' opt: ', 1)
-        opt = re_split(' c: | inf: | exf: ', arg[1])[
-            0].strip() if len(arg) > 1 else None
+        arg = item.split(' -c ', 1)
+        cmd = re_split(' -inf | -exf ', arg[1])[0].strip() if len(arg) > 1 else None
+        arg = item.split(' -inf ', 1)
+        inf = re_split(' -c | -exf ', arg[1])[0].strip() if len(arg) > 1 else None
+        arg = item.split(' -exf ', 1)
+        exf = re_split(' -c | -inf ', arg[1])[0].strip() if len(arg) > 1 else None
         async with rss_dict_lock:
-            if opt is not None:
-                if opt.lower() == 'none':
-                    opt = None
-                rss_dict[user_id][title]['options'] = opt
             if cmd is not None:
                 if cmd.lower() == 'none':
                     cmd = None
@@ -463,10 +442,11 @@ async def rssListener(client, query):
             button = buttons.build_menu(2)
             msg = '''Send one or more rss titles with new filters or command seperated by new line.
 Examples:
-Title1 c: mirror exf: none inf: 1080 or 720 opt: up: remote:path/subdir
-Title2 c: none inf: none opt: none
+Title1 -c mirror -up remote:path/subdir -exf none -inf 1080 or 720 opt: up: remote:path/subdir
+Title2 -c none -inf none -opt none
+Title3 -c mirror -rcf xxx -up xxx -z pswd
 Note: Only what you provide will be edited, the rest will be the same like example 2: exf will stay same as it is.
-Timeout: 60 sec.
+Timeout: 60 sec. Argument -c for command and options
             '''
             await editMessage(message, msg, button)
             pfunc = partial(rssEdit, pre_event=query)
@@ -628,8 +608,11 @@ async def rssMonitor():
                     if not parse:
                         continue
                     if command := data['command']:
-                        options = opt if (opt := data['options']) else ''
-                        feed_msg = f"/{command.replace('/', '')}@{bot_name} {url} {options}"
+                        cmd = command.split(maxsplit=1)
+                        cmd.insert(1, url)
+                        feed_msg = " ".join(cmd)
+                        if not feed_msg.startswith('/'):
+                            feed_msg = f"/{feed_msg}"
                     else:
                         feed_msg = f"<b>File Name: </b><code>{item_title.replace('>', '').replace('<', '')}</code>\n\n"
                         feed_msg += f"<b>Link: </b><code>{url}</code>"

@@ -66,7 +66,7 @@ class YoutubeDLHelper:
                      'allow_playlist_files': True,
                      'overwrites': True,
                      'writethumbnail': True,
-                     'trim_file_name': 230,
+                     'trim_file_name': 220,
                      'retry_sleep_functions': {'http': lambda x: 2,
                                                'fragment': lambda x: 2,
                                                'file_access': lambda x: 2,

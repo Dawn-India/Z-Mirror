@@ -2,12 +2,12 @@ from asyncio import Event, sleep, wait_for, wrap_future
 from functools import partial
 from re import split as re_split
 from time import time
-
 from aiofiles.os import path as aiopath
 from aiohttp import ClientSession
 from pyrogram.filters import command, regex, user
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from yt_dlp import YoutubeDL
+from argparse import ArgumentParser
 
 from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, config_dict, categories_dict,
                  user_data)
@@ -253,77 +253,68 @@ async def _mdisk(link, name):
 
 
 @new_task
-async def _ytdl(client, message, isZip=False, isLeech=False, sameDir=None, bulk=[]):
-    mssg = message.text
+async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
+    text = message.text.split('\n')
+    input_list = text[0].split()
     qual = ''
-    select = False
-    multi = 0
-    link = ''
-    folder_name = ''
+
+    try:
+        args = parser.parse_args(input_list[1:])
+    except:
+        await sendMessage(message, YT_HELP_MESSAGE.format(cmd = message.command[0]))
+        return
+
+    select = args.select
+    multi = args.multi
+    isBulk = args.bulk
+    opt = " ".join(args.options)
+    folder_name = " ".join(args.sameDir)
+    name = " ".join(args.newName)
+    up = " ".join(args.upload)
+    rcf = " ".join(args.rcloneFlags)
+    link = " ".join(args.link)
+    compress = args.zipPswd
+    drive_id = args.drive_id
+    index_link = args.index_link
     bulk_start = 0
     bulk_end = 0
-    is_bulk = False
-    index = 1
-
-    args = mssg.split(maxsplit=4)
-    args.pop(0)
     raw_url = None
-    drive_id = None
-    index_link = None
-    if len(args) > 0:
-        for x in args:
-            x = x.strip()
-            if x == 's':
-                select = True
-                index += 1
-            elif x.strip().isdigit():
-                multi = int(x)
-                mi = index
-                index += 1
-            elif x.startswith('m:'):
-                marg = x.split('m:', 1)
-                index += 1
-                if len(marg) > 1:
-                    folder_name = f'/{marg[1]}'
-            elif x == 'b':
-                is_bulk = True
-                bi = index
-                index += 1
-            elif x.startswith('b:'):
-                is_bulk = True
-                bi = index
-                index += 1
-                dargs = x.split(':')
-                bulk_start = dargs[1] or 0
-                if len(dargs) == 3:
-                    bulk_end = dargs[2] or 0
-            else:
-                break
-        if multi == 0 or len(bulk) != 0:
-            args = mssg.split(maxsplit=index)
-            if len(args) > index:
-                x = args[index].strip()
-                if not x.startswith(('n:', 'pswd:', 'up:', 'rcf:', 'opt:', 'id:', 'index:')):
-                    link = re_split(r' opt: | pswd: | n: | rcf: | up: | id: | index: ', x)[
-                        0].strip()
-                    
-        if len(folder_name) > 0 and not is_bulk:
-            if sameDir is None:
-                sameDir = {'total': multi, 'tasks': set()}
-            sameDir['tasks'].add(message.id)
 
-    if is_bulk:
-        bulk = await extract_bulk_links(message, bulk_start, bulk_end)
-        if len(bulk) == 0:
-            await sendMessage(message, 'Reply to text file or to tg message that have links seperated by new line!')
+    if isinstance(multi, list):
+        multi = multi[0]
+
+    if compress is not None:
+        compress = " ".join(compress)
+
+    if isBulk:
+        dargs = isBulk.split(':')
+        bulk_start = dargs[0] or None
+        if len(dargs) == 2:
+            bulk_end = dargs[1] or None
+        isBulk = True
+    elif isBulk is None:
+        isBulk = True
+
+    if folder_name and not isBulk:
+        folder_name = f'/{folder_name}'
+        if sameDir is None:
+            sameDir = {'total': multi, 'tasks': set(), 'name': folder_name}
+        sameDir['tasks'].add(message.id)
+
+    if isBulk:
+        try:
+            bulk = await extract_bulk_links(message, bulk_start, bulk_end)
+            if len(bulk) == 0:
+                raise ValueError('Bulk Empty!')
+        except:
+            await sendMessage(message, 'Reply to text file or tg message that have links seperated by new line!')
             return
-        b_msg = mssg.split(maxsplit=index)
-        b_msg[bi] = f'{len(bulk)}'
-        b_msg.insert(index, bulk[0])
+        b_msg = input_list[:1]
+        b_msg.append(f'{bulk[0]} -i {len(bulk)}')
         nextmsg = await sendMessage(message, " ".join(b_msg))
         nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
         nextmsg.from_user = message.from_user
-        _ytdl(client, nextmsg, isZip, isLeech, sameDir, bulk)
+        _ytdl(client, nextmsg, isLeech, sameDir, bulk)
         return
 
     if len(bulk) != 0:
@@ -333,72 +324,47 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir=None, bulk=
     async def __run_multi():
         if multi <= 1:
             return
-        await sleep(10)
-        ymsg = mssg.split(maxsplit=index)
-        ymsg[mi] = f'{multi - 1}'
+        await sleep(5)
         if len(bulk) != 0:
-            ymsg[index] = bulk[0]
-            nextmsg = await sendMessage(message, " ".join(ymsg))
+            msg = input_list[:1]
+            msg.append(f'{bulk[0]} -i {multi - 1}')
+            nextmsg = await sendMessage(message, " ".join(msg))
         else:
+            msg = [s.strip() for s in input_list]
+            index = msg.index('-i')
+            msg[index+1] = f"{multi - 1}"
             nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=message.reply_to_message_id + 1)
-            nextmsg = await sendMessage(nextmsg, ' '.join(ymsg))
-            nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
-        if len(folder_name) > 0:
+            nextmsg = await sendMessage(nextmsg, " ".join(msg))
+        nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
+        if folder_name:
             sameDir['tasks'].add(nextmsg.id)
         nextmsg.from_user = message.from_user
         if message.sender_chat:
             nextmsg.sender_chat = message.sender_chat
-        await sleep(10)
-        _ytdl(client, nextmsg, isZip, isLeech, sameDir, bulk)
+        await sleep(5)
+        _ytdl(client, nextmsg, isLeech, sameDir, bulk)
 
     path = f'{DOWNLOAD_DIR}{message.id}{folder_name}'
 
-    name = mssg.split(' n: ', 1)
-    name = re_split(' pswd: | opt: | up: | rcf: | index: | id: ', name[1])[
-        0].strip() if len(name) > 1 else ''
-
-    pswd = mssg.split(' pswd: ', 1)
-    pswd = re_split(' n: | opt: | up: | rcf: | index: | id: ', pswd[1])[
-        0] if len(pswd) > 1 else None
-
-    opt = mssg.split(' opt: ', 1)
-    opt = re_split(' n: | pswd: | up: | rcf: | index: | id: ', opt[1])[
-        0].strip() if len(opt) > 1 else ''
-
-    rcf = mssg.split(' rcf: ', 1)
-    rcf = re_split(' n: | pswd: | up: | opt: | index: | id: ', rcf[1])[
-        0].strip() if len(rcf) > 1 else None
-
-    up = mssg.split(' up: ', 1)
-    up = re_split(' n: | pswd: | rcf: | opt: | index: | id: ', up[1])[
-        0].strip() if len(up) > 1 else None
-
-    drive_id = mssg.split(' id: ', 1)
-    drive_id = re_split(' n: | pswd: | rcf: | opt: | index: ', drive_id[1])[
-        0].strip() if len(drive_id) > 1 else None
-    if drive_id and is_gdrive_link(drive_id):
-        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
-
-    index_link = mssg.split(' index: ', 1)
-    index_link = re_split(' n: | pswd: | rcf: | opt: | id: ', index_link[1])[
-        0].strip() if len(index_link) > 1 else None
-    if index_link and not index_link.startswith(('http://', 'https://')):
-        index_link = None
-    if index_link and not index_link.endswith('/'):
-        index_link += '/'
-
     opt = opt or config_dict['YT_DLP_OPTIONS']
 
-    if sender_chat := message.sender_chat:
+    if len(text) > 1 and text[1].startswith('Tag: '):
+        tag, id_ = text[1].split('Tag: ')[1].split()
+        message.from_user = await client.get_users(id_)
+        try:
+            await message.unpin()
+        except:
+            pass
+    elif sender_chat := message.sender_chat:
         tag = sender_chat.title
     elif username := message.from_user.username:
         tag = f'@{username}'
     else:
         tag = message.from_user.mention
 
-    if len(link) == 0 and (reply_to := message.reply_to_message):
+    if not link and (reply_to := message.reply_to_message):
         link = reply_to.text.split('\n', 1)[0].strip()
-
+    
     if not is_url(link):
         reply_message = await sendMessage(message, YT_HELP_MESSAGE.format(cmd = message.command[0]))
         await auto_delete_message(message, reply_message)
@@ -431,6 +397,7 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir=None, bulk=
             error_msg.append(dmMessage)
     else:
         dmMessage = None
+
     if error_msg:
         final_msg = f'Hey, <b>{tag}</b>,\n'
         for __i, __msg in enumerate(error_msg, 1):
@@ -445,9 +412,9 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir=None, bulk=
     logMessage = await sendLogMessage(message, link, tag)
 
     if not isLeech:
-        if config_dict['DEFAULT_UPLOAD'] == 'rc' and up is None or up == 'rc':
+        if config_dict['DEFAULT_UPLOAD'] == 'rc' and not up or up == 'rc':
             up = config_dict['RCLONE_PATH']
-        if up is None and config_dict['DEFAULT_UPLOAD'] == 'gd':
+        if not up and config_dict['DEFAULT_UPLOAD'] == 'gd':
             up = 'gd'
             if not drive_id and len(categories_dict) > 1:
                 drive_id, index_link = await open_category_btns(message)
@@ -477,10 +444,11 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir=None, bulk=
             await sendMessage(message, up)
             return
 
-    listener = MirrorLeechListener(message, isZip, isLeech=isLeech, pswd=pswd,
+    listener = MirrorLeechListener(message, compress, isLeech=isLeech,
                                    tag=tag, sameDir=sameDir, rcFlags=rcf, upPath=up,
                                    raw_url=raw_url, drive_id=drive_id,
                                    index_link=index_link, dmMessage=dmMessage, logMessage=logMessage)
+
     if 'mdisk.me' in link:
         name, link = await _mdisk(link, name)
 
@@ -514,6 +482,7 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir=None, bulk=
 
     __run_multi()
 
+    user_id = message.from_user.id
     if not select:
         user_dict = user_data.get(user_id, {})
         if 'format' in options:
@@ -531,26 +500,31 @@ async def _ytdl(client, message, isZip=False, isLeech=False, sameDir=None, bulk=
     await ydl.add_download(link, path, name, qual, playlist, opt)
 
 
+parser = ArgumentParser(description='YT-DLP args usage:', argument_default='')
+
+parser.add_argument('link', nargs='*')
+parser.add_argument('--s', '--select', action='store_true', default=False, dest='select')
+parser.add_argument('--o', '--opt', '--options', nargs='+', dest='options')
+parser.add_argument('--sd', '--samedir', nargs='+', dest='sameDir')
+parser.add_argument('--m', '--multi', nargs='+', default=0, dest='multi', type=int)
+parser.add_argument('--b', '--bulk', nargs='?', default=False, dest='bulk')
+parser.add_argument('--n', nargs='+', dest='newName')
+parser.add_argument('--id', nargs='*', default=None, dest='drive_id')
+parser.add_argument('--index', nargs='*', default=None, dest='index_link')
+parser.add_argument('--z', '--zip', nargs='*', default=None, dest='zipPswd')
+parser.add_argument('--up', nargs='+', dest='upload')
+parser.add_argument('--rcf', nargs='+', dest='rcloneFlags')
+
+
 async def ytdl(client, message):
     _ytdl(client, message)
-
-
-async def ytdlZip(client, message):
-    _ytdl(client, message, True)
 
 
 async def ytdlleech(client, message):
     _ytdl(client, message, isLeech=True)
 
 
-async def ytdlZipleech(client, message):
-    _ytdl(client, message, True, True)
-
 bot.add_handler(MessageHandler(ytdl, filters=command(
     BotCommands.YtdlCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(ytdlZip, filters=command(
-    BotCommands.YtdlZipCommand) & CustomFilters.authorized))
 bot.add_handler(MessageHandler(ytdlleech, filters=command(
     BotCommands.YtdlLeechCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(ytdlZipleech, filters=command(
-    BotCommands.YtdlZipLeechCommand) & CustomFilters.authorized))

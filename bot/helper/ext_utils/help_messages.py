@@ -1,170 +1,178 @@
 YT_HELP_MESSAGE = """
+<b><u>Mirror</u></b>:
+<code>/{cmd}</code> link
+Or reply to the link with <code>/{cmd}</code>
 
-<b>Send link along with command line:</b>
-<code>/{cmd}</code> s <b>LINK</b> n: newname pswd: xx(zip) opt: x:y|x1:y1
+<b>Rename</b>: --n
+<code>/{cmd}</code> link --n New_Name
+<b><u>Note</u></b>: Don't add file extension
 
-<b>By replying to link:</b>
-<code>/{cmd}</code> n: newname pswd: xx(zip) opt: x:y|x1:y1
-
-<b>Upload Custom Drive</b>
-<code>/{cmd}</code> <b>LINK</b> or by replying to file/link <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code>
+<b>Upload Custom Drive</b>: link --id --index
+--id <code>drive_folder_link</code> or <code>drive_id</code> --index <code>https://anything.in/0:</code>
 drive_id must be folder id and index must be url else it will not accept
-This options should be always after n: or pswd:
 
-<b>Quality Buttons:</b>
-Incase default quality added from yt-dlp options using format option and you need to select quality for specific link or <b>LINK</b>s with multi links feature.
-<code>/cmd</code> s link
-This option should be always before n:, pswd: and opt:
+<b>Quality Buttons</b>: --s
+Incase default quality added from yt-dlp options using format option and you need to select quality for specific link or links with multi links feature.
+<code>/{cmd}</code> link --s
 
-<b>Options Example:</b> opt: playliststart:^69|matchtitle:S13|writesubtitles:true|live_from_start:true|postprocessor_args:{{"ffmpeg": ["-threads", "4"]}}|wait_for_video:(5, 100)
+<b>Zip</b>: --z password
+<code>/{cmd}</code> link --z (zip)
+<code>/{cmd}</code> link --z password (zip password protected)
 
-<b>Multi links only by replying to first link:</b>
-<code>/{cmd}</code> 69(number of links)
-Number should be always before n:, pswd: and opt:
-
-<b>Multi links within same upload directory only by replying to first link:</b>
-<code>/{cmd}</code> 69(number of links) m:folder_name
-Number and m:folder_name should be always before n:, pswd: and opt:
-
-<b>Options Note:</b> Add `^` before integer, some values must be integer and some string.
-Like playlist_items:69 works with string, so no need to add `^` before the number but playlistend works only with integer so you must add `^` before the number like example above.
+<b>Options</b>: --opt
+<code>/{cmd}</code> link --opt playliststart:^10|fragment_retries:^inf|matchtitle:S13|writesubtitles:true|live_from_start:true|postprocessor_args:{{"ffmpeg": ["-threads", "4"]}}|wait_for_video:(5, 100)
+<b><u>Note</u></b>: Add `^` before integer or float, some values must be numeric and some string.
+Like playlist_items:10 works with string, so no need to add `^` before the number but playlistend works only with integer so you must add `^` before the number like example above.
 You can add tuple and dict also. Use double quotes inside dict.
 
-<b>Rclone Upload</b>:
-<code>/{cmd}</code> <b>LINK</b> up: <code>rcl</code> (To select config, remote and path)
-You can directly add the upload path. up: remote:dir/subdir
+<b>Multi links only by replying to first link</b>: --m
+<code>/{cmd}</code> --m 10(number of links)
+
+<b>Multi links within same upload directory only by replying to first link</b>: --sd
+<code>/{cmd}</code> --m 10(number of links) --sd folder name
+
+<b>Upload</b>: --up
+<code>/{cmd}</code> link --up <code>rcl</code> (To select rclone config, remote and path)
+You can directly add the upload path: --up remote:dir/subdir
 If DEFAULT_UPLOAD is `rc` then you can pass up: `gd` to upload using gdrive tools to GDRIVE_ID.
 If DEFAULT_UPLOAD is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
 If you want to add path manually from your config (uploaded from usetting) add <code>mrcc:</code> before the path without space
-<code>/{cmd}</code> <b>LINK</b> up: <code>mrcc:</code>main:dump
+<code>/{cmd}</code> link --up <code>mrcc:</code>main:dump
 
-<b>Rclone Flags</b>:
-<code>/{cmd}</code> <b>LINK</b> up: path|rcl rcf: --buffer-size:8M|--drive-starred-only|key|key:value
+<b>Rclone Flags</b>: --rcf
+<code>/{cmd}</code> link --up path|rcl --rcf |--buffer-size:8M|--drive-starred-only|key|key:value
 This will override all other flags except --exclude
+Note: When use --rcf start it with `|` to avoid reading it as bot argument.
 Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
 
-<b>Bulk Download</b>:
+<b>Bulk Download</b>: --b
 Bulk can be used by text message and by replying to text file contains links seperated by new line.
-You can use it only by reply to message(text/file). Options that came after link should be added along with and after link and not with cmd.
-
+You can use it only by reply to message(text/file).
+All options should be along with link!
 Example:
-<code>/cmd</code> b
-<b>LINK</b> n: newname up: remote1:path1
-<b>LINK</b> pswd: pass(zip/unzip) opt: ytdlpoptions up: remote2:path2
-Reply to this example by this cmd for example <code>/cmd</code> b(bulk) m:folder_name(same dir)
+link1 --n new name --up remote1:path1 --rcf |key:value|key:value
+link2 --z --n new name --up remote2:path2
+link3 --e --n new name --opt ytdlpoptions
+<b><u>Note</b></u>: You can't add --sd arg for some links only, do it for all links or use multi without bulk!
+link pswd: pass(zip/unzip) opt: ytdlpoptions up: remote2:path2
+Reply to this example by this cmd for example <code>/{cmd}</code> b(bulk) m:folder_name(same dir)
 You can set start and end of the links from the bulk with b:start:end or only end by b::end or only start by b:start. The default start is from zero(first link) to inf.
 
-<b>NOTES:</b>
-1. When use cmd by reply don't add any option in link msg! Always add them after cmd msg!
-2. Options (<b>b, s, m: and multi</b>) should be added randomly before link and before any other option.
-3. Options (<b>n:, pswd: and opt:</b>) should be added randomly after the link if link along with the cmd or after cmd if by reply.
-4. You can always add video quality from yt-dlp api options.
-5. Don't add file extension while rename using `n:`
-
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a> or use this <a href='https://graph.org/Script-to-convert-cli-arguments-to-api-options-05-28'>SCRIPT</a> to convert cli arguments to api options.
+
+<b>All Args:</b>
+
+1. <code>--n</code> to rename file.
+2. <code>--z</code> or <code>--zip</code> to zip files.
+3. <code>--b</code> or <code>--bulk</code> to download bulk links.
+4. <code>--m</code> or <code>--multi</code> to download multi links.
+5. <code>--sd</code> or <code>--samedir</code> to download multi links within same upload directory.
+6. <code>--s</code> or <code>--select</code> to select files from torrent.
+7. <code>--id</code> to enter drive id.
+8. <code>--index</code> to enter index link.
+9. <code>--o</code> or <code>---opt</code> or <code>--options</code> to add yt-dlp options.
+10.<code>--up</code> to upload to your drive.
+11.<code>--rcf</code> to add rclone flags.
 
 <b>Powered By @Z_Mirror</b>
 """
 
 MIRROR_HELP_MESSAGE = """
+<b><u>Mirror</u></b>:
+<code>/{cmd}</code> link
+Or reply to the link with <code>/{cmd}</code>
 
-<b><i>Mirror:</i></b> <code>/{cmd}</code> <b>LINK</b>
-<i>Or reply to the link/file with:</i> <code>/{cmd}</code>
+<b><u>Rename</u></b>: --n
+<code>/{cmd}</code> link --n new_name
+Note: It doesn't work with torrents.
 
-<b><i>Rename:</i></b> <code>/{cmd}</code> <b>LINK</b> <code>n:</code> <b>New_Name</b>
-<i>Or reply to the link/file with:</i> <code>/{cmd}</code> <code>n:</code> <b>New_Name</b>
-
-<b><i><u>Upload Custom Drive</u></i></b>
-<code>/{cmd} <b>LINK</b> </code> or by replying to file/link <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code>
-
+<b><u>Upload Custom Drive</u></b>: link --id --index
+--id <code>drive_folder_link</code> or <code>drive_id</code> --index <code>https://anything.in/0:</code>
 drive_id must be folder id and index must be url else it will not accept
-This options should be always after n: or pswd:
 
-<b><i><u>Direct link authorization</u></i></b>
-<code>/{cmd}</code> <b>LINK</b> n: newname pswd: xx(zip/unzip)
-<b>username</b>
-<b>password</b>
+<b><u>Direct Link Authorization</u></b>: --u or --username and --p or --password
+<code>/{cmd}</code> link --u your_username --p your_password
 
-<b><i>Torrent select:</i></b> <code>/{cmd}</code> <b>s</b> <b>LINK</b>
-<i>Or reply to the file/link with</i> <code>/{cmd}</code> <b>s</b>
-This option should be always before <b>n: or pswd: </b>
+<b><u>Zip/Unzip</u></b>: --z or --zip and --e or --uz or --unzip
+<code>/{cmd}</code> link --e password (extract password protected)
+<code>/{cmd}</code> link --z password (zip password protected)
+<code>/{cmd}</code> link --z password --e (extract and zip password protected)
+<code>/{cmd}</code> link --e password --z password (extract password protected and zip password protected)
+<b><u>Note</u></b>: When both extract and zip added with cmd it will extract first and then zip, so always extract first
 
-<b>Torrent seed</b>: <code>/{cmd}</code> <b>d</b> <b>LINK</b> 
-<i>Or reply to the file/link with</i> <code>/{cmd}</code> <b>d</b>
+<b><u>Torrent Selection</u></b>: --s or --select
+<code>/{cmd}</code> link --s or by replying to file/link
 
-To specify ratio and seed time add d:ratio:time. Ex: d:0.7:69 (ratio and time) or d:0.7 (only ratio) or d::69 (only time) where time in minutes.
-Those options should be always before n: or pswd:
+<b><u>Torrent Seed</u></b>: --d or --seed
+<code>/{cmd}</code> link --d ratio:seed_time or by replying to file/link
+To specify ratio and seed time add --d ratio:time. Ex: --d 0.7:10 (ratio and time) or --d 0.7 (only ratio) or --d :10 (only time) where time in minutes.
 
-<b>Multi mirror:</b> (Reply to the first link or file)
-<code>/{cmd}</code> <b>5</b>(*Here '5' is the number of links/files)
-Number should be always before n: or pswd:
+<b><u>Multi links by replying to first link/file</u></b>: --m or --multi
+<code>/{cmd}</code> --m 10(number of links/files)
 
-<b>Same DIR:</b> (Download multiple links or files or unzip in a single folder)
-<code>/{cmd}</code> <b>5</b>(*Here '5' is the number of links/files) <b>m:</b>folder_name
-Number and <code>m:folder_name</code> (<b>folder_name without space</b>) should be always before <b>n: or pswd: </b>
+<b><u>Multi links in same folder by replying to first link/file</u></b>: --sd or --samedir
+<code>/{cmd}</code> --m 10(number of links/files) --sd folder name (multi message)
+<code>/{cmd}</code> --b --sd folder name (bulk-message/file)
 
-<b>Rclone Download</b>: (Use rclone paths same as links)
-<code>/{cmd}</code> <b>main:dump/ubuntu.iso</b> or <code>rcl</code> (To select config, remote and path)
+<b><u>Rclone Download</u></b>:
+Treat rclone paths exactly like links
+<code>/{cmd}</code> main:dump/ubuntu.iso or <code>rcl</code>(To select config, remote and path)
+Users can add their own rclone from user settings
+If you want to add path manually from your config add <code>mrcc:</code> before the path without space
+<code>/{cmd}</code> <code>mrcc:</code>main:dump/ubuntu.iso
 
-Users can add their own rclone config from user settings.
-If you want to add path manually from your config then add <code>mrcc:</code> before the path without <b>space</b>.
-<code>/{cmd}</code> <code>mrcc:</code>main:/dump/ubuntu.iso
+<b><u>Rclone Upload</u></b>: --up
+<code>/{cmd}</code> link --up <code>rcl</code> (To select rclone config, remote and path)
+You can directly add the upload path: --up remote:dir/subdir
+If DEFAULT_UPLOAD is `rc` then you can pass up: `gd` to upload using gdrive tools to GDRIVE_ID.
+If DEFAULT_UPLOAD is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
+If you want to add path manually from your config (uploaded from usetting) add <code>mrcc:</code> before the path without space
+<code>/{cmd}</code> link --up <code>mrcc:</code>main:dump
 
-<b><i><u>Download using TG Links</u></i></b>
+<b><u>Rclone Flags</u></b>: --rcf
+<code>/{cmd}</code> link|path|rcl --up path|rcl --rcf |--buffer-size:8M|--drive-starred-only|key|key:value
+This will override all other flags except --exclude
+Note: When use --rcf start it with `|` to avoid reading it as bot argument.
+Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
+
+<b><u>Bulk Download</u></b>: --b or --bulk
+Reply to a file or message which contains links separated by new line.
+Example:
+link1 --n new name --up remote1:path1 --rcf |key:value|key:value
+link2 --z --n new name --up remote2:path2
+link3 --e --n new name --up remote2:path2
+Note: You can't add --sd arg for some links only, do it for all links or use multi without bulk!
+Reply to this example by this cmd for example <code>/{cmd}</code> --b(bulk)
+You can set start and end of the links from the bulk like seed, with --b start:end or only end by --b :end or only start by --b start. The default start is from zero(first link) to inf.
+
+<b><u>Join Splitted Files</u></b>: --j or --join
+This option will only work before extract and zip, so mostly it will be used with --sd argument (samedir)
+By Reply:
+<code>/{cmd}</code> --m 3 --j --sd folder name
+<code>/{cmd}</code> --b --j --sd folder name
+If your link have splitted files:
+<code>/{cmd}</code> link --j
+
+<b><u>Download using TG Links</u></b>
 Some links need user access so sure you must add USER_SESSION_STRING for it.
 <code>/{cmd}</code> tg_link
 
-Three types of TG links:
-<b>Public:</b> <code>https://t.me/channel_name/message_id</code>
-<b>Private:</b> <code>tg://openmessage?user_id=xxxxxx&message_id=xxxxx</code>
-<b>Super:</b> <code>https://t.me/c/channel_id/message_id</code>
-
-<b><i><u>Rclone Upload</u></i></b>
-<code>/{cmd}</code> <b>LINK</b> <b>up: </b><code>rcl</code> (To select rclone config, remote and path)
-
-You can directly add the upload path: <code>up: remote:dir/subdir</code>
-If <code>DEFAULT_UPLOAD</code> is `rc` then you can pass up: `gd` to upload using gdrive tools to GDRIVE_ID.
-If <code>DEFAULT_UPLOAD</code> is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
-If you want to add path manually from your config (uploaded from usetting) add <code>mrcc:</code> before the path without space.
-<code>/{cmd}</code> <b>LINK</b> <b>up: </b><code>mrcc:</code>main:dump
-
-<b><i><u>Rclone Flags</u></i></b>
-<code>/{cmd}</code> <b>LINK</b> path/rcl up: path/rcl rcf: --buffer-size:8M|--drive-starred-only|key|key:value
-This will override all other flags except --exclude
-Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
-
-<b><i><u>Bulk Download</u></i></b>
-Bulk can be used by text message and by replying to text file contains links seperated by new line.
-You can use it only by reply to message(text/file). Options that came after link should be added along with and after link and not with cmd.
-
-<b>Example:</b> Reply with <code>/{cmd}</code> <b>b</b>
-<b>LINK</b> n: newname up: remote1:path1
-<b>LINK</b> pswd: pass(zip/unzip) up: remote2:path2 \\n{{username}}\\n{{password}}(authentication)(last option)
-Reply to this example by this cmd for example <code>/cmd</code> b(bulk) d:2:10(seed) m:folder_name(same dir)
-You can set start and end of the links from the bulk with b:start:end or only end by b::end or only start by b:start. The default start is from zero(first link) to inf.
-
 <b>NOTES:</b>
-1. When use cmd by reply don't add any option in link msg! Always add them after cmd msg!
-2. Options (<b>n: and pswd:</b>) should be added randomly after the link if link along with the cmd and after any other option
-3. Options (<b>d, s, m:, b and multi</b>) should be added randomly before the link and before any other option.
-4. Commands that start with <b>qb</b> are ONLY for torrents.
-5. (n:) option doesn't work with torrents.
+1. Commands that start with <b>qb</b> are ONLY for torrents.
+2. Read all arguments <a href='https://graph.org/Z-Mirror-Bot-Arguments-06-10'>HERE</a>.
 
 <b>Powered By @Z_Mirror</b>
 """
 
-
 RSS_HELP_MESSAGE = """
-
 Use this format to add feed url:
-Title1 <b>LINK</b> (required)
-Title2 <b>LINK</b> c: cmd inf: xx exf: xx opt: options like(up, rcf, pswd) (optional)
-Title3 <b>LINK</b> c: cmd d:ratio:time opt: up: gd
+Title1 link (required)
+Title2 link -c cmd -inf xx -exf xx
+Title3 link -c cmd --d ratio:time --z password
 
-c: command + any mirror option before <b>LINK</b> like seed option.
-opt: any option after <b>LINK</b> like up, rcf and pswd(zip).
-inf: For included words filter.
-exf: For excluded words filter.
+-c command + any arg
+-inf For included words filter.
+-exf For excluded words filter.
 
 Example: Title https://www.rss-url.com inf: 1080 or 720 or 144p|mkv or mp4|hevc exf: flv or web|xxx opt: up: mrcc:remote:path/subdir rcf: --buffer-size:8M|key|key:value
 This filter will parse links that it's titles contains `(1080 or 720 or 144p) and (mkv or mp4) and hevc` and doesn't conyain (flv or web) and xxx` words. You can add whatever you want.
@@ -182,22 +190,24 @@ Timeout: 60 sec.
 """
 
 CLONE_HELP_MESSAGE = """
-
-Send Gdrive, Gdtot, Filepress, Filebee, Appdrive, Gdflix link or rclone path along with command or by replying to the link/rc_path by command
+Send Gdrive|Gdot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along with command or by replying to the link/rc_path by command.
 
 <b>Multi links only by replying to first gdlink or rclone_path:</b>
-<code>/{cmd}</code> 69(number of links/pathies)
+<code>/{cmd}</code> --m 10(number of links/pathies)
+
 <b>Gdrive:</b>
 <code>/{cmd}</code> gdrivelink
 
-<b>Upload Custom Drive</b>
-<code>/{cmd}</code> <b>LINK</b> or by replying to <b>LINK</b> <b>id:</b> <code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b> <code>https://anything.in/0:</code>
+<b>Upload Custom Drive</b>: link --id --index
+--id <code>drive_folder_link</code> or <code>drive_id</code> --index <code>https://anything.in/0:</code>
 drive_id must be folder id and index must be url else it will not accept
 
 <b>Rclone:</b>
-<code>/{cmd}</code> rcl or rclone_path up: rcl or rclone_path rcf: flagkey:flagvalue|flagkey|flagkey:flagvalue
+<code>/{cmd}</code> (rcl or rclone_path) --up (rcl or rclone_path) --rcf |flagkey:flagvalue|flagkey|flagkey:flagvalue
+
 Notes:
-if up: not specified then rclone destination will be the RCLONE_PATH from config.env
+1. If --up not specified then rclone destination will be the RCLONE_PATH from config.env
+2. When use --rcf start it with `|` to avoid reading it as bot argument.
 
 <b>Powered By @Z_Mirror</b>
 """
@@ -219,7 +229,7 @@ TOR_SEL_HELP_MESSAGE = """
 
 Reply to an active <code>/{cmd}</code> which was used to start the qb-download or add gid along with cmd\n\n
 This command mainly for selection incase you decided to select files from already added torrent.
-But you can always use <code>/{mir}</code> with arg `s` to select files before download start.
+But you can always use <code>/{mir}</code> with arg `--s` to select files before download start.
 
 <b>Powered By @Z_Mirror</b>
 """
