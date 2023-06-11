@@ -1,7 +1,6 @@
 from asyncio import gather, sleep
 from json import loads
 from random import SystemRandom
-from re import split as re_split
 from string import ascii_letters, digits
 from aiofiles.os import path as aiopath
 from pyrogram.filters import command
@@ -189,12 +188,12 @@ async def gdcloneNode(message, link, listener):
                 download_dict[message.id] = GdriveStatus(
                     drive, size, message, gid, 'cl', listener.extra_details)
             await sendStatusMessage(message)
-            link, size, mime_type, files, folders, dir_id = await sync_to_async(drive.clone, link, listener.drive_id or config_dict['GDRIVE_ID'])
+            link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
         if not link:
             await delete_links(message)
             return
         LOGGER.info(f'Cloning Done: {name}')
-        await listener.onUploadComplete(link, size, files, folders, mime_type, name, drive_id=dir_id)
+        await listener.onUploadComplete(link, size, files, folders, mime_type, name)
     else:
         reply_message = await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
         await auto_delete_message(message, reply_message)
@@ -217,6 +216,7 @@ async def clone(client, message):
     dst_path = " ".join(args.upload)
     rcf = " ".join(args.rcloneFlags)
     link = " ".join(args.link)
+    raw_url = None
 
     if isinstance(multi, list):
         multi = multi[0]
@@ -237,10 +237,10 @@ async def clone(client, message):
             return
         await sleep(5)
         msg = [s.strip() for s in input_list]
-        index = msg.index('-i')
+        index = msg.index('-m')
         msg[index+1] = f"{multi - 1}"
         nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=message.reply_to_message_id + 1)
-        nextmsg = await sendMessage(nextmsg, " ".join(args))
+        nextmsg = await sendMessage(nextmsg, " ".join(msg))
         nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
         if message.sender_chat:
             nextmsg.sender_chat = message.sender_chat
@@ -299,11 +299,10 @@ async def clone(client, message):
             await delete_links(message)
             return
         if not config_dict['RCLONE_PATH'] and not dst_path:
-            await sendMessage(message, 'Destinantion not specified!')
+            await sendMessage(message, 'Destination not specified!')
             await delete_links(message)
             return
-        listener = MirrorLeechListener(message, tag=tag, select=select, isClone=True, drive_id=drive_id,
-                                       index_link=index_link, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
+        listener = MirrorLeechListener(message, tag=tag, select=select, isClone=True, dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
         await rcloneNode(client, message, link, dst_path, rcf, listener)
     else:
         if not drive_id and len(categories_dict) > 1:
@@ -324,12 +323,12 @@ async def clone(client, message):
 parser = ArgumentParser(description='Clone args usage:')
 
 parser.add_argument('link', nargs='*', default='')
-parser.add_argument('--s', '--select', action='store_true', default=False, dest='select')
-parser.add_argument('--id', nargs='*', default=None, dest='drive_id')
-parser.add_argument('--index', nargs='*', default=None, dest='index_link')
-parser.add_argument('--m', '--multi', nargs='+', default=0, dest='multi', type=int)
-parser.add_argument('--up', nargs='+', default='', dest='upload')
-parser.add_argument('--rcf', nargs='+', default='', dest='rcloneFlags')
+parser.add_argument('-s', '-select', action='store_true', default=False, dest='select')
+parser.add_argument('-id', nargs='*', default=None, dest='drive_id')
+parser.add_argument('-index', nargs='*', default=None, dest='index_link')
+parser.add_argument('-m', nargs='+', default=0, dest='multi', type=int)
+parser.add_argument('-up', nargs='+', default='', dest='upload')
+parser.add_argument('-rcf', nargs='+', default='', dest='rcloneFlags')
 
 bot.add_handler(MessageHandler(clone, filters=command(
     BotCommands.CloneCommand) & CustomFilters.authorized))

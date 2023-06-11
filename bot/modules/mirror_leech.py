@@ -2,17 +2,16 @@ from base64 import b64encode
 from re import match as re_match
 from asyncio import sleep
 from aiofiles.os import path as aiopath
-from argparse import ArgumentParser
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
 from bot import IS_PREMIUM_USER, LOGGER, bot, categories_dict, config_dict
 from bot.helper.ext_utils.bot_utils import (get_content_type, is_gdrive_link,
-                                            is_magnet, is_mega_link,
+                                            is_magnet, is_mega_link, arg_parser,
                                             is_rclone_path, is_url, new_task,
                                             sync_to_async, is_telegram_link)
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE
+from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE
 from bot.helper.z_utils import none_admin_utils, stop_duplicate_tasks
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
@@ -37,68 +36,70 @@ from bot.helper.telegram_helper.message_utils import (anno_checker, delete_links
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 
+
+
 @new_task
 async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[]):
     text = message.text.split('\n')
-    input_list = text[0].split()
+    input_list = text[0].split(' ')
+
+    arg_base = {'link'      : '',
+                '-m'       : 0,
+                '-sd'      : '',       '-samedir' : '',
+                '-d'       : False,    '-seed'    : False,
+                '-j'       : False,    '-join'    : False,
+                '-s'       : False,    '-select'  : False,
+                '-b'       : False,    '-bulk'    : False,
+                '-n'       : '',       '-name'    : '',
+                '-e'       : False,    '-uz'      : False, '-unzip': False,
+                '-z'       : False,    '-zip'     : False,
+                '-index'   : None,     '-id'      : None,
+                '-up'      : '',       '-upload'  : '',
+                '-u'       : '',       '-username': '',
+                '-p'       : '',       '-password': '',
+                '-rcf'     : ''
+            }
+
+    args = arg_parser(input_list[1:], arg_base)
 
     try:
-        args = parser.parse_args(input_list[1:])
+        multi   = int(args['-m'])
     except:
-        await sendMessage(message, MIRROR_HELP_MESSAGE.format(cmd = message.command[0]))
-        return
+        multi   = 0
+    select      = args['-s']   or args['-select']
+    seed        = args['-d']   or args['-seed']
+    isBulk      = args['-b']   or args['-bulk']
+    folder_name = args['-sd']  or args['-samedir']
+    name        = args['-n']   or args['-name']
+    up          = args['-up']  or args['-upload']
+    compress    = args['-z']   or args['-zip']
+    extract     = args['-e']   or args['-uz']     or args['-unzip']
+    join        = args['-j']   or args['-join']
+    drive_id    = args['-id']
+    index_link  = args['-index']
+    rcf         = args['-rcf']
+    link        = args['link']
+    bulk_start  = 0
+    bulk_end    = 0
+    ratio       = None
+    seed_time   = None
+    reply_to    = None
+    file_       = None
+    raw_url     = None
+    auth        = ''
 
-    select = args.select
-    multi = args.multi
-    seed = args.seed
-    isBulk = args.bulk
-    folder_name = " ".join(args.sameDir)
-    name = " ".join(args.newName)
-    up = " ".join(args.upload)
-    rcf = " ".join(args.rcloneFlags)
-    link = " ".join(args.link)
-    compress = args.zipPswd
-    extract = args.extractPswd
-    join = args.join
-    drive_id = args.drive_id
-    index_link = args.index_link
-    bulk_start = 0
-    bulk_end = 0
-    ratio = None
-    seed_time = None
-    reply_to = None
-    file_ = None
-    session = ''
-    raw_url = None
-    auth = ''
-    reply_to = None
-    file_ = None
-    session = ''
-
-    if isinstance(multi, list):
-        multi = multi[0]
-
-    if compress is not None:
-        compress = " ".join(compress)
-    if extract is not None:
-        extract = " ".join(extract)
-
-    if seed:
+    if not isinstance(seed, bool):
         dargs = seed.split(':')
         ratio = dargs[0] or None
         if len(dargs) == 2:
             seed_time = dargs[1] or None
         seed = True
-    elif seed is None:
-        seed = True
 
-    if isBulk:
+    if not isinstance(isBulk, bool):
         dargs = isBulk.split(':')
         bulk_start = dargs[0] or None
         if len(dargs) == 2:
             bulk_end = dargs[1] or None
-        isBulk = True
-    elif isBulk is None:
         isBulk = True
 
     if folder_name and not isBulk:
@@ -119,7 +120,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await sendMessage(message, 'Reply to text file or tg message that have links seperated by new line!')
             return
         b_msg = input_list[:1]
-        b_msg.append(f'{bulk[0]} -i {len(bulk)}')
+        b_msg.append(f'{bulk[0]} -m {len(bulk)}')
         nextmsg = await sendMessage(message, " ".join(b_msg))
         nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
         nextmsg.from_user = message.from_user
@@ -136,11 +137,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         await sleep(5)
         if len(bulk) != 0:
             msg = input_list[:1]
-            msg.append(f'{bulk[0]} -i {multi - 1}')
+            msg.append(f'{bulk[0]} -m {multi - 1}')
             nextmsg = await sendMessage(message, " ".join(msg))
         else:
             msg = [s.strip() for s in input_list]
-            index = msg.index('-i')
+            index = msg.index('-m')
             msg[index+1] = f"{multi - 1}"
             nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=message.reply_to_message_id + 1)
             nextmsg = await sendMessage(nextmsg, " ".join(msg))
@@ -337,32 +338,12 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     elif isQbit:
         await add_qb_torrent(link, path, listener, ratio, seed_time)
     else:
-        ussr = " ".join(args.auth_user)
-        pssw = " ".join(args.auth_pswd)
+        ussr = args['-u'] or args['-username']
+        pssw = args['-p'] or args['-password']
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
             auth = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
         await add_aria2c_download(link, path, listener, name, auth, ratio, seed_time)
-
-
-parser = ArgumentParser(description='Mirror-Leech args usage:', argument_default='')
-
-parser.add_argument('link', nargs='*')
-parser.add_argument('--s', '--select', action='store_true', default=False, dest='select')
-parser.add_argument('--d','--seed', nargs='?', default=False, dest='seed')
-parser.add_argument('--sd', '--samedir', nargs='+', dest='sameDir')
-parser.add_argument('--m', '--multi', nargs='+', default=0, dest='multi', type=int)
-parser.add_argument('--b', '--bulk', nargs='?', default=False, dest='bulk')
-parser.add_argument('--n', nargs='+', dest='newName')
-parser.add_argument('--e', '--uz', '--unzip', nargs='*', default=None, dest='extractPswd')
-parser.add_argument('--id', nargs='*', default=None, dest='drive_id')
-parser.add_argument('--index', nargs='*', default=None, dest='index_link')
-parser.add_argument('--z', '--zip', nargs='*', default=None, dest='zipPswd')
-parser.add_argument('-j', '--join', action='store_true', default=False, dest='join')
-parser.add_argument('--up', '--upload', nargs='+', dest='upload')
-parser.add_argument('--rcf', nargs='+', dest='rcloneFlags')
-parser.add_argument('--u', '--username', nargs='+', dest='auth_user')
-parser.add_argument('--p', '--password', nargs='+', dest='auth_pswd')
 
 
 async def mirror(client, message):

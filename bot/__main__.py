@@ -2,7 +2,7 @@ from asyncio import create_subprocess_exec, gather
 from os import execl as osexecl
 from signal import SIGINT, signal
 from sys import executable
-from time import time, sleep, monotonic
+from time import time, monotonic
 from uuid import uuid4
 
 from aiofiles import open as aiopen

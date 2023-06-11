@@ -1,4 +1,3 @@
-import os
 from asyncio import Event
 
 from bot import (LOGGER, config_dict, non_queued_dl, non_queued_up,
@@ -18,9 +17,9 @@ async def stop_duplicate_check(name, listener):
     ):
         return False, None
     LOGGER.info(f'Checking File/Folder if already in Drive: {name}')
-    if listener.compress is not None:
+    if listener.compress:
         name = f"{name}.zip"
-    elif listener.extract is not None:
+    elif listener.extract:
         try:
             base_name = get_base_name(base_name)
         except:
@@ -149,7 +148,7 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
         if size > limit:
             limit_exceeded = f'Leech limit is {get_readable_file_size(limit)}'
     if not limit_exceeded and (STORAGE_THRESHOLD := config_dict['STORAGE_THRESHOLD']) and not listener.isClone:
-        arch = any([listener.isZip, listener.extract])
+        arch = any([listener.compress, listener.extract])
         limit = STORAGE_THRESHOLD * 1024**3
         acpt = await sync_to_async(check_storage_threshold, size, limit, arch)
         if not acpt:

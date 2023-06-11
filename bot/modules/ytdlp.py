@@ -1,18 +1,16 @@
 from asyncio import Event, sleep, wait_for, wrap_future
 from functools import partial
-from re import split as re_split
 from time import time
 from aiofiles.os import path as aiopath
 from aiohttp import ClientSession
 from pyrogram.filters import command, regex, user
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from yt_dlp import YoutubeDL
-from argparse import ArgumentParser
 
 from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, config_dict, categories_dict,
                  user_data)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
-                                            get_readable_time, is_gdrive_link,
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, arg_parser,
+                                            get_readable_time,
                                             is_rclone_path, is_url, new_task,
                                             new_thread, sync_to_async)
 from bot.helper.ext_utils.help_messages import YT_HELP_MESSAGE
@@ -255,44 +253,47 @@ async def _mdisk(link, name):
 @new_task
 async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     text = message.text.split('\n')
-    input_list = text[0].split()
+    input_list = text[0].split(' ')
     qual = ''
 
+    arg_base = {'link'   : '', 
+                '-m'    : 0, 
+                '-sd'   : '',       '-samedir' : '',
+                '-s'    : False,    '-select'  : False,
+                '-o'    : '',       '-opt'     : '', '-options': '',
+                '-index': None,     '-id'      : None,
+                '-b'    : False,    '-bulk'    : False,
+                '-n'    : '',       '-name'    : '',
+                '-z'    : False,    '-zip'     : False,
+                '-up'   : '',       '-upload'  : '',
+                '-rcf'  : ''
+            }
+
+    args = arg_parser(input_list[1:], arg_base)
     try:
-        args = parser.parse_args(input_list[1:])
+        multi   = int(args['-m'])
     except:
-        await sendMessage(message, YT_HELP_MESSAGE.format(cmd = message.command[0]))
-        return
+        multi   = 0
+    select      = args['-s']   or args['-select']
+    isBulk      = args['-b']   or args['-bulk']
+    opt         = args['-o']   or args['-opt'] or args['-options']
+    folder_name = args['-sd']  or args['-samedir']
+    name        = args['-n']   or args['-name']
+    drive_id    = args['-id'] 
+    index_link  = args['-index']
+    up          = args['-up']  or args['-upload']
+    rcf         = args['-rcf']
+    link        = args['link']
+    compress    = args['-z']   or args['-zip']
+    bulk_start  = 0
+    bulk_end    = 0
+    raw_url     = None
 
-    select = args.select
-    multi = args.multi
-    isBulk = args.bulk
-    opt = " ".join(args.options)
-    folder_name = " ".join(args.sameDir)
-    name = " ".join(args.newName)
-    up = " ".join(args.upload)
-    rcf = " ".join(args.rcloneFlags)
-    link = " ".join(args.link)
-    compress = args.zipPswd
-    drive_id = args.drive_id
-    index_link = args.index_link
-    bulk_start = 0
-    bulk_end = 0
-    raw_url = None
-
-    if isinstance(multi, list):
-        multi = multi[0]
-
-    if compress is not None:
-        compress = " ".join(compress)
-
-    if isBulk:
+    if not isinstance(isBulk, bool):
         dargs = isBulk.split(':')
         bulk_start = dargs[0] or None
         if len(dargs) == 2:
             bulk_end = dargs[1] or None
-        isBulk = True
-    elif isBulk is None:
         isBulk = True
 
     if folder_name and not isBulk:
@@ -310,7 +311,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             await sendMessage(message, 'Reply to text file or tg message that have links seperated by new line!')
             return
         b_msg = input_list[:1]
-        b_msg.append(f'{bulk[0]} -i {len(bulk)}')
+        b_msg.append(f'{bulk[0]} -m {len(bulk)}')
         nextmsg = await sendMessage(message, " ".join(b_msg))
         nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
         nextmsg.from_user = message.from_user
@@ -327,11 +328,11 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         await sleep(5)
         if len(bulk) != 0:
             msg = input_list[:1]
-            msg.append(f'{bulk[0]} -i {multi - 1}')
+            msg.append(f'{bulk[0]} -m {multi - 1}')
             nextmsg = await sendMessage(message, " ".join(msg))
         else:
             msg = [s.strip() for s in input_list]
-            index = msg.index('-i')
+            index = msg.index('-m')
             msg[index+1] = f"{multi - 1}"
             nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=message.reply_to_message_id + 1)
             nextmsg = await sendMessage(nextmsg, " ".join(msg))
@@ -498,22 +499,6 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     playlist = 'entries' in result
     ydl = YoutubeDLHelper(listener)
     await ydl.add_download(link, path, name, qual, playlist, opt)
-
-
-parser = ArgumentParser(description='YT-DLP args usage:', argument_default='')
-
-parser.add_argument('link', nargs='*')
-parser.add_argument('--s', '--select', action='store_true', default=False, dest='select')
-parser.add_argument('--o', '--opt', '--options', nargs='+', dest='options')
-parser.add_argument('--sd', '--samedir', nargs='+', dest='sameDir')
-parser.add_argument('--m', '--multi', nargs='+', default=0, dest='multi', type=int)
-parser.add_argument('--b', '--bulk', nargs='?', default=False, dest='bulk')
-parser.add_argument('--n', nargs='+', dest='newName')
-parser.add_argument('--id', nargs='*', default=None, dest='drive_id')
-parser.add_argument('--index', nargs='*', default=None, dest='index_link')
-parser.add_argument('--z', '--zip', nargs='*', default=None, dest='zipPswd')
-parser.add_argument('--up', nargs='+', dest='upload')
-parser.add_argument('--rcf', nargs='+', dest='rcloneFlags')
 
 
 async def ytdl(client, message):

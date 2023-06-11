@@ -41,7 +41,7 @@ from bot.helper.telegram_helper.message_utils import (delete_all_messages,
 
 
 class MirrorLeechListener:
-    def __init__(self, message, compress=None, extract=None, isQbit=False,
+    def __init__(self, message, compress=False, extract=False, isQbit=False,
                  isLeech=False, tag=None, select=False,
                  seed=False, sameDir=None, rcFlags=None, upPath=None, join=False, isClone=False, raw_url=None,
                  drive_id=None, index_link=None, dmMessage=None, logMessage=None):
@@ -95,9 +95,9 @@ class MirrorLeechListener:
             mode = 'Rclone'
         else:
             mode = 'GDrive'
-        if self.compress is not None:
+        if self.compress:
             mode += ' as Zip'
-        elif self.extract is not None:
+        elif self.extract:
             mode += ' as Unzip'
         self.extra_details['mode'] = mode
 
@@ -128,7 +128,7 @@ class MirrorLeechListener:
         multi_links = False
         while True:
             if self.sameDir:
-                if self.sameDir['total'] == 1 or self.sameDir['total'] > 1 and len(self.sameDir['tasks']) > 1:
+                if self.sameDir['total'] in [1, 0] or self.sameDir['total'] > 1 and len(self.sameDir['tasks']) > 1:
                     break
             else:
                 break
@@ -178,8 +178,8 @@ class MirrorLeechListener:
         if self.join:
             await join_files(dl_path)
 
-        if self.extract is not None:
-            pswd = self.extract
+        if self.extract:
+            pswd = self.extract if isinstance(self.extract, str) else ''
             try:
                 if await aiopath.isfile(dl_path):
                     up_path = get_base_name(dl_path)
@@ -251,8 +251,8 @@ class MirrorLeechListener:
                 self.newDir = ""
                 up_path = dl_path
 
-        if self.compress is not None:
-            pswd = self.compress
+        if self.compress:
+            pswd = self.compress if isinstance(self.compress, str) else ''
             if up_path:
                 dl_path = up_path
                 up_path = f"{up_path}.zip"
@@ -290,7 +290,7 @@ class MirrorLeechListener:
             elif not self.seed:
                 await clean_target(dl_path)
 
-        if self.compress is None and self.extract is None:
+        if not self.compress and not self.extract:
             up_path = dl_path
 
         up_dir, up_name = up_path.rsplit('/', 1)
@@ -298,7 +298,7 @@ class MirrorLeechListener:
         if self.isLeech:
             m_size = []
             o_files = []
-            if self.compress is None:
+            if not self.compress:
                 checked = False
                 LEECH_SPLIT_SIZE = user_dict.get(
                     'split_size', False) or config_dict['LEECH_SPLIT_SIZE']
@@ -513,7 +513,7 @@ class MirrorLeechListener:
             if self.seed and not self.isClone:
                 if self.newDir:
                     await clean_target(self.newDir)
-                elif self.compress is not None:
+                elif self.compress:
                     await clean_target(f"{self.dir}/{name}")
                 async with queue_dict_lock:
                     if self.uid in non_queued_up:

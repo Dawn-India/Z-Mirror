@@ -88,20 +88,20 @@ async def get_user_settings(from_user):
 
     text = f"""<u>User Settings of {name}</u>
 
-TG Premium Status: {IS_PREMIUM_USER}
+<b>TG Premium Status</b>: <code>{IS_PREMIUM_USER}</code>
 
-Leech Type: <b>{ltype}</b>
-Leech Prefix: <code>{escape(lprefix)}</code>
-Leech Split Size: <b>{split_size}</b>
+<b>Leech Type</b>       : <code>{ltype}</code>
+<b>Leech Prefix</b>     : <code>{escape(lprefix)}</code>
+<b>Leech Split Size</b> : <code>{split_size}</code>
 
-Equal Splits: <b>{equal_splits}</b>
-Thumbnail: <b>{thumbmsg}</b>
-Media Group: <b>{media_group}</b>
+<b>Equal Splits</b>       : <code>{equal_splits}</code>
+<b>Thumbnail</b>         : <code>{thumbmsg}</code>
+<b>Media Group</b>      : <code>{media_group}</code>
 
-YT-DLP Options: <b><code>{escape(ytopt)}</code></b>
-Rclone Config: <b>{rccmsg}</b>"""
+<b>YT-DLP Options</b>   : <code>{escape(ytopt)}</code>
+<b>Rclone Config</b>     : <code>{rccmsg}</code>"""
     return text, buttons.build_menu(1)
-    
+
 @new_thread
 async def update_user_settings(query):
     msg, button = await get_user_settings(query.from_user)
