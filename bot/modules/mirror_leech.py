@@ -6,10 +6,10 @@ from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
 from bot import IS_PREMIUM_USER, LOGGER, bot, categories_dict, config_dict
-from bot.helper.ext_utils.bot_utils import (get_content_type, is_gdrive_link,
-                                            is_magnet, is_mega_link, arg_parser,
-                                            is_rclone_path, is_url, new_task,
-                                            sync_to_async, is_telegram_link)
+from bot.helper.ext_utils.bot_utils import (arg_parser, get_content_type, is_gdrive_link,
+                                            is_magnet, is_mega_link,
+                                            is_rclone_path, is_telegram_link,
+                                            is_url, new_task, sync_to_async)
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE
 from bot.helper.z_utils import none_admin_utils, stop_duplicate_tasks
@@ -43,7 +43,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     text = message.text.split('\n')
     input_list = text[0].split(' ')
 
-    arg_base = {'link'      : '',
+    arg_base = {
+                'link'      : '',
                 '-m'       : 0,
                 '-sd'      : '',       '-samedir' : '',
                 '-d'       : False,    '-seed'    : False,
@@ -101,6 +102,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if len(dargs) == 2:
             bulk_end = dargs[1] or None
         isBulk = True
+
+    if drive_id and is_gdrive_link(drive_id):
+        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
 
     if folder_name and not isBulk:
         seed = False

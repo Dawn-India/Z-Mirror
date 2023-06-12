@@ -7,16 +7,16 @@ from pyrogram.filters import command, regex, user
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from yt_dlp import YoutubeDL
 
-from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, config_dict, categories_dict,
-                 user_data)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size, arg_parser,
-                                            get_readable_time,
-                                            is_rclone_path, is_url, new_task,
+from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, categories_dict,
+                 config_dict, user_data)
+from bot.helper.ext_utils.bot_utils import (arg_parser, get_readable_file_size,
+                                            get_readable_time, is_rclone_path, is_url, new_task, is_gdrive_link,
                                             new_thread, sync_to_async)
+from bot.helper.ext_utils.bulk_links import extract_bulk_links
 from bot.helper.ext_utils.help_messages import YT_HELP_MESSAGE
 from bot.helper.z_utils import none_admin_utils, stop_duplicate_tasks
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
-from bot.helper.mirror_utils.download_utils.yt_dlp_download import YoutubeDLHelper
+from bot.helper.mirror_utils.download_utils.yt_dlp_download import  YoutubeDLHelper
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -31,7 +31,6 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       request_limiter,
                                                       sendLogMessage,
                                                       sendMessage)
-from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 
 @new_task
@@ -256,7 +255,8 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     input_list = text[0].split(' ')
     qual = ''
 
-    arg_base = {'link'   : '', 
+    arg_base = {
+                'link'   : '', 
                 '-m'    : 0, 
                 '-sd'   : '',       '-samedir' : '',
                 '-s'    : False,    '-select'  : False,
@@ -276,7 +276,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         multi   = 0
     select      = args['-s']   or args['-select']
     isBulk      = args['-b']   or args['-bulk']
-    opt         = args['-o']   or args['-opt'] or args['-options']
+    opt         = args['-o']   or args['-opt']      or args['-options']
     folder_name = args['-sd']  or args['-samedir']
     name        = args['-n']   or args['-name']
     drive_id    = args['-id'] 
@@ -301,6 +301,9 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         if sameDir is None:
             sameDir = {'total': multi, 'tasks': set(), 'name': folder_name}
         sameDir['tasks'].add(message.id)
+
+    if drive_id and is_gdrive_link(drive_id):
+        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
 
     if isBulk:
         try:

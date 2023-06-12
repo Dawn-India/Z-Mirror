@@ -40,7 +40,7 @@ If you want to add path manually from your config (uploaded from usetting) add <
 <code>/{cmd}</code> link -up <code>mrcc:</code>main:dump
 
 <b>Rclone Flags</b>: -rcf
-<code>/cmd</code> link -up path|rcl -rcf --buffer-size:8M|--drive-starred-only|key|key:value
+<code>/{cmd}</code> link -up path|rcl -rcf --buffer-size:8M|--drive-starred-only|key|key:value
 This will override all other flags except --exclude
 Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
 
@@ -54,7 +54,7 @@ link2 -z -n new name -up remote2:path2
 link3 -e -n new name -opt ytdlpoptions
 <b><u>Note</b></u>: You can't add -sd arg for some links only, do it for all links or use multi without bulk!
 link pswd: pass(zip/unzip) opt: ytdlpoptions up: remote2:path2
-Reply to this example by this cmd <code>/cmd</code> -b(bulk)
+Reply to this example by this cmd <code>/{cmd}</code> b(bulk)
 You can set start and end of the links from the bulk with -b start:end or only end by -b :end or only start by -b start. The default start is from zero(first link) to inf.
 
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a> or use this <a href='https://graph.org/Script-to-convert-cli-arguments-to-api-options-05-28'>SCRIPT</a> to convert cli arguments to api options.
@@ -129,7 +129,7 @@ If you want to add path manually from your config (uploaded from usetting) add <
 <code>/{cmd}</code> link -up <code>mrcc:</code>main:dump
 
 <b>Rclone Flags</b>: -rcf
-<code>/cmd</code> link|path|rcl -up path|rcl -rcf --buffer-size:8M|--drive-starred-only|key|key:value
+<code>/{cmd}</code> link|path|rcl -up path|rcl -rcf --buffer-size:8M|--drive-starred-only|key|key:value
 This will override all other flags except --exclude
 Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
 
@@ -140,8 +140,9 @@ link1 -n new name -up remote1:path1 -rcf |key:value|key:value
 link2 -z -n new name -up remote2:path2
 link3 -e -n new name -up remote2:path2
 Note: You can't add -sd arg for some links only, do it for all links or use multi without bulk!
-Reply to this example by this cmd <code>/cmd</code> -b(bulk)
-You can set start and end of the links from the bulk like seed, with -b start:end or only end by -b :end or only start by -b start. The default start is from zero(first link) to inf.
+Reply to this example by this cmd <code>/{cmd}</code> -b(bulk)
+You can set start and end of the links from the bulk like seed, with -b start:end or only end by -b :end or only start by -b start.
+The default start is from zero(first link) to inf.
 
 <b><u>Join Splitted Files</u></b>: -j or -join
 This option will only work before extract and zip, so mostly it will be used with -sd argument (samedir)
@@ -210,13 +211,13 @@ drive_id must be folder id and index must be url else it will not accept
 
 CAT_SEL_HELP_MESSAGE = """
 
-Reply to an active /{cmd} which was used to start the download or add gid along with /{cmd}
+Reply to an active /{cmd} which was used to start the download or add gid along with {cmd}
 This command mainly for change category incase you decided to change category from already added download.
 But you can always use /{mir} with to select category before download start.
 
-<b>Upload Custom Drive</b>
-<code>/{cmd}</code> <b>id:</b><code>drive_folder_link</code> or <code>drive_id</code> <b>index:</b><code>https://anything.in/0:</code> gid or by replying to active download
-drive_id must be folder id and index must be url else it will not accept
+<b><u>Upload Custom Drive</u></b>
+<code>/{cmd}</code> -id <code>drive_folder_link</code> or <code>drive_id</code> -index <code>https://anything.in/0:</code> gid or by replying to active download
+drive_id must be folder id and index must be url else it will not accept.
 
 <b>Powered By @Z_Mirror</b>
 """

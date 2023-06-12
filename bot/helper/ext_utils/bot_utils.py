@@ -263,6 +263,7 @@ def is_gdrive_link(url):
 def is_telegram_link(url):
     return url.startswith(('https://t.me/', 'tg://openmessage?user_id='))
 
+
 def is_share_link(url: str):
     if 'gdtot' in url:
         regex = r'(https?:\/\/.+\.gdtot\..+\/file\/\d+)'
@@ -347,9 +348,11 @@ def checking_access(user_id, button=None):
     user_data.setdefault(user_id, {})
     data = user_data[user_id]
     expire = data.get('time')
-    isExpired = (expire is None or expire is not None and (time() - expire) > config_dict['TOKEN_TIMEOUT'])
+    isExpired = (expire is None or expire is not None and (
+        time() - expire) > config_dict['TOKEN_TIMEOUT'])
     if isExpired:
-        token = data['token'] if expire is None and 'token' in data else str(uuid4())
+        token = data['token'] if expire is None and 'token' in data else str(
+            uuid4())
         if expire is not None:
             del data['time']
         data['token'] = token
