@@ -17,7 +17,7 @@ from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
 from bot import (DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, bot,
                  config_dict, user_data)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread, get_readable_time,
+from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread,
                                             sync_to_async, update_user_ldata)
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -88,18 +88,18 @@ async def get_user_settings(from_user):
 
     text = f"""<u>User Settings of {name}</u>
 
-<b>TG Premium Status</b>: <code>{IS_PREMIUM_USER}</code>
+<code>TG Premium Status:</code> <b>{IS_PREMIUM_USER}</b>
 
-<b>Leech Type</b>       : <code>{ltype}</code>
-<b>Leech Prefix</b>     : <code>{escape(lprefix)}</code>
-<b>Leech Split Size</b> : <code>{split_size}</code>
+<code>Leech Type       :</code> <b>{ltype}</b>
+<code>Leech Prefix     :</code> <b>{escape(lprefix)}</b>
+<code>Leech Split Size :</code> <b>{split_size}</b>
 
-<b>Equal Splits</b>       : <code>{equal_splits}</code>
-<b>Thumbnail</b>         : <code>{thumbmsg}</code>
-<b>Media Group</b>      : <code>{media_group}</code>
+<code>Equal Splits     :</code> <b>{equal_splits}</b>
+<code>Thumbnail        :</code> <b>{thumbmsg}</b>
+<code>Media Group      :</code> <b>{media_group}</b>
 
-<b>YT-DLP Options</b>   : <code>{escape(ytopt)}</code>
-<b>Rclone Config</b>     : <code>{rccmsg}</code>"""
+<code>YT-DLP Options   :</code> <b>{escape(ytopt)}</b>
+<code>Rclone Config    :</code> <b>{rccmsg}</b>"""
     return text, buttons.build_menu(1)
 
 @new_thread
@@ -227,7 +227,8 @@ async def edit_user_settings(client, query):
     elif data[2] == 'vthumb':
         handler_dict[user_id] = False
         await query.answer()
-        await sendFile(message, thumb_path, from_user.mention)
+        reply_message = await sendFile(message, thumb_path, from_user.mention)
+        await auto_delete_message(message, reply_message)
         await update_user_settings(query)
     elif data[2] == "dthumb":
         handler_dict[user_id] = False

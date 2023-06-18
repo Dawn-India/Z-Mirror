@@ -330,8 +330,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     elif is_gdrive_link(link):
         if not any([compress, extract, isLeech]):
             gmsg = f"Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\n\n"
-            gmsg += f"Use /{BotCommands.ZipMirrorCommand[0]} to make zip of Google Drive folder\n\n"
-            gmsg += f"Use /{BotCommands.UnzipMirrorCommand[0]} to extracts Google Drive archive folder/file"
+            gmsg += f"Use /{BotCommands.MirrorCommand[0]} {link} -zip to make zip of Google Drive folder\n\n"
+            gmsg += f"Use /{BotCommands.MirrorCommand[0]} {link} -unzip to extracts Google Drive archive folder/file"
             reply_message = await sendMessage(message, gmsg)
             await auto_delete_message(message, reply_message)
             await delete_links(message)

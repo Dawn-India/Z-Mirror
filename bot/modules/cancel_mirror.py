@@ -3,7 +3,7 @@ from asyncio import sleep
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import bot, bot_loop, download_dict, download_dict_lock
+from bot import bot, bot_name, bot_loop, download_dict, download_dict_lock
 from bot.helper.ext_utils.bot_utils import (MirrorStatus, getAllDownload,
                                             getDownloadByGid, new_task)
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -19,9 +19,12 @@ async def cancel_mirror(client, message):
     if not message.from_user:
         return
     user_id = message.from_user.id
-    msg = message.text.split()
+    msg = message.text.split('_', maxsplit=1)
     if len(msg) > 1:
-        gid = msg[1]
+        cmd_data = msg[1].split('@', maxsplit=1)
+        if len(cmd_data) > 1 and cmd_data[1].strip() != bot_name:
+            return
+        gid = cmd_data[0]
         dl = await getDownloadByGid(gid)
         if not dl:
             await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
@@ -98,25 +101,18 @@ async def cancell_all_buttons(client, message):
         return await sendMessage(message, f"{user_id} Don't have any active task!")
     msg_id = message.id
     buttons = ButtonMaker()
-    buttons.ibutton(
-        "Downloading", f"cnall {MirrorStatus.STATUS_DOWNLOADING} {msg_id}")
-    buttons.ibutton(
-        "Uploading", f"cnall {MirrorStatus.STATUS_UPLOADING} {msg_id}")
-    buttons.ibutton("Seeding", f"cnall {MirrorStatus.STATUS_SEEDING} {msg_id}")
-    buttons.ibutton("Cloning", f"cnall {MirrorStatus.STATUS_CLONING} {msg_id}")
-    buttons.ibutton(
-        "Extracting", f"cnall {MirrorStatus.STATUS_EXTRACTING} {msg_id}")
-    buttons.ibutton(
-        "Archiving", f"cnall {MirrorStatus.STATUS_ARCHIVING} {msg_id}")
-    buttons.ibutton(
-        "QueuedDl", f"cnall {MirrorStatus.STATUS_QUEUEDL} {msg_id}")
-    buttons.ibutton(
-        "QueuedUp", f"cnall {MirrorStatus.STATUS_QUEUEUP} {msg_id}")
-    buttons.ibutton(
-        "Splitting", f"cnall {MirrorStatus.STATUS_SPLITTING} {msg_id}")
-    buttons.ibutton("Paused", f"cnall {MirrorStatus.STATUS_PAUSED} {msg_id}")
-    buttons.ibutton("All", f"cnall all {msg_id}")
-    buttons.ibutton("Close", f"cnall close {msg_id}")
+    buttons.ibutton("Downloading",  f"cnall {MirrorStatus.STATUS_DOWNLOADING} {msg_id}")
+    buttons.ibutton("Uploading",    f"cnall {MirrorStatus.STATUS_UPLOADING} {msg_id}")
+    buttons.ibutton("Seeding",      f"cnall {MirrorStatus.STATUS_SEEDING} {msg_id}")
+    buttons.ibutton("Cloning",      f"cnall {MirrorStatus.STATUS_CLONING} {msg_id}")
+    buttons.ibutton("Extracting",   f"cnall {MirrorStatus.STATUS_EXTRACTING} {msg_id}")
+    buttons.ibutton("Archiving",    f"cnall {MirrorStatus.STATUS_ARCHIVING} {msg_id}")
+    buttons.ibutton("QueuedDl",     f"cnall {MirrorStatus.STATUS_QUEUEDL} {msg_id}")
+    buttons.ibutton("QueuedUp",     f"cnall {MirrorStatus.STATUS_QUEUEUP} {msg_id}")
+    buttons.ibutton("Splitting",    f"cnall {MirrorStatus.STATUS_SPLITTING} {msg_id}")
+    buttons.ibutton("Paused",       f"cnall {MirrorStatus.STATUS_PAUSED} {msg_id}")
+    buttons.ibutton("All",          f"cnall all {msg_id}")
+    buttons.ibutton("Close",        f"cnall close {msg_id}")
     button = buttons.build_menu(2)
     can_msg = await sendMessage(message, 'Choose tasks to cancel. You have 30 Secounds only', button)
     cancel_listener[msg_id] = [user_id, can_msg, message.from_user.id, tag]
@@ -151,9 +147,8 @@ async def _auto_cancel(msg, msg_id):
         del cancel_listener[msg_id]
         await editMessage(msg, 'Timed out!')
 
-bot.add_handler(MessageHandler(cancel_mirror, filters=command(
-    BotCommands.CancelMirror) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(cancel_mirror, filters=regex(
+    f"^/{BotCommands.CancelMirror[0]}(_\w+)?(?!all)") & CustomFilters.authorized))
 bot.add_handler(MessageHandler(cancell_all_buttons, filters=command(
     BotCommands.CancelAllCommand) & CustomFilters.authorized))
-bot.add_handler(CallbackQueryHandler(
-    cancel_all_update, filters=regex("^cnall")))
+bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=regex("^cnall")))

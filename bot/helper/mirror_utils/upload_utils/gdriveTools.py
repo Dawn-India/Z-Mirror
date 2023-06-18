@@ -195,6 +195,8 @@ class GoogleDriveHelper:
         return msg
 
     def upload(self, file_name, size, gdrive_id):
+        if not gdrive_id:
+            gdrive_id = config_dict['GDRIVE_ID']
         self.__is_uploading = True
         item_path = f"{self.__path}/{file_name}"
         LOGGER.info(f"Uploading: {item_path}")
@@ -373,6 +375,8 @@ class GoogleDriveHelper:
         return
 
     def clone(self, link, gdrive_id):
+        if not gdrive_id:
+            gdrive_id = config_dict['GDRIVE_ID']
         self.__is_cloning = True
         self.__start_time = time()
         self.__total_files = 0

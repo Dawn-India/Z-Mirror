@@ -45,7 +45,8 @@ async def _list_drive(key, message, item_type, isRecursive):
         await editMessage(message, msg, button)
     else:
         msg = f'No result found for <i>{key}</i>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
-        await editMessage(message, msg)
+        reply_message = await editMessage(message, msg)
+        await auto_delete_message(message, reply_message)
     if config_dict['DELETE_LINKS']:
         await deleteMessage(message.reply_to_message)
 
@@ -75,7 +76,9 @@ async def select_type(_, query):
 
 async def drive_list(_, message):
     if len(message.text.split()) == 1:
-        return await sendMessage(message, 'Send a search key along with command')
+        reply_message = await sendMessage(message, 'Send a search key along with command')
+        await auto_delete_message(message, reply_message)
+        return
     if not message.from_user:
         message.from_user = await anno_checker(message)
     if not message.from_user:
