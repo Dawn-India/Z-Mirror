@@ -202,7 +202,7 @@ Send Gdrive|Gdot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along wit
 drive_id must be folder id and index must be url else it will not accept
 
 <b>Rclone:</b>
-<code>/cmd</code> (rcl or rclone_path) -up (rcl or rclone_path) -rcf flagkey:flagvalue|flagkey|flagkey:flagvalue
+<code>/{cmd}</code> (rcl or rclone_path) -up (rcl or rclone_path) -rcf flagkey:flagvalue|flagkey|flagkey:flagvalue
 
 <b><u>Note</u></b>: If -up not specified then rclone destination will be the RCLONE_PATH from config.env
 

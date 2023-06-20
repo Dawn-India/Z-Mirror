@@ -5,7 +5,12 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus, async_to_sync,
                                             get_readable_file_size,
                                             get_readable_time)
 from bot.helper.ext_utils.fs_utils import get_path_size
+from subprocess import run as prun
 
+
+def _eng_ver():
+    _engine = prun(['7z', '-version'], capture_output=True, text=True)
+    return _engine.stdout.split('\n')[2].split(' ')[2]
 
 class ExtractStatus:
     def __init__(self, name, size, gid, listener):
@@ -16,7 +21,7 @@ class ExtractStatus:
         self.__start_time = time()
         self.message = self.__listener.message
         self.extra_details = self.__listener.extra_details
-        self.engine = 'p7zip v16.02'
+        self.engine = f'p7zip v{_eng_ver()}'
 
     def gid(self):
         return self.__gid

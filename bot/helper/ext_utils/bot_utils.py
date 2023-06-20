@@ -34,15 +34,14 @@ class MirrorStatus:
     STATUS_UPLOADING = "Uploading"
     STATUS_DOWNLOADING = "Downloading"
     STATUS_CLONING = "Cloning"
-    STATUS_QUEUEDL = "Queue Dn"
-    STATUS_QUEUEUP = "Queue Up"
+    STATUS_QUEUEDL = "Queued Download"
+    STATUS_QUEUEUP = "Queued Upload"
     STATUS_PAUSED = "Paused"
     STATUS_ARCHIVING = "Archiving"
     STATUS_EXTRACTING = "Extracting"
     STATUS_SPLITTING = "Spliting"
     STATUS_CHECKING = "CheckingUp"
     STATUS_SEEDING = "Seeding"
-    STATUS_CONVERTING = "Converting"
 
 class setInterval:
     def __init__(self, interval, action):
@@ -145,9 +144,8 @@ def get_readable_message():
         msg += f"\n<b>File Name</b> » <i>{escape(f'{download.name()}')}</i>\n\n" if elapsed <= config_dict['AUTO_DELETE_MESSAGE_DURATION'] else ""
         msg += f"• <b>{download.status()}</b>"
 
-        if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_CONVERTING,
-                                     MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP, 
-                                     MirrorStatus.STATUS_PAUSED]:
+        if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_PAUSED,
+                                     MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
 
             msg += f" » {download.speed()}"
             msg += f"\n• {get_progress_bar_string(download.progress())} » {download.progress()}"
@@ -185,7 +183,7 @@ def get_readable_message():
             msg += f"\n• <code>Task     </code>» <a href='{download.message.link}'>{download.extra_details['mode']}</a>"
 
         msg += f"\n• <code>User     </code>» {tag}"
-        msg += f"\n⚠️ /{BotCommands.CancelMirror[0]}_{download.gid()}\n\n"
+        msg += f"\n⚠️ /{BotCommands.CancelMirror}_{download.gid()}\n\n"
 
     if len(msg) == 0:
         return None, None
@@ -332,9 +330,12 @@ def arg_parser(items, arg_base):
 
 
 async def get_content_type(url):
-    async with ClientSession(trust_env=True) as session:
-        async with session.get(url) as response:
-            return response.headers.get('Content-Type')
+    try:
+        async with ClientSession(trust_env=True) as session:
+            async with session.get(url, verify_ssl=False) as response:
+                return response.headers.get('Content-Type')
+    except:
+        return None
 
 
 def update_user_ldata(id_, key, value):
@@ -435,7 +436,7 @@ async def set_commands(client):
             BotCommand(f'{BotCommands.StatsCommand[0]}', f'{BotCommands.StatsCommand[1]} Check bot stats'),
             BotCommand(f'{BotCommands.BtSelectCommand}', 'Select files to download only torrents'),
             BotCommand(f'{BotCommands.CategorySelect}', 'Select category to upload only mirror'),
-            BotCommand(f'{BotCommands.CancelMirror[0]}', f'or {BotCommands.CancelMirror[1]} Cancel a Task'),
+            BotCommand(f'{BotCommands.CancelMirror}', 'Cancel a Task'),
             BotCommand(f'{BotCommands.CancelAllCommand[0]}', f'Cancel all tasks which added by you or {BotCommands.CancelAllCommand[1]} to in bots.'),
             BotCommand(f'{BotCommands.ListCommand}', 'Search in Drive'),
             BotCommand(f'{BotCommands.SearchCommand}', 'Search in Torrent'),

@@ -37,7 +37,7 @@ async def cancel_mirror(client, message):
             return
     elif len(msg) == 1:
         msg = f"Reply to an active Command message which was used to start the download" \
-              f" or send <code>/{BotCommands.CancelMirror[1]} GID</code> to cancel it!"
+            f" or send <code>/{BotCommands.CancelMirror}_GID@{bot_name}</code> to cancel it!"
         await sendMessage(message, msg)
         return
 
@@ -148,7 +148,7 @@ async def _auto_cancel(msg, msg_id):
         await editMessage(msg, 'Timed out!')
 
 bot.add_handler(MessageHandler(cancel_mirror, filters=regex(
-    f"^/{BotCommands.CancelMirror[0]}(_\w+)?(?!all)") & CustomFilters.authorized))
+    f"^/{BotCommands.CancelMirror}(_\w+)?(?!all)") & CustomFilters.authorized))
 bot.add_handler(MessageHandler(cancell_all_buttons, filters=command(
     BotCommands.CancelAllCommand) & CustomFilters.authorized))
 bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=regex("^cnall")))

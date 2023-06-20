@@ -184,7 +184,7 @@ help_string = f'''
 /{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
 
 <b>Cancel Tasks:</b>
-/{BotCommands.CancelMirror[0]} or /{BotCommands.CancelMirror[1]}: Cancel task by gid or reply.
+/{BotCommands.CancelMirror}: Cancel task by gid or reply.
 /{BotCommands.CancelAllCommand[0]} : Cancel all tasks which added by you /{BotCommands.CancelAllCommand[1]} to in bots.
 
 <b>Torrent/Drive Search:</b>

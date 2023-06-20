@@ -178,7 +178,8 @@ class MirrorLeechListener:
         user_dict = user_data.get(self.message.from_user.id, {})
 
         if self.join:
-            await join_files(dl_path)
+            if await aiopath.isdir(dl_path):
+                await join_files(dl_path)
 
         if self.extract:
             pswd = self.extract if isinstance(self.extract, str) else ''
@@ -396,27 +397,27 @@ class MirrorLeechListener:
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().rm_complete_task(self.message.link)
         LOGGER.info(f'Done Uploading {name}')
-        lmsg = f'<b>File Name</b>: <code>{escape(name)}</code>'
-        lmsg += f'\n<b>Req By</b>: {self.tag}'
+        lmsg = f'<b><i>{escape(name)}</i></b>'
+        lmsg += f'\n<b>Req By</b>: <i>{self.tag}</i>'
         gmsg = f'Hey <b>{self.tag}</b>!\nYour job is done.'
-        msg = f'\n\n<b>Size</b>: {get_readable_file_size(size)}'
-        msg += f"\n<b>Elapsed</b>: {get_readable_time(time() - self.extra_details['startTime'])}"
-        msg += f"\n<b>Upload</b>: {self.extra_details['mode']}"
+        msg = f'\n\n<b>Size</b>: <i>{get_readable_file_size(size)}</i>'
+        msg += f"\n<b>Elapsed</b>: <i>{get_readable_time(time() - self.extra_details['startTime'])}</i>"
+        msg += f"\n<b>Upload</b>: <i>{self.extra_details['mode']}</i>"
         _msg = '' if rclonePath == '' else f'\n\n<b>Path</b>: <code>{rclonePath}</code>'
-        msg_ = '\n\n<b>Links has been sent in your DM.</b>'
+        msg_ = '\n\n<b><i>Links has been sent in your DM.</i></b>'
         buttons = ButtonMaker()
         if self.isLeech:
-            msg += f'\n<b>Total Files</b>: {folders}\n'
+            msg += f'\n<b>Total Files</b>: <i>{folders}</i>\n'
             if mime_type != 0:
-                msg += f'\n<b>Corrupted Files</b>: {mime_type}\n'
-            msg_ = '\n<b>Files has been sent in your DM.</b>'
+                msg += f'<b>Corrupted Files</b>: <i>{mime_type}</i>\n'
+            msg_ = '\n<b><i>Files has been sent in your DM.</i></b>'
             if not self.dmMessage:
                 if not files:
                     await sendMessage(self.message, lmsg + msg)
                     if self.logMessage:
                         await sendMessage(self.logMessage, lmsg + msg)
                 else:
-                    fmsg = ''
+                    fmsg = '\n'
                     for index, (link, name) in enumerate(files.items(), start=1):
                         fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                         if len(fmsg.encode() + msg.encode()) > 4000:
@@ -424,8 +425,8 @@ class MirrorLeechListener:
                                 await sendMessage(self.logMessage, lmsg + msg + fmsg)
                             await sendMessage(self.message, lmsg + msg + fmsg)
                             await sleep(1)
-                            fmsg = ''
-                    if fmsg != '':
+                            fmsg = '\n'
+                    if fmsg != '\n':
                         if self.logMessage:
                             await sendMessage(self.logMessage, lmsg + msg + fmsg)
                         await sendMessage(self.message, lmsg + msg + fmsg)
@@ -440,7 +441,7 @@ class MirrorLeechListener:
                     if self.logMessage:
                         await sendMessage(self.logMessage, lmsg + msg)
                 else:
-                    fmsg = ''
+                    fmsg = '\n'
                     for index, (link, name) in enumerate(files.items(), start=1):
                         fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                         if len(fmsg.encode() + msg.encode()) > 4000:
@@ -448,8 +449,8 @@ class MirrorLeechListener:
                                 await sendMessage(self.logMessage, lmsg + msg + fmsg)
                             await sendMessage(self.dmMessage, gmsg + msg + fmsg)
                             await sleep(1)
-                            fmsg = ''
-                    if fmsg != '':
+                            fmsg = '\n'
+                    if fmsg != '\n':
                         if self.logMessage:
                             await sendMessage(self.logMessage, lmsg + msg + fmsg)
                         await sendMessage(self.message, gmsg + msg + msg_)
