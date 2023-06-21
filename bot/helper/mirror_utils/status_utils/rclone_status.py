@@ -14,7 +14,10 @@ class RcloneStatus:
         self.__status = status
         self.message = message
         self.extra_details = extra_details
-        self.engine = f'Rclone v{_eng_ver()}'
+        eng_ver = _eng_ver()
+        if eng_ver[0].isdigit():
+            eng_ver = f'v{eng_ver}'
+        self.engine = f'Rclone {eng_ver}'
 
     def gid(self):
         return self.__gid
