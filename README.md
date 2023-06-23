@@ -14,63 +14,64 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 
 ### Aria2c
 
-- Select files from Torrent before and while downloading
-- Seed torrents to specific ratio and time
-- Netrc support
-- Direct link authentication for specific link while using the bot (it will work even if only username or password)
-- Improve aria.sh
-- Fix all download listener functions and status
-- Edit Global Options while bot running from bot settings
+- Select files from Torrent before and while downloading.
+- Seed torrents to specific ratio and time.
+- Netrc support.
+- Direct link authentication for specific link while using the bot (it will work even if only username or password).
+- Improve aria.sh.
+- Fix all download listener functions and status.
+- Edit Global Options while bot running from bot settings.
 
 ### Rclone
 
-- Download and Upload using rclone with and without service accounts
-- Ability to choose config, remote and path from list with buttons
-- Ability to set rclone flags for each task or globally from config
-- Rclone.conf for each user
-- Clone server-side
-- Rclone serve for combine remote to use it as index from all remotes
+- Download and Upload using rclone with and without service accounts.
+- Ability to choose config, remote and path from list with buttons.
+- Ability to set rclone flags for each task or globally from config.
+- Rclone.conf for each user.
+- Clone server-side.
+- Rclone serve for combine remote to use it as index from all remotes.
 
 ### qBittorrent
 
-- Qbittorrent support
-- Select files from Torrent before and while downloading
-- Seed torrents to specific ratio and time
-- Edit Global Options while bot running from bot settings
+- Qbittorrent support.
+- Select files from Torrent before and while downloading.
+- Seed torrents to specific ratio and time.
+- Edit Global Options while bot running from bot settings.
 
 ### Yt-dlp
 
-- Switch from youtube-dl to yt-dlp and fix all conflicts
-- Yt-dlp quality buttons
-- Ability to use specific yt-dlp option for each task
-- Custom default yt-dlp options for each user
-- Fix download progress
-- Embed original thumbnail and add it for leech
-- All supported audio formats
+- Switch from youtube-dl to yt-dlp and fix all conflicts.
+- Yt-dlp quality buttons.
+- Ability to use specific yt-dlp option for each task.
+- Custom default yt-dlp options for each user.
+- Fix download progress.
+- Embed original thumbnail and add it for leech.
+- All supported audio formats.
 
 ### TG Download/Upload
 
-- Leech support(Upload to Telegram)
-- Splitting
-- Thumbnail for each user
+- Leech support(Upload to Telegram).
+- Splitting.
+- Thumbnail for each user.
 - Leech filename prefix for each user.
-- Set upload as document or as media for each user
-- 4GB file upload with premium account also available in DM feature
+- Set upload as document or as media for each user.
+- 4GB file upload with premium account also available in DM feature.
 - Upload all files to specific superGroup/channel.
-- Leech Split size and equal split size settings for each user
-- Ability to leech splitted file parts in media group. Setting for each user
-- Download using premium account if available
-- Download restricted messages (document or link) by tg private/public/super links
+- Leech Split size and equal split size settings for each user.
+- Ability to leech splitted file parts in media group. Setting for each user.
+- Download using premium account if available.
+- Download restricted messages (document or link) by tg private/public/super links.
+- Auto remove unwanted filenames.
 
 ### Google
 
-- Stop duplicates for all tasks except yt-dlp tasks
-- Download from Google Drive
-- Counting Google Drive files/folders
-- Search in multiple Drive folder/TeamDrive
+- Stop duplicates for all tasks except yt-dlp tasks.
+- Download from Google Drive.
+- Counting Google Drive files/folders.
+- Search in multiple Drive folder/TeamDrive.
 - Recursive Search (only with `root` or TeamDrive ID, folder ids will be listed with non-recursive method). Based on [Sreeraj](https://github.com/SVR666) searchX-bot.
-- Use Token.pickle if file not found with Service Account, for all Gdrive functions
-- Random Service Account for each task
+- Use Token.pickle if file not found with Service Account, for all Gdrive functions.
+- Random Service Account for each task.
 
 ### Limits
 - Storage threshold limit 
@@ -101,76 +102,76 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Extract Status
 - Archive Status
 - Seed Status
-- Status Pages for unlimited tasks
-- Ability to cancel upload/clone/archive/extract/split
-- Cancel all buttons for choosing specific tasks status to cancel
+- Status Pages for unlimited tasks.
+- Ability to cancel upload/clone/archive/extract/split.
+- Cancel all buttons for choosing specific tasks status to cancel.
 - Fix flooding issues
 - Fix overall upload and download speed
 
 ### Database
 
-- Mongo Database support
-- Store bot settings
-- Store user settings including thumbnails and rclone config in database
-- Store private files
-- Store RSS data
-- Store incompleted task messages
+- Mongo Database support.
+- Store bot settings.
+- Store user settings including thumbnails and rclone config in database.
+- Store private files.
+- Store RSS data.
+- Store incompleted task messages.
 
 ### Torrents Search
 
-- Torrent search support
-- Search on torrents with Torrent Search API
-- Search on torrents with variable plugins using qBittorrent search engine
+- Torrent search support.
+- Search on torrents with Torrent Search API.
+- Search on torrents with variable plugins using qBittorrent search engine.
 
 ### Archives
 
-- Zip instead of tar
-- Using 7-zip tool to extract all supported types
-- Extract rar, zip and 7z within folder or splits with or without password
-- Zip file/folder with or without password
+- Zip instead of tar.
+- Using 7-zip tool to extract all supported types.
+- Extract rar, zip and 7z within folder or splits with or without password.
+- Zip file/folder with or without password.
 
 ### RSS
 
-- Rss feed. Based on this repository [rss-chan](https://github.com/hyPnOtICDo0g/rss-chan)
-- Filters added
-- Edit any feed while running: pause, resume, edit command and edit filters
-- Rss for each user with tag
-- Sudo settings to control users feeds
+- Rss feed. Based on this repository [rss-chan](https://github.com/hyPnOtICDo0g/rss-chan).
+- Filters added.
+- Edit any feed while running: pause, resume, edit command and edit filters.
+- Rss for each user with tag.
+- Sudo settings to control users feeds.
 - All functions have been improved using buttons from one command.
 
 ### Overall
 
 - Docker image support for linux `amd64, arm64/v8, arm/v7`
-- Switch from sync to async
-- SWitch from python-telegram-bot to pyrogram
-- Edit variables and overwrite the private files while bot running
-- Update bot at startup and with restart command using `UPSTREAM_REPO`
-- Improve Telegraph. Based on [Sreeraj](https://github.com/SVR666) loaderX-bot
-- Mirror/Leech/Watch/Clone/Count/Del by reply
-- Mirror/Leech/Clone multi links/files with one command
-- Custom name for all links except torrents. For files you should add extension except yt-dlp links
-- Extensions Filter for the files to be uploaded/cloned
-- View Link button. Extra button to open index link in broswer instead of direct download for file
-- Queueing System for all tasks
-- Ability to zip/unzip multi links in same directory. Mostly helpful in unziping tg file parts
-- Bulk download from telegram txt file or text message contains links seperated by new line
-- Join splitted files that have splitted before by split linux pkg
-- Almost all repository functions have been improved and many other details can't mention all of them
-- Many bugs have been fixed
-- Mirror direct download links, Torrent, Mega.nz and Telegram files to Google Drive
-- Copy files from someone's Drive to your Drive
-- Download/Upload progress, Speeds and ETAs
-- Mirror all youtube-dl supported links
-- Docker support
-- Uploading to Team Drive
-- Index Link support
-- Service Account support
-- Delete files from Drive
-- Multiple Trackers support
-- Shell and Executor
-- Add sudo users
-- Extract password protected files
-- Extract these filetypes
+- Switch from sync to async.
+- SWitch from python-telegram-bot to pyrogram.
+- Edit variables and overwrite the private files while bot running.
+- Update bot at startup and with restart command using `UPSTREAM_REPO`.
+- Improve Telegraph. Based on [Sreeraj](https://github.com/SVR666) loaderX-bot.
+- Mirror/Leech/Watch/Clone/Count/Del by reply.
+- Mirror/Leech/Clone multi links/files with one command.
+- Custom name for all links except torrents. For files you should add extension except yt-dlp links.
+- Extensions Filter for the files to be uploaded/cloned.
+- View Link button. Extra button to open index link in broswer instead of direct download for file.
+- Queueing System for all tasks.
+- Ability to zip/unzip multi links in same directory. Mostly helpful in unziping tg file parts.
+- Bulk download from telegram txt file or text message contains links seperated by new line.
+- Join splitted files that have splitted before by split linux pkg.
+- Almost all repository functions have been improved and many other details can't mention all of them.
+- Many bugs have been fixed.
+- Mirror direct download links, Torrent, Mega.nz and Telegram files to Google Drive.
+- Copy files from someone's Drive to your Drive.
+- Download/Upload progress, Speeds and ETAs.
+- Mirror all youtube-dl supported links.
+- Docker support.
+- Uploading to Team Drive.
+- Index Link support.
+- Service Account support.
+- Delete files from Drive.
+- Multiple Trackers support.
+- Shell and Executor.
+- Add sudo users.
+- Extract password protected files.
+- Extract these filetypes.
   > ZIP, RAR, TAR, 7z, ISO, WIM, CAB, GZIP, BZIP2, APM, ARJ, CHM, CPIO, CramFS, DEB, DMG, FAT, HFS, LZH, LZMA, LZMA2, MBR, MSI, MSLZ, NSIS, NTFS, RPM, SquashFS, UDF, VHD, XAR, Z, TAR.XZ
 - Direct links Supported:
   > mediafire, letsupload.io, hxfile.co, antfiles, fembed.com, fembed.net, femax20.com, layarkacaxxi.icu, fcdn.stream, sbplay.org, naniplay.com, naniplay.nanime.in, naniplay.nanime.biz, sbembed.com, streamtape.com, streamsb.net, feurl.com, upload.ee, pixeldrain.com, racaty.net, 1fichier.com, 1drv.ms (Only works for file not folder or business account), uptobox.com and solidfiles.com, linkbox.to, shrdsk.me (sharedisk.io), akmfiles.com, wetransfer.com, mdisk.me (with ytdl), terabox.com (you need to add cookies txt with name) [terabox.txt](https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl) and almost every anonfiles based sites
@@ -198,6 +199,9 @@ sudo apt install python3 python3-pip
 ```
 
 Install Docker by following the [Official docker docs](https://docs.docker.com/engine/install/#server).
+Or you can use the convenience script: `curl -fsSL https://get.docker.com |  bash`
+
+```
 
 - For Arch and it's derivatives:
 
@@ -283,6 +287,7 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `MEDIA_GROUP`: View Uploaded splitted file parts in media group. Default is `False`. `Bool`.
 - `LEECH_FILENAME_PREFIX`: Add custom word to leeched file name. `Str`
 - `DUMP_CHAT_ID`: Chat ID to where leeched files would be uploaded. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!
+- `LEECH_REMOVE_UNWANTED`: Remove unwanted filenames separated with `|` from leeched files. Example: `mltb|jmdkh|wzml`. `Str`
 
 ### qBittorrent/Aria2c
 

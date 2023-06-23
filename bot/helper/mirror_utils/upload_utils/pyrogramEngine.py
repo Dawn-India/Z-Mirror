@@ -1,16 +1,11 @@
 from asyncio import sleep
 from html import escape
 from logging import ERROR, getLogger
-from os import path as ospath
-from os import walk
-from re import match as re_match
-from re import sub as re_sub
+from os import path as ospath, walk
+from re import match as re_match, sub as re_sub
 from time import time
 
-from aiofiles.os import makedirs
-from aiofiles.os import path as aiopath
-from aiofiles.os import remove as aioremove
-from aiofiles.os import rename as aiorename
+from aiofiles.os import makedirs, path as aiopath, remove as aioremove, rename as aiorename
 from aioshutil import copy
 from natsort import natsorted
 from PIL import Image
@@ -19,15 +14,10 @@ from pyrogram.types import InputMediaDocument, InputMediaVideo
 from tenacity import (RetryError, retry, retry_if_exception_type,
                       stop_after_attempt, wait_exponential)
 
-from bot import (GLOBAL_EXTENSION_FILTER, IS_PREMIUM_USER, bot, config_dict,
-                 user, user_data)
-from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
-                                            sync_to_async)
-from bot.helper.ext_utils.fs_utils import (clean_unwanted, get_base_name,
-                                           is_archive)
-from bot.helper.ext_utils.leech_utils import (get_document_type,
-                                              get_media_info, take_ss)
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot import GLOBAL_EXTENSION_FILTER, IS_PREMIUM_USER, bot, config_dict, user, user_data
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
+from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, is_archive
+from bot.helper.ext_utils.leech_utils import get_document_type, get_media_info, take_ss, remove_unwanted
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
@@ -52,6 +42,7 @@ class TgUploader:
         self.__last_msg_in_group = False
         self.__up_path = ''
         self.__lprefix = ''
+        self.__lremname = ''
         self.__as_doc = False
         self.__media_group = False
         self.__sent_DMmsg = None
@@ -70,10 +61,9 @@ class TgUploader:
         user_id = self.__listener.message.from_user.id
         user_dict = user_data.get(user_id, {})
         self.__as_doc = user_dict.get('as_doc') or config_dict['AS_DOCUMENT']
-        self.__media_group = user_dict.get(
-            'media_group') or config_dict['MEDIA_GROUP']
-        self.__lprefix = user_dict.get(
-            'lprefix') or config_dict['LEECH_FILENAME_PREFIX']
+        self.__media_group = user_dict.get('media_group') or config_dict['MEDIA_GROUP']
+        self.__lprefix = user_dict.get('lprefix') or config_dict['LEECH_FILENAME_PREFIX']
+        self.__lremname = user_dict.get('lremname') or config_dict['LEECH_REMOVE_UNWANTED']
         if not await aiopath.exists(self.__thumb):
             self.__thumb = None
 
@@ -118,8 +108,9 @@ class TgUploader:
         return True
 
     async def __prepare_file(self, file_, dirpath):
-        if self.__lprefix:
-            cap_mono = f"{self.__lprefix} <code>{file_}</code>"
+        if self.__lprefix or self.__lremname:
+            file_ = await remove_unwanted(file_, self.__lremname)
+            cap_mono = f"<i>{self.__lprefix} {file_}</i>"
             self.__lprefix = re_sub('<.*?>', '', self.__lprefix)
             if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("/splited_files_z"):
                 dirpath = f'{dirpath}/copied_z'
@@ -131,7 +122,7 @@ class TgUploader:
                 await aiorename(self.__up_path, new_path)
                 self.__up_path = new_path
         else:
-            cap_mono = f"<code>{file_}</code>"
+            cap_mono = f"<i>{file_}</i>"
         if len(file_) > 60:
             if is_archive(file_):
                 name = get_base_name(file_)

@@ -3,20 +3,17 @@ from functools import partial
 from html import escape
 from io import BytesIO
 from math import ceil
-from os import getcwd
-from os import path as ospath
+from os import getcwd, path as ospath
 from re import sub as re_sub
 from time import time
 
-from aiofiles.os import mkdir
-from aiofiles.os import path as aiopath
-from aiofiles.os import remove as aioremove
+from aiofiles.os import mkdir, path as aiopath, remove as aioremove
 from PIL import Image
+
 from pyrogram.filters import command, create, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import (DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, bot,
-                 config_dict, user_data)
+from bot import DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, bot, config_dict, user_data
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread,
                                             sync_to_async, update_user_ldata)
 from bot.helper.ext_utils.db_handler import DbManger
@@ -44,15 +41,25 @@ async def get_user_settings(from_user):
         ltype = "MEDIA"
         buttons.ibutton("Send As Document", f"userset {user_id} doc")
 
+    buttons.ibutton("Leech Prefix", f"userset {user_id} lprefix")
+    if user_dict.get('lprefix', False):
+        lprefix = user_dict['lprefix']
+    elif 'lprefix' not in user_dict and (LP := config_dict['LEECH_FILENAME_PREFIX']):
+        lprefix = LP
+    else:
+        lprefix = 'None'
+
     buttons.ibutton("Leech Splits", f"userset {user_id} lss")
-    split_size = user_dict.get(
-        'split_size', False) or config_dict['LEECH_SPLIT_SIZE']
+    split_size = user_dict.get('split_size', False) or config_dict['LEECH_SPLIT_SIZE']
     split_size = get_readable_file_size(split_size)
 
     if user_dict.get('equal_splits', False) or 'equal_splits' not in user_dict and config_dict['EQUAL_SPLITS']:
         equal_splits = 'Enabled'
     else:
         equal_splits = 'Disabled'
+
+    buttons.ibutton("Thumbnail", f"userset {user_id} sthumb")
+    thumbmsg = "Exists" if await aiopath.exists(thumbpath) else "Not Exists"
 
     if user_dict.get('media_group', False) or 'media_group' not in user_dict and config_dict['MEDIA_GROUP']:
         media_group = 'Enabled'
@@ -67,26 +74,24 @@ async def get_user_settings(from_user):
     else:
         ytopt = 'None'
 
-    buttons.ibutton("Leech Prefix", f"userset {user_id} lprefix")
-    if user_dict.get('lprefix', False):
-        lprefix = user_dict['lprefix']
-    elif 'lprefix' not in user_dict and (LP := config_dict['LEECH_FILENAME_PREFIX']):
-        lprefix = LP
-    else:
-        lprefix = 'None'
-
-    buttons.ibutton("Thumbnail", f"userset {user_id} sthumb")
-    thumbmsg = "Exists" if await aiopath.exists(thumbpath) else "Not Exists"
-
     buttons.ibutton("Rclone", f"userset {user_id} rcc")
     rccmsg = "Exists" if await aiopath.exists(rclone_path) else "Not Exists"
+
+    buttons.ibutton("Remove Unwanted", f"userset {user_id} lremname")
+    if user_dict.get('lremname', False):
+        lremname = user_dict['lremname']
+    elif 'lremname' not in user_dict and (LFP := config_dict['LEECH_REMOVE_UNWANTED']):
+        lremname = LFP
+    else:
+        lremname = 'None'
 
     if user_dict:
         buttons.ibutton("Reset Setting", f"userset {user_id} reset_all")
 
     buttons.ibutton("Close", f"userset {user_id} close")
 
-    text = f"""<u>User Settings of {name}</u>
+    text = f"""
+<u>User Settings of {name}</u>
 
 <code>TG Premium Status:</code> <b>{IS_PREMIUM_USER}</b>
 
@@ -99,7 +104,10 @@ async def get_user_settings(from_user):
 <code>Media Group      :</code> <b>{media_group}</b>
 
 <code>YT-DLP Options   :</code> <b>{escape(ytopt)}</b>
-<code>Rclone Config    :</code> <b>{rccmsg}</b>"""
+<code>Rclone Config    :</code> <b>{rccmsg}</b>
+
+<code>Remove Unwanted  :</code> <b>{escape(lremname)}</b>
+"""
     return text, buttons.build_menu(1)
 
 @new_thread
@@ -129,11 +137,22 @@ async def set_prefix(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     value = message.text
-    if len(re_sub('<.*?>', '', value)) <= 15:
+    if len(re_sub('<.*?>', '', value)) <= 20:
         update_user_ldata(user_id, 'lprefix', value)
         await message.delete()
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
+    await update_user_settings(pre_event)
+
+@new_thread
+async def set_remname(_, message, pre_event):
+    user_id = message.from_user.id
+    handler_dict[user_id] = False
+    value = message.text
+    update_user_ldata(user_id, 'lremname', value)
+    await message.delete()
+    if DATABASE_URL:
+        await DbManger().update_user_data(user_id)
     await update_user_settings(pre_event)
 
 @new_thread
@@ -372,6 +391,32 @@ Check all available formatting options <a href="https://core.telegram.org/bots/a
         handler_dict[user_id] = False
         await query.answer()
         update_user_ldata(user_id, 'lprefix', '')
+        await update_user_settings(query)
+        if DATABASE_URL:
+            await DbManger().update_user_data(user_id)
+    elif data[2] == 'lremname':
+        await query.answer()
+        buttons = ButtonMaker()
+        if user_dict.get('lremname', False) or config_dict['LEECH_REMOVE_UNWANTED']:
+            buttons.ibutton("Remove Leech Unwanted",
+                            f"userset {user_id} rlremname")
+        buttons.ibutton("Back", f"userset {user_id} back")
+        buttons.ibutton("Close", f"userset {user_id} close")
+        rmsg = f'''
+Send Leech Unwanted.
+Timeout: 60 sec
+
+Examples: <code>mltb|jmdkh|wzml</code>
+
+This will remove if any of those words found in filename.
+'''
+        await editMessage(message, rmsg, buttons.build_menu(1))
+        pfunc = partial(set_remname, pre_event=query)
+        await event_handler(client, query, pfunc)
+    elif data[2] == 'rlremname':
+        handler_dict[user_id] = False
+        await query.answer()
+        update_user_ldata(user_id, 'lremname', '')
         await update_user_settings(query)
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)

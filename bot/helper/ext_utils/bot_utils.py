@@ -7,7 +7,7 @@ from html import escape
 from re import match
 from time import time
 from uuid import uuid4
-from psutil import cpu_percent, disk_usage, virtual_memory
+from psutil import disk_usage
 from pyrogram.types import BotCommand
 from aiohttp import ClientSession
 

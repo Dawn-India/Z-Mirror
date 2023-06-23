@@ -135,6 +135,10 @@ async def load_config():
     if len(LEECH_FILENAME_PREFIX) == 0:
         LEECH_FILENAME_PREFIX = ''
 
+    LEECH_REMOVE_UNWANTED = environ.get('LEECH_REMOVE_UNWANTED', '')
+    if len(LEECH_REMOVE_UNWANTED) == 0:
+        LEECH_REMOVE_UNWANTED = ''
+
     SEARCH_PLUGINS = environ.get('SEARCH_PLUGINS', '')
     if len(SEARCH_PLUGINS) == 0:
         SEARCH_PLUGINS = ''
@@ -451,6 +455,7 @@ async def load_config():
         "INDEX_URL": INDEX_URL,
         "IS_TEAM_DRIVE": IS_TEAM_DRIVE,
         "LEECH_FILENAME_PREFIX": LEECH_FILENAME_PREFIX,
+        "LEECH_REMOVE_UNWANTED": LEECH_REMOVE_UNWANTED,
         "LEECH_SPLIT_SIZE": LEECH_SPLIT_SIZE,
         "MEDIA_GROUP": MEDIA_GROUP,
         "MEGA_EMAIL": MEGA_EMAIL,
