@@ -201,7 +201,6 @@ sudo apt install python3 python3-pip
 Install Docker by following the [Official docker docs](https://docs.docker.com/engine/install/#server).
 Or you can use the convenience script: `curl -fsSL https://get.docker.com |  bash`
 
-```
 
 - For Arch and it's derivatives:
 
