@@ -305,11 +305,10 @@ class TgUploader:
 
     async def __send_to_udump(self):
         try:
-            await self.__sent_msg._client.copy_message(
-                chat_id=self.__upload_dest,
-                message_id=self.__sent_msg.id,
-                from_chat_id=self.__sent_msg.chat.id,
-                reply_to_message_id=self.__sent_msg.id
+            await bot.copy_message(
+                chat_id=self.__upload_dest, 
+                from_chat_id=self.__sent_msg.chat.id, 
+                message_id=self.__sent_msg.id
             )
         except Exception as err:
             if isinstance(err, RPCError):

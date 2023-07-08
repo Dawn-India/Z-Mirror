@@ -87,6 +87,7 @@ class GoogleDriveHelper:
                 credentials = pload(f)
         else:
             LOGGER.error('token.pickle not found!')
+            return
         return build('drive', 'v3', credentials=credentials, cache_discovery=False)
 
     def __alt_authorize(self):
@@ -99,6 +100,7 @@ class GoogleDriveHelper:
                 return build('drive', 'v3', credentials=credentials, cache_discovery=False)
             else:
                 LOGGER.error('token.pickle not found!')
+        return None
 
     def __switchServiceAccount(self):
         if self.__sa_index == self.__sa_number - 1:
