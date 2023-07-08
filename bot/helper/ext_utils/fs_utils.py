@@ -55,7 +55,8 @@ async def clean_download(path):
         LOGGER.info(f"Cleaning Download: {path}")
         try:
             await aiormtree(path)
-        except:
+            LOGGER.info(f"Done cleaning: {path}")
+        except KeyError:
             pass
 
 

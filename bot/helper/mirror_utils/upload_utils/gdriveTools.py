@@ -206,9 +206,8 @@ class GoogleDriveHelper:
                 if item_path.lower().endswith(tuple(GLOBAL_EXTENSION_FILTER)):
                     raise Exception('This file extension is excluded by extension filter!')
                 mime_type = get_mime_type(item_path)
-                dir_id = gdrive_id
                 link = self.__upload_file(
-                    item_path, file_name, mime_type, dir_id, is_dir=False)
+                    item_path, file_name, mime_type, gdrive_id, is_dir=False)
                 if self.__is_cancelled:
                     return
                 if link is None:
@@ -244,7 +243,7 @@ class GoogleDriveHelper:
             elif self.__is_errored:
                 return
             async_to_sync(self.__listener.onUploadComplete, link, size, self.__total_files,
-                        self.__total_folders, mime_type, file_name, drive_id=dir_id)
+                          self.__total_folders, mime_type, file_name)
 
     def __upload_dir(self, input_directory, dest_id):
         list_dirs = listdir(input_directory)
@@ -399,19 +398,18 @@ class GoogleDriveHelper:
                 if self.__is_cancelled:
                     LOGGER.info("Deleting cloned data from Drive...")
                     self.deletefile(durl)
-                    return None, None, None, None, None, None
+                    return None, None, None, None, None
                 mime_type = 'Folder'
                 size = self.__processed_bytes
             else:
-                dir_id = gdrive_id
                 file = self.__copyFile(
-                    meta.get('id'), dir_id)
+                    meta.get('id'), gdrive_id)
                 msg += f'<b>Name: </b><code>{file.get("name")}</code>'
                 durl = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))
                 if mime_type is None:
                     mime_type = 'File'
                 size = int(meta.get('size', 0))
-            return durl, size, mime_type, self.__total_files, self.__total_folders, dir_id
+            return durl, size, mime_type, self.__total_files, self.__total_folders
         except Exception as err:
             if isinstance(err, RetryError):
                 LOGGER.info(
@@ -427,12 +425,12 @@ class GoogleDriveHelper:
                         LOGGER.error(
                             'File not found. Trying with token.pickle...')
                         self.__service = token_service
-                        return self.clone(link)
+                        return self.clone(link, gdrive_id)
                 msg = "File not found."
             else:
                 msg = f"Error.\n{err}"
             async_to_sync(self.__listener.onUploadError, msg)
-            return None, None, None, None, None, None
+            return None, None, None, None, None
 
     def __cloneFolder(self, name, local_path, folder_id, dest_id):
         LOGGER.info(f"Syncing: {local_path}")

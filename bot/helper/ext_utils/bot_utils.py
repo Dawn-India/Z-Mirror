@@ -284,48 +284,47 @@ def get_mega_link_type(url):
 def arg_parser(items, arg_base):
     if not items:
         return arg_base
+    bool_arg_set = {
+                    '-b', '-bulk', 
+                    '-e', '-uz', '-unzip', 
+                    '-z', '-zip', 
+                    '-s', '-select', 
+                    '-j', '-join', 
+                    '-d', '-seed'}
     t = len(items)
-    i = 0
-    while i + 1 <= t:
-        part = items[i]
+    m = 0
+    arg_start = -1
+    while m + 1 <= t:
+        part = items[m].strip()
         if part in arg_base:
-            if part in [
-                        '-s', '-select', 
-                        '-j', '-join'
-                    ]:
+            if arg_start == -1:
+                arg_start = m
+            if m + 1 == t and part in bool_arg_set or part in [
+                                                                '-s', '-select', 
+                                                                '-j', '-join'
+                                                            ]:
                 arg_base[part] = True
-            elif t == i + 1:
-                if part in [
-                            '-b', '-bulk', 
-                            '-e', '-uz', '-unzip', 
-                            '-z', '-zip', 
-                            '-s', '-select', 
-                            '-j', '-join', 
-                            '-d', '-seed'
-                        ]:
-                    arg_base[part] = True
             else:
                 sub_list = []
-                for j in range(i+1, t):
-                    item = items[j]
+                for j in range(m + 1, t):
+                    item = items[j].strip()
                     if item in arg_base:
-                        if part in [
-                                    '-b', '-bulk', 
-                                    '-e', '-uz', '-unzip', 
-                                    '-z', '-zip', 
-                                    '-s', '-select', 
-                                    '-j', '-join', 
-                                    '-d', '-seed'
-                                ]:
+                        if part in bool_arg_set and not sub_list:
                             arg_base[part] = True
                         break
-                    sub_list.append(item)
-                    i += 1
+                    sub_list.append(item.strip())
+                    m += 1
                 if sub_list:
                     arg_base[part] = " ".join(sub_list)
-        i += 1
-    if items[0] not in arg_base:
-        arg_base['link'] = items[0]
+        m += 1
+    link = []
+    if items[0].strip() not in arg_base:
+        if arg_start == -1:
+            link.extend(item.strip() for item in items)
+        else:
+            link.extend(items[r].strip() for r in range(arg_start))
+        if link:
+            arg_base['link'] = " ".join(link)
     return arg_base
 
 

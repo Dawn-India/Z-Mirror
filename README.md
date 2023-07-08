@@ -287,6 +287,7 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `LEECH_FILENAME_PREFIX`: Add custom word to leeched file name. `Str`
 - `DUMP_CHAT_ID`: Chat ID to where leeched files would be uploaded. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!
 - `LEECH_REMOVE_UNWANTED`: Remove unwanted filenames separated with `|` from leeched files. Example: `mltb|jmdkh|wzml`. `Str`
+- `USER_DUMP`: Chat ID to where leeched files would be uploaded. `Int`. **NOTE**: Only available for superGroup/channel. Add bot as `admin` and Add `-100` before channel/superGroup id. In short don't add bot id or your id!
 
 ### qBittorrent/Aria2c
 

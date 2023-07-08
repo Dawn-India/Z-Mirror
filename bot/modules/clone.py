@@ -73,13 +73,14 @@ async def rcloneNode(client, message, link, dst_path, rcf, listener):
             await sendMessage(message, 'You should use same rclone.conf to clone between pathies!')
             await delete_links(message)
             return
+        dst_path = dst_path.lstrip('mrcc:')
     elif config_path != 'rclone.conf':
         await sendMessage(message, 'You should use same rclone.conf to clone between pathies!')
         await delete_links(message)
         return
 
     remote, src_path = link.split(':', 1)
-    src_path = src_path .strip('/')
+    src_path = src_path.strip('/')
 
     cmd = ['rclone', 'lsjson', '--fast-list', '--stat',
            '--no-modtime', '--config', config_path, f'{remote}:{src_path}']
@@ -179,7 +180,7 @@ async def gdcloneNode(message, link, listener):
         drive = GoogleDriveHelper(name, listener=listener)
         if files <= 20:
             msg = await sendMessage(message, f"Cloning: <code>{link}</code>")
-            link, size, mime_type, files, folders, dir_id = await sync_to_async(drive.clone, link, listener.drive_id or config_dict['GDRIVE_ID'])
+            link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
             await deleteMessage(msg)
         else:
             gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))

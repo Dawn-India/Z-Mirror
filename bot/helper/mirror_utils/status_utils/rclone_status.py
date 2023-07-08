@@ -14,7 +14,7 @@ class RcloneStatus:
         self.__status = status
         self.message = message
         self.extra_details = extra_details
-        self.engine = f'Rclone v{_eng_ver()}'
+        self.engine = f'Rclone {_eng_ver()}'
 
     def gid(self):
         return self.__gid

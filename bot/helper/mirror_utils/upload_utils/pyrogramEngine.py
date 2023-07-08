@@ -47,6 +47,7 @@ class TgUploader:
         self.__media_group = False
         self.__sent_DMmsg = None
         self.__button = None
+        self.__upload_dest = None
 
     async def __upload_progress(self, current, total):
         if self.__is_cancelled:
@@ -60,12 +61,17 @@ class TgUploader:
     async def __user_settings(self):
         user_id = self.__listener.message.from_user.id
         user_dict = user_data.get(user_id, {})
-        self.__as_doc = user_dict.get('as_doc') or config_dict['AS_DOCUMENT']
-        self.__media_group = user_dict.get('media_group') or config_dict['MEDIA_GROUP']
-        self.__lprefix = user_dict.get('lprefix') or config_dict['LEECH_FILENAME_PREFIX']
-        self.__lremname = user_dict.get('lremname') or config_dict['LEECH_REMOVE_UNWANTED']
+        self.__as_doc = user_dict.get(
+            'as_doc', False) or (config_dict['AS_DOCUMENT'] if 'as_doc' not in user_dict else False)
+        self.__media_group = user_dict.get(
+            'media_group') or (config_dict['MEDIA_GROUP'] if 'media_group' not in user_dict else False)
+        self.__lprefix = user_dict.get(
+            'lprefix') or (config_dict['LEECH_FILENAME_PREFIX'] if 'lprefix' not in user_dict else '')
+        self.__lremname = user_dict.get(
+            'lremname') or (config_dict['LEECH_REMOVE_UNWANTED'] if 'lremname' not in user_dict else '')
         if not await aiopath.exists(self.__thumb):
             self.__thumb = None
+        self.__upload_dest = user_dict.get('user_dump') or config_dict['USER_DUMP']
 
     async def __msg_to_reply(self):
         if DUMP_CHAT_ID := config_dict['DUMP_CHAT_ID']:
@@ -297,6 +303,21 @@ class TgUploader:
                 LOGGER.error(f"Error while sending dm {err.__class__.__name__}")
             self.__sent_DMmsg = None
 
+    async def __send_to_udump(self):
+        try:
+            await self.__sent_msg._client.copy_message(
+                chat_id=self.__upload_dest,
+                message_id=self.__sent_msg.id,
+                from_chat_id=self.__sent_msg.chat.id,
+                reply_to_message_id=self.__sent_msg.id
+            )
+        except Exception as err:
+            if isinstance(err, RPCError):
+                LOGGER.error(f"Error while sending to user dump {err.NAME}: {err.MESSAGE}")
+            else:
+                LOGGER.error(f"Error while sending to user dump {err.__class__.__name__}")
+            self.__upload_dest = None
+
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
     async def __upload_file(self, cap_mono, file, force_document=False):
@@ -404,8 +425,12 @@ class TgUploader:
                         self.__last_msg_in_group = True
                 elif self.__sent_DMmsg:
                     await self.__send_dm()
+                if self.__upload_dest:
+                    await self.__send_to_udump()
             elif self.__sent_DMmsg:
                 await self.__send_dm()
+            if self.__upload_dest:
+                await self.__send_to_udump()
             if self.__thumb is None and thumb is not None and await aiopath.exists(thumb):
                 await aioremove(thumb)
         except FloodWait as f:
