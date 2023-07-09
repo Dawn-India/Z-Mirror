@@ -555,7 +555,8 @@ class MirrorLeechListener:
         msg += f"\n\n<code>Reason  </code>: {escape(str(error))}"
         msg += f"\n<code>Elapsed </code>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<code>Upload  </code>: {self.extra_details['mode']}"
-        await sendMessage(self.message, msg, button)
+        reply_message = await sendMessage(self.message, msg, button)
+        await auto_delete_message(self.message, reply_message)
         if self.logMessage:
             await sendMessage(self.logMessage, msg, button)
         if count == 0:
