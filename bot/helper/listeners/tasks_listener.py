@@ -556,13 +556,13 @@ class MirrorLeechListener:
         msg += f"\n<code>Elapsed </code>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<code>Upload  </code>: {self.extra_details['mode']}"
         reply_message = await sendMessage(self.message, msg, button)
-        await auto_delete_message(self.message, reply_message)
         if self.logMessage:
             await sendMessage(self.logMessage, msg, button)
         if count == 0:
             await self.clean()
         else:
             await update_all_messages()
+        await auto_delete_message(self.message, reply_message)
 
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS'] and self.raw_url:
             await DbManger().remove_download(self.raw_url)
@@ -600,7 +600,6 @@ class MirrorLeechListener:
         msg += f"\n<code>Elapsed </code>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<code>Upload  </code>: {self.extra_details['mode']}"
         reply_message = await sendMessage(self.message, msg)
-        await auto_delete_message(self.message, reply_message)
         if self.logMessage:
             await sendMessage(self.logMessage, msg)
         if count == 0:
@@ -611,6 +610,7 @@ class MirrorLeechListener:
             await DbManger().remove_download(self.raw_url)
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().rm_complete_task(self.message.link)
+        await auto_delete_message(self.message, reply_message)
 
         async with queue_dict_lock:
             if self.uid in queued_dl:

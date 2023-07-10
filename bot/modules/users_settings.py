@@ -452,7 +452,7 @@ This will remove if any of those words found in filename.
                             f"userset {user_id} rudump")
         buttons.ibutton("Back", f"userset {user_id} back")
         buttons.ibutton("Close", f"userset {user_id} close")
-        await editMessage(message, 'Send USER DUMP ID/USERNAME. Timeout: 60 sec', buttons.build_menu(1))
+        await editMessage(message, 'Send USER DUMP ID. Timeout: 60 sec', buttons.build_menu(1))
         pfunc = partial(set_user_dump, pre_event=query)
         await event_handler(client, query, pfunc)
     elif data[2] == 'rudump':
