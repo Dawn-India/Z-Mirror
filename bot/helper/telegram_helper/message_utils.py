@@ -3,8 +3,7 @@ from datetime import datetime, timedelta, timezone
 from time import time
 from re import match as re_match
 
-from pyrogram.errors import (FloodWait, PeerIdInvalid, RPCError,
-                             UserNotParticipant)
+from pyrogram.errors import (FloodWait, PeerIdInvalid, RPCError, UserNotParticipant)
 from pyrogram.types import ChatPermissions
 
 from bot import (LOGGER, Interval, bot, bot_name, cached_dict, categories_dict,
@@ -196,7 +195,10 @@ async def isBot_canDm(message, dmMode, isLeech=False, button=None):
     if dmMode == 'leech' and not isLeech:
         return None, button
     user = await user_info(message._client, message.from_user.id)
-    if user.status == user.status.LONG_AGO:
+    try:
+        dm_check = await message._client.send_message(message.from_user.id, "Your task added to download.")
+        await dm_check.delete()
+    except Exception as e:
         if button is None:
             button = ButtonMaker()
         _msg = "You need to <b>Start</b> me in <b>DM</b>."

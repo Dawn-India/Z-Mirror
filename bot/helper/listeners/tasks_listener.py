@@ -562,12 +562,11 @@ class MirrorLeechListener:
             await self.clean()
         else:
             await update_all_messages()
-        await auto_delete_message(self.message, reply_message)
-
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS'] and self.raw_url:
             await DbManger().remove_download(self.raw_url)
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().rm_complete_task(self.message.link)
+        await auto_delete_message(self.message, reply_message)
 
         async with queue_dict_lock:
             if self.uid in queued_dl:

@@ -18,36 +18,32 @@ from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-THREADPOOL = ThreadPoolExecutor(max_workers=1000)
-
-MAGNET_REGEX = r'^magnet:\?.*xt=urn:(btih|btmh):[a-zA-Z0-9]*\s*'
-
-URL_REGEX = r'^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$'
-
-SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-
-STATUS_START = 0
-PAGES = 1
-PAGE_NO = 1
+THREADPOOL      = ThreadPoolExecutor(max_workers=1000)
+MAGNET_REGEX    = r'^magnet:\?.*xt=urn:(btih|btmh):[a-zA-Z0-9]*\s*'
+URL_REGEX       = r'^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$'
+SIZE_UNITS      = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+STATUS_START    = 0
+PAGES           = 1
+PAGE_NO         = 1
 
 class MirrorStatus:
-    STATUS_UPLOADING = "Uploading"
-    STATUS_DOWNLOADING = "Downloading"
-    STATUS_CLONING = "Cloning"
-    STATUS_QUEUEDL = "Queued Download"
-    STATUS_QUEUEUP = "Queued Upload"
-    STATUS_PAUSED = "Paused"
-    STATUS_ARCHIVING = "Archiving"
-    STATUS_EXTRACTING = "Extracting"
-    STATUS_SPLITTING = "Spliting"
-    STATUS_CHECKING = "CheckingUp"
-    STATUS_SEEDING = "Seeding"
+    STATUS_UPLOADING    = "Uploading"
+    STATUS_DOWNLOADING  = "Downloading"
+    STATUS_CLONING      = "Cloning"
+    STATUS_QUEUEDL      = "Queued Download"
+    STATUS_QUEUEUP      = "Queued Upload"
+    STATUS_PAUSED       = "Paused"
+    STATUS_ARCHIVING    = "Archiving"
+    STATUS_EXTRACTING   = "Extracting"
+    STATUS_SPLITTING    = "Spliting"
+    STATUS_CHECKING     = "CheckingUp"
+    STATUS_SEEDING      = "Seeding"
 
 class setInterval:
     def __init__(self, interval, action):
-        self.interval = interval
-        self.action = action
-        self.task = bot_loop.create_task(self.__set_interval())
+        self.interval   = interval
+        self.action     = action
+        self.task       = bot_loop.create_task(self.__set_interval())
 
     async def __set_interval(self):
         while True:
@@ -290,7 +286,8 @@ def arg_parser(items, arg_base):
                     '-z', '-zip', 
                     '-s', '-select', 
                     '-j', '-join', 
-                    '-d', '-seed'}
+                    '-d', '-seed'
+                    }
     t = len(items)
     m = 0
     arg_start = -1
@@ -355,9 +352,10 @@ def extra_btns(buttons):
 async def check_user_tasks(user_id, maxtask):
     downloading_tasks   = await getAllDownload(MirrorStatus.STATUS_DOWNLOADING, user_id)
     uploading_tasks     = await getAllDownload(MirrorStatus.STATUS_UPLOADING, user_id)
+    cloning_tasks       = await getAllDownload(MirrorStatus.STATUS_CLONING, user_id)
     queuedl_tasks       = await getAllDownload(MirrorStatus.STATUS_QUEUEDL, user_id)
     queueup_tasks       = await getAllDownload(MirrorStatus.STATUS_QUEUEUP, user_id)
-    total_tasks         = downloading_tasks + uploading_tasks + queuedl_tasks + queueup_tasks
+    total_tasks         = downloading_tasks + uploading_tasks + cloning_tasks + queuedl_tasks + queueup_tasks
     return len(total_tasks) >= maxtask
 
 
