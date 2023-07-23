@@ -35,56 +35,33 @@ from .modules import (anonymous, authorize, bot_settings, cancel_mirror,
                       torrent_select, users_settings, ytdlp)
 
 
-sysTime     = get_readable_time(time() - boot_time())
-botTime     = get_readable_time(time() - botStartTime)
-total, used, free, disk = disk_usage('/')
-total       = get_readable_file_size(total)
-used        = get_readable_file_size(used)
-free        = get_readable_file_size(free)
-sent        = get_readable_file_size(net_io_counters().bytes_sent)
-recv        = get_readable_file_size(net_io_counters().bytes_recv)
-tb          = get_readable_file_size(net_io_counters().bytes_sent + net_io_counters().bytes_recv)
-cpuUsage    = cpu_percent(interval=1)
-v_core      = cpu_count(logical=True) - cpu_count(logical=False)
-memory      = virtual_memory()
-swap        = swap_memory()
-mem_p       = memory.percent
-
-
-bot_stats = f'<b><i><u>Zee Bot Statistics</u></i></b>\n\n'\
-            f'<code>CPU  : </code>{get_progress_bar_string(cpuUsage)} {cpuUsage}%\n' \
-            f'<code>RAM  : </code>{get_progress_bar_string(mem_p)} {mem_p}%\n' \
-            f'<code>SWAP : </code>{get_progress_bar_string(swap.percent)} {swap.percent}%\n' \
-            f'<code>DISK : </code>{get_progress_bar_string(disk)} {disk}%\n\n' \
-            f'<code>Bot Uptime      : </code> {botTime}\n' \
-            f'<code>Uploaded        : </code> {sent}\n' \
-            f'<code>Downloaded      : </code> {recv}\n' \
-            f'<code>Total Bandwidth : </code> {tb}'
-
-
-async def stats(_, message):
+async def stats(_, message, edit_mode=False):
     buttons = ButtonMaker()
-    buttons.ibutton("Sys Stats", "show_sys_stats")
-    buttons.ibutton("Repo Stats", "show_repo_stats")
-    buttons.ibutton("Bot Limits", "show_bot_limits")
-    buttons.ibutton("Close", "close_signal")
-    sbtns = buttons.build_menu(2)
-    await message.reply(bot_stats, reply_markup=sbtns)
+    sysTime     = get_readable_time(time() - boot_time())
+    botTime     = get_readable_time(time() - botStartTime)
+    total, used, free, disk = disk_usage('/')
+    total       = get_readable_file_size(total)
+    used        = get_readable_file_size(used)
+    free        = get_readable_file_size(free)
+    sent        = get_readable_file_size(net_io_counters().bytes_sent)
+    recv        = get_readable_file_size(net_io_counters().bytes_recv)
+    tb          = get_readable_file_size(net_io_counters().bytes_sent + net_io_counters().bytes_recv)
+    cpuUsage    = cpu_percent(interval=1)
+    v_core      = cpu_count(logical=True) - cpu_count(logical=False)
+    memory      = virtual_memory()
+    swap        = swap_memory()
+    mem_p       = memory.percent
 
+    bot_stats = f'<b><i><u>Zee Bot Statistics</u></i></b>\n\n'\
+                f'<code>CPU  : </code>{get_progress_bar_string(cpuUsage)} {cpuUsage}%\n' \
+                f'<code>RAM  : </code>{get_progress_bar_string(mem_p)} {mem_p}%\n' \
+                f'<code>SWAP : </code>{get_progress_bar_string(swap.percent)} {swap.percent}%\n' \
+                f'<code>DISK : </code>{get_progress_bar_string(disk)} {disk}%\n\n' \
+                f'<code>Bot Uptime      : </code> {botTime}\n' \
+                f'<code>Uploaded        : </code> {sent}\n' \
+                f'<code>Downloaded      : </code> {recv}\n' \
+                f'<code>Total Bandwidth : </code> {tb}'
 
-async def send_bot_stats(_, query):
-    buttons = ButtonMaker()
-    buttons.ibutton("Sys Stats",  "show_sys_stats")
-    buttons.ibutton("Repo Stats", "show_repo_stats")
-    buttons.ibutton("Bot Limits", "show_bot_limits")
-    buttons.ibutton("Close",      "close_signal")
-    sbtns = buttons.build_menu(2)
-    await query.answer()
-    await query.message.edit_text(bot_stats, reply_markup=sbtns)
-
-
-async def send_sys_stats(_, query):
-    buttons = ButtonMaker()
     sys_stats = f'<b><i><u>Zee System Statistics</u></i></b>\n\n'\
                 f'<b>System Uptime:</b> <code>{sysTime}</code>\n' \
                 f'<b>CPU:</b> {get_progress_bar_string(cpuUsage)}<code> {cpuUsage}%</code>\n' \
@@ -101,6 +78,31 @@ async def send_sys_stats(_, query):
                 f'<b>DISK:</b> {get_progress_bar_string(disk)}<code> {disk}%</code>\n' \
                 f'<b>Total:</b> <code>{total}</code> | <b>Free:</b> <code>{free}</code>'
 
+    buttons.ibutton("Sys Stats",  "show_sys_stats")
+    buttons.ibutton("Repo Stats", "show_repo_stats")
+    buttons.ibutton("Bot Limits", "show_bot_limits")
+    buttons.ibutton("Close", "close_signal")
+    sbtns = buttons.build_menu(2)
+    if not edit_mode:
+        await message.reply(bot_stats, reply_markup=sbtns)
+    return bot_stats, sys_stats
+
+
+async def send_bot_stats(_, query):
+    buttons = ButtonMaker()
+    bot_stats, _ = await stats(_, query.message, edit_mode=True)
+    buttons.ibutton("Sys Stats",  "show_sys_stats")
+    buttons.ibutton("Repo Stats", "show_repo_stats")
+    buttons.ibutton("Bot Limits", "show_bot_limits")
+    buttons.ibutton("Close",      "close_signal")
+    sbtns = buttons.build_menu(2)
+    await query.answer()
+    await query.message.edit_text(bot_stats, reply_markup=sbtns)
+
+
+async def send_sys_stats(_, query):
+    buttons = ButtonMaker()
+    _, sys_stats = await stats(_, query.message, edit_mode=True)
     buttons.ibutton("Bot Stats",  "show_bot_stats")
     buttons.ibutton("Repo Stats", "show_repo_stats")
     buttons.ibutton("Bot Limits", "show_bot_limits")
