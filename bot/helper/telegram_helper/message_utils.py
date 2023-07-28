@@ -351,7 +351,8 @@ async def open_category_btns(message):
     buttons = ButtonMaker()
     for _name in categories_dict.keys():
         buttons.ibutton(f'{_name}', f'scat {user_id} {msg_id} {_name}')
-    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>', buttons.build_menu(2))
+    msg = f'<b>Select where you want to upload</b>\n\nUser: {message.from_user.mention}'
+    prompt = await sendMessage(message, msg, buttons.build_menu(2))
     cached_dict[msg_id] = [None, None]
     start_time = time()
     while time() - start_time <= 30:

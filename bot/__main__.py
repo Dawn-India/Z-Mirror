@@ -123,7 +123,7 @@ async def send_repo_stats(_, query):
         version     = 'N/A'
         change_log  = 'N/A'
 
-    stats_part3 = f'<b><i><u>Repo Info</u></i></b>\n\n' \
+    repo_stats = f'<b><i><u>Repo Info</u></i></b>\n\n' \
                   f'<code>Updated   : </code> {last_commit}\n' \
                   f'<code>Version   : </code> {version}\n' \
                   f'<code>Changelog : </code> {change_log}'
@@ -134,7 +134,7 @@ async def send_repo_stats(_, query):
     buttons.ibutton("Close", "close_signal")
     sbtns = buttons.build_menu(2)
     await query.answer()
-    await query.message.edit_text(stats_part3, reply_markup=sbtns)
+    await query.message.edit_text(repo_stats, reply_markup=sbtns)
 
 
 async def send_bot_limits(_, query):

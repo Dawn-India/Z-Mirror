@@ -9,7 +9,7 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus, getAllDownload,
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (anno_checker,
+from bot.helper.telegram_helper.message_utils import (anno_checker, auto_delete_message,
                                                       editMessage, sendMessage)
 
 
@@ -27,22 +27,26 @@ async def cancel_mirror(client, message):
         gid = cmd_data[0]
         dl = await getDownloadByGid(gid)
         if not dl:
-            await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
+            tmsg = await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
+            await auto_delete_message(message, tmsg)
             return
     elif reply_to_id := message.reply_to_message_id:
         async with download_dict_lock:
             dl = download_dict.get(reply_to_id, None)
         if not dl:
-            await sendMessage(message, "This is not an active task!")
+            tmsg = await sendMessage(message, "This is not an active task!")
+            await auto_delete_message(message, tmsg)
             return
     elif len(msg) == 1:
         msg = f"Reply to an active Command message which was used to start the download" \
             f" or send <code>/{BotCommands.CancelMirror}_GID@{bot_name}</code> to cancel it!"
-        await sendMessage(message, msg)
+        tmsg = await sendMessage(message, msg)
+        await auto_delete_message(message, tmsg)
         return
 
     if not await CustomFilters.sudo(client, message) and dl.message.from_user.id != user_id:
-        await sendMessage(message, "This task is not for you!")
+        tmsg = await sendMessage(message, "This task is not for you!")
+        await auto_delete_message(message, tmsg)
         return
     obj = dl.download()
     await obj.cancel_download()
@@ -70,14 +74,16 @@ async def cancel_all(status, info, listOfTasks):
         new_msg = f"<b>Success</b>: {success}\n"
         new_msg += f"<b>Failed</b>: {failed}\n"
         new_msg += f"<b>#cancel_all</b> : {tag}"
-        await editMessage(msg, _msg+new_msg)
+        emsg = await editMessage(msg, _msg+new_msg)
+        await auto_delete_message(msg, emsg)
 
 
 async def cancell_all_buttons(client, message):
     async with download_dict_lock:
         count = len(download_dict)
     if count == 0:
-        await sendMessage(message, "No active tasks!")
+        tmsg = await sendMessage(message, "No active tasks!")
+        await auto_delete_message(message, tmsg)
         return
     if not message.from_user:
         tag = 'Anonymous'
@@ -96,9 +102,13 @@ async def cancell_all_buttons(client, message):
             try:
                 user_id = int(message.command[1])
             except:
-                return await sendMessage(message, "Invalid Argument! Send Userid or reply")
+                tmsg = await sendMessage(message, "Invalid Argument! Send Userid or reply")
+                await auto_delete_message(message, tmsg)
+                return
     if user_id and not await getAllDownload('all', user_id):
-        return await sendMessage(message, f"{user_id} Don't have any active task!")
+        tmsg = await sendMessage(message, f"{user_id} Don't have any active task!")
+        await auto_delete_message(message, tmsg)
+        return
     msg_id = message.id
     buttons = ButtonMaker()
     buttons.ibutton("Downloading",  f"cnall {MirrorStatus.STATUS_DOWNLOADING} {msg_id}")
