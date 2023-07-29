@@ -7,7 +7,7 @@ from html import escape
 from re import match
 from time import time
 from uuid import uuid4
-from psutil import cpu_percent, disk_usage, virtual_memory
+from psutil import cpu_percent, disk_usage, virtual_memory, net_io_counters
 from pyrogram.types import BotCommand
 from pyrogram.handlers import CallbackQueryHandler
 from pyrogram.filters import regex
@@ -226,10 +226,11 @@ def get_readable_message():
 
 
 async def fstats(_, query):
-    acti = len(download_dict)
-    free = config_dict['QUEUE_ALL'] - acti
+    totl = len(download_dict)
+    free = max(config_dict['QUEUE_ALL'] - totl, 0)
     inqu, dwld, upld, splt, clon, arch, extr, seed = [0] * 8
-    fdisk = get_readable_file_size(disk_usage(config_dict["DOWNLOAD_DIR"]).free)
+    fdis = get_readable_file_size(disk_usage(config_dict["DOWNLOAD_DIR"]).free)
+    traf = get_readable_file_size(net_io_counters().bytes_sent + net_io_counters().bytes_recv)
     uptm = time() - botStartTime
     for download in download_dict.values():
         status = download.status()
@@ -250,13 +251,14 @@ async def fstats(_, query):
         elif status == MirrorStatus.STATUS_SEEDING:
             seed += 1
 
-    stat = f'_____Zee Bot Info_____\n\n'\
-           f'Active: {acti}, Free: {free}, Queued: {inqu}\n\n' \
+    stat = f'_______Zee Bot Info_______\n\n'\
+           f'Total: {totl}, Free: {free}, Queued: {inqu}\n\n' \
            f'Download: {dwld}, Upload: {upld}, Seed: {seed}\n\n' \
            f'Split: {splt}, Clone: {clon}\n\n' \
            f'Zip: {arch}, UnZip: {extr}\n\n' \
-           f'Free Disk: {fdisk} ' \
-           f'Uptime: {get_readable_time(uptm)}'
+           f'Free Disk: {fdis}\n' \
+           f'Traffic: {traf}\n' \
+           f'Bot Uptime: {get_readable_time(uptm)}'
     await query.answer(stat, show_alert=True)
 
 
