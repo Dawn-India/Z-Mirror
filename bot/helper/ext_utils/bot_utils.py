@@ -227,7 +227,7 @@ def get_readable_message():
 
 async def fstats(_, query):
     totl = len(download_dict)
-    free = max(config_dict['QUEUE_ALL'] - totl, 0)
+    free = max(config_dict['QUEUE_ALL'] - totl, 0) if config_dict['QUEUE_ALL'] else '∞'
     inqu, dwld, upld, splt, clon, arch, extr, seed = [0] * 8
     fdis = get_readable_file_size(disk_usage(config_dict["DOWNLOAD_DIR"]).free)
     traf = get_readable_file_size(net_io_counters().bytes_sent + net_io_counters().bytes_recv)
