@@ -496,8 +496,8 @@ Timeout: 60 sec
         if data[2] == 'close':
             handler_dict[user_id] = False
         await query.answer()
-        await message.reply_to_message.delete()
         await message.delete()
+        await message.reply_to_message.delete()
 
 
 async def send_users_settings(_, message):

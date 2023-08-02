@@ -13,7 +13,8 @@ from bot.helper.ext_utils.task_manager import (is_queued, limit_checker,
                                                stop_duplicate_check)
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.telegram_helper.message_utils import (delete_links,
+from bot.helper.telegram_helper.message_utils import (auto_delete_message,
+                                                      delete_links,
                                                       sendMessage,
                                                       sendStatusMessage)
 
@@ -167,8 +168,9 @@ async def add_mega_download(mega_link, path, listener, name):
     gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=8))
     size = api.getSize(node)
     if limit_exceeded := await limit_checker(size, listener, isMega=True):
-        await sendMessage(listener.message, limit_exceeded)
+        dmsg = await sendMessage(listener.message, limit_exceeded)
         await delete_links(listener.message)
+        await auto_delete_message(listener.message, dmsg)
         return
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:

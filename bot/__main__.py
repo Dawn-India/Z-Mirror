@@ -49,14 +49,14 @@ async def stats(_, message, edit_mode=False):
     cpuUsage    = cpu_percent(interval=1)
     v_core      = cpu_count(logical=True) - cpu_count(logical=False)
     memory      = virtual_memory()
-    swap        = swap_memory()
     mem_p       = memory.percent
+    swap        = swap_memory()
 
     bot_stats = f'<b><i><u>Zee Bot Statistics</u></i></b>\n\n'\
-                f'<code>CPU  : </code>{get_progress_bar_string(cpuUsage)} {cpuUsage}%\n' \
-                f'<code>RAM  : </code>{get_progress_bar_string(mem_p)} {mem_p}%\n' \
-                f'<code>SWAP : </code>{get_progress_bar_string(swap.percent)} {swap.percent}%\n' \
-                f'<code>DISK : </code>{get_progress_bar_string(disk)} {disk}%\n\n' \
+                f'<code>CPU  : {get_progress_bar_string(cpuUsage)}</code> {cpuUsage}%\n' \
+                f'<code>RAM  : {get_progress_bar_string(mem_p)}</code> {mem_p}%\n' \
+                f'<code>SWAP : {get_progress_bar_string(swap.percent)}</code> {swap.percent}%\n' \
+                f'<code>DISK : {get_progress_bar_string(disk)}</code> {disk}%\n\n' \
                 f'<code>Bot Uptime      : </code> {botTime}\n' \
                 f'<code>Uploaded        : </code> {sent}\n' \
                 f'<code>Downloaded      : </code> {recv}\n' \

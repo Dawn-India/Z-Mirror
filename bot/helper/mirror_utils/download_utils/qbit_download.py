@@ -40,7 +40,7 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
 \nIf it's torrent file then report, this happens if torrent file size above 10mb."
                         tmsg = await sendMessage(listener.message, msg)
                         await delete_links(listener.message)
-                        await auto_delete_message(message, tmsg)
+                        await auto_delete_message(listener.message, tmsg)
                         return
             tor_info = tor_info[0]
             ext_hash = tor_info.hash
@@ -48,7 +48,7 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
             msg = "This Torrent already added or unsupported/invalid link/file."
             tmsg = await sendMessage(listener.message, msg)
             await delete_links(listener.message)
-            await auto_delete_message(message, tmsg)
+            await auto_delete_message(listener.message, tmsg)
             return
 
         async with download_dict_lock:
