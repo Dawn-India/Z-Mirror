@@ -1,18 +1,17 @@
+#!/usr/bin/env python3
 from asyncio import sleep
 from time import time
 from aiofiles.os import path as aiopath
 from aiofiles.os import remove as aioremove
-from bot import LOGGER, aria2, config_dict, download_dict, download_dict_lock
+from bot import config_dict, LOGGER, aria2, config_dict, download_dict, download_dict_lock
 from bot.helper.ext_utils.bot_utils import (bt_selection_buttons,
-                                            get_telegraph_list,
                                             getDownloadByGid, new_thread,
                                             sync_to_async)
-from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name
-from bot.helper.ext_utils.task_manager import limit_checker
+from bot.helper.ext_utils.fs_utils import clean_unwanted
+from bot.helper.ext_utils.task_manager import limit_checker, stop_duplicate_check
 from bot.helper.mirror_utils.status_utils.aria2_status import Aria2Status
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import (deleteMessage, delete_links,
-                                                      sendMessage,
+                                                      sendMessage, auto_delete_message,
                                                       update_all_messages)
 
 
@@ -52,24 +51,15 @@ async def __onDownloadStarted(api, gid):
                 if not download.is_torrent:
                     await sleep(3)
                     download = download.live
-                LOGGER.info('Checking File/Folder if already in Drive...')
-                name = download.name
-                if listener.compress:
-                    name = f"{name}.zip"
-                elif listener.extract:
-                    try:
-                        name = get_base_name(name)
-                    except:
-                        name = None
-                if name is not None:
-                    telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, True)
-                    if telegraph_content:
-                        msg = f"File/Folder is already available in Drive.\nHere are {contents_no} list results:"
-                        button = await get_telegraph_list(telegraph_content)
-                        await listener.onDownloadError(msg, button)
-                        await sync_to_async(api.remove, [download], force=True, files=True)
-                        await delete_links(listener.message)
-                        return
+            name = download.name
+            msg, button = await stop_duplicate_check(name, listener)
+            if msg:
+                amsg = await listener.onDownloadError(msg, button)
+                await sync_to_async(api.remove, [download], force=True, files=True)
+                await delete_links(listener.message)
+                if config_dict['DELETE_LINKS']:
+                    await auto_delete_message(listener.message, amsg)
+                return
     if any([config_dict['DIRECT_LIMIT'],
             config_dict['TORRENT_LIMIT'],
             config_dict['LEECH_LIMIT'],
@@ -97,9 +87,11 @@ async def __onDownloadStarted(api, gid):
                         break
             size = download.total_length
             if limit_exceeded := await limit_checker(size, listener, download.is_torrent):
-                await listener.onDownloadError(limit_exceeded)
+                amsg = await listener.onDownloadError(limit_exceeded)
                 await sync_to_async(api.remove, [download], force=True, files=True)
                 await delete_links(listener.message)
+                if config_dict['DELETE_LINKS']:
+                    await auto_delete_message(listener.message, amsg)
 
 
 @new_thread

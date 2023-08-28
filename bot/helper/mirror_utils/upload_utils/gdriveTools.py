@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from io import FileIO
 from logging import ERROR, getLogger
 from os import listdir, makedirs
@@ -572,10 +573,8 @@ class GoogleDriveHelper:
         for drive_name, drive_dict in list_drives_dict.items():
             dir_id = drive_dict['drive_id']
             index_url = drive_dict['index_link']
-            isRecur = False if isRecursive and len(
-                dir_id) > 23 else isRecursive
-            response = self.__drive_query(
-                dir_id, fileName, stopDup, isRecur, itemType)
+            isRecur = False if isRecursive and len(dir_id) > 23 else isRecursive
+            response = self.__drive_query(dir_id, fileName, stopDup, isRecur, itemType)
             if not response["files"]:
                 if noMulti:
                     break
@@ -595,8 +594,7 @@ class GoogleDriveHelper:
                         msg += f"<b><a href={furl}>Drive Link</a></b> | "
                     if index_url:
                         if isRecur:
-                            url_path = "/".join([rquote(n, safe='')
-                                                for n in self.__get_recursive_list(file, dir_id)])
+                            url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id)])
                         else:
                             url_path = rquote(f'{file.get("name")}', safe='')
                         url = f'{index_url}/{url_path}/'
@@ -612,8 +610,7 @@ class GoogleDriveHelper:
                         msg += f"<b><a href={furl}>Drive Link</a></b> | "
                     if index_url:
                         if isRecur:
-                            url_path = "/".join(rquote(n, safe='')
-                                                for n in self.__get_recursive_list(file, dir_id))
+                            url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id))
                         else:
                             url_path = rquote(f'{file.get("name")}')
                         url = f'{index_url}/{url_path}'
@@ -631,7 +628,6 @@ class GoogleDriveHelper:
 
         if msg != '':
             telegraph_content.append(msg)
-
         return telegraph_content, contents_no
 
     def count(self, link):

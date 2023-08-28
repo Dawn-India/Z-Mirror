@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from bot.helper.ext_utils.bot_utils import MirrorStatus
 from subprocess import run as rrun
 

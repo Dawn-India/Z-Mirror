@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from os import environ
 
 from aiofiles import open as aiopen
@@ -5,12 +6,13 @@ from aiofiles.os import makedirs
 from aiofiles.os import path as aiopath
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
+from time import time
 
 from bot import (DATABASE_URL, LOGGER, aria2_options, bot_id, bot_loop,
                  bot_name, config_dict, qbit_options, rss_dict, user_data)
 
 
-class DbManger:
+class DbManager:
     def __init__(self):
         self.__err = False
         self.__db = None
@@ -204,7 +206,7 @@ class DbManger:
         await self.__db.download_links.update_one({'_id': url}, {'$set': download}, upsert=True)
         self.__conn.close
 
-    async def check_download(self, url:str):
+    async def check_download(self, url: str):
         if self.__err:
             return
         exist = await self.__db.download_links.find_one({'_id': url})
@@ -225,5 +227,35 @@ class DbManger:
         await self.__db.download_links.delete_one({'_id': url})
         self.__conn.close
 
+    async def update_user_tdata(self, user_id, token, creation_time):
+        if self.__err:
+            return
+        await self.__db.access_token.update_one({'_id': user_id}, {'$set': {'token': token, 'time': creation_time}}, upsert=True)
+        self.__conn.close
+
+    async def get_token_expire_time(self, user_id):
+        if self.__err:
+            return None
+        user_data = await self.__db.access_token.find_one({'_id': user_id})
+        if user_data:
+            return user_data.get('time')
+        self.__conn.close
+        return None
+
+    async def get_user_token(self, user_id):
+        if self.__err:
+            return None
+        user_data = await self.__db.access_token.find_one({'_id': user_id})
+        if user_data:
+            return user_data.get('token')
+        self.__conn.close
+        return None
+
+    async def delete_all_access_tokens(self):
+        if self.__err:
+            return
+        await self.__db.access_token.delete_many({})
+        self.__conn.close
+
 if DATABASE_URL:
-    bot_loop.run_until_complete(DbManger().db_load())
+    bot_loop.run_until_complete(DbManager().db_load())

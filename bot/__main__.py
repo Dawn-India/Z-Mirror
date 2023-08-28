@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import create_subprocess_exec, gather
 from os import execl as osexecl
 from signal import SIGINT, signal
@@ -21,7 +22,7 @@ from bot.helper.listeners.aria2_listener import start_aria2_listener
 from .helper.ext_utils.bot_utils import (cmd_exec, get_readable_file_size,
                                          get_readable_time, new_thread, set_commands,
                                          sync_to_async, get_progress_bar_string)
-from .helper.ext_utils.db_handler import DbManger
+from .helper.ext_utils.db_handler import DbManager
 from .helper.ext_utils.fs_utils import clean_all, exit_clean_up, start_cleanup
 from .helper.telegram_helper.button_build import ButtonMaker
 from .helper.telegram_helper.bot_commands import BotCommands
@@ -30,7 +31,7 @@ from .helper.telegram_helper.message_utils import (editMessage, sendFile,
                                                    sendMessage, auto_delete_message)
 from .modules import (anonymous, authorize, bot_settings, cancel_mirror,
                       category_select, clone, eval, gd_count, gd_delete,
-                      gd_list, leech_del, mirror_leech, rmdb, rss,
+                      gd_search, leech_del, mirror_leech, rmdb, rss,
                       shell, status, torrent_search,
                       torrent_select, users_settings, ytdlp)
 
@@ -46,7 +47,7 @@ async def stats(_, message, edit_mode=False):
     sent        = get_readable_file_size(net_io_counters().bytes_sent)
     recv        = get_readable_file_size(net_io_counters().bytes_recv)
     tb          = get_readable_file_size(net_io_counters().bytes_sent + net_io_counters().bytes_recv)
-    cpuUsage    = cpu_percent(interval=1)
+    cpuUsage    = cpu_percent(interval=0.1)
     v_core      = cpu_count(logical=True) - cpu_count(logical=False)
     memory      = virtual_memory()
     mem_p       = memory.percent
@@ -179,28 +180,39 @@ async def send_close_signal(_, query):
 
 
 async def start(_, message):
-    if len(message.command) > 1:
+    if len(message.command) > 1 and len(message.command[1]) == 36:
         userid = message.from_user.id
         input_token = message.command[1]
-        if userid not in user_data:
-            return await sendMessage(message, 'This token is not yours!\n\nKindly generate your own.')
-        data = user_data[userid]
-        if 'token' not in data or data['token'] != input_token:
-            return await sendMessage(message, 'Token already used!\n\nKindly generate a new one.')
-        data['token'] = str(uuid4())
-        data['time'] = time()
-        user_data[userid].update(data)
+        if DATABASE_URL:
+            stored_token = await DbManager().get_user_token(userid)
+            if stored_token is None:
+                return await sendMessage(message, 'This token is not associated with your account.\n\nPlease generate your own token.')
+            if input_token != stored_token:
+                return await sendMessage(message, 'Invalid token.\n\nPlease generate a new one.')
+        else:
+            if userid not in user_data:
+                return await sendMessage(message, 'This token is not yours!\n\nKindly generate your own.')
+            data = user_data[userid]
+            if 'token' not in data or data['token'] != input_token:
+                return await sendMessage(message, 'Token already used!\n\nKindly generate a new one.')
+            data['token'] = str(uuid4())
+            data['time'] = time()
+            user_data[userid].update(data)
         msg = 'Token refreshed successfully!\n\n'
         msg += f'Validity: {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}'
         return await sendMessage(message, msg)
-    elif config_dict['DM_MODE']:
+    elif config_dict['DM_MODE'] and message.chat.type != message.chat.type.SUPERGROUP:
         start_string = 'Bot Started.\n' \
-                       'Now I can send your stuff here.\n' \
-                       'Use me here: @Z_Mirror'
-    else:
-        start_string = 'Sorry, you cant use me here!\n' \
-                       'Join @Z_Mirror to use me.\n' \
+                       'Now I will send all of your stuffs here.\n' \
+                       'Use me at: @Z_Mirror'
+    elif not config_dict['DM_MODE'] and message.chat.type != message.chat.type.SUPERGROUP:
+        start_string = 'Sorry, you cannot use me here!\n' \
+                       'Join: @Z_Mirror to use me.\n' \
                        'Thank You'
+    else:
+        tag = message.from_user.mention
+        start_string = 'Start me in DM, not in the group.\n' \
+                       f'cc: {tag}'
     await sendMessage(message, start_string)
 
 
@@ -322,7 +334,7 @@ async def restart_notification():
         except Exception as e:
             LOGGER.error(e)
     if DATABASE_URL:
-        if INCOMPLETE_TASK_NOTIFIER and (notifier_dict := await DbManger().get_incomplete_tasks()):
+        if INCOMPLETE_TASK_NOTIFIER and (notifier_dict := await DbManager().get_incomplete_tasks()):
             for cid, data in notifier_dict.items():
                 msg = 'Restarted Successfully!' if cid == chat_id else 'Bot Restarted!'
                 for tag, links in data.items():
@@ -336,7 +348,7 @@ async def restart_notification():
                     await send_incompelete_task_message(cid, msg)
 
         if STOP_DUPLICATE_TASKS:
-            await DbManger().clear_download_links()
+            await DbManager().clear_download_links()
 
 
     if await aiopath.isfile(".restartmsg"):

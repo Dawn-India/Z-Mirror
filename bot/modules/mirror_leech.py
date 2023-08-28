@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from base64 import b64encode
 from re import match as re_match
 from asyncio import sleep

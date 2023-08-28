@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
 

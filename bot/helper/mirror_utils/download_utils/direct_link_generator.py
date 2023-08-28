@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 from cloudscraper import create_scraper
 from lk21 import Bypass
 from lxml import etree
+from requests import Session
 
 from bot import config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
@@ -468,16 +469,19 @@ def uploadee(url: str) -> str:
 
 def terabox(url) -> str:
     if not path.isfile('terabox.txt'):
-        raise DirectDownloadLinkException("ERROR: terabox.txt not found")
-    session = create_scraper()
+        raise DirectDownloadLinkException("ERROR: terabox.txt not uploaded.")
     try:
         jar = MozillaCookieJar('terabox.txt')
         jar.load()
         cookie_string = ''
-        for cookie in jar: cookie_string += f'{cookie.name}={cookie.value}; '
-        session.cookies.update(jar)
+        cookie_dict = {}
+        for cookie in jar:
+            cookie_string += f'{cookie.name}={cookie.value}; '
+            cookie_dict[cookie.name] = cookie.value
+        session = Session()
+        session.cookies.update(cookie_dict)
         res = session.request('GET', url)
-        key = res.url.split('?surl=')[-1]
+        surl = res.url.split('?surl=')[-1]
         soup = BeautifulSoup(res.content, 'lxml')
         jsToken = None
         for fs in soup.find_all('script'):
@@ -485,15 +489,24 @@ def terabox(url) -> str:
             if fstring and fstring.startswith('try {eval(decodeURIComponent'):
                 jsToken = fstring.split('%22')[1]
         headers = {"Cookie": cookie_string}
-        res = session.request('GET', f'https://www.terabox.com/share/list?app_id=250528&jsToken={jsToken}&shorturl={key}&root=1', headers=headers)
+        res = session.request(
+            'GET', f'https://www.terabox.com/share/list?app_id=250528&jsToken={jsToken}&shorturl={surl}&root=1', headers=headers)
         result = res.json()
-    except Exception as e: raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-    if result['errno'] != 0: raise DirectDownloadLinkException(f"ERROR: '{result['errmsg']}' Check cookies")
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+    if result['errno'] != 0: raise DirectDownloadLinkException(f"ERROR: '{result}' Check cookies")
     result = result['list']
-    if len(result) > 1: raise DirectDownloadLinkException("ERROR: Can't download mutiple files")
+    if len(result) > 1:
+        raise DirectDownloadLinkException(
+            "ERROR: Can't download mutiple files")
     result = result[0]
-    if result['isdir'] != '0': raise DirectDownloadLinkException("ERROR: Can't download folder")
-    return result['dlink']
+    if result['isdir'] != '0':
+        raise DirectDownloadLinkException("ERROR: Can't download folder")
+    try:
+        dlink = result['dlink']
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}, Check cookies")
+    return dlink
 
 
 def filepress(url):

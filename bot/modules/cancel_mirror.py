@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import sleep
 
 from pyrogram.filters import command, regex
@@ -133,17 +134,17 @@ async def cancell_all_buttons(client, message):
 async def cancel_all_update(_, query):
     data = query.data.split()
     user_id = query.from_user.id
-    data = query.data.split()
     message = query.message
     msg_id = int(data[2])
-    if not (info := cancel_listener.get(msg_id)):
+    if msg_id not in cancel_listener:
         return await editMessage(message, "This is an old message")
+    info = cancel_listener[msg_id]
     if info[0] and info[2] != user_id:
         return await query.answer(text="You are not allowed to do this!", show_alert=True)
-    elif data[1] == 'close':
+    if data[1] == 'close':
         await query.answer()
         del cancel_listener[msg_id]
-        return await editMessage(message, "Cancellation Listener Closed.", message)
+        return await editMessage(message, "Cancellation Listener Closed.")
     if not (listOfTasks := await getAllDownload(data[1], info[0])):
         return await query.answer(text=f"You don't have any active task in {data[1]}", show_alert=True)
     await query.answer(f"{len(listOfTasks)} will be cancelled in {data[1]}", show_alert=True)
@@ -151,6 +152,7 @@ async def cancel_all_update(_, query):
     await cancel_all(data[1], info, listOfTasks)
 
 
+@new_task
 async def _auto_cancel(msg, msg_id):
     await sleep(30)
     if cancel_listener.get(msg_id):

@@ -101,12 +101,13 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Clone Status
 - Extract Status
 - Archive Status
+- Split Status
 - Seed Status
 - Status Pages for unlimited tasks.
 - Ability to cancel upload/clone/archive/extract/split.
 - Cancel all buttons for choosing specific tasks status to cancel.
-- Fix flooding issues
-- Fix overall upload and download speed
+- Fix flooding issues.
+- Fix overall upload and download speed.
 
 ### Database
 
@@ -147,7 +148,7 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Edit variables and overwrite the private files while bot running.
 - Update bot at startup and with restart command using `UPSTREAM_REPO`.
 - Improve Telegraph. Based on [Sreeraj](https://github.com/SVR666) loaderX-bot.
-- Mirror/Leech/Watch/Clone/Count/Del by reply.
+- Mirror/Leech/Ytdl/Clone/Count/Del by reply.
 - Mirror/Leech/Clone multi links/files with one command.
 - Custom name for all links except torrents. For files you should add extension except yt-dlp links.
 - Extensions Filter for the files to be uploaded/cloned.

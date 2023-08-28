@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from time import time
 
 from aiofiles.os import path as aiopath
@@ -36,19 +37,22 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
                     if len(tor_info) > 0:
                         break
                     elif time() - ADD_TIME >= 120:
-                        msg = "Not added! Check if the link is valid or not. \
-\nIf it's torrent file then report, this happens if torrent file size above 10mb."
-                        tmsg = await sendMessage(listener.message, msg)
+                        msg = "Not added! Check if the link is valid or not."
+                        msg += "\nIf it's torrent file then report, "
+                        msg += "this happens if torrent file size above 10mb."
+                        qmsg = await sendMessage(listener.message, msg)
                         await delete_links(listener.message)
-                        await auto_delete_message(listener.message, tmsg)
+                        if config_dict['DELETE_LINKS']:
+                            await auto_delete_message(listener.message, qmsg)
                         return
             tor_info = tor_info[0]
             ext_hash = tor_info.hash
         else:
             msg = "This Torrent already added or unsupported/invalid link/file."
-            tmsg = await sendMessage(listener.message, msg)
+            qmsg = await sendMessage(listener.message, msg)
             await delete_links(listener.message)
-            await auto_delete_message(listener.message, tmsg)
+            if config_dict['DELETE_LINKS']:
+                await auto_delete_message(listener.message, qmsg)
             return
 
         async with download_dict_lock:
@@ -87,9 +91,10 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
             if not added_to_queue:
                 await sync_to_async(client.torrents_pause, torrent_hashes=ext_hash)
             SBUTTONS = bt_selection_buttons(ext_hash)
-            msg = f"<b>Name</b>: <code>{tor_info.name}</code>\n\nYour download paused. \
-Choose files then press Done Selecting button to start downloading. \
-\n<b><i>Your download will not start automatically</i></b>"
+            msg = f"<b>Name</b>: <code>{tor_info.name}</code>"
+            msg += f"\n\nYour download paused."
+            msg += f"Choose files then press Done Selecting button to start downloading."
+            msg += f"\n<b><i>Your download will not start automatically</i></b>"
             await sendMessage(listener.message, msg, SBUTTONS)
         else:
             await sendStatusMessage(listener.message)
@@ -108,8 +113,10 @@ Choose files then press Done Selecting button to start downloading. \
             async with queue_dict_lock:
                 non_queued_dl.add(listener.uid)
     except Exception as e:
-        await sendMessage(listener.message, str(e))
+        qmsg = await sendMessage(listener.message, str(e))
         await delete_links(listener.message)
+        if config_dict['DELETE_LINKS']:
+            await auto_delete_message(listener.message, qmsg)
     finally:
         if await aiopath.exists(link):
             await aioremove(link)

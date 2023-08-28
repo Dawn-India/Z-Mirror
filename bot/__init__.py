@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import Lock
 from collections import OrderedDict
 from faulthandler import enable as faulthandler_enable
@@ -172,7 +173,7 @@ USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
 if len(USER_SESSION_STRING) != 0:
     info("Creating client from USER_SESSION_STRING")
     user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
-                    parse_mode=enums.ParseMode.HTML, no_updates=True).start()
+                    workers=100, parse_mode=enums.ParseMode.HTML, no_updates=True).start()
     if user.me.is_bot:
         warning(
             "You added bot string for USER_SESSION_STRING this is not allowed! Exiting now")
@@ -611,7 +612,7 @@ info('qBittorrent-Nox started!')
 
 info("Creating client from BOT_TOKEN")
 bot = tgClient('bot', TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN,
-               parse_mode=enums.ParseMode.HTML).start()
+               workers=100, parse_mode=enums.ParseMode.HTML).start()
 bot_loop = bot.loop
 bot_name = bot.me.username
 scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)

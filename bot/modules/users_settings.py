@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import sleep
 from functools import partial
 from html import escape
@@ -17,7 +18,7 @@ from pyrogram.types import InputMediaPhoto
 from bot import DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE, bot, config_dict, user_data
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size, new_thread,
                                             sync_to_async, update_user_ldata)
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -150,7 +151,7 @@ async def set_yt_options(_, message, pre_event):
     await message.delete()
     await update_user_settings(pre_event)
     if DATABASE_URL:
-        await DbManger().update_user_data(user_id)
+        await DbManager().update_user_data(user_id)
 
 
 async def set_prefix(_, message, pre_event):
@@ -161,7 +162,7 @@ async def set_prefix(_, message, pre_event):
         update_user_ldata(user_id, 'lprefix', value)
         await message.delete()
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     await update_user_settings(pre_event)
 
 
@@ -179,7 +180,7 @@ async def set_thumb(_, message, pre_event):
     await message.delete()
     await update_user_settings(pre_event)
     if DATABASE_URL:
-        await DbManger().update_user_doc(user_id, 'thumb', des_dir)
+        await DbManager().update_user_doc(user_id, 'thumb', des_dir)
 
 
 async def add_rclone(_, message, pre_event):
@@ -194,7 +195,7 @@ async def add_rclone(_, message, pre_event):
     await message.delete()
     await update_user_settings(pre_event)
     if DATABASE_URL:
-        await DbManger().update_user_doc(user_id, 'rclone', des_dir)
+        await DbManager().update_user_doc(user_id, 'rclone', des_dir)
 
 
 async def leech_split_size(_, message, pre_event):
@@ -205,7 +206,7 @@ async def leech_split_size(_, message, pre_event):
     await message.delete()
     await update_user_settings(pre_event)
     if DATABASE_URL:
-        await DbManger().update_user_data(user_id)
+        await DbManager().update_user_data(user_id)
 
 
 async def set_user_dump(_, message, pre_event):
@@ -218,7 +219,7 @@ async def set_user_dump(_, message, pre_event):
     await message.delete()
     await update_user_settings(pre_event)
     if DATABASE_URL:
-        await DbManger().update_user_data(user_id)
+        await DbManager().update_user_data(user_id)
 
 async def set_remname(_, message, pre_event):
     user_id = message.from_user.id
@@ -228,7 +229,7 @@ async def set_remname(_, message, pre_event):
     await message.delete()
     await update_user_settings(pre_event)
     if DATABASE_URL:
-        await DbManger().update_user_data(user_id)
+        await DbManager().update_user_data(user_id)
 
 async def event_handler(client, query, pfunc, photo=False, document=False):
     user_id = query.from_user.id
@@ -272,7 +273,7 @@ async def edit_user_settings(client, query):
         await query.answer()
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == "dthumb":
         handler_dict[user_id] = False
         if await aiopath.exists(thumb_path):
@@ -281,7 +282,7 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, 'thumb', '')
             await update_user_settings(query)
             if DATABASE_URL:
-                await DbManger().update_user_doc(user_id, 'thumb')
+                await DbManager().update_user_doc(user_id, 'thumb')
         else:
             await query.answer("Old Settings", show_alert=True)
             await update_user_settings(query)
@@ -321,7 +322,7 @@ Timeout: 60 sec
         update_user_ldata(user_id, 'yt_opt', '')
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'lss':
         await query.answer()
         buttons = ButtonMaker()
@@ -348,21 +349,21 @@ Timeout: 60 sec
         update_user_ldata(user_id, 'split_size', '')
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'esplits':
         handler_dict[user_id] = False
         await query.answer()
         update_user_ldata(user_id, 'equal_splits', not user_dict.get('equal_splits', False))
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'mgroup':
         handler_dict[user_id] = False
         await query.answer()
         update_user_ldata(user_id, 'media_group', not user_dict.get('media_group', False))
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'rcc':
         await query.answer()
         buttons = ButtonMaker()
@@ -381,17 +382,20 @@ Timeout: 60 sec
             update_user_ldata(user_id, 'rclone', '')
             await update_user_settings(query)
             if DATABASE_URL:
-                await DbManger().update_user_doc(user_id, 'rclone')
+                await DbManager().update_user_doc(user_id, 'rclone')
         else:
             await query.answer("Old Settings", show_alert=True)
             await update_user_settings(query)
     elif data[2] == 'lprefix':
-        await query.answer()
-        buttons = ButtonMaker()
-        if user_dict.get('lprefix', False) or config_dict['LEECH_FILENAME_PREFIX']:
-            buttons.ibutton("Remove Leech Prefix", f"userset {user_id} rlprefix")
-        buttons.ibutton("Back", f"userset {user_id} back")
-        buttons.ibutton("Close", f"userset {user_id} close")
+        if config_dict['LEECH_FILENAME_PREFIX']:
+            return await query.answer("Leech Prefix is already set by Owner", show_alert=True)
+        else:
+            await query.answer()
+            buttons = ButtonMaker()
+            if user_dict.get('lprefix', False) or config_dict['LEECH_FILENAME_PREFIX']:
+                buttons.ibutton("Remove Leech Prefix", f"userset {user_id} rlprefix")
+            buttons.ibutton("Back", f"userset {user_id} back")
+            buttons.ibutton("Close", f"userset {user_id} close")
         rmsg = f'''
 Send Leech Prefix. Timeout: 60 sec
 Examples:
@@ -414,7 +418,7 @@ Check all available formatting options <a href="https://core.telegram.org/bots/a
         update_user_ldata(user_id, 'lprefix', '')
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'user_dump':
         await query.answer()
         buttons = ButtonMaker()
@@ -438,7 +442,7 @@ Timeout: 60 sec
         update_user_ldata(user_id, 'user_dump', '')
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'lremname':
         await query.answer()
         buttons = ButtonMaker()
@@ -463,7 +467,7 @@ Timeout: 60 sec
         update_user_ldata(user_id, 'lremname', '')
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'back':
         handler_dict[user_id] = False
         await query.answer()
@@ -478,7 +482,7 @@ Timeout: 60 sec
         update_user_ldata(user_id, None, None)
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_doc(user_id)
+            await DbManager().update_user_doc(user_id)
     elif data[2] == 'user_del':
         user_id = int(data[3])
         await query.answer()
@@ -490,7 +494,7 @@ Timeout: 60 sec
             await aioremove(rclone_path)
         update_user_ldata(user_id, None, None)
         if DATABASE_URL:
-            await DbManger().update_user_doc(user_id)
+            await DbManager().update_user_doc(user_id)
         await editMessage(message, f'Data reset for {user_id}')
     else:
         if data[2] == 'close':

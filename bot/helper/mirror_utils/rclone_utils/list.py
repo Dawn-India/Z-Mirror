@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import Event, wait_for, wrap_future
 from configparser import ConfigParser
 from functools import partial
@@ -13,7 +14,7 @@ from bot import LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import (cmd_exec, get_readable_file_size,
                                             get_readable_time, new_task,
                                             new_thread)
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
 
@@ -79,7 +80,7 @@ async def path_updates(_, query, obj):
             config_dict['RCLONE_PATH'] = path
             await obj.get_path_buttons()
             if config_dict['DATABASE_URL']:
-                await DbManger().update_config({'RCLONE_PATH': path})
+                await DbManager().update_config({'RCLONE_PATH': path})
     elif data[1] == 'owner':
         obj.config_path = 'rclone.conf'
         obj.path = ''

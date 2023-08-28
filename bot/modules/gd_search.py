@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from time import time
 
 from pyrogram.filters import command, regex
@@ -104,7 +105,7 @@ async def drive_list(_, message):
         if await request_limiter(message):
             return
         if message.chat.type != message.chat.type.PRIVATE:
-            msg, btn = checking_access(user_id)
+            msg, btn = await checking_access(user_id)
             if msg is not None:
                 msg += f'\n\n<b>User</b>: {tag}'
                 reply_message = await sendMessage(message, msg, btn.build_menu(1))

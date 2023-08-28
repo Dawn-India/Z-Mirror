@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 from asyncio import sleep
 from time import time
 
-from bot import (LOGGER, QbInterval, QbTorrents, bot_loop, config_dict,
+from bot import (config_dict, LOGGER, QbInterval, QbTorrents, bot_loop, config_dict,
                  download_dict, download_dict_lock, get_client,
                  qb_listener_lock)
 from bot.helper.ext_utils.bot_utils import (get_readable_time,
@@ -11,7 +12,7 @@ from bot.helper.ext_utils.fs_utils import clean_unwanted
 from bot.helper.ext_utils.task_manager import (limit_checker,
                                                stop_duplicate_check)
 from bot.helper.mirror_utils.status_utils.qbit_status import QbittorrentStatus
-from bot.helper.telegram_helper.message_utils import update_all_messages, delete_links
+from bot.helper.telegram_helper.message_utils import update_all_messages, delete_links, auto_delete_message
 
 
 async def __remove_torrent(client, hash_, tag):
@@ -60,8 +61,10 @@ async def __stop_duplicate(tor):
     name = tor.content_path.rsplit('/', 1)[-1].rsplit('.!qB', 1)[0]
     msg, button = await stop_duplicate_check(name, listener)
     if msg:
-        __onDownloadError(msg, tor, button)
+        qmsg = await __onDownloadError(msg, tor, button)
         await delete_links(listener.message)
+        if config_dict['DELETE_LINKS']:
+            await auto_delete_message(listener.message, qmsg)
 
 
 @new_task
@@ -71,8 +74,10 @@ async def __size_checked(tor):
         listener = download.listener()
         size = tor.size
         if limit_exceeded := await limit_checker(size, listener, True):
-            await __onDownloadError(limit_exceeded, tor)
+            qmsg = await __onDownloadError(limit_exceeded, tor)
             await delete_links(listener.message)
+            if config_dict['DELETE_LINKS']:
+                await auto_delete_message(listener.message, qmsg)
 
 
 @new_task
@@ -131,17 +136,17 @@ async def __qb_listener():
                         TORRENT_TIMEOUT = config_dict['TORRENT_TIMEOUT']
                         QbTorrents[tag]['stalled_time'] = time()
                         if TORRENT_TIMEOUT and time() - tor_info.added_on >= TORRENT_TIMEOUT:
-                            __onDownloadError("Dead Torrent!", tor_info)
+                            await __onDownloadError("Dead Torrent!", tor_info)
                         else:
                             await sync_to_async(client.torrents_reannounce, torrent_hashes=tor_info.hash)
                     elif state == "downloading":
                         QbTorrents[tag]['stalled_time'] = time()
                         if config_dict['STOP_DUPLICATE'] and not QbTorrents[tag]['stop_dup_check']:
                             QbTorrents[tag]['stop_dup_check'] = True
-                            __stop_duplicate(tor_info)
+                            await __stop_duplicate(tor_info)
                         if any([config_dict['STORAGE_THRESHOLD'], config_dict['TORRENT_LIMIT'], config_dict['LEECH_LIMIT']]) and not QbTorrents[tag]['size_checked']:
                             QbTorrents[tag]['size_checked'] = True
-                            __size_checked(tor_info)
+                            await __size_checked(tor_info)
                     elif state == "stalledDL":
                         TORRENT_TIMEOUT = config_dict['TORRENT_TIMEOUT']
                         if not QbTorrents[tag]['rechecked'] and 0.99989999999999999 < tor_info.progress < 1:
@@ -152,21 +157,20 @@ async def __qb_listener():
                             await sync_to_async(client.torrents_recheck, torrent_hashes=tor_info.hash)
                             QbTorrents[tag]['rechecked'] = True
                         elif TORRENT_TIMEOUT and time() - QbTorrents[tag]['stalled_time'] >= TORRENT_TIMEOUT:
-                            __onDownloadError("Dead Torrent!", tor_info)
+                            await __onDownloadError("Dead Torrent!", tor_info)
                         else:
                             await sync_to_async(client.torrents_reannounce, torrent_hashes=tor_info.hash)
                     elif state == "missingFiles":
                         await sync_to_async(client.torrents_recheck, torrent_hashes=tor_info.hash)
                     elif state == "error":
-                        __onDownloadError(
-                            "No enough space for this torrent on device", tor_info)
+                        await __onDownloadError("No enough space for this torrent on device", tor_info)
                     elif tor_info.completion_on != 0 and not QbTorrents[tag]['uploaded'] and \
                             state not in ['checkingUP', 'checkingDL', 'checkingResumeData']:
                         QbTorrents[tag]['uploaded'] = True
-                        __onDownloadComplete(tor_info)
+                        await __onDownloadComplete(tor_info)
                     elif state in ['pausedUP', 'pausedDL'] and QbTorrents[tag]['seeding']:
                         QbTorrents[tag]['seeding'] = False
-                        __onSeedFinish(tor_info)
+                        await __onSeedFinish(tor_info)
             except Exception as e:
                 LOGGER.error(str(e))
                 client = await sync_to_async(get_client)

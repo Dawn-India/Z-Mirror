@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import Event, sleep, wait_for, wrap_future
 from functools import partial
 from time import time

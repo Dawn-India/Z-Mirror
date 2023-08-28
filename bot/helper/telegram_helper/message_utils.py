@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import sleep
 from datetime import datetime, timedelta, timezone
 from time import time
@@ -133,7 +134,7 @@ async def get_tg_link_content(link):
         try:
             user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
         except Exception as e:
-            raise TgLinkException(f"You don't have access to this chat!. ERROR: {e}") from e
+            raise TgLinkException(f"I don't have access to that chat!\nAdd me there first. ERROR: {e}") from e
         if not user_message.empty:
             return user_message, 'user'
         else:

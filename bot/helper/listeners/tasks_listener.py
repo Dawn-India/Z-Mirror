@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import Event, create_subprocess_exec, sleep
 from html import escape
 from os import path as ospath, walk
@@ -14,7 +15,7 @@ from bot import (DATABASE_URL, DOWNLOAD_DIR, GLOBAL_EXTENSION_FILTER, LOGGER,
                  user_data)
 from bot.helper.ext_utils.bot_utils import (extra_btns, get_readable_file_size,
                                             get_readable_time, sync_to_async)
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
 from bot.helper.ext_utils.fs_utils import (clean_download, clean_target,
                                            get_base_name, get_path_size,
@@ -121,9 +122,9 @@ class MirrorLeechListener:
         if self.dmMessage == 'BotStarted':
             self.dmMessage = await send_to_chat(self.message._client, self.message.from_user.id, self.message.link)
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS'] and self.raw_url:
-            await DbManger().add_download_url(self.raw_url, self.tag)
+            await DbManager().add_download_url(self.raw_url, self.tag)
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
+            await DbManager().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
     async def onDownloadComplete(self):
         multi_links = False
@@ -395,9 +396,9 @@ class MirrorLeechListener:
 
     async def onUploadComplete(self, link, size, files, folders, mime_type, name, rclonePath=''):
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS'] and self.raw_url:
-            await DbManger().remove_download(self.raw_url)
+            await DbManager().remove_download(self.raw_url)
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().rm_complete_task(self.message.link)
+            await DbManager().rm_complete_task(self.message.link)
         LOGGER.info(f'Done Uploading {name}')
         lmsg = f'<b><i>{escape(name)}</i></b>'
         lmsg += f'\n<b>cc</b>: <i>{self.tag}</i>'
@@ -406,7 +407,7 @@ class MirrorLeechListener:
         msg += f"\n<code>Elapsed         </code>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<code>Upload          </code>: {self.extra_details['mode']}"
         _msg = '' if rclonePath == '' else f'\n\n<code>Path            </code>: {rclonePath}'
-        msg_ = '\n\n<b><i>Links has been sent in your DM.</i></b>'
+        msg_ = '\n\n<b><i>Link has been sent in your DM.</i></b>'
         buttons = ButtonMaker()
         if self.isLeech:
             msg += f'\n<code>Total Files     </code>: {folders}\n'
@@ -555,7 +556,7 @@ class MirrorLeechListener:
         msg += f"\n\n<code>Reason  </code>: {escape(str(error))}"
         msg += f"\n<code>Elapsed </code>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<code>Upload  </code>: {self.extra_details['mode']}"
-        reply_message = await sendMessage(self.message, msg, button)
+        tlmsg = await sendMessage(self.message, msg, button)
         if self.logMessage:
             await sendMessage(self.logMessage, msg, button)
         if count == 0:
@@ -563,10 +564,11 @@ class MirrorLeechListener:
         else:
             await update_all_messages()
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS'] and self.raw_url:
-            await DbManger().remove_download(self.raw_url)
+            await DbManager().remove_download(self.raw_url)
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().rm_complete_task(self.message.link)
-        await auto_delete_message(self.message, reply_message)
+            await DbManager().rm_complete_task(self.message.link)
+        if config_dict['DELETE_LINKS']:
+            await auto_delete_message(self.message, tlmsg)
 
         async with queue_dict_lock:
             if self.uid in queued_dl:
@@ -598,7 +600,7 @@ class MirrorLeechListener:
         msg = f"{self.tag} {escape(str(error))}"
         msg += f"\n<code>Elapsed </code>: {get_readable_time(time() - self.extra_details['startTime'])}"
         msg += f"\n<code>Upload  </code>: {self.extra_details['mode']}"
-        reply_message = await sendMessage(self.message, msg)
+        tlmsg = await sendMessage(self.message, msg)
         if self.logMessage:
             await sendMessage(self.logMessage, msg)
         if count == 0:
@@ -606,10 +608,11 @@ class MirrorLeechListener:
         else:
             await update_all_messages()
         if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS'] and self.raw_url:
-            await DbManger().remove_download(self.raw_url)
+            await DbManager().remove_download(self.raw_url)
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().rm_complete_task(self.message.link)
-        await auto_delete_message(self.message, reply_message)
+            await DbManager().rm_complete_task(self.message.link)
+        if config_dict['DELETE_LINKS']:
+            await auto_delete_message(self.message, tlmsg)
 
         async with queue_dict_lock:
             if self.uid in queued_dl:

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from os import walk, path as ospath
 from aiofiles.os import remove as aioremove, path as aiopath, listdir, rmdir, makedirs
 from aioshutil import rmtree as aiormtree

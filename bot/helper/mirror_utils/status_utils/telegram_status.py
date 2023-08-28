@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
 from pkg_resources import get_distribution
 
 from bot.helper.ext_utils.bot_utils import (MirrorStatus,
                                             get_readable_file_size,
                                             get_readable_time)
 
-engine_ = f"Pyro v{get_distribution('pyrogram').version}"
+engine_ = f"PyroF v{get_distribution('pyrofork').version}"
 
 
 class TelegramStatus:

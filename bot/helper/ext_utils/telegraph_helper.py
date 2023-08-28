@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from string import ascii_letters
 from random import SystemRandom
 from asyncio import sleep

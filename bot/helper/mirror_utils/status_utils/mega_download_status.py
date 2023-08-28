@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from mega import MegaApi
 
 from bot.helper.ext_utils.bot_utils import (MirrorStatus,

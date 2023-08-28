@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from __future__ import print_function
 import googleapiclient.discovery, json, progress.bar, glob, sys, argparse, time
 from google_auth_oauthlib.flow import InstalledAppFlow

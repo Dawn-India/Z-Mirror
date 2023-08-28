@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 try:
     from pyrogram import Client
 except Exception as e:

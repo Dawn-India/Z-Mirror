@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import (create_subprocess_exec, create_subprocess_shell,
                      run_coroutine_threadsafe, sleep)
 from asyncio.subprocess import PIPE
@@ -7,20 +8,19 @@ from html import escape
 from re import match
 from time import time
 from uuid import uuid4
-from psutil import cpu_percent, disk_usage, virtual_memory, net_io_counters
+from psutil import disk_usage
 from pyrogram.types import BotCommand
-from pyrogram.handlers import CallbackQueryHandler
-from pyrogram.filters import regex
 from aiohttp import ClientSession
 
-from bot import (bot, bot_loop, bot_name, botStartTime, config_dict, download_dict,
-                 download_dict_lock, extra_buttons, user_data)
+from bot import (bot_loop, bot_name, botStartTime, config_dict, download_dict,
+                 DATABASE_URL, download_dict_lock, extra_buttons, user_data)
 from bot.helper.ext_utils.shortener import short_url
 from bot.helper.ext_utils.telegraph_helper import telegraph
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-THREADPOOL      = ThreadPoolExecutor(max_workers=1000)
+THREADPOOL      = ThreadPoolExecutor(max_workers=100)
 MAGNET_REGEX    = r'^magnet:\?.*xt=urn:(btih|btmh):[a-zA-Z0-9]*\s*'
 URL_REGEX       = r'^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$'
 SIZE_UNITS      = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -126,47 +126,40 @@ def get_readable_message():
     button = None
     STATUS_LIMIT = config_dict['STATUS_LIMIT']
     tasks = len(download_dict)
-
     globals()['PAGES'] = (tasks + STATUS_LIMIT - 1) // STATUS_LIMIT
     if PAGE_NO > PAGES and PAGES != 0:
         globals()['STATUS_START'] = STATUS_LIMIT * (PAGES - 1)
         globals()['PAGE_NO'] = PAGES
-
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
-
         tag = download.message.from_user.mention
         if reply_to := download.message.reply_to_message:
             tag = reply_to.from_user.mention
-
         elapsed = time() - download.extra_details['startTime']
-
-        msg += f"\n<b>File Name</b> » <i>{escape(f'{download.name()}')}</i>\n\n" if elapsed <= config_dict['AUTO_DELETE_MESSAGE_DURATION'] else ""
+        if config_dict['DELETE_LINKS']:
+            msg += f"\n<b>File Name</b> » <i>{escape(f'{download.name()}')}</i>\n\n" if elapsed <= config_dict['AUTO_DELETE_MESSAGE_DURATION'] else ""
+        else:
+            msg += f"\n<b>File Name</b> » <i>{escape(f'{download.name()}')}</i>\n\n"
         msg += f"⌑ <b>{download.status()}</b>"
-
         if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_PAUSED,
                                      MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
-
             msg += f" » {download.speed()}"
             msg += f"\n⌑ {get_progress_bar_string(download.progress())} » {download.progress()}"
             msg += f"\n⌑ <code>Done     </code>» {download.processed_bytes()} of {download.size()}"
             msg += f"\n⌑ <code>ETA      </code>» {download.eta()}"
             msg += f"\n⌑ <code>Active   </code>» {get_readable_time(elapsed)}"
             msg += f"\n⌑ <code>Engine   </code>» {download.engine}"
-
             if hasattr(download, 'playList'):
                 try:
                     if playlist:=download.playList():
                         msg += f"\n⌑ <code>YT Count </code>» {playlist}"
                 except:
                     pass
-
             if hasattr(download, 'seeders_num'):
                 try:
                     msg += f"\n⌑ <code>Seeders  </code>» {download.seeders_num()}"
                     msg += f"\n⌑ <code>Leechers </code>» {download.leechers_num()}"
                 except:
                     pass
-
         elif download.status() == MirrorStatus.STATUS_SEEDING:
             msg += f"\n⌑ <code>Size     </code>» {download.size()}"
             msg += f"\n⌑ <code>Speed    </code>» {download.upload_speed()}"
@@ -175,18 +168,14 @@ def get_readable_message():
             msg += f"\n⌑ <code>Time     </code>» {download.seeding_time()}"
         else:
             msg += f"\n⌑ <code>Size     </code>» {download.size()}"
-
         if config_dict['DELETE_LINKS']:
             msg += f"\n⌑ <code>Task     </code>» {download.extra_details['mode']}"
         else:
             msg += f"\n⌑ <code>Task     </code>» <a href='{download.message.link}'>{download.extra_details['mode']}</a>"
-
         msg += f"\n⌑ <code>User     </code>» {tag}"
         msg += f"\n⚠️ /{BotCommands.CancelMirror}_{download.gid()}\n\n"
-
     if len(msg) == 0:
         return None, None
-
     def convert_speed_to_bytes_per_second(spd):
         if 'K' in spd:
             return float(spd.split('K')[0]) * 1024
@@ -194,7 +183,6 @@ def get_readable_message():
             return float(spd.split('M')[0]) * 1048576
         else:
             return 0
-
     dl_speed = 0
     up_speed = 0
     for download in download_dict.values():
@@ -205,77 +193,47 @@ def get_readable_message():
             dl_speed += speed_in_bytes_per_second
         elif tstatus == MirrorStatus.STATUS_UPLOADING or tstatus == MirrorStatus.STATUS_SEEDING:
             up_speed += speed_in_bytes_per_second
-
-
+    msg += "____________________________"
+    msg += f"\n<code>FREE: </code>{get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)}"
+    msg += f"<code> | DL: </code>{get_readable_file_size(dl_speed)}/s"
+    msg += f"\n<code>UPTM: </code>{get_readable_time(time() - botStartTime)}"
+    msg += f"<code> | UL: </code>{get_readable_file_size(up_speed)}/s"
     if tasks <= STATUS_LIMIT:
         buttons = ButtonMaker()
-        buttons.ibutton("BOT INFO", "stats")
+        buttons.ibutton("BOT INFO", "status stats")
         button = buttons.build_menu(1)
-
-
     if tasks > STATUS_LIMIT:
-        buttons = ButtonMaker()
-        buttons.ibutton("⫷", "status pre")
-        buttons.ibutton(f"{PAGE_NO}/{PAGES}", "stats")
-        buttons.ibutton("⫸", "status nex")
-        button = buttons.build_menu(3)
-
-    msg += "____________________________"
-    msg += f"\n<b>DL</b>: <code>{get_readable_file_size(dl_speed)}/s</code>"
-    msg += f" | <b>UL</b>: <code>{get_readable_file_size(up_speed)}/s</code>"
-    msg += f"\n<b>DISK</b>: <code>{get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)}</code>"
-    msg += f" | <b>UPTM</b>: <code>{get_readable_time(time() - botStartTime)}</code>"
+        return get_pages(msg)
     return msg, button
 
 
-async def fstats(_, query):
-    cpup = cpu_percent(interval=1)
-    ramp = virtual_memory().percent
-    disk = disk_usage(config_dict["DOWNLOAD_DIR"]).percent
-    totl = len(download_dict)
-    traf = get_readable_file_size(net_io_counters().bytes_sent + net_io_counters().bytes_recv)
-    free = max(config_dict['QUEUE_ALL'] - totl, 0) if config_dict['QUEUE_ALL'] else '∞'
-    inqu, dwld, upld, splt, arch, extr, seed = [0] * 7
-    for download in download_dict.values():
-        status = download.status()
-        if status in MirrorStatus.STATUS_QUEUEDL or status in MirrorStatus.STATUS_QUEUEUP:
-            inqu += 1
-        elif status == MirrorStatus.STATUS_DOWNLOADING:
-            dwld += 1
-        elif status == MirrorStatus.STATUS_UPLOADING:
-            upld += 1
-        elif status == MirrorStatus.STATUS_SPLITTING:
-            splt += 1
-        elif status == MirrorStatus.STATUS_ARCHIVING:
-            arch += 1
-        elif status == MirrorStatus.STATUS_EXTRACTING:
-            extr += 1
-        elif status == MirrorStatus.STATUS_SEEDING:
-            seed += 1
-
-    stat = f'_______Zee Bot Info_______\n\n'\
-           f'C: {cpup}% | R: {ramp}% | D: {disk}%\n\n' \
-           f'T  : {totl} | F  : {free} | Q : {inqu}\n' \
-           f'DL: {dwld} | UL: {upld} | SD: {seed}\n' \
-           f'ZP: {arch} | UZ: {extr} | SP: {splt}\n\n' \
-           f'Bandwidth Used: {traf}'
-    await query.answer(stat, show_alert=True)
+def get_pages(msg):
+    buttons = ButtonMaker()
+    buttons.ibutton("⫷", "status pre")
+    buttons.ibutton(f"{PAGE_NO}/{PAGES}", "status stats")
+    buttons.ibutton("⫸", "status nex")
+    button = buttons.build_menu(3)
+    return msg, button
 
 
 async def turn_page(data):
-    STATUS_LIMIT = config_dict['STATUS_LIMIT']
-    global STATUS_START, PAGE_NO, PAGES
-    async with download_dict_lock:
-        if data[1] == "nex" and PAGE_NO == PAGES:
-            PAGE_NO = 1
-        elif data[1] == "nex" and PAGE_NO < PAGES:
-            PAGE_NO += 1
-        elif data[1] == "pre" and PAGE_NO == 1:
-            PAGE_NO = PAGES
-        elif data[1] == "pre" and PAGE_NO > 1:
-            PAGE_NO -= 1
-        if data[1] != "stats":
-            STATUS_START = (PAGE_NO - 1) * STATUS_LIMIT
+    try:
+        STATUS_LIMIT = config_dict['STATUS_LIMIT']
+        global STATUS_START, PAGE_NO, PAGES
+        async with download_dict_lock:
+            if data[1] == "nex" and PAGE_NO == PAGES:
+                PAGE_NO = 1
+            elif data[1] == "nex" and PAGE_NO < PAGES:
+                PAGE_NO += 1
+            elif data[1] == "pre" and PAGE_NO == 1:
+                PAGE_NO = PAGES
+            elif data[1] == "pre" and PAGE_NO > 1:
+                PAGE_NO -= 1
+            if data[1] != "stats":
+                STATUS_START = (PAGE_NO - 1) * STATUS_LIMIT
+        return True
+    except:
+        return False
 
 
 def get_readable_time(seconds):
@@ -408,25 +366,35 @@ async def check_user_tasks(user_id, maxtask):
     return len(total_tasks) >= maxtask
 
 
-def checking_access(user_id, button=None):
+async def checking_access(user_id, button=None):
     if not config_dict['TOKEN_TIMEOUT']:
         return None, button
     user_data.setdefault(user_id, {})
     data = user_data[user_id]
-    expire = data.get('time')
-    isExpired = (expire is None or expire is not None and (
-        time() - expire) > config_dict['TOKEN_TIMEOUT'])
-    if isExpired:
-        token = data['token'] if expire is None and 'token' in data else str(
-            uuid4())
-        if expire is not None:
+    is_expired = False
+    if DATABASE_URL:
+        token = await DbManager().get_user_token(user_id)
+        expire_time = await DbManager().get_token_expire_time(user_id)
+        if expire_time is None or (time() - expire_time) > config_dict['TOKEN_TIMEOUT']:
+            is_expired = True
+            token = str(uuid4())
+            await DbManager().update_user_tdata(user_id, token, time())
+    else:
+        expire = data.get('time')
+        if expire is None or (time() - expire) > config_dict['TOKEN_TIMEOUT']:
+            is_expired = True
+            token = data.get('token', str(uuid4()))
+    if is_expired:
+        if 'time' in data:
             del data['time']
         data['token'] = token
-        user_data[user_id].update(data)
+        user_data[user_id] = data
         if button is None:
             button = ButtonMaker()
         button.ubutton('Get New Token', short_url(f'https://telegram.me/{bot_name}?start={token}'))
-        return 'Your <b>Token</b> is expired. Get a new one.', button
+        tmsg = 'Your <b>Token</b> is expired. Get a new one.'
+        tmsg += f'\n<b>Token Validity</b>: {get_readable_time(config_dict["TOKEN_TIMEOUT"])}'
+        return tmsg, button
     return None, button
 
 
@@ -441,11 +409,9 @@ async def cmd_exec(cmd, shell=False):
     return stdout, stderr, proc.returncode
 
 
-def new_task(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return bot_loop.create_task(func(*args, **kwargs))
-    return wrapper
+def async_to_sync(func, *args, wait=True, **kwargs):
+    future = run_coroutine_threadsafe(func(*args, **kwargs), bot_loop)
+    return future.result() if wait else future
 
 
 async def sync_to_async(func, *args, wait=True, **kwargs):
@@ -454,9 +420,11 @@ async def sync_to_async(func, *args, wait=True, **kwargs):
     return await future if wait else future
 
 
-def async_to_sync(func, *args, wait=True, **kwargs):
-    future = run_coroutine_threadsafe(func(*args, **kwargs), bot_loop)
-    return future.result() if wait else future
+def new_task(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return bot_loop.create_task(func(*args, **kwargs))
+    return wrapper
 
 
 def new_thread(func):
@@ -490,4 +458,3 @@ async def set_commands(client):
             BotCommand(f'{BotCommands.HelpCommand}', 'Get detailed help'),
         ])
 
-bot.add_handler(CallbackQueryHandler(fstats, filters=regex("^stats")))

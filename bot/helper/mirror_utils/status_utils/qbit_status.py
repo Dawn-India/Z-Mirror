@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import sleep
 
 from bot import LOGGER, QbTorrents, get_client, qb_listener_lock

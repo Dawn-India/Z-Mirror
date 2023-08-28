@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from pkg_resources import get_distribution
 
 from bot.helper.ext_utils.bot_utils import (MirrorStatus,

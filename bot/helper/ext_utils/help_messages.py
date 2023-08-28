@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 YT_HELP_MESSAGE = """
 <b><u>Mirror</u></b>:
 <code>/{cmd}</code> link

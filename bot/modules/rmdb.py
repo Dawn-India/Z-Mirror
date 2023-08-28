@@ -1,13 +1,24 @@
+#!/usr/bin/env python3
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
 from bot import DATABASE_URL, bot, config_dict
 from bot.helper.ext_utils.bot_utils import is_magnet, is_url, new_task
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.z_utils import extract_link
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage
+
+
+@new_task
+async def rmAllTokens(_, message):
+    if DATABASE_URL:
+        await DbManager().delete_all_access_tokens()
+        msg = 'All access tokens have been removed from the database.'
+    else:
+        msg = 'Database URL not added.'
+    return await sendMessage(message, msg)
 
 
 @new_task
@@ -45,8 +56,8 @@ async def rmdbNode(_, message):
         msg = 'Something went wrong!!'
         return await sendMessage(message, msg)
     raw_url = await extract_link(link, shouldDel)
-    if exist := await DbManger().check_download(raw_url):
-        await DbManger().remove_download(exist['_id'])
+    if exist := await DbManager().check_download(raw_url):
+        await DbManager().remove_download(exist['_id'])
         msg = 'Download is removed from database successfully'
         msg += f'\n{exist["tag"]} Your download is removed.'
     else:
@@ -55,4 +66,5 @@ async def rmdbNode(_, message):
 
 
 if DATABASE_URL:
-    bot.add_handler(MessageHandler(rmdbNode, filters=command(BotCommands.RmdbCommand) & CustomFilters.authorized))
+    bot.add_handler(MessageHandler(rmdbNode, filters=command(BotCommands.RmdbCommand) & CustomFilters.sudo))
+    bot.add_handler(MessageHandler(rmAllTokens, filters=command(BotCommands.RmalltokensCommand) & CustomFilters.sudo))

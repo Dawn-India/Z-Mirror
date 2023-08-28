@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from pyrogram.filters import regex
 from pyrogram.handlers import CallbackQueryHandler
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import gather, sleep
 from json import loads
 from random import SystemRandom
@@ -178,7 +179,7 @@ async def gdcloneNode(message, link, listener):
         await listener.onDownloadStart()
         LOGGER.info(f'Clone Started: Name: {name} - Source: {link}')
         drive = GoogleDriveHelper(name, listener=listener)
-        if files <= 20:
+        if files <= 10:
             msg = await sendMessage(message, f"Cloning: <code>{link}</code>")
             link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
             await deleteMessage(msg)

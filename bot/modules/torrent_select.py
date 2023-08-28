@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from aiofiles.os import path as aiopath
 from aiofiles.os import remove as aioremove
 from pyrogram.filters import command, regex

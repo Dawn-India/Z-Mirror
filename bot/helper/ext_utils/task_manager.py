@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from asyncio import Event
 
 from bot import (LOGGER, config_dict, non_queued_dl, non_queued_up,

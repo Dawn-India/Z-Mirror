@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from pyrogram.filters import create
 
 from bot import OWNER_ID, user_data

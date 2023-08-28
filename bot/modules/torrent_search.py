@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from html import escape
 from urllib.parse import quote
 
@@ -250,7 +251,7 @@ async def torrentSearch(_, message):
         if await request_limiter(message):
             return
         if message.chat.type != message.chat.type.PRIVATE:
-            msg, buttons = checking_access(user_id, buttons)
+            msg, buttons = await checking_access(user_id, buttons)
             if msg is not None:
                 msg += f'\n\n<b>User</b>: {tag}'
                 reply_message = await sendMessage(message, msg, buttons.build_menu(1))
