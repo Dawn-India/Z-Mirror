@@ -3,11 +3,11 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 
 ## Deploy on Heroku
 
-[![Deploy on Heroku](https://www.herokucdn.com/deploy/button.svg)](https://gitlab.com/Dawn-India/Z-Mirror/-/tree/zh_deploy?ref_type=heads)
+[![Deploy on Heroku](https://www.herokucdn.com/deploy/button.svg)]([https://gitlab.com/Dawn-India/Z-Mirror/-/tree/zh_deploy?ref_type=heads](https://gitlab.com/Dawn-India/Z-Mirror/-/tree/hr_deploy?ref_type=heads#deploy-to-heroku))
 
 ## Deploy on Railway
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://gitlab.com/Dawn-India/Z-Mirror/-/tree/rail_deploy?ref_type=heads)
+[![Deploy on Railway](https://railway.app/button.svg)]([https://gitlab.com/Dawn-India/Z-Mirror/-/tree/rail_deploy?ref_type=heads](https://gitlab.com/Dawn-India/Z-Mirror/-/tree/hr_deploy?ref_type=heads#deploy-to-railway))
 
 
 # Available features in this REPO:
