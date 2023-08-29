@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+from secrets import token_urlsafe
+from aiofiles.os import makedirs
 from asyncio import Event
-from random import SystemRandom
-from string import ascii_letters, digits
 
 from aiofiles.os import makedirs
 from mega import MegaApi, MegaError, MegaListener, MegaRequest, MegaTransfer
@@ -170,7 +170,7 @@ async def add_mega_download(mega_link, path, listener, name):
             await auto_delete_message(listener.message, mmsg)
         return
 
-    gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=8))
+    gid = token_urlsafe(8)
     size = api.getSize(node)
     if limit_exceeded := await limit_checker(size, listener, isMega=True):
         mmsg = await sendMessage(listener.message, limit_exceeded)

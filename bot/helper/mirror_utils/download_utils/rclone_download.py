@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import gather
 from json import loads
-from random import SystemRandom
-from string import ascii_letters, digits
+from secrets import token_urlsafe
 
 from bot import (config_dict, LOGGER, download_dict, download_dict_lock, non_queued_dl,
                  queue_dict_lock)
@@ -43,7 +42,7 @@ async def add_rclone_download(rc_path, config_path, path, name, listener):
     else:
         name = rc_path.rsplit('/', 1)[-1]
     size = rsize['bytes']
-    gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
+    gid = token_urlsafe(12)
 
     msg, button = await stop_duplicate_check(name, listener)
     if msg:

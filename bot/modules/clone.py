@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import gather, sleep
 from json import loads
-from random import SystemRandom
-from string import ascii_letters, digits
+from secrets import token_urlsafe
 from aiofiles.os import path as aiopath
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
@@ -106,7 +105,7 @@ async def rcloneNode(client, message, link, dst_path, rcf, listener):
     RCTransfer = RcloneTransferHelper(listener, name)
     LOGGER.info(
         f'Clone Started: Name: {name} - Source: {link} - Destination: {dst_path}')
-    gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
+    gid = token_urlsafe(12)
     async with download_dict_lock:
         download_dict[message.id] = RcloneStatus(
             RCTransfer, message, gid, 'cl', listener.extra_details)

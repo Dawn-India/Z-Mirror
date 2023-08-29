@@ -18,7 +18,7 @@ from tenacity import (RetryError, retry, retry_if_exception_type,
 from bot import GLOBAL_EXTENSION_FILTER, IS_PREMIUM_USER, bot, config_dict, user, user_data
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
 from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, is_archive
-from bot.helper.ext_utils.leech_utils import get_document_type, get_media_info, take_ss, remove_unwanted
+from bot.helper.ext_utils.leech_utils import get_document_type, get_media_info, take_ss, remove_unwanted, get_audio_thumb
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
@@ -333,6 +333,8 @@ class TgUploader:
                 thumb_path = f"{self.__path}/yt-dlp-thumb/{file_name}.jpg"
                 if await aiopath.isfile(thumb_path):
                     thumb = thumb_path
+                elif is_audio:
+                    thumb = await get_audio_thumb(self.__up_path)
 
             if self.__as_doc or force_document or (not is_video and not is_audio and not is_image):
                 key = 'documents'
