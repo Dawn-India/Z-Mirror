@@ -77,8 +77,7 @@ class GoogleDriveHelper:
             json_files = listdir("accounts")
             self.__sa_number = len(json_files)
             self.__sa_index = randrange(self.__sa_number)
-            LOGGER.info(
-                f"Authorizing with {json_files[self.__sa_index]} service account")
+            LOGGER.info(f"Authorizing with {json_files[self.__sa_index]} service account")
             credentials = service_account.Credentials.from_service_account_file(
                 f'accounts/{json_files[self.__sa_index]}',
                 scopes=self.__OAUTH_SCOPE)
