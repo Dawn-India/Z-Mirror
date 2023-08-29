@@ -371,24 +371,18 @@ async def checking_access(user_id, button=None):
         return None, button
     user_data.setdefault(user_id, {})
     data = user_data[user_id]
-    is_expired = False
     if DATABASE_URL:
-        token = await DbManager().get_user_token(user_id)
-        expire_time = await DbManager().get_token_expire_time(user_id)
-        if expire_time is None or (time() - expire_time) > config_dict['TOKEN_TIMEOUT']:
-            is_expired = True
-            token = str(uuid4())
-            await DbManager().update_user_tdata(user_id, token, time())
-    else:
-        expire = data.get('time')
-        if expire is None or (time() - expire) > config_dict['TOKEN_TIMEOUT']:
-            is_expired = True
-            token = data.get('token', str(uuid4()))
-    if is_expired:
-        if 'time' in data:
+        data['time'] = await DbManager().get_token_expire_time(user_id)
+    expire = data.get('time')
+    isExpired = (expire is None or expire is not None and (time() - expire) > config_dict['TOKEN_TIMEOUT'])
+    if isExpired:
+        token = data['token'] if expire is None and 'token' in data else str(uuid4())
+        if expire is not None:
             del data['time']
         data['token'] = token
-        user_data[user_id] = data
+        if DATABASE_URL:
+            await DbManager().update_user_token(user_id, token)
+        user_data[user_id].update(data)
         if button is None:
             button = ButtonMaker()
         button.ubutton('Get New Token', short_url(f'https://telegram.me/{bot_name}?start={token}'))

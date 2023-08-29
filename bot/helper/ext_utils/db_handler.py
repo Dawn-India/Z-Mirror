@@ -227,10 +227,16 @@ class DbManager:
         await self.__db.download_links.delete_one({'_id': url})
         self.__conn.close
 
-    async def update_user_tdata(self, user_id, token, creation_time):
+    async def update_user_tdata(self, user_id, token, time):
         if self.__err:
             return
-        await self.__db.access_token.update_one({'_id': user_id}, {'$set': {'token': token, 'time': creation_time}}, upsert=True)
+        await self.__db.access_token.update_one({'_id': user_id}, {'$set': {'token': token, 'time': time}}, upsert=True)
+        self.__conn.close
+
+    async def update_user_token(self, user_id, token):
+        if self.__err:
+            return
+        await self.__db.access_token.update_one({'_id': user_id}, {'$set': {'token': token}}, upsert=True)
         self.__conn.close
 
     async def get_token_expire_time(self, user_id):

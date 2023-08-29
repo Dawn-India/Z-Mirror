@@ -189,15 +189,18 @@ async def start(_, message):
                 return await sendMessage(message, 'This token is not associated with your account.\n\nPlease generate your own token.')
             if input_token != stored_token:
                 return await sendMessage(message, 'Invalid token.\n\nPlease generate a new one.')
-        else:
-            if userid not in user_data:
-                return await sendMessage(message, 'This token is not yours!\n\nKindly generate your own.')
-            data = user_data[userid]
-            if 'token' not in data or data['token'] != input_token:
-                return await sendMessage(message, 'Token already used!\n\nKindly generate a new one.')
-            data['token'] = str(uuid4())
-            data['time'] = time()
-            user_data[userid].update(data)
+        if userid not in user_data:
+            return await sendMessage(message, 'This token is not yours!\n\nKindly generate your own.')
+        data = user_data[userid]
+        if 'token' not in data or data['token'] != input_token:
+            return await sendMessage(message, 'Token already used!\n\nKindly generate a new one.')
+        token = str(uuid4())
+        ttime = time()
+        data['token'] = token
+        data['time'] = ttime
+        user_data[userid].update(data)
+        if DATABASE_URL:
+            await DbManager().update_user_tdata(userid, token, ttime)
         msg = 'Token refreshed successfully!\n\n'
         msg += f'Validity: {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}'
         return await sendMessage(message, msg)
