@@ -320,7 +320,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                                    drive_id, index_link, dmMessage, logMessage)
 
     if file_ is not None:
-        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
+        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name)
     elif isinstance(link, dict):
         await add_direct_download(link, path, listener, name)
     elif is_rclone_path(link):
