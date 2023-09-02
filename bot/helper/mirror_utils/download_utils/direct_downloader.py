@@ -29,6 +29,12 @@ async def add_direct_download(details, path, listener, foldername):
 
     if not foldername:
         foldername = details['title']
+    if not foldername:
+        amsg = await sendMessage(listener.message, 'There is no any title use -n New Name')
+        await delete_links(listener.message)
+        if config_dict['DELETE_LINKS']:
+            await auto_delete_message(listener.message, amsg)
+        return
     if config_dict['STOP_DUPLICATE']:
         msg, button = await stop_duplicate_check(foldername, listener)
         if msg:
@@ -48,7 +54,6 @@ async def add_direct_download(details, path, listener, foldername):
             if config_dict['DELETE_LINKS']:
                 await auto_delete_message(listener.message, amsg)
             return
-
 
     gid = token_urlsafe(10)
     added_to_queue, event = await is_queued(listener.uid)

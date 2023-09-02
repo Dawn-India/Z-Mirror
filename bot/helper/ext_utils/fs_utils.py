@@ -67,7 +67,7 @@ async def start_cleanup():
         await aiormtree(DOWNLOAD_DIR)
     except:
         pass
-    await makedirs(DOWNLOAD_DIR)
+    await makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 
 def clean_all():
