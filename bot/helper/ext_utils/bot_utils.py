@@ -246,6 +246,20 @@ def get_readable_time(seconds):
     return result
 
 
+def text_size_to_bytes(size_text):
+    size = 0
+    size_text = size_text.lower()
+    if 'k' in size_text:
+        size += float(size_text.split('k')[0]) * 1024
+    elif 'm' in size_text:
+        size += float(size_text.split('m')[0]) * 1048576
+    elif 'g' in size_text:
+        size += float(size_text.split('g')[0]) *1073741824 
+    elif 't' in size_text:
+        size += float(size_text.split('t')[0]) *1099511627776 
+    return size
+
+
 def is_magnet(url):
     return bool(match(MAGNET_REGEX, url))
 
