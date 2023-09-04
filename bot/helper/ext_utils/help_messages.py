@@ -93,6 +93,9 @@ drive_id must be folder id and index must be url else it will not accept
 <b><u>Direct Link Authorization</u></b>: -u or -username and -p or -password
 <code>/{cmd}</code> link -u your_username -p your_password
 
+<b>Direct link custom headers</b>: -h
+<code>/cmd</code> link -h Key: value Key1: value1
+
 <b><u>Zip/Unzip</u></b>: -z or -zip and -e or -uz or -unzip
 <code>/{cmd}</code> link -e password (extract password protected)
 <code>/{cmd}</code> link -z password (zip password protected)
