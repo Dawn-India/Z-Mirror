@@ -271,10 +271,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 if isinstance(link, str):
                     LOGGER.info(f"Generated link: {link}")
             except DirectDownloadLinkException as e:
-                LOGGER.info(str(e))
-                await delete_links(message)
-                if str(e).startswith('ERROR:'):
-                    await editMessage(process_msg, str(e))
+                e = str(e)
+                if 'This link requires a password!' not in e:
+                    LOGGER.info(e)
+                if e.startswith('ERROR:'):
+                    await sendMessage(message, e)
                     return
             await process_msg.delete()
 
