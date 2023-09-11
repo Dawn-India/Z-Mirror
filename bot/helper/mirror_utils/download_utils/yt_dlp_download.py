@@ -155,9 +155,9 @@ class YoutubeDLHelper:
                         self.__size += entry['filesize_approx']
                     elif 'filesize' in entry:
                         self.__size += entry['filesize']
-                    if not name:
+                    if not self.name:
                         outtmpl_ = '%(series,playlist_title,channel)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d.%(ext)s'
-                        name, ext = ospath.splitext(ydl.prepare_filename(entry, outtmpl=outtmpl_))
+                        self.name, ext = ospath.splitext(ydl.prepare_filename(entry, outtmpl=outtmpl_))
                         self.name = name
                         if not self.__ext:
                             self.__ext = ext
@@ -242,8 +242,9 @@ class YoutubeDLHelper:
         else:
             self.opts['outtmpl'] = {'default': f"{path}/{self.name}",
                                     'thumbnail': f"{path}/yt-dlp-thumb/{base_name}.%(ext)s"}
-            self.name = base_name
 
+        if qual.startswith('ba/b'):
+            self.name = f'{base_name}{self.__ext}'
         if self.__listener.isLeech:
             self.opts['postprocessors'].append({'format': 'jpg', 'key': 'FFmpegThumbnailsConvertor', 'when': 'before_dl'})
         if self.__ext in ['.mp3', '.mkv', '.mka', '.ogg', '.opus', '.flac', '.m4a', '.mp4', '.mov']:
@@ -294,6 +295,8 @@ class YoutubeDLHelper:
         options = options.split('|')
         for opt in options:
             key, value = map(str.strip, opt.split(':', 1))
+            if key == 'format' and value.startswith('ba/b-'):
+                continue
             if value.startswith('^'):
                 if '.' in value or value == '^inf':
                     value = float(value.split('^', 1)[1])

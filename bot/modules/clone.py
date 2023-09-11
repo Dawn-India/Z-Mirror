@@ -183,7 +183,7 @@ async def gdcloneNode(message, link, listener):
             link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
             await deleteMessage(msg)
         else:
-            gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
+            gid = token_urlsafe(12)
             async with download_dict_lock:
                 download_dict[message.id] = GdriveStatus(
                     drive, size, message, gid, 'cl', listener.extra_details)

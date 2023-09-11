@@ -464,6 +464,9 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         yt_opt = opt.split('|')
         for ytopt in yt_opt:
             key, value = map(str.strip, ytopt.split(':', 1))
+            if key == 'format' and value.startswith('ba/b-'):
+                qual = value
+                continue
             if value.startswith('^'):
                 if '.' in value or value == '^inf':
                     value = float(value.split('^')[1])
@@ -492,10 +495,8 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     user_id = message.from_user.id
     if not select:
         user_dict = user_data.get(user_id, {})
-        if 'format' in options:
+        if not qual and 'format' in options:
             qual = options['format']
-        elif user_dict.get('yt_opt'):
-            qual = user_dict['yt_opt']
 
     if not qual:
         qual = await YtSelection(client, message).get_quality(result)

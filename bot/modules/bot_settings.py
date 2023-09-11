@@ -126,6 +126,10 @@ async def load_config():
     if len(UPTOBOX_TOKEN) == 0:
         UPTOBOX_TOKEN = ''
 
+    FILELION_API = environ.get('FILELION_API', '')
+    if len(FILELION_API) == 0:
+        FILELION_API = ''
+
     INDEX_URL = environ.get('INDEX_URL', '').rstrip("/")
     if len(INDEX_URL) == 0:
         INDEX_URL = ''
@@ -468,6 +472,7 @@ async def load_config():
                         'ENABLE_RATE_LIMIT': ENABLE_RATE_LIMIT,
                         'ENABLE_MESSAGE_FILTER': ENABLE_MESSAGE_FILTER,
                         'FSUB_IDS': FSUB_IDS,
+                        'FILELION_API': FILELION_API,
                         'GDRIVE_ID': GDRIVE_ID,
                         'GDRIVE_LIMIT': GDRIVE_LIMIT,
                         'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
