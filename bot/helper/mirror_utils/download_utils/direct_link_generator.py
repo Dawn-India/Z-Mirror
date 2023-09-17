@@ -88,7 +88,9 @@ def direct_link_generator(link):
         return send_cm(link)
     elif 'easyupload.io' in domain:
         return easyupload(link)
-    elif any(x in domain for x in ['dood.watch', 'doodstream.com', 'dood.to', 'dood.so', 'dood.cx', 'dood.la', 'dood.ws', 'dood.sh', 'doodstream.co', 'dood.pm', 'dood.wf', 'dood.re', 'dood.video', 'dooood.com', 'dood.yt', 'dood.stream', 'doods.pro']):
+    elif 'streamvid.net' in domain:
+        return streamvid(link)
+    elif any(x in domain for x in ['dood.watch', 'doodstream.com', 'dood.to', 'dood.so', 'dood.cx', 'dood.la', 'dood.ws', 'dood.sh', 'doodstream.co', 'dood.pm', 'dood.wf', 'dood.re', 'dood.video', 'dooood.com', 'dood.yt', 'doods.yt', 'dood.stream', 'doods.pro']):
         return doods(link)
     elif any(x in domain for x in ['streamtape.com', 'streamtape.co', 'streamtape.cc', 'streamtape.to', 'streamtape.net', 'streamta.pe', 'streamtape.xyz']):
         return streamtape(link)
@@ -102,7 +104,7 @@ def direct_link_generator(link):
         return fembed(link)
     elif any(x in domain for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
-    elif any(x in domain for x in ['filelions.com', 'filelions.live', 'filelions.to']):
+    elif any(x in domain for x in ['filelions.com', 'filelions.live', 'filelions.to', 'filelions.online']):
         return filelions(link)
     elif is_share_link(link):
         if 'gdtot' in domain:
@@ -420,8 +422,7 @@ def fichier(link):
                 raise DirectDownloadLinkException("ERROR: 1fichier is on a limit. Please wait a few minutes/hour.")
         elif "bad password" in str_3.lower():
             raise DirectDownloadLinkException("ERROR: The password you entered is wrong!")
-        else:
-            raise DirectDownloadLinkException("ERROR: Error trying to generate Direct Link from 1fichier!")
+    raise DirectDownloadLinkException("ERROR: Error trying to generate Direct Link from 1fichier!")
 
 
 def solidfiles(url):
@@ -844,7 +845,7 @@ def mediafireFolder(url):
     if len(folderkey) == 1:
         folderkey = folderkey[0]
     details = {'contents': [], 'title': '', 'total_size': 0, 'header': ''}
-    
+
     session = req_session()
     adapter = HTTPAdapter(max_retries=Retry(
         total=10, read=10, connect=10, backoff_factor=0.3))
@@ -1081,14 +1082,13 @@ def doods(url):
     parsed_url = urlparse(url)
     with create_scraper() as session:
         try:
-            _res = session.get(url)
-            _res = session.get(_res.url)
-            html = HTML(_res.text)
+            html = HTML(session.get(url).text)
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} While fetching token link')
         if not (link := html.xpath("//div[@class='download-content']//a/@href")):
-            raise DirectDownloadLinkException('ERROR: Token Link not found')
-        link = f'{parsed_url.scheme}://{parsed_url.hostname}/{link[0]}'
+            raise DirectDownloadLinkException('ERROR: Token Link not found or maybe not allow to download! open in browser.')
+        link = f'{parsed_url.scheme}://{parsed_url.hostname}{link[0]}'
+        sleep(2)
         try:
             _res = session.get(link)
         except Exception as e:
@@ -1154,6 +1154,8 @@ def filelions(url):
         spited_file_code = file_code.rsplit('_', 1)
         quality = spited_file_code[1]
         file_code = spited_file_code[0]
+    parsed_url = urlparse(url)
+    url = f'{parsed_url.scheme}://{parsed_url.hostname}/{file_code}'
     with Session() as session:
         try:
             _res = session.get('https://api.filelions.com/api/file/direct_link', params={'key': config_dict['FILELION_API'], 'file_code': file_code, 'hls': '1'}).json()
@@ -1178,3 +1180,40 @@ def filelions(url):
             error += f"\nHD"
         error +=f" <code>{url}_{version['name']}</code>"
     raise DirectDownloadLinkException(f'ERROR: {error}')
+
+def streamvid(url: str):
+    file_code = url.split('/')[-1]
+    parsed_url = urlparse(url)
+    url = f'{parsed_url.scheme}://{parsed_url.hostname}/d/{file_code}'
+    quality_defined = bool(url.endswith(('_o', '_h', '_n', '_l')))
+    with create_scraper() as session:
+        try:
+            html = HTML(session.get(url).text)
+        except Exception as e:
+            raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+        if quality_defined:
+            data = {}
+            if not (inputs := html.xpath('//form[@id="F1"]//input')):
+                raise DirectDownloadLinkException('ERROR: No inputs found')
+            for i in inputs:
+                if key := i.get('name'):
+                    data[key] = i.get('value')
+            try:
+                html = HTML(session.post(url, data=data).text)
+            except Exception as e:
+                raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+            if not (script := html.xpath('//script[contains(text(),"document.location.href")]/text()')):
+                if error := html.xpath('//div[@class="alert alert-danger"][1]/text()[2]'):
+                    raise DirectDownloadLinkException(f'ERROR: {error[0]}')
+                raise DirectDownloadLinkException("ERROR: direct link script not found!")
+            if directLink:=findall(r'document\.location\.href="(.*)"', script[0]):
+                return directLink[0]
+            raise DirectDownloadLinkException("ERROR: direct link not found! in the script")
+        elif (qualities_urls := html.xpath('//div[@id="dl_versions"]/a/@href')) and (qualities := html.xpath('//div[@id="dl_versions"]/a/text()[2]')):
+            error = '\nProvide a quality to download the video\nAvailable Quality:'
+            for quality_url, quality in zip(qualities_urls, qualities):
+                error += f"\n{quality.strip()} <code>{quality_url}</code>"
+            raise DirectDownloadLinkException(f'ERROR: {error}')
+        elif error:= html.xpath('//div[@class="not-found-text"]/text()'):
+            raise DirectDownloadLinkException(f'ERROR: {error[0]}')
+        raise DirectDownloadLinkException('ERROR: Something went wrong')

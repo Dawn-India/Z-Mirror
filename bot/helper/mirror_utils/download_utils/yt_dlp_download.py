@@ -10,7 +10,7 @@ from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.telegram_helper.message_utils import sendStatusMessage, delete_links, auto_delete_message
 from ..status_utils.yt_dlp_download_status import YtDlpDownloadStatus
 from bot.helper.ext_utils.bot_utils import sync_to_async, async_to_sync
-from bot.helper.ext_utils.task_manager import is_queued, stop_duplicate_check, limit_checker
+from bot.helper.ext_utils.task_manager import is_queued, stop_duplicate_check, limit_checker, list_checker
 
 LOGGER = getLogger(__name__)
 
@@ -261,6 +261,12 @@ class YoutubeDLHelper:
             return
         if limit_exceeded := await limit_checker(self.__size, self.__listener, isYtdlp=True):
             ymsg = await self.__listener.onDownloadError(limit_exceeded)
+            await delete_links(self.__listener.message)
+            if config_dict['DELETE_LINKS']:
+                await auto_delete_message(self.__listener.message, ymsg)
+            return
+        if list_exceeded := await list_checker(self.playlist_count, is_playlist=True):
+            ymsg = await self.__listener.onDownloadError(list_exceeded)
             await delete_links(self.__listener.message)
             if config_dict['DELETE_LINKS']:
                 await auto_delete_message(self.__listener.message, ymsg)

@@ -112,6 +112,11 @@ async def start_from_queued():
                 for uid in list(queued_dl.keys()):
                     start_dl_from_queued(uid)
 
+async def list_checker(playlist_count, is_playlist=False):
+    if is_playlist:
+        if PLAYLIST_LIMIT := config_dict['PLAYLIST_LIMIT']:
+            if playlist_count > PLAYLIST_LIMIT:
+                return f'Playlist limit is {PLAYLIST_LIMIT}\n⚠ Your Playlist has {playlist_count} items.'
 
 async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False):
     limit_exceeded = ''

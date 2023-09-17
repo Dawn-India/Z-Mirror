@@ -326,6 +326,9 @@ async def load_config():
     YTDLP_LIMIT = environ.get('YTDLP_LIMIT', '')
     YTDLP_LIMIT = '' if len(YTDLP_LIMIT) == 0 else float(YTDLP_LIMIT)
 
+    PLAYLIST_LIMIT = environ.get('PLAYLIST_LIMIT', '')
+    PLAYLIST_LIMIT = '' if len(PLAYLIST_LIMIT) == 0 else int(PLAYLIST_LIMIT)
+
     GDRIVE_LIMIT = environ.get('GDRIVE_LIMIT', '')
     GDRIVE_LIMIT = '' if len(GDRIVE_LIMIT) == 0 else float(GDRIVE_LIMIT)
 
@@ -524,6 +527,7 @@ async def load_config():
                         'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
                         'WEB_PINCODE': WEB_PINCODE,
                         'YTDLP_LIMIT': YTDLP_LIMIT,
+                        'PLAYLIST_LIMIT': PLAYLIST_LIMIT,
                         'YT_DLP_OPTIONS': YT_DLP_OPTIONS})
 
     if DATABASE_URL:
@@ -684,7 +688,7 @@ async def edit_variable(_, message, pre_message, key):
                 "drive_id": GDRIVE_ID, "index_link": value}
             categories_dict['Root'] = {
                 "drive_id": GDRIVE_ID, "index_link": value}
-    elif key not in ['SEARCH_LIMIT', 'STATUS_LIMIT'] and key.endswith(('_THRESHOLD', '_LIMIT')):
+    elif key not in ['SEARCH_LIMIT', 'STATUS_LIMIT', 'PLAYLIST_LIMIT'] and key.endswith(('_THRESHOLD', '_LIMIT')):
         value = float(value)
     elif value.isdigit() and key != 'FSUB_IDS':
         value = int(value)
