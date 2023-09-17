@@ -100,7 +100,6 @@ class GoogleDriveHelper:
                 return build('drive', 'v3', credentials=credentials, cache_discovery=False)
             else:
                 LOGGER.error('token.pickle not found!')
-        return None
 
     def __switchServiceAccount(self):
         if self.__sa_index == self.__sa_number - 1:
@@ -414,8 +413,7 @@ class GoogleDriveHelper:
             return durl, size, mime_type, self.__total_files, self.__total_folders
         except Exception as err:
             if isinstance(err, RetryError):
-                LOGGER.info(
-                    f"Total Attempts: {err.last_attempt.attempt_number}")
+                LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
                 err = err.last_attempt.exception()
             err = str(err).replace('>', '').replace('<', '')
             if "User rate limit exceeded" in err:
@@ -424,8 +422,7 @@ class GoogleDriveHelper:
                 if not self.__alt_auth:
                     token_service = self.__alt_authorize()
                     if token_service is not None:
-                        LOGGER.error(
-                            'File not found. Trying with token.pickle...')
+                        LOGGER.error('File not found. Trying with token.pickle...')
                         self.__service = token_service
                         return self.clone(link, gdrive_id)
                 msg = "File not found."
