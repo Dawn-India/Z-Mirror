@@ -146,7 +146,7 @@ def get_readable_message():
             msg += f"\n⌑ {get_progress_bar_string(download.progress())} » {download.progress()}"
             msg += f"\n⌑ <code>Done   </code>» {download.processed_bytes()} of {download.size()}"
             msg += f"\n⌑ <code>ETA    </code>» {download.eta()}"
-            msg += f"\n⌑ <code>EST    </code>» {get_readable_time(elapsed)}"
+            msg += f"\n⌑ <code>Past    </code>» {get_readable_time(elapsed)}"
             msg += f"\n⌑ <code>ENG    </code>» {download.engine}"
             if hasattr(download, 'playList'):
                 try:

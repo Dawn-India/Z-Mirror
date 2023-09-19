@@ -38,7 +38,7 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       sendStatusMessage)
 
 
-async def rcloneNode(client, message, link, dst_path, rcf, listener):
+async def rcloneNode(client, link, dst_path, listener):
     if link == 'rcl':
         link = await RcloneList(client, message).get_rclone_path('rcd')
         if not is_rclone_path(link):
@@ -107,10 +107,10 @@ async def rcloneNode(client, message, link, dst_path, rcf, listener):
         f'Clone Started: Name: {name} - Source: {link} - Destination: {dst_path}')
     gid = token_urlsafe(12)
     async with download_dict_lock:
-        download_dict[message.id] = RcloneStatus(
-            RCTransfer, message, gid, 'cl', listener.extra_details)
-    await sendStatusMessage(message)
-    link, destination = await RCTransfer.clone(config_path, remote, src_path, dst_path, rcf, mime_type)
+        download_dict[listener.uid] = RcloneStatus(
+            RCTransfer, listener.message, gid, 'cl')
+    await sendStatusMessage(listener.message)
+    link, destination = await RCTransfer.clone(config_path, remote, src_path, mime_type)
     if not link:
         await delete_links(message)
         return
@@ -303,9 +303,8 @@ async def clone(client, message):
             await sendMessage(message, 'Destination not specified!')
             await delete_links(message)
             return
-        listener = MirrorLeechListener(message, tag=tag, select=select, isClone=True,
-                                       dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
-        await rcloneNode(client, message, link, dst_path, rcf, listener)
+        listener.rcFlags = rcf
+        await rcloneNode(client, link, dst_path, listener)
     else:
         if not drive_id and len(categories_dict) > 1:
             drive_id, index_link = await open_category_btns(message)
