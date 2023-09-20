@@ -38,7 +38,7 @@ from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       sendStatusMessage)
 
 
-async def rcloneNode(client, message, link, dst_path, listener):
+async def rcloneNode(client, message, link, dst_path, rcf, listener):
     if link == 'rcl':
         link = await RcloneList(client, message).get_rclone_path('rcd')
         if not is_rclone_path(link):
@@ -70,7 +70,7 @@ async def rcloneNode(client, message, link, dst_path, listener):
         return
     if dst_path.startswith('mrcc:'):
         if config_path != f'rclone/{message.from_user.id}.conf':
-            await sendMessage(message, 'You should use same rclone.conf to clone between pathies!')
+            await sendMessage(message, 'You should use same rclone.conf to clone between paths!')
             await delete_links(message)
             return
         dst_path = dst_path.lstrip('mrcc:')
@@ -107,10 +107,9 @@ async def rcloneNode(client, message, link, dst_path, listener):
         f'Clone Started: Name: {name} - Source: {link} - Destination: {dst_path}')
     gid = token_urlsafe(12)
     async with download_dict_lock:
-        download_dict[message.id] = RcloneStatus(
-            RCTransfer, message, gid, 'cl', listener.extra_details)
+        download_dict[message.id] = RcloneStatus(RCTransfer, message, gid, 'cl', listener.extra_details)
     await sendStatusMessage(message)
-    link, destination = await RCTransfer.clone(config_path, remote, src_path, dst_path, mime_type)
+    link, destination = await RCTransfer.clone(config_path, remote, src_path, dst_path, rcf, mime_type)
     if not link:
         await delete_links(message)
         return
@@ -185,8 +184,7 @@ async def gdcloneNode(message, link, listener):
         else:
             gid = token_urlsafe(12)
             async with download_dict_lock:
-                download_dict[message.id] = GdriveStatus(
-                    drive, size, message, gid, 'cl', listener.extra_details)
+                download_dict[message.id] = GdriveStatus(drive, size, message, gid, 'cl', listener.extra_details)
             await sendStatusMessage(message)
             link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
         if not link:
@@ -305,8 +303,7 @@ async def clone(client, message):
             return
         listener = MirrorLeechListener(message, tag=tag, select=select, isClone=True,
                                        dmMessage=dmMessage, logMessage=logMessage, raw_url=raw_url)
-        listener.rcFlags = rcf
-        await rcloneNode(client, link, dst_path, listener)
+        await rcloneNode(client, message, link, dst_path, rcf, listener)
     else:
         if not drive_id and len(categories_dict) > 1:
             drive_id, index_link = await open_category_btns(message)
