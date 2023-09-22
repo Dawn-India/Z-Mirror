@@ -75,7 +75,7 @@ async def rcloneNode(client, message, link, dst_path, rcf, listener):
             return
         dst_path = dst_path.lstrip('mrcc:')
     elif config_path != 'rclone.conf':
-        await sendMessage(message, 'You should use same rclone.conf to clone between pathies!')
+        await sendMessage(message, 'You should use same rclone.conf to clone between paths!')
         await delete_links(message)
         return
 

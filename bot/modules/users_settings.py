@@ -368,10 +368,10 @@ Timeout: 60 sec
         await query.answer()
         buttons = ButtonMaker()
         if await aiopath.exists(rclone_path):
-            buttons.ibutton("Delete rclone.conf", f"userset {user_id} drcc")
+            buttons.ibutton("Delete Rclone Config", f"userset {user_id} drcc")
         buttons.ibutton("Back", f"userset {user_id} back")
         buttons.ibutton("Close", f"userset {user_id} close")
-        await editMessage(message, 'Send rclone.conf. Timeout: 60 sec', buttons.build_menu(1))
+        await editMessage(message, 'Send Rclone Config. Timeout: 60 sec', buttons.build_menu(1))
         pfunc = partial(add_rclone, pre_event=query)
         await event_handler(client, query, pfunc, document=True)
     elif data[2] == 'drcc':
