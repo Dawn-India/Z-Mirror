@@ -412,25 +412,25 @@ sudo docker stop id
 - Install docker compose
 
 ```
-sudo apt install docker compose
+sudo apt install docker-compose
 ```
 
 - Build and run Docker image:
 
 ```
-sudo docker compose up --build
+sudo docker-compose up --build
 ```
 
 - To stop the running image:
 
 ```
-sudo docker compose stop
+sudo docker-compose stop
 ```
 
 - To run the image:
 
 ```
-sudo docker compose start
+sudo docker-compose start
 ```
 
 - To get latest log from already running image (after mounting the folder):
