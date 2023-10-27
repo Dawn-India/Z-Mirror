@@ -108,21 +108,18 @@ class TelegramDownloadHelper:
                 if msg:
                     tmsg = await sendMessage(self.__listener.message, msg, button)
                     await delete_links(self.__listener.message)
-                    if config_dict['DELETE_LINKS']:
-                        await auto_delete_message(self.__listener.message, tmsg)
+                    await auto_delete_message(self.__listener.message, tmsg)
                     return
                 if limit_exceeded := await limit_checker(size, self.__listener):
                     tmsg = await sendMessage(self.__listener.message, limit_exceeded)
                     await delete_links(self.__listener.message)
-                    if config_dict['DELETE_LINKS']:
-                        await auto_delete_message(self.__listener.message, tmsg)
+                    await auto_delete_message(self.__listener.message, tmsg)
                     return
                 added_to_queue, event = await is_queued(self.__listener.uid)
                 if added_to_queue:
                     LOGGER.info(f"Added to Queue/Download: {name}")
                     async with download_dict_lock:
-                        download_dict[self.__listener.uid] = QueueStatus(
-                            name, size, gid, self.__listener, 'dl')
+                        download_dict[self.__listener.uid] = QueueStatus(name, size, gid, self.__listener, 'dl')
                     await self.__listener.onDownloadStart()
                     await sendStatusMessage(self.__listener.message)
                     await event.wait()
@@ -141,5 +138,4 @@ class TelegramDownloadHelper:
 
     async def cancel_download(self):
         self.__is_cancelled = True
-        LOGGER.info(
-            f'Cancelling download on user request: name: {self.name} id: {self.__id}')
+        LOGGER.info(f'Cancelling download on user request: name: {self.name} id: {self.__id}')

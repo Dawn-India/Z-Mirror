@@ -4,7 +4,7 @@ from time import time
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from bot import LOGGER, bot, config_dict
+from bot import LOGGER, bot
 from bot.helper.ext_utils.bot_utils import (checking_access, get_readable_time,
                                             get_telegraph_list, new_task,
                                             sync_to_async)
@@ -12,7 +12,7 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (anno_checker, deleteMessage,
+from bot.helper.telegram_helper.message_utils import (anno_checker, delete_links,
                                                       editMessage, isAdmin,
                                                       auto_delete_message,
                                                       request_limiter,
@@ -43,13 +43,14 @@ async def _list_drive(key, message, item_type, isRecursive):
             await editMessage(message, e)
             return
         msg = f'<b>Found {contents_no} result for <i>{key}</i></b>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
-        await editMessage(message, msg, button)
+        gdmsg = await editMessage(message, msg, button)
+        await delete_links(message.reply_to_message)
+        await auto_delete_message(message, gdmsg)
     else:
         msg = f'No result found for <i>{key}</i>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
-        reply_message = await editMessage(message, msg)
-        await auto_delete_message(message, reply_message)
-    if config_dict['DELETE_LINKS']:
-        await deleteMessage(message.reply_to_message)
+        gdmsg = await editMessage(message, msg)
+        await delete_links(message.reply_to_message)
+        await auto_delete_message(message, gdmsg)
 
 
 @new_task
@@ -67,7 +68,10 @@ async def select_type(_, query):
         return await editMessage(message, 'Choose list options:', buttons)
     elif data[2] == 'cancel':
         await query.answer()
-        return await editMessage(message, "list has been canceled!")
+        gdmsg = await editMessage(message, "list has been canceled!")
+        await delete_links(message.reply_to_message)
+        await auto_delete_message(message, gdmsg)
+        return
     await query.answer()
     item_type = data[2]
     isRecursive = eval(data[3])
@@ -77,8 +81,9 @@ async def select_type(_, query):
 
 async def drive_list(_, message):
     if len(message.text.split()) == 1:
-        reply_message = await sendMessage(message, 'Send a search key along with command')
-        await auto_delete_message(message, reply_message)
+        gdmsg = await sendMessage(message, 'Send a search key along with command')
+        await delete_links(message.reply_to_message)
+        await auto_delete_message(message, gdmsg)
         return
     if not message.from_user:
         message.from_user = await anno_checker(message)
@@ -108,13 +113,11 @@ async def drive_list(_, message):
             msg, btn = await checking_access(user_id)
             if msg is not None:
                 msg += f'\n\n<b>User</b>: {tag}'
-                reply_message = await sendMessage(message, msg, btn.build_menu(1))
-                await auto_delete_message(message, reply_message)
+                gdmsg = await sendMessage(message, msg, btn.build_menu(1))
+                await auto_delete_message(message, gdmsg)
                 return
     buttons = await list_buttons(user_id)
     await sendMessage(message, 'Choose list options:', buttons)
 
-bot.add_handler(MessageHandler(drive_list, filters=command(
-    BotCommands.ListCommand) & CustomFilters.authorized))
-bot.add_handler(CallbackQueryHandler(
-    select_type, filters=regex("^list_types")))
+bot.add_handler(MessageHandler(drive_list, filters=command(BotCommands.ListCommand) & CustomFilters.authorized))
+bot.add_handler(CallbackQueryHandler(select_type, filters=regex("^list_types")))

@@ -8,7 +8,7 @@ from bot import (LOGGER, aria2, aria2_options, aria2c_global, config_dict,
 from bot.helper.ext_utils.bot_utils import bt_selection_buttons, sync_to_async
 from bot.helper.ext_utils.task_manager import is_queued
 from bot.helper.mirror_utils.status_utils.aria2_status import Aria2Status
-from bot.helper.telegram_helper.message_utils import (delete_links,
+from bot.helper.telegram_helper.message_utils import (delete_links, auto_delete_message,
                                                       sendMessage,
                                                       sendStatusMessage)
 
@@ -37,23 +37,24 @@ async def add_aria2c_download(link, path, listener, filename, header, ratio, see
         download = (await sync_to_async(aria2.add, link, a2c_opt))[0]
     except Exception as e:
         LOGGER.info(f"Aria2c Download Error: {e}")
-        await sendMessage(listener.message, f'{e}')
+        amsg = await sendMessage(listener.message, f'{e}')
         await delete_links(listener.message)
+        await auto_delete_message(listener.message, amsg)
         return
     if await aiopath.exists(link):
         await aioremove(link)
     if download.error_message:
         error = str(download.error_message).replace('<', ' ').replace('>', ' ')
         LOGGER.info(f"Aria2c Download Error: {error}")
-        await sendMessage(listener.message, error)
+        amsg = await sendMessage(listener.message, error)
         await delete_links(listener.message)
+        await auto_delete_message(listener.message, amsg)
         return
 
     gid = download.gid
     name = download.name
     async with download_dict_lock:
-        download_dict[listener.uid] = Aria2Status(
-            gid, listener, queued=added_to_queue)
+        download_dict[listener.uid] = Aria2Status(gid, listener, queued=added_to_queue)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {name}. Gid: {gid}")
         if not listener.select or not download.is_torrent:

@@ -4,14 +4,16 @@ from time import time
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
-from bot import bot, config_dict
+from bot import bot, LOGGER
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size,
                                             get_readable_time, is_gdrive_link,
                                             new_task, sync_to_async)
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import deleteMessage, sendMessage
+from bot.helper.telegram_helper.message_utils import (deleteMessage, delete_links, 
+                                                     sendMessage, auto_delete_message,
+                                                     editMessage)
 
 
 @new_task
@@ -29,15 +31,22 @@ async def countNode(_, message):
         link = reply_to.text.split(maxsplit=1)[0].strip()
 
     if is_gdrive_link(link):
-        msg = await sendMessage(message, f"Counting: <code>{link}</code>")
+        LOGGER.info(f'Counting {link}')
+        mssg = await sendMessage(message, f"Counting: <code>{link}</code>")
         gd = GoogleDriveHelper()
         start_time = time()
         name, mime_type, size, files, folders = await sync_to_async(gd.count, link)
-        elapsed = time() - start_time
         if mime_type is None:
-            await sendMessage(message, name)
+            elapsed = time() - start_time
+            LOGGER.error(f'Error in counting: {name}')
+            msg = f'Sorry {tag}!\nYour count has been stopped.'
+            msg += f'\n\n<code>Reason : </code>{name}'
+            msg += f'\n<code>Elapsed: </code>{get_readable_time(elapsed)}'
+            await editMessage(mssg, msg)
+            await delete_links(message)
+            await auto_delete_message(message, mssg)
             return
-        await deleteMessage(msg)
+        await deleteMessage(mssg)
         msg = f'<b>File Name</b>: <code>{name}</code>'
         msg += f'\n\n<b>Size</b>: {get_readable_file_size(size)}'
         msg += f'\n<b>Type</b>: {mime_type}'
@@ -47,12 +56,12 @@ async def countNode(_, message):
         msg += f'\n<b>Elapsed</b>: {get_readable_time(elapsed)}'
         msg += f'\n\n<b>cc</b>: {tag}'
         msg += f'\nThanks For Using <b>@Z_Mirror</b>'
+        
     else:
-        msg = 'Send Gdrive link along with command or by replying to the link by command'
-    if config_dict['DELETE_LINKS']:
-        await deleteMessage(message.reply_to_message)
-    await sendMessage(message, msg)
+        msg = f'Send Gdrive link along with command or by replying to the link by command\n\n<b>cc</b>: {tag}'
+    gdmsg = await sendMessage(message, msg)
+    await delete_links(message.reply_to_message)
+    await auto_delete_message(message, gdmsg)
 
 
-bot.add_handler(MessageHandler(countNode, filters=command(
-    BotCommands.CountCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(countNode, filters=command(BotCommands.CountCommand) & CustomFilters.authorized))

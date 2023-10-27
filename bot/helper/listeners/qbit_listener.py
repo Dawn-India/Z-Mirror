@@ -63,8 +63,7 @@ async def __stop_duplicate(tor):
     if msg:
         qmsg = __onDownloadError(msg, tor, button)
         await delete_links(listener.message)
-        if config_dict['DELETE_LINKS']:
-            await auto_delete_message(listener.message, qmsg)
+        await auto_delete_message(listener.message, qmsg)
 
 
 @new_task
@@ -76,8 +75,7 @@ async def __size_checked(tor):
         if limit_exceeded := await limit_checker(size, listener, True):
             qmsg = await __onDownloadError(limit_exceeded, tor)
             await delete_links(listener.message)
-            if config_dict['DELETE_LINKS']:
-                await auto_delete_message(listener.message, qmsg)
+            await auto_delete_message(listener.message, qmsg)
 
 
 @new_task
@@ -179,8 +177,8 @@ async def __qb_listener():
 
 async def onDownloadStart(tag):
     async with qb_listener_lock:
-        QbTorrents[tag] = {'stalled_time': time(
-        ), 'stop_dup_check': False, 'rechecked': False, 'uploaded': False, 'seeding': False, 'size_checked': False}
+        QbTorrents[tag] = {'stalled_time': time(), 'stop_dup_check': False, 'rechecked': False, 
+                           'uploaded': False, 'seeding': False, 'size_checked': False}
         if not QbInterval:
             periodic = bot_loop.create_task(__qb_listener())
             QbInterval.append(periodic)

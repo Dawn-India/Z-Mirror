@@ -36,7 +36,5 @@ async def shell(_, message):
         await sendMessage(message, 'No Reply')
 
 
-bot.add_handler(MessageHandler(shell, filters=command(
-    BotCommands.ShellCommand) & CustomFilters.owner))
-bot.add_handler(EditedMessageHandler(shell, filters=command(
-    BotCommands.ShellCommand) & CustomFilters.owner))
+bot.add_handler(MessageHandler(shell, filters=command(BotCommands.ShellCommand) & CustomFilters.owner))
+bot.add_handler(EditedMessageHandler(shell, filters=command(BotCommands.ShellCommand) & CustomFilters.owner))

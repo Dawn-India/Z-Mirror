@@ -10,8 +10,8 @@ from yt_dlp import YoutubeDL
 
 from bot import (DOWNLOAD_DIR, IS_PREMIUM_USER, LOGGER, bot, categories_dict,
                  config_dict, user_data)
-from bot.helper.ext_utils.bot_utils import (arg_parser, get_readable_file_size,
-                                            get_readable_time, is_rclone_path, is_url, new_task, is_gdrive_link,
+from bot.helper.ext_utils.bot_utils import (arg_parser, get_readable_file_size, get_readable_time,
+                                            is_rclone_path, is_url, new_task, is_gdrive_link,
                                             new_thread, sync_to_async)
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 from bot.helper.ext_utils.help_messages import YT_HELP_MESSAGE
@@ -23,15 +23,10 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (anno_checker,
-                                                      delete_links,
-                                                      auto_delete_message,
-                                                      editMessage, isAdmin,
-                                                      isBot_canDm,
-                                                      open_category_btns,
-                                                      request_limiter,
-                                                      sendLogMessage,
-                                                      sendMessage)
+from bot.helper.telegram_helper.message_utils import (anno_checker, delete_links, isBot_canDm,
+                                                      auto_delete_message, editMessage, isAdmin,
+                                                      open_category_btns, request_limiter,
+                                                      deleteMessage, sendLogMessage, sendMessage)
 
 
 @new_task
@@ -73,6 +68,7 @@ class YtSelection:
     def __init__(self, client, message):
         self.__message = message
         self.__user_id = message.from_user.id
+        self.__tag = message.from_user.mention
         self.__client = client
         self.__is_m4a = False
         self.__reply_to = None
@@ -90,15 +86,21 @@ class YtSelection:
         pfunc = partial(select_format, obj=self)
         handler = self.__client.add_handler(CallbackQueryHandler(
             pfunc, filters=regex('^ytq') & user(self.__user_id)), group=-1)
+        ytmsg = None
         try:
             await wait_for(self.event.wait(), timeout=self.__timeout)
         except:
-            await editMessage(self.__reply_to, 'Timed Out. Task has been cancelled!')
+            msg = f'Timed Out. Task has been cancelled!\n\ncc: {self.__tag}'
+            ytmsg = await editMessage(self.__reply_to, msg)
+            LOGGER.info(f"YT-DLP Selection Timed Out: {self.__message.text} added by : {self.__tag}")
             self.qual = None
             self.is_cancelled = True
             self.event.set()
         finally:
             self.__client.remove_handler(*handler)
+            if self.is_cancelled:
+                await delete_links(self.__message)
+                await auto_delete_message(self.__reply_to, ytmsg)
 
     async def get_quality(self, result):
         future = self.__event_handler()
@@ -120,7 +122,8 @@ class YtSelection:
             buttons.ibutton('Best Audios', 'ytq ba/b')
             buttons.ibutton('Cancel', 'ytq cancel', 'footer')
             self.__main_buttons = buttons.build_menu(3)
-            msg = f'Choose Playlist Videos Quality:\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+            msg = f'Choose Playlist Videos Quality:\nTimeout: '
+            msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         else:
             format_dict = result.get('formats')
             if format_dict is not None:
@@ -166,18 +169,21 @@ class YtSelection:
             buttons.ibutton('Best Audio', 'ytq ba/b')
             buttons.ibutton('Cancel', 'ytq cancel', 'footer')
             self.__main_buttons = buttons.build_menu(2)
-            msg = f'Choose Video Quality:\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+            msg = f'Choose Video Quality:\nTimeout: '
+            msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         self.__reply_to = await sendMessage(self.__message, msg, self.__main_buttons)
         await wrap_future(future)
         if not self.is_cancelled:
-            await self.__reply_to.delete()
+            await deleteMessage(self.__reply_to)
         return self.qual
 
     async def back_to_main(self):
         if self.__is_playlist:
-            msg = f'Choose Playlist Videos Quality:\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+            msg = f'Choose Playlist Videos Quality:\nTimeout: '
+            msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         else:
-            msg = f'Choose Video Quality:\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+            msg = f'Choose Video Quality:\nTimeout: '
+            msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         await editMessage(self.__reply_to, msg, self.__main_buttons)
 
     async def qual_subbuttons(self, b_name):
@@ -189,7 +195,8 @@ class YtSelection:
         buttons.ibutton('Back', 'ytq back', 'footer')
         buttons.ibutton('Cancel', 'ytq cancel', 'footer')
         subbuttons = buttons.build_menu(2)
-        msg = f'Choose Bit rate for <b>{b_name}</b>:\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+        msg = f'Choose Bit rate for <b>{b_name}</b>:\nTimeout: '
+        msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         await editMessage(self.__reply_to, msg, subbuttons)
 
     async def mp3_subbuttons(self):
@@ -202,7 +209,8 @@ class YtSelection:
         buttons.ibutton('Back', 'ytq back')
         buttons.ibutton('Cancel', 'ytq cancel')
         subbuttons = buttons.build_menu(3)
-        msg = f'Choose mp3 Audio{i} Bitrate:\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+        msg = f'Choose mp3 Audio{i} Bitrate:\nTimeout: '
+        msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         await editMessage(self.__reply_to, msg, subbuttons)
 
     async def audio_format(self):
@@ -214,7 +222,8 @@ class YtSelection:
         buttons.ibutton('Back', 'ytq back', 'footer')
         buttons.ibutton('Cancel', 'ytq cancel', 'footer')
         subbuttons = buttons.build_menu(3)
-        msg = f'Choose Audio{i} Format:\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+        msg = f'Choose Audio{i} Format:\nTimeout: '
+        msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         await editMessage(self.__reply_to, msg, subbuttons)
 
     async def audio_quality(self, format):
@@ -226,7 +235,8 @@ class YtSelection:
         buttons.ibutton('Back', 'ytq aq back')
         buttons.ibutton('Cancel', 'ytq aq cancel')
         subbuttons = buttons.build_menu(5)
-        msg = f'Choose Audio{i} Qaulity:\n0 is best and 10 is worst\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+        msg = f'Choose Audio{i} Qaulity:\n0 is best and 10 is worst'
+        msg += f'\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         await editMessage(self.__reply_to, msg, subbuttons)
 
 
@@ -312,7 +322,9 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             if len(bulk) == 0:
                 raise ValueError('Bulk Empty!')
         except:
-            await sendMessage(message, 'Reply to text file or tg message that have links seperated by new line!')
+            ymsg = await sendMessage(message, f'Reply to text file or tg message that have links seperated by new line!')
+            await delete_links(message)
+            await auto_delete_message(message, ymsg)
             return
         b_msg = input_list[:1]
         b_msg.append(f'{bulk[0]} -m {len(bulk)}')
@@ -371,9 +383,9 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         link = reply_to.text.split('\n', 1)[0].strip()
     
     if not is_url(link):
-        reply_message = await sendMessage(message, YT_HELP_MESSAGE.format(cmd = message.command[0]))
-        await auto_delete_message(message, reply_message)
+        ymsg = await sendMessage(message, YT_HELP_MESSAGE.format(cmd = message.command[0]))
         await delete_links(message)
+        await auto_delete_message(message, ymsg)
         return
     if not message.from_user:
         message.from_user = await anno_checker(message)
@@ -424,12 +436,18 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             if not drive_id and len(categories_dict) > 1:
                 drive_id, index_link = await open_category_btns(message)
             if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
-                return await sendMessage(message, "Google Drive id validation failed!!")
+                ygmsg = await sendMessage(message, "Google Drive id validation failed!!")
+                await delete_links(message)
+                await auto_delete_message(message, ygmsg)
         if up == 'gd' and not config_dict['GDRIVE_ID'] and not drive_id:
-            await sendMessage(message, 'GDRIVE_ID not Provided!')
+            ygmsg = await sendMessage(message, 'GDRIVE_ID not Provided!')
+            await delete_links(message)
+            await auto_delete_message(message, ygmsg)
             return
         elif not up:
-            await sendMessage(message, 'No Rclone Destination!')
+            yrmsg = await sendMessage(message, 'No Rclone Destination!')
+            await delete_links(message)
+            await auto_delete_message(message, yrmsg)
             return
         elif up not in ['rcl', 'gd']:
             if up.startswith('mrcc:'):
@@ -437,10 +455,14 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             else:
                 config_path = 'rclone.conf'
             if not await aiopath.exists(config_path):
-                await sendMessage(message, f'Rclone Config: {config_path} not Exists!')
+                yrmsg = await sendMessage(message, f'Rclone Config: {config_path} not Exists!')
+                await delete_links(message)
+                await auto_delete_message(message, yrmsg)
                 return
         if up != 'gd' and not is_rclone_path(up):
-            await sendMessage(message, 'Wrong Rclone Upload Destination!')
+            yrmsg = await sendMessage(message, 'Wrong Rclone Upload Destination!')
+            await delete_links(message)
+            await auto_delete_message(message, yrmsg)
             return
     elif up.isdigit() or up.startswith('-'):
         up = int(up)
@@ -486,7 +508,9 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         result = await sync_to_async(extract_info, link, options)
     except Exception as e:
         msg = str(e).replace('<', ' ').replace('>', ' ')
-        await sendMessage(message, f'{tag} {msg}')
+        emsg = await sendMessage(message, f'{msg}\n\ncc: {tag} ')
+        await delete_links(message)
+        await auto_delete_message(message, emsg)
         __run_multi()
         return
 
@@ -516,7 +540,5 @@ async def ytdlleech(client, message):
     _ytdl(client, message, isLeech=True)
 
 
-bot.add_handler(MessageHandler(ytdl, filters=command(
-    BotCommands.YtdlCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(ytdlleech, filters=command(
-    BotCommands.YtdlLeechCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(ytdl,      filters=command(BotCommands.YtdlCommand)      & CustomFilters.authorized))
+bot.add_handler(MessageHandler(ytdlleech, filters=command(BotCommands.YtdlLeechCommand) & CustomFilters.authorized))

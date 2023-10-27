@@ -42,8 +42,7 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
                         msg += "this happens if torrent file size above 10mb."
                         qmsg = await sendMessage(listener.message, msg)
                         await delete_links(listener.message)
-                        if config_dict['DELETE_LINKS']:
-                            await auto_delete_message(listener.message, qmsg)
+                        await auto_delete_message(listener.message, qmsg)
                         return
             tor_info = tor_info[0]
             ext_hash = tor_info.hash
@@ -51,13 +50,11 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
             msg = "This Torrent already added or unsupported/invalid link/file."
             qmsg = await sendMessage(listener.message, msg)
             await delete_links(listener.message)
-            if config_dict['DELETE_LINKS']:
-                await auto_delete_message(listener.message, qmsg)
+            await auto_delete_message(listener.message, qmsg)
             return
 
         async with download_dict_lock:
-            download_dict[listener.uid] = QbittorrentStatus(
-                listener, queued=added_to_queue)
+            download_dict[listener.uid] = QbittorrentStatus(listener, queued=added_to_queue)
         await onDownloadStart(f'{listener.uid}')
 
         if added_to_queue:
@@ -71,7 +68,8 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
 
         if config_dict['BASE_URL'] and listener.select:
             if link.startswith('magnet:'):
-                metamsg = "Downloading Metadata, please wait!\nThen you can select files.\n\nUse torrent file to avoid this wait."
+                metamsg = "Downloading Metadata, please wait!"
+                metamsg += "\nThen you can select files.\n\nUse torrent file to avoid this wait."
                 meta = await sendMessage(listener.message, metamsg)
                 while True:
                     tor_info = await sync_to_async(client.torrents_info, tag=f'{listener.uid}')
@@ -115,8 +113,7 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
     except Exception as e:
         qmsg = await sendMessage(listener.message, str(e))
         await delete_links(listener.message)
-        if config_dict['DELETE_LINKS']:
-            await auto_delete_message(listener.message, qmsg)
+        await auto_delete_message(listener.message, qmsg)
     finally:
         if await aiopath.exists(link):
             await aioremove(link)

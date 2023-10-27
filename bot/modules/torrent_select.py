@@ -11,7 +11,7 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus, bt_selection_buttons,
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker, isAdmin,
-                                                      request_limiter,
+                                                      request_limiter, deleteMessage,
                                                       auto_delete_message,
                                                       sendMessage,
                                                       sendStatusMessage)
@@ -66,16 +66,16 @@ async def select(client, message):
                 try:
                     await sync_to_async(aria2.client.force_pause, id_)
                 except Exception as e:
-                    LOGGER.error(
-                        f"{e} Error in pause, this mostly happens after abuse aria2")
+                    LOGGER.error(f"{e} Error in pause, this mostly happens after abuse aria2")
         listener.select = True
     except:
         await sendMessage(message, "This is not a bittorrent task!")
         return
 
     SBUTTONS = bt_selection_buttons(id_, False)
-    msg = f"<b>Name</b>: <code>{dl.name()}</code>\n\nYour download paused. Choose files then press Done Selecting button to resume downloading." \
-        "\n<b><i>Your download will not start automatically</i></b>"
+    msg = f"<b>Name</b>: <code>{dl.name()}</code>"
+    msg += f"\n\nYour download paused. Choose files then press Done Selecting "
+    msg += f"button to resume downloading.\n<b><i>Your download will not start automatically</i></b>"
     await sendMessage(message, msg, SBUTTONS)
 
 
@@ -86,7 +86,7 @@ async def get_confirm(client, query):
     dl = await getDownloadByGid(data[2])
     if dl is None:
         await query.answer("This task has been cancelled!", show_alert=True)
-        await message.delete()
+        await deleteMessage(message)
         return
     if hasattr(dl, 'listener'):
         listener = dl.listener()
@@ -128,17 +128,15 @@ async def get_confirm(client, query):
                 try:
                     await sync_to_async(aria2.client.unpause, id_)
                 except Exception as e:
-                    LOGGER.error(
-                        f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
+                    LOGGER.error(f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
         await sendStatusMessage(message)
-        await message.delete()
+        await deleteMessage(message)
     elif data[1] == "rm":
         await query.answer()
         obj = dl.download()
         await obj.cancel_download()
-        await message.delete()
+        await deleteMessage(message)
 
 
-bot.add_handler(MessageHandler(select, filters=command(
-    BotCommands.BtSelectCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(select, filters=command(BotCommands.BtSelectCommand) & CustomFilters.authorized))
 bot.add_handler(CallbackQueryHandler(get_confirm, filters=regex("^btsel")))

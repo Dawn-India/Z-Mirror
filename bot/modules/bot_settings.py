@@ -130,6 +130,10 @@ async def load_config():
     if len(STREAMWISH_API) == 0:
         STREAMWISH_API = ''
 
+    JIODRIVE_ACCESS_TOKEN = environ.get('JIODRIVE_ACCESS_TOKEN', '')
+    if len(JIODRIVE_ACCESS_TOKEN) == 0:
+        JIODRIVE_ACCESS_TOKEN = ''
+
     INDEX_URL = environ.get('INDEX_URL', '').rstrip("/")
     if len(INDEX_URL) == 0:
         INDEX_URL = ''
@@ -481,6 +485,7 @@ async def load_config():
                         'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
                         'INDEX_URL': INDEX_URL,
                         'IS_TEAM_DRIVE': IS_TEAM_DRIVE,
+                        'JIODRIVE_ACCESS_TOKEN': JIODRIVE_ACCESS_TOKEN,
                         'LEECH_FILENAME_PREFIX': LEECH_FILENAME_PREFIX,
                         'LEECH_REMOVE_UNWANTED': LEECH_REMOVE_UNWANTED,
                         'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,

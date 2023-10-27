@@ -29,13 +29,10 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker, delete_links,
-                                                      editMessage, auto_delete_message,
-                                                      get_tg_link_content,
-                                                      isAdmin, isBot_canDm,
-                                                      open_category_btns,
-                                                      request_limiter,
-                                                      sendLogMessage,
-                                                      sendMessage)
+                                                      editMessage, deleteMessage, 
+                                                      auto_delete_message, get_tg_link_content,
+                                                      isAdmin, isBot_canDm, open_category_btns,
+                                                      request_limiter, sendLogMessage, sendMessage)
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 
@@ -183,19 +180,39 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         tag = message.from_user.mention
 
     if link and is_telegram_link(link):
+        LOGGER.info(f'Processing TG Link: {link}')
         try:
             reply_to, session = await get_tg_link_content(link)
         except Exception as e:
-            await sendMessage(message, f'ERROR: {e}')
+            e = str(e)
+            LOGGER.error(e)
+            if 'group' in e:
+                tmsg = await sendMessage(message, f'ERROR: This is a TG invite link.\nSend media links to download.\n\ncc: {tag}')
+                await delete_links(message)
+                await auto_delete_message(message, tmsg)
+                return
+            tmsg = await sendMessage(message, f'ERROR: {e}\n\ncc: {tag}')
+            await delete_links(message)
+            await auto_delete_message(message, tmsg)
             return
     elif not link and (reply_to := message.reply_to_message):
         if reply_to.text:
             reply_text = reply_to.text.split('\n', 1)[0].strip()
             if reply_text and is_telegram_link(reply_text):
+                LOGGER.info(f'Processing TG Link: {reply_text}')
                 try:
                     reply_to, session = await get_tg_link_content(reply_text)
                 except Exception as e:
-                    await sendMessage(message, f'ERROR: {e}')
+                    e = str(e)
+                    LOGGER.error(e)
+                    if 'group' in e:
+                        tmsg = await sendMessage(message, f'ERROR: This is a TG invite link.\nSend media links to download.\n\ncc: {tag}')
+                        await delete_links(message)
+                        await auto_delete_message(message, tmsg)
+                        return
+                    tmsg = await sendMessage(message, f'ERROR: {e}\n\ncc: {tag}')
+                    await delete_links(message)
+                    await auto_delete_message(message, tmsg)
                     return
 
     if reply_to:
@@ -203,7 +220,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             file_ = getattr(reply_to, reply_to.media.value)
         if file_ is None:
             reply_text = reply_to.text.split('\n', 1)[0].strip()
-            if is_url(reply_text) or is_magnet(reply_text):
+            if is_url(reply_text) or is_magnet(reply_text) or is_rclone_path(reply_text):
                 link = reply_text
         elif reply_to.document and (file_.mime_type == 'application/x-bittorrent' or file_.file_name.endswith('.torrent')):
             link = await reply_to.download()
@@ -270,14 +287,18 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                     link, headers = link
                 elif isinstance(link, str):
                     LOGGER.info(f"Generated link: {link}")
+                    await editMessage(process_msg, f"Generated link: <code>{link}</code>")
             except DirectDownloadLinkException as e:
-                e = str(e)
-                if 'This link requires a password!' not in e:
-                    LOGGER.info(e)
-                if e.startswith('ERROR:'):
-                    await sendMessage(message, e)
-                    return
-            await process_msg.delete()
+                try:
+                    e = str(e)
+                    if 'This link requires a password!' not in e:
+                        LOGGER.info(e)
+                    if e.startswith('ERROR:'):
+                        await editMessage(process_msg, e)
+                        await delete_links(message)
+                        return
+                finally:
+                    await auto_delete_message(process_msg)
 
     if not isLeech:
         if config_dict['DEFAULT_UPLOAD'] == 'rc' and not up or up == 'rc':
@@ -287,12 +308,23 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             if not drive_id and len(categories_dict) > 1:
                 drive_id, index_link = await open_category_btns(message)
             if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
-                return await sendMessage(message, "Google Drive id validation failed!!")
+                LOGGER.info(f'Google Drive id validation failed: {drive_id}')
+                gmsg = await sendMessage(
+                    message, f"Google Drive id validation failed!\nPlease check your Google Drive id.\n\ncc: {tag}")
+                await delete_links(message)
+                await auto_delete_message(message, gmsg)
+                return
         if up == 'gd' and not config_dict['GDRIVE_ID'] and not drive_id:
-            await sendMessage(message, 'GDRIVE_ID not Provided!')
+            LOGGER.info('GDRIVE_ID not Provided!')
+            gmsg = await sendMessage(message, f'GDRIVE_ID not Provided!\n\ncc: {tag}')
+            await delete_links(message)
+            await auto_delete_message(message, gmsg)
             return
         elif not up:
-            await sendMessage(message, 'No Rclone Destination!')
+            LOGGER.info('No Rclone Destination!')
+            rcmsg = await sendMessage(message, f'No Rclone Destination!\n\ncc: {tag}')
+            await delete_links(message)
+            await auto_delete_message(message, rcmsg)
             return
         elif up not in ['rcl', 'gd']:
             if up.startswith('mrcc:'):
@@ -300,10 +332,16 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             else:
                 config_path = 'rclone.conf'
             if not await aiopath.exists(config_path):
-                await sendMessage(message, f"Rclone Config: {config_path} not Exists!")
+                LOGGER.info(f"Rclone Config: {config_path} not Exists!")
+                rcmsg = await sendMessage(message, f"Rclone Config: {config_path} not Exists!\n\ncc: {tag}")
+                await delete_links(message)
+                await auto_delete_message(message, rcmsg)
                 return
         if up != 'gd' and not is_rclone_path(up):
-            await sendMessage(message, 'Wrong Rclone Upload Destination!')
+            LOGGER.info('Wrong Rclone Upload Destination!')
+            rcmsg = await sendMessage(message, f'Wrong Rclone Upload Destination!\n\ncc: {tag}')
+            await delete_links(message)
+            await auto_delete_message(message, rcmsg)
             return
     elif up.isdigit() or up.startswith('-'):
         up = int(up)
@@ -334,18 +372,21 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         else:
             config_path = 'rclone.conf'
         if not await aiopath.exists(config_path):
-            await sendMessage(message, f"Rclone Config: {config_path} not Exists!")
+            rcmsg = await sendMessage(message, f"Rclone Config: {config_path} not Exists!\n\ncc: {tag}")
+            await delete_links(message)
+            await auto_delete_message(message, rcmsg)
             return
         await add_rclone_download(link, config_path, f'{path}/', name, listener)
     elif is_gdrive_link(link):
         if up == 'gd' and not any([compress, extract, isLeech]):
-            gmsg = f"Use <code>/{BotCommands.LeechCommand[0]} {link}</code> to leech Google Drive file/folder\n\n"
+            gmsg =  f"Use <code>/{BotCommands.LeechCommand[0]} {link}</code> to leech Google Drive file/folder\n\n"
             gmsg += f"Use <code>/{BotCommands.CloneCommand} {link}</code> to clone Google Drive file/folder\n\n"
-            gmsg += f"Use <code>/{BotCommands.MirrorCommand[0]} {link}</code> -zip to make zip of Google Drive folder\n\n"
-            gmsg += f"Use <code>/{BotCommands.MirrorCommand[0]} {link}</code> -unzip to extracts Google Drive archive folder/file"
-            reply_message = await sendMessage(message, gmsg)
-            await auto_delete_message(message, reply_message)
+            gmsg += f"Use <code>/{BotCommands.MirrorCommand[0]} {link} -zip</code> to make zip of Google Drive folder\n\n"
+            gmsg += f"Use <code>/{BotCommands.MirrorCommand[0]} {link} -unzip</code> to extracts Google Drive archive folder/file"
+            gmsg += f"\n\ncc: {tag}"
+            gdmsg = await sendMessage(message, gmsg)
             await delete_links(message)
+            await auto_delete_message(message, gdmsg)
         else:
             await add_gd_download(link, path, listener, name)
     elif is_mega_link(link):
@@ -377,11 +418,7 @@ async def qb_leech(client, message):
     _mirror_leech(client, message, isQbit=True, isLeech=True)
 
 
-bot.add_handler(MessageHandler(mirror, filters=command(
-    BotCommands.MirrorCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(qb_mirror, filters=command(
-    BotCommands.QbMirrorCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(leech, filters=command(
-    BotCommands.LeechCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(qb_leech, filters=command(
-    BotCommands.QbLeechCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(mirror,    filters=command(BotCommands.MirrorCommand)   & CustomFilters.authorized))
+bot.add_handler(MessageHandler(qb_mirror, filters=command(BotCommands.QbMirrorCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(leech,     filters=command(BotCommands.LeechCommand)    & CustomFilters.authorized))
+bot.add_handler(MessageHandler(qb_leech,  filters=command(BotCommands.QbLeechCommand)  & CustomFilters.authorized))

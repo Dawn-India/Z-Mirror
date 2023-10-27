@@ -48,8 +48,7 @@ async def add_rclone_download(rc_path, config_path, path, name, listener):
     if msg:
         rmsg = await sendMessage(listener.message, msg, button)
         await delete_links(listener.message)
-        if config_dict['DELETE_LINKS']:
-            await auto_delete_message(listener.message, rmsg)
+        await auto_delete_message(listener.message, rmsg)
         return
 
     added_to_queue, event = await is_queued(listener.uid)

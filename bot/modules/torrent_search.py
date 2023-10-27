@@ -18,7 +18,7 @@ from bot.helper.telegram_helper.message_utils import (anno_checker, deleteMessag
                                                       editMessage, isAdmin,
                                                       auto_delete_message,
                                                       request_limiter,
-                                                      sendMessage)
+                                                      delete_links, sendMessage)
 
 PLUGINS = []
 SITES = None
@@ -83,9 +83,9 @@ async def __search(key, site, message, method):
                 async with c.get(api) as res:
                     search_results = await res.json()
             if 'error' in search_results or search_results['total'] == 0:
-                await editMessage(message, f"No result found for <i>{key}</i>\nTorrent Site:- <i>{SITES.get(site)}</i>")
-                if config_dict['DELETE_LINKS']:
-                    await deleteMessage(message.reply_to_message)
+                smsg = await editMessage(message, f"No result found for <i>{key}</i>\nTorrent Site:- <i>{SITES.get(site)}</i>")
+                await delete_links(message.reply_to_message)
+                await auto_delete_message(message, smsg)
                 return
             msg = f"<b>Found {min(search_results['total'], TELEGRAPH_LIMIT)}</b>"
             if method == 'apitrend':
@@ -96,9 +96,9 @@ async def __search(key, site, message, method):
                 msg += f" <b>result(s) for <i>{key}</i>\nTorrent Site:- <i>{SITES.get(site)}</i></b>"
             search_results = search_results['data']
         except Exception as e:
-            await editMessage(message, str(e))
-            if config_dict['DELETE_LINKS']:
-                await deleteMessage(message.reply_to_message)
+            smsg = await editMessage(message, str(e))
+            await delete_links(message.reply_to_message)
+            await auto_delete_message(message, smsg)
             return
     else:
         LOGGER.info(f"PLUGINS Searching: {key} from {site}")
@@ -114,9 +114,9 @@ async def __search(key, site, message, method):
         search_results = dict_search_results.results
         total_results = dict_search_results.total
         if total_results == 0:
-            await editMessage(message, f"No result found for <i>{key}</i>\nTorrent Site:- <i>{site.capitalize()}</i>")
-            if config_dict['DELETE_LINKS']:
-                await deleteMessage(message.reply_to_message)
+            smsg = await editMessage(message, f"No result found for <i>{key}</i>\nTorrent Site:- <i>{site.capitalize()}</i>")
+            await delete_links(message.reply_to_message)
+            await auto_delete_message(message, smsg)
             return
         msg = f"<b>Found {min(total_results, TELEGRAPH_LIMIT)}</b>"
         msg += f" <b>result(s) for <i>{key}</i>\nTorrent Site:- <i>{site.capitalize()}</i></b>"
@@ -126,9 +126,9 @@ async def __search(key, site, message, method):
     buttons = ButtonMaker()
     buttons.ubutton("🔎 VIEW", link)
     button = buttons.build_menu(1)
-    await editMessage(message, msg, button)
-    if config_dict['DELETE_LINKS']:
-        await deleteMessage(message.reply_to_message)
+    smsg = await editMessage(message, msg, button)
+    await delete_links(message.reply_to_message)
+    await auto_delete_message(message, smsg)
 
 
 async def __getResult(search_results, key, message, method):
@@ -318,10 +318,10 @@ async def torrentSearchUpdate(_, query):
         await __search(key, site, message, method)
     else:
         await query.answer()
-        await editMessage(message, "Search has been canceled!")
+        smsg = await editMessage(message, "Search has been canceled!")
+        await delete_links(message.reply_to_message)
+        await auto_delete_message(message, smsg)
 
 
-bot.add_handler(MessageHandler(torrentSearch, filters=command(
-    BotCommands.SearchCommand) & CustomFilters.authorized))
-bot.add_handler(CallbackQueryHandler(
-    torrentSearchUpdate, filters=regex("^torser")))
+bot.add_handler(MessageHandler(torrentSearch, filters=command(BotCommands.SearchCommand) & CustomFilters.authorized))
+bot.add_handler(CallbackQueryHandler(torrentSearchUpdate, filters=regex("^torser")))

@@ -92,8 +92,7 @@ def bt_selection_buttons(id_, isCanCncl=True):
         buttons.ubutton("Select Files", f"{BASE_URL}/app/files/{id_}")
         buttons.ibutton("Pincode", f"btsel pin {gid} {pincode}")
     else:
-        buttons.ubutton(
-            "Select Files", f"{BASE_URL}/app/files/{id_}?pin_code={pincode}")
+        buttons.ubutton("Select Files", f"{BASE_URL}/app/files/{id_}?pin_code={pincode}")
     if isCanCncl:
         buttons.ibutton("Cancel", f"btsel rm {gid} {id_}")
     buttons.ibutton("Done Selecting", f"btsel done {gid} {id_}")
@@ -135,7 +134,7 @@ def get_readable_message():
         if reply_to := download.message.reply_to_message:
             tag = reply_to.from_user.mention
         elapsed = time() - download.extra_details['startTime']
-        if config_dict['DELETE_LINKS']:
+        if config_dict['DELETE_LINKS'] and int(config_dict['AUTO_DELETE_MESSAGE_DURATION']) > 0:
             msg += f"\n<b>File Name</b> » <i>{escape(f'{download.name()}')}</i>\n\n" if elapsed <= config_dict['AUTO_DELETE_MESSAGE_DURATION'] else ""
         else:
             msg += f"\n<b>File Name</b> » <i>{escape(f'{download.name()}')}</i>\n\n"

@@ -256,20 +256,17 @@ class YoutubeDLHelper:
         if msg:
             ymsg = await self.__listener.onDownloadError(msg, button)
             await delete_links(self.__listener.message)
-            if config_dict['DELETE_LINKS']:
-                await auto_delete_message(self.__listener.message, ymsg)
+            await auto_delete_message(self.__listener.message, ymsg)
             return
         if limit_exceeded := await limit_checker(self.__size, self.__listener, isYtdlp=True):
             ymsg = await self.__listener.onDownloadError(limit_exceeded)
             await delete_links(self.__listener.message)
-            if config_dict['DELETE_LINKS']:
-                await auto_delete_message(self.__listener.message, ymsg)
+            await auto_delete_message(self.__listener.message, ymsg)
             return
         if list_exceeded := await list_checker(self.playlist_count, is_playlist=True):
             ymsg = await self.__listener.onDownloadError(list_exceeded)
             await delete_links(self.__listener.message)
-            if config_dict['DELETE_LINKS']:
-                await auto_delete_message(self.__listener.message, ymsg)
+            await auto_delete_message(self.__listener.message, ymsg)
             return
         added_to_queue, event = await is_queued(self.__listener.uid)
         if added_to_queue:

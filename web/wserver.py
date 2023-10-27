@@ -13,7 +13,7 @@ from web.nodes import make_tree
 app = Flask(__name__)
 
 basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[FileHandler('log.txt'), StreamHandler()],
+                    handlers=[FileHandler('Z_logs.txt'), StreamHandler()],
                     level=INFO)
 
 aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
@@ -35,9 +35,7 @@ pin_entry = '''
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
-          <span
-            >* Dont mess around. Your download will get messed up.</
-          >
+          <span>* Dont mess around. Your download will get messed up.</>
     </section>
 '''
 files_list = '''
@@ -831,11 +829,11 @@ def status():
     }
 @app.route('/')
 def homepage():
-    return rawindexpage.replace("/* style1 */", stlye1).replace("<!-- Print -->", rawowners)
+    return rawindexpage.replace("/* style2 */", stlye2).replace("<!-- Print -->", rawowners)
 
 @app.errorhandler(Exception)
 def page_not_found(e):
-    return rawindexpage.replace("/* style1 */", stlye1) \
+    return rawindexpage.replace("/* style2 */", stlye2) \
                     .replace("<!-- Print -->", f"<h1 style='text-align: center;color: red;'>404: Torrent not found! Mostly wrong input. <br><br>Error: {e}</h1>"), 404
 
 if __name__ == "__main__":

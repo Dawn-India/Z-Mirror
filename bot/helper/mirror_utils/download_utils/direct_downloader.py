@@ -28,8 +28,7 @@ async def add_direct_download(details, path, listener, foldername):
         if msg:
             dmsg = await sendMessage(listener.message, msg, button)
             await delete_links(listener.message)
-            if config_dict['DELETE_LINKS']:
-                await auto_delete_message(listener.message, dmsg)
+            await auto_delete_message(listener.message, dmsg)
             return
     if any([config_dict['DIRECT_LIMIT'],
             config_dict['LEECH_LIMIT'],
@@ -39,8 +38,7 @@ async def add_direct_download(details, path, listener, foldername):
             LOGGER.info(f"Limit Exceeded: {foldername} | {size}")
             amsg = await sendMessage(listener.message, limit_exceeded)
             await delete_links(listener.message)
-            if config_dict['DELETE_LINKS']:
-                await auto_delete_message(listener.message, amsg)
+            await auto_delete_message(listener.message, amsg)
             return
 
     gid = token_urlsafe(10)

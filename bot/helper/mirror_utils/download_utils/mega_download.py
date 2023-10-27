@@ -154,8 +154,7 @@ async def add_mega_download(mega_link, path, listener, name):
         if folder_api is not None:
             await executor.do(folder_api.logout, ())
         await delete_links(listener.message)
-        if config_dict['DELETE_LINKS']:
-            await auto_delete_message(listener.message, mmsg)
+        await auto_delete_message(listener.message, mmsg)
         return
 
     name = name or node.getName()
@@ -166,8 +165,7 @@ async def add_mega_download(mega_link, path, listener, name):
         if folder_api is not None:
             await executor.do(folder_api.logout, ())
         await delete_links(listener.message)
-        if config_dict['DELETE_LINKS']:
-            await auto_delete_message(listener.message, mmsg)
+        await auto_delete_message(listener.message, mmsg)
         return
 
     gid = token_urlsafe(8)
@@ -175,8 +173,7 @@ async def add_mega_download(mega_link, path, listener, name):
     if limit_exceeded := await limit_checker(size, listener, isMega=True):
         mmsg = await sendMessage(listener.message, limit_exceeded)
         await delete_links(listener.message)
-        if config_dict['DELETE_LINKS']:
-            await auto_delete_message(listener.message, mmsg)
+        await auto_delete_message(listener.message, mmsg)
         return
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:

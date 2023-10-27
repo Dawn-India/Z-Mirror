@@ -25,8 +25,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from bot import config_dict
-from bot.helper.ext_utils.bot_utils import (get_readable_time, is_share_link,
-                                            text_size_to_bytes)
+from bot.helper.ext_utils.bot_utils import (is_share_link, text_size_to_bytes)
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 
@@ -77,7 +76,7 @@ def direct_link_generator(link):
     elif any(x in domain for x in ['dood.watch', 'doodstream.com', 'dood.to', 'dood.so', 'dood.cx',
                                    'dood.la', 'dood.ws', 'dood.sh', 'doodstream.co', 'dood.pm',
                                    'dood.wf', 'dood.re', 'dood.video', 'dooood.com', 'dood.yt',
-                                   'doods.yt', 'dood.stream', 'doods.pro']):
+                                   'doods.yt', 'dood.stream', 'doods.pro', 'ds2play.com']):
         return doods(link)
     elif any(x in domain for x in ['streamtape.com', 'streamtape.co', 'streamtape.cc', 'streamtape.to', 'streamtape.net',
                                    'streamta.pe', 'streamtape.xyz']):
@@ -85,7 +84,7 @@ def direct_link_generator(link):
     elif any(x in domain for x in ['wetransfer.com', 'we.tl']):
         return wetransfer(link)
     elif any(x in domain for x in ['terabox.com', 'nephobox.com', '4funbox.com', 'mirrobox.com', 'momerybox.com',
-                                   'teraboxapp.com', '1024tera.com']):
+                                   'teraboxapp.com', '1024tera.com', 'terabox.app']):
         return terabox(link)
     elif any(x in domain for x in ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com',
                                    'layarkacaxxi.icu', 'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com',
@@ -94,7 +93,7 @@ def direct_link_generator(link):
     elif any(x in domain for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
     elif any(x in domain for x in ['filelions.com', 'filelions.live', 'filelions.to', 'filelions.online','embedwish.com',
-                                   'streamwish.com', 'kitabmarkaz.xyz', 'wishfast.top']):
+                                   'streamwish.com', 'streamwish.to', 'kitabmarkaz.xyz', 'wishfast.top']):
         return filelions_and_streamwish(link)
     elif any(x in domain for x in ['streamhub.ink', 'streamhub.to']):
         return streamhub(link)
@@ -105,6 +104,8 @@ def direct_link_generator(link):
             return gdtot(link)
         elif 'filepress' in domain:
             return filepress(link)
+        elif 'jiodrive' in domain:
+            return jiodrive(link)
         else:
             return sharer_scraper(link)
     elif any(x in domain for x in  ['anonfiles.com', 'zippyshare.com', 'letsupload.io', 'hotfile.io', 'bayfiles.com',
@@ -113,8 +114,7 @@ def direct_link_generator(link):
                                     'uptobox.com', 'uptobox.fr']):
         raise DirectDownloadLinkException(f'ERROR: R.I.P {domain}')
     else:
-        raise DirectDownloadLinkException(
-            f'No Direct link function found for {link}')
+        raise DirectDownloadLinkException(f'No Direct link function found for {link}')
 
 def get_captcha_token(session, params):
     recaptcha_api = 'https://www.google.com/recaptcha/api2'
@@ -508,7 +508,13 @@ def filepress(url):
                 'method': 'publicDownlaod',
             }
             api = f'{raw.scheme}://{raw.hostname}/api/file/downlaod/'
-            res = session.post(api, headers={'Referer': f'{raw.scheme}://{raw.hostname}'}, json=json_data).json()
+            res2 = session.post(api, headers={'Referer': f'{raw.scheme}://{raw.hostname}'}, json=json_data).json()
+            json_data2 = {
+               'id':res2["data"],
+               'method': 'publicUserDownlaod',
+            }
+            api2 = f'https://new2.filepress.store/api/file/downlaod2/'
+            res = session.post(api2, headers={'Referer': f'{raw.scheme}://{raw.hostname}'}, json=json_data2).json()
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
     if 'data' not in res:
@@ -522,27 +528,23 @@ def gdtot(url):
         res = cget('GET', f'https://gdtot.pro/file/{url.split("/")[-1]}')
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    token_url = HTML(res.text).xpath(
-        "//a[contains(@class,'inline-flex items-center justify-center')]/@href")
+    token_url = HTML(res.text).xpath("//a[contains(@class,'inline-flex items-center justify-center')]/@href")
     if not token_url:
         try:
             url = cget('GET', url).url
             p_url = urlparse(url)
-            res = cget(
-                "GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
+            res = cget("GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
         if (drive_link := findall(r"myDl\('(.*?)'\)", res.text)) and "drive.google.com" in drive_link[0]:
             return drive_link[0]
         else:
-            raise DirectDownloadLinkException(
-                'ERROR: Drive Link not found, Try in your broswer')
+            raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer')
     token_url = token_url[0]
     try:
         token_page = cget('GET', token_url)
     except Exception as e:
-        raise DirectDownloadLinkException(
-            f'ERROR: {e.__class__.__name__} with {token_url}')
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} with {token_url}')
     path = findall('\("(.*?)"\)', token_page.text)
     if not path:
         raise DirectDownloadLinkException('ERROR: Cannot bypass this')
@@ -557,8 +559,7 @@ def sharer_scraper(url):
     try:
         url = cget('GET', url).url
         raw = urlparse(url)
-        header = {
-            "useragent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/7.0.548.0 Safari/534.10"}
+        header = {"useragent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/7.0.548.0 Safari/534.10"}
         res = cget('GET', url, headers=header)
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
@@ -567,8 +568,7 @@ def sharer_scraper(url):
         raise DirectDownloadLinkException("ERROR: Key not found!")
     key = key[0]
     if not HTML(res.text).xpath("//button[@id='drc']"):
-        raise DirectDownloadLinkException(
-            "ERROR: This link don't have direct download button")
+        raise DirectDownloadLinkException("ERROR: This link don't have direct download button")
     boundary = uuid4()
     headers = {
         'Content-Type': f'multipart/form-data; boundary=----WebKitFormBoundary{boundary}',
@@ -581,13 +581,11 @@ def sharer_scraper(url):
         f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="action_token"\r\n\r\n\r\n' \
         f'------WebKitFormBoundary{boundary}--\r\n'
     try:
-        res = cget("POST", url, cookies=res.cookies,
-                   headers=headers, data=data).json()
+        res = cget("POST", url, cookies=res.cookies, headers=headers, data=data).json()
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
     if "url" not in res:
-        raise DirectDownloadLinkException(
-            'ERROR: Drive Link not found, Try in your broswer')
+        raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer')
     if "drive.google.com" in res["url"]:
         return res["url"]
     try:
@@ -597,8 +595,7 @@ def sharer_scraper(url):
     if (drive_link := HTML(res.text).xpath("//a[contains(@class,'btn')]/@href")) and "drive.google.com" in drive_link[0]:
         return drive_link[0]
     else:
-        raise DirectDownloadLinkException(
-            'ERROR: Drive Link not found, Try in your broswer')
+        raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer')
 
 
 def wetransfer(url):
@@ -1150,7 +1147,7 @@ def filelions_and_streamwish(url):
     if any(x in hostname for x in ['filelions.com', 'filelions.live', 'filelions.to', 'filelions.online']):
         apiKey = config_dict['FILELION_API']
         apiUrl = 'https://api.filelions.com'
-    elif any(x in hostname for x in ['embedwish.com', 'streamwish.com', 'kitabmarkaz.xyz', 'wishfast.top']):
+    elif any(x in hostname for x in ['embedwish.com', 'streamwish.com', 'streamwish.to', 'kitabmarkaz.xyz', 'wishfast.top']):
         apiKey = config_dict['STREAMWISH_API']
         apiUrl = 'https://api.streamwish.com'
     if not apiKey:
@@ -1250,3 +1247,18 @@ def streamhub(url):
         if error := html.xpath('//div[@class="alert alert-danger"]/text()[2]'):
             raise DirectDownloadLinkException(f"ERROR: {error[0]}")
         raise DirectDownloadLinkException("ERROR: direct link not found!")
+
+def jiodrive(url):
+    if not config_dict['JIODRIVE_ACCESS_TOKEN']:
+        raise DirectDownloadLinkException("ERROR: JioDrive API is not provided")
+    with create_scraper() as session:
+        try:
+            url = session.get(url).url
+            cookies = {'access_token': config_dict['JIODRIVE_ACCESS_TOKEN']}
+            data = {'id': url.split("/")[-1]}
+            resp = session.post('https://www.jiodrive.xyz/ajax.php?ajax=download', cookies=cookies, data=data).json()
+        except Exception as e:
+            raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}') from e
+        if 'error' in resp:
+            raise DirectDownloadLinkException(f"ERROR: {resp['msg']}")
+        return resp['file']

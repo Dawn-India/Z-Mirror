@@ -22,78 +22,72 @@ async def __onDownloadStarted(api, gid):
         return
     if download.is_metadata:
         LOGGER.info(f'onDownloadStarted: {gid} METADATA')
-        await sleep(1)
+        await sleep(3)
         if dl := await getDownloadByGid(gid):
             listener = dl.listener()
             if listener.select:
                 metamsg = "Downloading Metadata, wait then you can select files. Use torrent file to avoid this wait."
                 meta = await sendMessage(listener.message, metamsg)
                 while True:
-                    await sleep(0.5)
+                    await sleep(3)
                     if download.is_removed or download.followed_by_ids:
                         await deleteMessage(meta)
                         break
                     download = download.live
         return
     else:
-        LOGGER.info(f'onDownloadStarted: {download.name} - Gid: {gid}')
-    dl = None
+        LOGGER.info(f'onDownloadStarted: {download.name} - Gid: {gid} - Size: {download.total_length}')
+
     if config_dict['STOP_DUPLICATE']:
         await sleep(1)
-        if dl is None:
-            dl = await getDownloadByGid(gid)
-        if dl:
-            if not hasattr(dl, 'listener'):
-                LOGGER.warning(
-                    f"onDownloadStart: {gid}. STOP_DUPLICATE didn't pass since download completed earlier!")
-                return
-            listener = dl.listener()
-            if not listener.isLeech and not listener.select and listener.upPath == 'gd':
-                download = await sync_to_async(api.get_download, gid)
-                if not download.is_torrent:
-                    await sleep(3)
-                    download = download.live
-            name = download.name
-            msg, button = await stop_duplicate_check(name, listener)
-            if msg:
-                amsg = await listener.onDownloadError(msg, button)
-                await sync_to_async(api.remove, [download], force=True, files=True)
-                await delete_links(listener.message)
-                if config_dict['DELETE_LINKS']:
-                    await auto_delete_message(listener.message, amsg)
-                return
+        dl = await getDownloadByGid(gid)
+        if dl and not hasattr(dl, 'listener'):
+            LOGGER.warning(f"onDownloadStart: {gid}. STOP_DUPLICATE didn't pass since download completed earlier!")
+            return
+        listener = dl.listener()
+        if not listener.isLeech and not listener.select and listener.upPath == 'gd':
+            download = await sync_to_async(api.get_download, gid)
+            if not download.is_torrent:
+                await sleep(3)
+                download = download.live
+        name = download.name
+        msg, button = await stop_duplicate_check(name, listener)
+        if msg:
+            amsg = await listener.onDownloadError(msg, button)
+            await sync_to_async(api.remove, [download], force=True, files=True)
+            await delete_links(listener.message)
+            await auto_delete_message(listener.message, amsg)
+            return
+
     if any([config_dict['DIRECT_LIMIT'],
             config_dict['TORRENT_LIMIT'],
             config_dict['LEECH_LIMIT'],
             config_dict['STORAGE_THRESHOLD']]):
-        await sleep(1)
-        if dl is None:
-            dl = await getDownloadByGid(gid)
-        if dl is not None:
-            if not hasattr(dl, 'listener'):
-                LOGGER.warning(
-                    f"onDownloadStart: {gid}. at Download limit didn't pass since download completed earlier!")
-                return
-            listener = dl.listener()
-            download = await sync_to_async(api.get_download, gid)
-            download = download.live
-            if download.total_length == 0:
-                start_time = time()
-                while time() - start_time <= 15:
-                    await sleep(0.5)
-                    download = await sync_to_async(api.get_download, gid)
+        await sleep(3)
+        dl = await getDownloadByGid(gid)
+        if dl and not hasattr(dl, 'listener'):
+            LOGGER.warning(f"onDownloadStart: {gid}. at Download limit didn't pass since download completed earlier!")
+            return
+        listener = dl.listener()
+        download = await sync_to_async(api.get_download, gid)
+        download = download.live
+        if download.total_length == 0:
+            start_time = time()
+            while time() - start_time <= 15:
+                await sleep(5)
+                download = await sync_to_async(api.get_download, gid)
+                download = download.live
+                if download.followed_by_ids:
+                    download = await sync_to_async(api.get_download, download.followed_by_ids[0])
                     download = download.live
-                    if download.followed_by_ids:
-                        download = await sync_to_async(api.get_download, download.followed_by_ids[0])
-                    if download.total_length > 0:
-                        break
-            size = download.total_length
-            if limit_exceeded := await limit_checker(size, listener, download.is_torrent):
-                amsg = await listener.onDownloadError(limit_exceeded)
-                await sync_to_async(api.remove, [download], force=True, files=True)
-                await delete_links(listener.message)
-                if config_dict['DELETE_LINKS']:
-                    await auto_delete_message(listener.message, amsg)
+                if download.total_length > 0:
+                    break
+        size = download.total_length
+        if limit_exceeded := await limit_checker(size, listener, download.is_torrent):
+            amsg = await listener.onDownloadError(limit_exceeded)
+            await sync_to_async(api.remove, [download], force=True, files=True)
+            await delete_links(listener.message)
+            await auto_delete_message(listener.message, amsg)
 
 
 @new_thread
@@ -119,8 +113,7 @@ Your download paused. Choose files then press Done Selecting button to start dow
     elif download.is_torrent:
         if dl := await getDownloadByGid(gid):
             if hasattr(dl, 'listener') and dl.seeding:
-                LOGGER.info(
-                    f"Cancelling Seed: {download.name} onDownloadComplete")
+                LOGGER.info(f"Cancelling Seed: {download.name} onDownloadComplete")
                 listener = dl.listener()
                 await listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
                 await sync_to_async(api.remove, [download], force=True, files=True)
@@ -176,8 +169,7 @@ async def __onBtDownloadComplete(api, gid):
                     if listener.uid not in download_dict:
                         await sync_to_async(api.remove, [download], force=True, files=True)
                         return
-                    download_dict[listener.uid] = Aria2Status(
-                        gid, listener, True)
+                    download_dict[listener.uid] = Aria2Status(gid, listener, True)
                     download_dict[listener.uid].start_time = seed_start_time
                 LOGGER.info(f"Seeding started: {download.name} - Gid: {gid}")
                 await update_all_messages()

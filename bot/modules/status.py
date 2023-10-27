@@ -28,8 +28,7 @@ async def mirror_status(_, message):
         count = len(download_dict)
     if count == 0:
         currentTime = get_readable_time(time() - botStartTime)
-        free = get_readable_file_size(
-            disk_usage(config_dict['DOWNLOAD_DIR']).free)
+        free = get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)
         msg = '<b>Uninstall Telegram and enjoy your life!</b>'
         msg += '\n\nNo Active Tasks!\n___________________________'
         msg += f"\n<b>CPU</b>: {cpu_percent()}% | <b>FREE</b>: {free}" \
@@ -43,8 +42,7 @@ async def mirror_status(_, message):
             if Interval:
                 Interval[0].cancel()
                 Interval.clear()
-                Interval.append(setInterval(
-                    config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
+                Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
 
 @new_task
@@ -99,6 +97,5 @@ def bot_sys_stats():
     return bmsg
 
 
-bot.add_handler(MessageHandler(mirror_status, filters=command(
-    BotCommands.StatusCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(mirror_status, filters=command(BotCommands.StatusCommand) & CustomFilters.authorized))
 bot.add_handler(CallbackQueryHandler(status_pages, filters=regex("^status")))

@@ -31,21 +31,21 @@ handler_dict = {}
 async def rssMenu(event):
     user_id = event.from_user.id
     buttons = ButtonMaker()
-    buttons.ibutton("Subscribe", f"rss sub {user_id}")
-    buttons.ibutton("Subscriptions", f"rss list {user_id} 0")
-    buttons.ibutton("Get Items", f"rss get {user_id}")
-    buttons.ibutton("Edit", f"rss edit {user_id}")
-    buttons.ibutton("Pause", f"rss pause {user_id}")
-    buttons.ibutton("Resume", f"rss resume {user_id}")
-    buttons.ibutton("Unsubscribe", f"rss unsubscribe {user_id}")
+    buttons.ibutton("Subscribe",     f"rss sub         {user_id}")
+    buttons.ibutton("Subscriptions", f"rss list        {user_id} 0")
+    buttons.ibutton("Get Items",     f"rss get         {user_id}")
+    buttons.ibutton("Edit",          f"rss edit        {user_id}")
+    buttons.ibutton("Pause",         f"rss pause       {user_id}")
+    buttons.ibutton("Resume",        f"rss resume      {user_id}")
+    buttons.ibutton("Unsubscribe",   f"rss unsubscribe {user_id}")
     if await CustomFilters.sudo('', event):
-        buttons.ibutton("All Subscriptions", f"rss listall {user_id} 0")
-        buttons.ibutton("Pause All", f"rss allpause {user_id}")
-        buttons.ibutton("Resume All", f"rss allresume {user_id}")
-        buttons.ibutton("Unsubscribe All", f"rss allunsub {user_id}")
-        buttons.ibutton("Delete User", f"rss deluser {user_id}")
+        buttons.ibutton("All Subscriptions", f"rss listall   {user_id} 0")
+        buttons.ibutton("Pause All",         f"rss allpause  {user_id}")
+        buttons.ibutton("Resume All",        f"rss allresume {user_id}")
+        buttons.ibutton("Unsubscribe All",   f"rss allunsub  {user_id}")
+        buttons.ibutton("Delete User",       f"rss deluser   {user_id}")
         if scheduler.running:
-            buttons.ibutton("Shutdown Rss", f"rss shutdown {user_id}")
+            buttons.ibutton("Shutdown Rss",  f"rss shutdown  {user_id}")
         else:
             buttons.ibutton("Start Rss", f"rss start {user_id}")
     buttons.ibutton("Close", f"rss close {user_id}")
@@ -241,8 +241,7 @@ async def rssList(query, start, all_users=False):
     buttons.ibutton("Close", f"rss close {user_id}")
     if keysCount > 5:
         for x in range(0, keysCount, 5):
-            buttons.ibutton(
-                f'{int(x/5)}', f"rss list {user_id} {x}", position='footer')
+            buttons.ibutton(f'{int(x/5)}', f"rss list {user_id} {x}", position='footer')
     button = buttons.build_menu(2)
     if query.message.text.html == list_feed:
         return
@@ -254,7 +253,9 @@ async def rssGet(_, message, pre_event):
     handler_dict[user_id] = False
     args = message.text.split()
     if len(args) < 2:
-        await sendMessage(message, f'{args}. Wrong Input format. You should add number of the items you want to get. Read help message before adding new subcription!')
+        msg = f'{args}. Wrong Input format. You should add number of the items you want to get.'
+        msg += 'Read help message before adding new subcription!'
+        await sendMessage(message, msg)
         await updateRssMenu(pre_event)
         return
     try:
@@ -360,8 +361,7 @@ async def event_handler(client, query, pfunc):
     async def event_filter(_, __, event):
         user = event.from_user or event.sender_chat
         return bool(user.id == user_id and event.chat.id == query.message.chat.id and event.text)
-    handler = client.add_handler(MessageHandler(
-        pfunc, create(event_filter)), group=-1)
+    handler = client.add_handler(MessageHandler(pfunc, create(event_filter)), group=-1)
     while handler_dict[user_id]:
         await sleep(0.5)
         if time() - start_time > 60:
@@ -428,8 +428,7 @@ async def rssListener(client, query):
             if data[1] == 'pause':
                 buttons.ibutton("Pause AllMyFeeds", f"rss uallpause {user_id}")
             elif data[1] == 'resume':
-                buttons.ibutton("Resume AllMyFeeds",
-                                f"rss uallresume {user_id}")
+                buttons.ibutton("Resume AllMyFeeds", f"rss uallresume {user_id}")
             elif data[1] == 'unsubscribe':
                 buttons.ibutton("Unsub AllMyFeeds", f"rss uallunsub {user_id}")
             buttons.ibutton("Close", f"rss close {user_id}")
