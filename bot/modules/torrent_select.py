@@ -12,7 +12,7 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker, isAdmin,
                                                       request_limiter, deleteMessage,
-                                                      auto_delete_message,
+                                                      auto_delete_message, delete_links,
                                                       sendMessage,
                                                       sendStatusMessage)
 
@@ -30,27 +30,38 @@ async def select(client, message):
         gid = msg[1]
         dl = await getDownloadByGid(gid)
         if dl is None:
-            await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
+            tsmsg = await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
+            await delete_links(message)
+            await auto_delete_message(message, tsmsg)
             return
     elif reply_to_id := message.reply_to_message_id:
         async with download_dict_lock:
             dl = download_dict.get(reply_to_id, None)
         if dl is None:
-            await sendMessage(message, "This is not an active task!")
+            tsmsg = await sendMessage(message, "This is not an active task!")
+            await delete_links(message)
+            await auto_delete_message(message, tsmsg)
             return
     elif len(msg) == 1:
-        reply_message = await sendMessage(message, TOR_SEL_HELP_MESSAGE.format_map({'cmd': BotCommands.BtSelectCommand, 'mir': BotCommands.MirrorCommand[0]}))
-        await auto_delete_message(message, reply_message)
+        tsmsg = await sendMessage(message, TOR_SEL_HELP_MESSAGE.format_map({'cmd': BotCommands.BtSelectCommand, 'mir': BotCommands.MirrorCommand[0]}))
+        await delete_links(message)
+        await auto_delete_message(message, tsmsg)
         return
 
     if not await CustomFilters.sudo(client, message) and dl.message.from_user.id != user_id:
-        await sendMessage(message, "This task is not for you!")
+        tsmsg = await sendMessage(message, "This task is not for you!")
+        await delete_links(message)
+        await auto_delete_message(message, tsmsg)
         return
     if dl.status() not in [MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_PAUSED, MirrorStatus.STATUS_QUEUEDL]:
-        await sendMessage(message, 'Task should be in download or pause (incase message deleted by wrong) or queued (status incase you used torrent file)!')
+        tsmsg = await sendMessage(message, 'Task should be in download or pause (incase message deleted by wrong) or queued (status incase you used torrent file)!')
+        await delete_links(message)
+        await auto_delete_message(message, tsmsg)
         return
     if dl.name().startswith('[METADATA]'):
-        await sendMessage(message, 'Try after downloading metadata finished!')
+        tsmsg = await sendMessage(message, 'Try after downloading metadata finished!')
+        await delete_links(message)
+        await auto_delete_message(message, tsmsg)
         return
 
     try:
@@ -69,7 +80,9 @@ async def select(client, message):
                     LOGGER.error(f"{e} Error in pause, this mostly happens after abuse aria2")
         listener.select = True
     except:
-        await sendMessage(message, "This is not a bittorrent task!")
+        tsmsg = await sendMessage(message, "This is not a bittorrent task!")
+        await delete_links(message)
+        await auto_delete_message(message, tsmsg)
         return
 
     SBUTTONS = bt_selection_buttons(id_, False)

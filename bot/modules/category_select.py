@@ -11,7 +11,7 @@ from bot.helper.ext_utils.help_messages import CAT_SEL_HELP_MESSAGE
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (anno_checker,
+from bot.helper.telegram_helper.message_utils import (anno_checker, delete_links,
                                                       auto_delete_message,
                                                       editMessage, isAdmin,
                                                       open_category_btns,
@@ -49,30 +49,42 @@ async def change_category(client, message):
     if gid := args['link']:
         dl = await getDownloadByGid(gid)
         if not dl:
-            await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
+            cmsg = await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
+            await delete_links(message)
+            await auto_delete_message(message, cmsg)
             return
     if reply_to := message.reply_to_message:
         async with download_dict_lock:
             dl = download_dict.get(reply_to.id, None)
         if not dl:
-            await sendMessage(message, "This is not an active task!")
+            cmsg = await sendMessage(message, "This is not an active task!")
+            await delete_links(message)
+            await auto_delete_message(message, cmsg)
             return
     if not dl:
-        reply_message = await sendMessage(message, CAT_SEL_HELP_MESSAGE.format(cmd=BotCommands.CategorySelect, mir=BotCommands.MirrorCommand[0]))
-        await auto_delete_message(message, reply_message)
+        cmsg = await sendMessage(message, CAT_SEL_HELP_MESSAGE.format(cmd=BotCommands.CategorySelect, mir=BotCommands.MirrorCommand[0]))
+        await delete_links(message)
+        await auto_delete_message(message, cmsg)
         return
     if not await CustomFilters.sudo(client, message) and dl.message.from_user.id != user_id:
-        await sendMessage(message, "This task is not for you!")
+        cmsg = await sendMessage(message, "This task is not for you!")
+        await delete_links(message)
+        await auto_delete_message(message, cmsg)
         return
     if dl.status() not in [MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_PAUSED, MirrorStatus.STATUS_QUEUEDL]:
-        await sendMessage(message, f'Task should be on {MirrorStatus.STATUS_DOWNLOADING} or {MirrorStatus.STATUS_PAUSED} or {MirrorStatus.STATUS_QUEUEDL}')
+        cmsg = await sendMessage(message, f'Task should be on {MirrorStatus.STATUS_DOWNLOADING} or {MirrorStatus.STATUS_PAUSED} or {MirrorStatus.STATUS_QUEUEDL}')
+        await delete_links(message)
+        await auto_delete_message(message, cmsg)
         return
     listener = dl.listener() if dl and hasattr(dl, 'listener') else None
     if listener and not listener.isLeech:
         if not index_link and not drive_id and categories_dict:
             drive_id, index_link = await open_category_btns(message)
         if not index_link and not drive_id:
-            return await sendMessage(message, "Time out")
+            cmsg = await sendMessage(message, "Time out")
+            await delete_links(message)
+            await auto_delete_message(message, cmsg)
+            return
         msg = '<b>Task has been Updated Successfully!</b>'
         if drive_id:
             if not (folder_name := await sync_to_async(GoogleDriveHelper().getFolderData, drive_id)):
@@ -87,7 +99,9 @@ async def change_category(client, message):
             msg += f'\n\n<b>Index Link</b> : <code>{index_link}</code>'
         return await sendMessage(message, msg)
     else:
-        await sendMessage(message, "Can not change Category for this task!")
+        cmsg = await sendMessage(message, "Can not change Category for this task!")
+        await delete_links(message)
+        await auto_delete_message(message, cmsg)
 
 
 @new_task
@@ -96,7 +110,8 @@ async def confirm_category(client, query):
     data = query.data.split(maxsplit=3)
     msg_id = int(data[2])
     if msg_id not in cached_dict:
-        return await editMessage(query.message, '<b>Old Task</b>')
+        cmsg = await editMessage(query.message, '<b>Old Task</b>')
+        await auto_delete_message(query.message, cmsg)
     if user_id != int(data[1]) and not await CustomFilters.sudo(client, query):
         return await query.answer(text="This task is not for you!", show_alert=True)
     await query.answer()

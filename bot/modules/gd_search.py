@@ -36,6 +36,7 @@ async def _list_drive(key, message, item_type, isRecursive):
     gdrive = GoogleDriveHelper()
     telegraph_content, contents_no = await sync_to_async(gdrive.drive_list, key, isRecursive=isRecursive, itemType=item_type)
     Elapsed = get_readable_time(time() - start_time)
+    gdmsg = None
     if telegraph_content:
         try:
             button = await get_telegraph_list(telegraph_content)
@@ -44,11 +45,10 @@ async def _list_drive(key, message, item_type, isRecursive):
             return
         msg = f'<b>Found {contents_no} result for <i>{key}</i></b>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
         gdmsg = await editMessage(message, msg, button)
-        await delete_links(message.reply_to_message)
-        await auto_delete_message(message, gdmsg)
     else:
         msg = f'No result found for <i>{key}</i>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
         gdmsg = await editMessage(message, msg)
+    if gdmsg:
         await delete_links(message.reply_to_message)
         await auto_delete_message(message, gdmsg)
 
@@ -82,7 +82,7 @@ async def select_type(_, query):
 async def drive_list(_, message):
     if len(message.text.split()) == 1:
         gdmsg = await sendMessage(message, 'Send a search key along with command')
-        await delete_links(message.reply_to_message)
+        await delete_links(message)
         await auto_delete_message(message, gdmsg)
         return
     if not message.from_user:

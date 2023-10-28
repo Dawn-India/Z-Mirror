@@ -31,13 +31,13 @@ async def countNode(_, message):
         link = reply_to.text.split(maxsplit=1)[0].strip()
 
     if is_gdrive_link(link):
+        start_time = time()
         LOGGER.info(f'Counting {link}')
         mssg = await sendMessage(message, f"Counting: <code>{link}</code>")
         gd = GoogleDriveHelper()
-        start_time = time()
         name, mime_type, size, files, folders = await sync_to_async(gd.count, link)
+        elapsed = time() - start_time
         if mime_type is None:
-            elapsed = time() - start_time
             LOGGER.error(f'Error in counting: {name}')
             msg = f'Sorry {tag}!\nYour count has been stopped.'
             msg += f'\n\n<code>Reason : </code>{name}'
@@ -60,7 +60,7 @@ async def countNode(_, message):
     else:
         msg = f'Send Gdrive link along with command or by replying to the link by command\n\n<b>cc</b>: {tag}'
     gdmsg = await sendMessage(message, msg)
-    await delete_links(message.reply_to_message)
+    await delete_links(message)
     await auto_delete_message(message, gdmsg)
 
 

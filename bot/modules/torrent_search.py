@@ -254,21 +254,22 @@ async def torrentSearch(_, message):
             msg, buttons = await checking_access(user_id, buttons)
             if msg is not None:
                 msg += f'\n\n<b>User</b>: {tag}'
-                reply_message = await sendMessage(message, msg, buttons.build_menu(1))
-                await auto_delete_message(message, reply_message)
+                tmsg = await sendMessage(message, msg, buttons.build_menu(1))
+                await auto_delete_message(message, tmsg)
                 return
     key = message.text.split()
     SEARCH_PLUGINS = config_dict['SEARCH_PLUGINS']
+    smsg = None
     if SITES is None and not SEARCH_PLUGINS:
         await sendMessage(message, "No API link or search PLUGINS added for this function")
     elif len(key) == 1 and SITES is None:
-        await sendMessage(message, "Send a search key along with command")
+        smsg = await sendMessage(message, f"Send a search key along with command\n\ncc: {tag}")
     elif len(key) == 1:
         buttons.ibutton('Trending', f"torser {user_id} apitrend")
         buttons.ibutton('Recent', f"torser {user_id} apirecent")
         buttons.ibutton("Cancel", f"torser {user_id} cancel")
         button = buttons.build_menu(2)
-        await sendMessage(message, "Send a search key along with command", button)
+        smsg = await sendMessage(message, f"Send a search key along with command\n\ncc: {tag}", button)
     elif SITES is not None and SEARCH_PLUGINS:
         buttons.ibutton('Api', f"torser {user_id} apisearch")
         buttons.ibutton('Plugins', f"torser {user_id} plugin")
@@ -281,6 +282,9 @@ async def torrentSearch(_, message):
     else:
         button = await __plugin_buttons(user_id)
         await sendMessage(message, 'Choose site to search | Plugins:', button)
+    if smsg:
+        await delete_links(message)
+        await auto_delete_message(message, smsg)
 
 
 @new_task

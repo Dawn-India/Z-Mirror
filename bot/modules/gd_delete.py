@@ -35,9 +35,8 @@ async def deletefile(_, message):
     else:
         msg = f'Send Gdrive link along with command or by replying to the link by command\n\n<b>cc</b>: {tag}'
     gdmge = await sendMessage(message, msg)
-    await delete_links(message.reply_to_message)
+    await delete_links(message)
     await auto_delete_message(message, gdmge)
 
 
-bot.add_handler(MessageHandler(deletefile, filters=command(
-    BotCommands.DeleteCommand) & CustomFilters.sudo))
+bot.add_handler(MessageHandler(deletefile, filters=command(BotCommands.DeleteCommand) & CustomFilters.sudo))
