@@ -268,8 +268,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if error_button is not None:
             error_button = error_button.build_menu(2)
         await delete_links(message)
-        reply_message = await sendMessage(message, final_msg, error_button)
-        await auto_delete_message(message, reply_message)
+        mmsg = await sendMessage(message, final_msg, error_button)
+        await auto_delete_message(message, mmsg)
         return
     logMessage = await sendLogMessage(message, link, tag)
 
@@ -281,15 +281,16 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         content_type = await get_content_type(link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
             process_msg = await sendMessage(message, f"Processing: <code>{link}</code>")
+            auto_delete = False
             try:
                 link = await sync_to_async(direct_link_generator, link)
                 if isinstance(link, tuple):
                     link, headers = link
+                    LOGGER.info(f"Generated link: {link}")
+                    await editMessage(process_msg, f"Generated link: <code>{link}</code>")
                 elif isinstance(link, str):
                     LOGGER.info(f"Generated link: {link}")
                     await editMessage(process_msg, f"Generated link: <code>{link}</code>")
-                    await sleep(1)
-                    await deleteMessage(process_msg)
             except DirectDownloadLinkException as e:
                 e = str(e)
                 if 'This link requires a password!' not in e:
@@ -297,8 +298,12 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 if e.startswith('ERROR:'):
                     await editMessage(process_msg, e)
                     await delete_links(message)
-                    await auto_delete_message(process_msg)
+                    auto_delete = True
                     return
+            finally:
+                if auto_delete:
+                    await auto_delete_message(message, process_msg)
+                await deleteMessage(process_msg)
 
     if not isLeech:
         if config_dict['DEFAULT_UPLOAD'] == 'rc' and not up or up == 'rc':

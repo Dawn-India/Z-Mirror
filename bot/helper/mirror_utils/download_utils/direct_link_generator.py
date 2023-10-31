@@ -1250,7 +1250,7 @@ def streamhub(url):
 
 def jiodrive(url):
     if not config_dict['JIODRIVE_ACCESS_TOKEN']:
-        raise DirectDownloadLinkException("ERROR: JioDrive API is not provided")
+        raise DirectDownloadLinkException("ERROR: JIODRIVE_ACCESS_TOKEN is not provided")
     with create_scraper() as session:
         try:
             url = session.get(url).url

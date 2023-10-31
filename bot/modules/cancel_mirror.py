@@ -58,8 +58,8 @@ async def cancel_mirror(client, message):
         await auto_delete_message(message, tmsg)
         return
     obj = dl.download()
-    await obj.cancel_download()
     await delete_links(message)
+    await obj.cancel_download()
 
 cancel_listener = {}
 
