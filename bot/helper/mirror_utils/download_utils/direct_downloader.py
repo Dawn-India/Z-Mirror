@@ -41,13 +41,12 @@ async def add_direct_download(details, path, listener, foldername):
             await auto_delete_message(listener.message, amsg)
             return
 
-    gid = token_urlsafe(10)
+    gid = token_urlsafe(6)
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {foldername}")
         async with download_dict_lock:
-            download_dict[listener.uid] = QueueStatus(
-                foldername, size, gid, listener, 'dl')
+            download_dict[listener.uid] = QueueStatus(foldername, size, gid, listener, 'dl')
         await listener.onDownloadStart()
         await sendStatusMessage(listener.message)
         await event.wait()

@@ -197,7 +197,7 @@ class YoutubeDLHelper:
             self.opts['ignoreerrors'] = True
             self.is_playlist = True
 
-        self.__gid = token_urlsafe(10)
+        self.__gid = token_urlsafe(6)
 
         await self.__onDownloadStart()
 

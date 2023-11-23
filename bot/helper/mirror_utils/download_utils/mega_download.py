@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from secrets import token_urlsafe
 from aiofiles.os import makedirs
-from asyncio import Event
+from threading import Event
 
 from aiofiles.os import makedirs
 from mega import MegaApi, MegaError, MegaListener, MegaRequest, MegaTransfer
@@ -69,8 +69,7 @@ class MegaAppListener(MegaListener):
         LOGGER.error(f'Mega Request error in {error}')
         if not self.is_cancelled:
             self.is_cancelled = True
-            async_to_sync(self.listener.onDownloadError,
-                          f"RequestTempError: {error.toString()}")
+            async_to_sync(self.listener.onDownloadError, f"RequestTempError: {error.toString()}")
         self.error = error.toString()
         self.continue_event.set()
 
@@ -87,7 +86,7 @@ class MegaAppListener(MegaListener):
             if self.is_cancelled:
                 self.continue_event.set()
             elif transfer.isFinished() and (transfer.isFolderTransfer() or transfer.getFileName() == self.__name):
-                async_to_sync(self.listener.onDownloadComplete)
+                self.completed = True
                 self.continue_event.set()
         except Exception as e:
             LOGGER.error(e)
@@ -96,18 +95,15 @@ class MegaAppListener(MegaListener):
         filen = transfer.getFileName()
         state = transfer.getState()
         errStr = error.toString()
-        LOGGER.error(
-            f'Mega download error in file {transfer} {filen}: {error}')
+        LOGGER.error(f'Mega download error in file {transfer} {filen}: {error}')
         if state in [1, 4]:
             # Sometimes MEGA (official client) can't stream a node either and raises a temp failed error.
             # Don't break the transfer queue if transfer's in queued (1) or retrying (4) state [causes seg fault]
             return
 
-        self.error = errStr
+        self.error = f"TransferTempError: {errStr} ({filen}"
         if not self.is_cancelled:
             self.is_cancelled = True
-            async_to_sync(self.listener.onDownloadError,
-                          f"TransferTempError: {errStr} ({filen})")
             self.continue_event.set()
 
     async def cancel_download(self):
@@ -120,10 +116,10 @@ class AsyncExecutor:
     def __init__(self):
         self.continue_event = Event()
 
-    async def do(self, function, args):
+    def do(self, function, args):
         self.continue_event.clear()
-        await sync_to_async(function, *args)
-        await self.continue_event.wait()
+        function(*args)
+        self.continue_event.wait()
 
 
 async def add_mega_download(mega_link, path, listener, name):
@@ -138,21 +134,21 @@ async def add_mega_download(mega_link, path, listener, name):
     api.addListener(mega_listener)
 
     if MEGA_EMAIL and MEGA_PASSWORD:
-        await executor.do(api.login, (MEGA_EMAIL, MEGA_PASSWORD))
+        await sync_to_async(executor.do, api.login, (MEGA_EMAIL, MEGA_PASSWORD))
 
     if get_mega_link_type(mega_link) == "file":
-        await executor.do(api.getPublicNode, (mega_link,))
+        await sync_to_async(executor.do, api.getPublicNode, (mega_link,))
         node = mega_listener.public_node
     else:
         folder_api = MegaApi(None, None, None, 'Z-Mirror')
         folder_api.addListener(mega_listener)
-        await executor.do(folder_api.loginToFolder, (mega_link,))
+        await sync_to_async(executor.do, folder_api.loginToFolder, (mega_link,))
         node = await sync_to_async(folder_api.authorizeNode, mega_listener.node)
     if mega_listener.error is not None:
         mmsg = await sendMessage(listener.message, str(mega_listener.error))
-        await executor.do(api.logout, ())
+        await sync_to_async(executor.do, api.logout, ())
         if folder_api is not None:
-            await executor.do(folder_api.logout, ())
+            await sync_to_async(executor.do, folder_api.logout, ())
         await delete_links(listener.message)
         await auto_delete_message(listener.message, mmsg)
         return
@@ -161,14 +157,14 @@ async def add_mega_download(mega_link, path, listener, name):
     msg, button = await stop_duplicate_check(name, listener)
     if msg:
         mmsg = await sendMessage(listener.message, msg, button)
-        await executor.do(api.logout, ())
+        await sync_to_async(executor.do, api.logout, ())
         if folder_api is not None:
-            await executor.do(folder_api.logout, ())
+            await sync_to_async(executor.do, folder_api.logout, ())
         await delete_links(listener.message)
         await auto_delete_message(listener.message, mmsg)
         return
 
-    gid = token_urlsafe(8)
+    gid = token_urlsafe(6)
     size = api.getSize(node)
     if limit_exceeded := await limit_checker(size, listener, isMega=True):
         mmsg = await sendMessage(listener.message, limit_exceeded)
@@ -186,9 +182,9 @@ async def add_mega_download(mega_link, path, listener, name):
         await event.wait()
         async with download_dict_lock:
             if listener.uid not in download_dict:
-                await executor.do(api.logout, ())
+                await sync_to_async(executor.do, api.logout, ())
                 if folder_api is not None:
-                    await executor.do(folder_api.logout, ())
+                    await sync_to_async(executor.do, folder_api.logout, ())
                 await delete_links(listener.message)
                 return
         from_queue = True
@@ -210,7 +206,7 @@ async def add_mega_download(mega_link, path, listener, name):
         LOGGER.info(f"Download from Mega: {name}")
 
     await makedirs(path, exist_ok=True)
-    await executor.do(api.startDownload, (node, path, name, None, False, None))
-    await executor.do(api.logout, ())
+    await sync_to_async(executor.do, api.startDownload, (node, path, name, None, False, None))
+    await sync_to_async(executor.do, api.logout, ())
     if folder_api is not None:
-        await executor.do(folder_api.logout, ())
+        await sync_to_async(executor.do, folder_api.logout, ())

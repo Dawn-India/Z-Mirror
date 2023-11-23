@@ -38,7 +38,7 @@ async def add_gd_download(link, path, listener, newname):
         await auto_delete_message(listener.message, cmsg)
         return
     name = newname or name
-    gid = token_urlsafe(12)
+    gid = token_urlsafe(6)
 
     msg, button = await stop_duplicate_check(name, listener)
     if msg:

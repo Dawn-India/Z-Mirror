@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 from io import FileIO
 from logging import ERROR, getLogger
-from os import listdir, makedirs
-from os import path as ospath
-from os import remove as osremove
+from os import listdir, makedirs, path as ospath, remove as osremove
 from pickle import load as pload
 from random import randrange
 from re import search as re_search
 from time import sleep, time
-from urllib.parse import parse_qs
-from urllib.parse import quote as rquote
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, quote as rquote, urlparse
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build

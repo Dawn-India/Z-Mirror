@@ -1,7 +1,7 @@
 aiohttp
 aiofiles
 aioshutil
-anytree==2.8.0
+anytree
 apscheduler
 aria2p
 asyncio
@@ -15,7 +15,6 @@ google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 gunicorn
-git+https://github.com/zevtyardt/lk21.git
 httpx
 lxml
 motor

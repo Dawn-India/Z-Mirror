@@ -112,7 +112,7 @@ async def rcloneNode(client, message, link, dst_path, rcf, listener):
     RCTransfer = RcloneTransferHelper(listener, name)
     LOGGER.info(
         f'Clone Started: Name: {name} - Source: {link} - Destination: {dst_path}')
-    gid = token_urlsafe(12)
+    gid = token_urlsafe(6)
     async with download_dict_lock:
         download_dict[message.id] = RcloneStatus(RCTransfer, message, gid, 'cl', listener.extra_details)
     await sendStatusMessage(message)
@@ -200,7 +200,7 @@ async def gdcloneNode(message, link, listener):
             link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
             await deleteMessage(msg)
         else:
-            gid = token_urlsafe(12)
+            gid = token_urlsafe(6)
             async with download_dict_lock:
                 download_dict[message.id] = GdriveStatus(drive, size, message, gid, 'cl', listener.extra_details)
             await sendStatusMessage(message)
