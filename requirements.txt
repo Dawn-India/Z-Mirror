@@ -24,7 +24,7 @@ pillow
 psutil
 pybase64
 pymongo
-pyrofork==2.2.10
+pyrofork>=2.3.12
 python-dotenv
 python-magic
 qbittorrent-api
@@ -33,6 +33,7 @@ telegraph
 tenacity
 tgcrypto
 typing_extensions
+urllib3
 uvloop
 xattr
 yt-dlp

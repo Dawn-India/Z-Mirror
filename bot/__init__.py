@@ -2,12 +2,11 @@
 from asyncio import Lock
 from collections import OrderedDict
 from faulthandler import enable as faulthandler_enable
-from logging import (INFO, FileHandler, StreamHandler, basicConfig,
+from logging import (ERROR, INFO, FileHandler, StreamHandler, basicConfig,
                      error, getLogger, info, warning)
 from os import environ, path as ospath, remove, getcwd
 from socket import setdefaulttimeout
 from subprocess import Popen, run as zrun
-from threading import Thread
 from time import sleep, time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -31,6 +30,14 @@ basicConfig(format='%(levelname)s | From %(name)s -> %(module)s line no: %(linen
                     handlers=[FileHandler('Z_Logs.txt'), StreamHandler()], level=INFO)
 
 LOGGER = getLogger(__name__)
+getLogger("apscheduler").setLevel(ERROR)
+getLogger("httpx").setLevel(ERROR)
+getLogger("pyrogram").setLevel(ERROR)
+getLogger("aria2c").setLevel(INFO)
+getLogger("aria2p").setLevel(INFO)
+getLogger("qbittorrentapi").setLevel(INFO)
+getLogger("requests").setLevel(INFO)
+getLogger("urllib3").setLevel(INFO)
 
 load_dotenv('config.env', override=True)
 
@@ -171,24 +178,21 @@ IS_PREMIUM_USER = False
 user = ''
 USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
 if len(USER_SESSION_STRING) != 0:
-    info("Creating client from USER_SESSION_STRING")
     user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
                     workers=1000, parse_mode=enums.ParseMode.HTML, no_updates=True).start()
     if user.me.is_bot:
-        warning(
-            "You added bot string for USER_SESSION_STRING this is not allowed! Exiting now")
+        error("You added bot string for USER_SESSION_STRING this is not allowed! Exiting now")
         user.stop()
         exit(1)
     else:
         IS_PREMIUM_USER = user.me.is_premium
+        info(f"Successfully logged into @{user.me.username}...")
 
 MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
 MEGA_PASSWORD = environ.get('MEGA_PASSWORD', '')
 if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
-    warning('MEGA Credentials not provided!')
     MEGA_EMAIL = ''
     MEGA_PASSWORD = ''
-
 
 FILELION_API = environ.get('FILELION_API', '')
 if len(FILELION_API) == 0:
@@ -304,8 +308,6 @@ BASE_URL_PORT = 80 if len(BASE_URL_PORT) == 0 else int(BASE_URL_PORT)
 
 BASE_URL = environ.get('BASE_URL', '').rstrip("/")
 if len(BASE_URL) == 0:
-    warning('BASE_URL not provided!')
-    info('Torrent select wont work.')
     BASE_URL = ''
 
 UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
@@ -550,10 +552,8 @@ if ospath.exists('categories.txt'):
             categories_dict[name] = tempdict
 
 if BASE_URL:
-    Popen(
-        f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent", shell=True)
+    Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent", shell=True)
 
-info("Starting qBittorrent-Nox")
 zrun(["qbittorrent-nox", "-d", f"--profile={getcwd()}"])
 if not ospath.exists('.netrc'):
     with open('.netrc', 'w'):
@@ -565,7 +565,7 @@ zrun("./aria.sh", shell=True)
 if ospath.exists('accounts.zip'):
     if ospath.exists('accounts'):
         zrun(["rm", "-rf", "accounts"])
-    zrun(["7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json"])
+    zrun(["7z", "x", "-o.", "-bso0", "-aoa", "accounts.zip", "accounts/*.json"])
     zrun(["chmod", "-R", "777", "accounts"])
     remove('accounts.zip')
 if not ospath.exists('accounts'):
@@ -576,28 +576,8 @@ aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
 
 
 def get_client():
-    return qbClient(host="localhost", port=8090, VERIFY_WEBUI_CERTIFICATE=False, REQUESTS_ARGS={'timeout': (30, 60)})
+    return qbClient(host="localhost", port=8090)
 
-
-def aria2c_init():
-    try:
-        info("Starting Aria2c")
-        link = "https://linuxmint.com/torrents/lmde-5-cinnamon-64bit.iso.torrent"
-        dl = aria2.add_uris([link], {'dir': DOWNLOAD_DIR.rstrip("/")})
-        for _ in range(4):
-            dl = dl.live
-            if dl.followed_by_ids:
-                dl = dl.api.get_download(dl.followed_by_ids[0])
-                dl = dl.live
-            sleep(2)
-        if dl.remove(True, True):
-            info('Aria2c started!')
-    except Exception as e:
-        error(f"Aria2c startup error: {e}")
-
-
-Thread(target=aria2c_init).start()
-sleep(1.5)
 
 aria2c_global = ['bt-max-open-files', 'download-result', 'keep-unfinished-download-result', 'log', 'log-level',
                  'max-concurrent-downloads', 'max-download-result', 'max-overall-download-limit', 'save-session',
@@ -606,8 +586,7 @@ aria2c_global = ['bt-max-open-files', 'download-result', 'keep-unfinished-downlo
 if not aria2_options:
     aria2_options = aria2.client.get_global_option()
 else:
-    a2c_glo = {op: aria2_options[op]
-               for op in aria2c_global if op in aria2_options}
+    a2c_glo = {op: aria2_options[op] for op in aria2c_global if op in aria2_options}
     aria2.set_global_options(a2c_glo)
 
 qb_client = get_client()
@@ -623,11 +602,28 @@ else:
         if v in ["", "*"]:
             del qb_opt[k]
     qb_client.app_set_preferences(qb_opt)
-info('qBittorrent-Nox started!')
+try:
+    bot = tgClient('bot',
+                TELEGRAM_API,
+                TELEGRAM_HASH,
+                bot_token=BOT_TOKEN,
+                workers=1000,
+                max_concurrent_transmissions=10,
+                parse_mode=enums.ParseMode.HTML
+                ).start()
+except Exception as e:
+    e = str(e)
+    if 'max_concurrent_transmissions' in e:
+        warning("Old pyrogram version detected!")
+        warning("Updating PyroFork...")
+        zrun(["pip3", "install", "pyrofork>=2.3.12"])
+        zrun(["pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone"])
+        info("Restarting bot...")
+        zrun(["python3", "-m", "bot"])
+    else:
+        exit(1)
 
-info("Creating client from BOT_TOKEN")
-bot = tgClient('bot', TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN,
-               workers=1000, parse_mode=enums.ParseMode.HTML).start()
 bot_loop = bot.loop
 bot_name = bot.me.username
+info(f"Starting Bot @{bot_name}...")
 scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)

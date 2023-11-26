@@ -39,6 +39,7 @@ async def add_gd_download(link, path, listener, newname):
         return
     name = newname or name
     gid = token_urlsafe(6)
+    gid = gid.replace('-', '')
 
     msg, button = await stop_duplicate_check(name, listener)
     if msg:

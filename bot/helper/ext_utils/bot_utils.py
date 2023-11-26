@@ -143,19 +143,19 @@ def get_readable_message():
                                      MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
             msg += f" » {download.speed()}"
             msg += f"\n⌑ {get_progress_bar_string(download.progress())} » {download.progress()}"
-            msg += f"\n⌑ <code>Done   </code>» {download.processed_bytes()} of {download.size()}"
-            msg += f"\n⌑ <code>ETA    </code>» {download.eta()}"
-            msg += f"\n⌑ <code>Past   </code>» {get_readable_time(elapsed)}"
-            msg += f"\n⌑ <code>ENG    </code>» {download.engine}"
+            msg += f"\n⌑ <code>Done   </code>: {download.processed_bytes()} of {download.size()}"
+            msg += f"\n⌑ <code>ETA    </code>: {download.eta()}"
+            msg += f"\n⌑ <code>Past   </code>: {get_readable_time(elapsed)}"
+            msg += f"\n⌑ <code>ENG    </code>: {download.engine}"
             if hasattr(download, 'playList'):
                 try:
                     if playlist:=download.playList():
-                        msg += f"\n⌑ <code>YtList </code>» {playlist}"
+                        msg += f"\n⌑ <code>YtList </code>: {playlist}"
                 except:
                     pass
             if hasattr(download, 'seeders_num'):
                 try:
-                    msg += f"\n⌑ <code>S/L    </code>» {download.seeders_num()}/{download.leechers_num()}"
+                    msg += f"\n⌑ <code>S/L    </code>: {download.seeders_num()}/{download.leechers_num()}"
                 except:
                     pass
         elif download.status() == MirrorStatus.STATUS_SEEDING:
@@ -165,12 +165,12 @@ def get_readable_message():
             msg += f"\n⌑ <code>Ratio    </code>» {download.ratio()}"
             msg += f"\n⌑ <code>Time     </code>» {download.seeding_time()}"
         else:
-            msg += f"\n⌑ <code>Size   </code>» {download.size()}"
+            msg += f"\n⌑ <code>Size   </code>: {download.size()}"
         if config_dict['DELETE_LINKS']:
-            msg += f"\n⌑ <code>Task   </code>» {download.extra_details['mode']}"
+            msg += f"\n⌑ <code>Task   </code>: {download.extra_details['mode']}"
         else:
-            msg += f"\n⌑ <code>Task   </code>» <a href='{download.message.link}'>{download.extra_details['mode']}</a>"
-        msg += f"\n⌑ <code>User   </code>» {tag}"
+            msg += f"\n⌑ <code>Task   </code>: <a href='{download.message.link}'>{download.extra_details['mode']}</a>"
+        msg += f"\n⌑ <code>User   </code>: {tag}"
         msg += f"\n⚠️ /{BotCommands.CancelMirror}_{download.gid()}\n\n"
     if len(msg) == 0:
         return None, None

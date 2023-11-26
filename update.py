@@ -34,17 +34,18 @@ if len(DATABASE_URL) == 0:
 if DATABASE_URL:
     conn = MongoClient(DATABASE_URL)
     db = conn.z
-    # retrun config dict (all env vars)
     if config_dict := db.settings.config.find_one({'_id': bot_id}):
         environ['UPSTREAM_REPO'] = config_dict['UPSTREAM_REPO']
         environ['UPSTREAM_BRANCH'] = config_dict['UPSTREAM_BRANCH']
     conn.close()
 
 UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
+log_info(f'Entered upstream repo: {UPSTREAM_REPO}')
 if len(UPSTREAM_REPO) == 0:
     UPSTREAM_REPO = 'https://github.com/Dawn-India/Z-Mirror'
 
 UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
+log_info(f'Entered upstream branch: {UPSTREAM_BRANCH}')
 if len(UPSTREAM_BRANCH) == 0:
     UPSTREAM_BRANCH = 'main'
 
@@ -60,13 +61,10 @@ if UPSTREAM_REPO:
                      && git remote add origin {UPSTREAM_REPO} \
                      && git fetch origin -q \
                      && git reset --hard origin/{UPSTREAM_BRANCH} -q"], shell=True)
-
+    log_info('Fetching latest updates...')
     if update.returncode == 0:
-        log_info('Successfully updated with latest commit.')
-        log_info(f'Repo in use: {UPSTREAM_REPO}')
-        log_info(f'Branch in use: {UPSTREAM_BRANCH}')
-        log_info('Thanks For Using Z_Mirror')
+        log_info('Successfully updated...')
+        log_info('Thanks For Using @Z_Mirror')
     else:
-        log_error('Something went wrong while updating.')
-        log_info('Check if entered UPSTREAM_REPO is valid or not!')
-        log_info(f'Entered upstream repo: {UPSTREAM_REPO}')
+        log_error('Error while getting latest updates.')
+        log_error('Check if entered UPSTREAM_REPO is valid or not!')

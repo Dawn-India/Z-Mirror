@@ -110,9 +110,9 @@ async def rcloneNode(client, message, link, dst_path, rcf, listener):
     await listener.onDownloadStart()
 
     RCTransfer = RcloneTransferHelper(listener, name)
-    LOGGER.info(
-        f'Clone Started: Name: {name} - Source: {link} - Destination: {dst_path}')
+    LOGGER.info(f'Clone Started: Name: {name} - Source: {link} - Destination: {dst_path}')
     gid = token_urlsafe(6)
+    gid = gid.replace('-', '')
     async with download_dict_lock:
         download_dict[message.id] = RcloneStatus(RCTransfer, message, gid, 'cl', listener.extra_details)
     await sendStatusMessage(message)
@@ -201,6 +201,7 @@ async def gdcloneNode(message, link, listener):
             await deleteMessage(msg)
         else:
             gid = token_urlsafe(6)
+            gid = gid.replace('-', '')
             async with download_dict_lock:
                 download_dict[message.id] = GdriveStatus(drive, size, message, gid, 'cl', listener.extra_details)
             await sendStatusMessage(message)
@@ -264,9 +265,9 @@ async def clone(client, message):
             nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
             nextmsg.from_user = message.from_user
             await sleep(5)
-            clone(client, nextmsg)
+            await clone(client, nextmsg)
 
-    __run_multi()
+    await __run_multi()
 
     if not link:
         cmsg = await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))

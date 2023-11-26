@@ -267,7 +267,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     qual = ''
 
     arg_base = {
-                'link'   : '', 
+                'link'  : '', 
                 '-m'    : 0, 
                 '-sd'   : '',       '-samedir' : '',
                 '-s'    : False,    '-select'  : False,

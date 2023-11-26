@@ -17,7 +17,6 @@ class TelegraphHelper:
         self.author_url = author_url
 
     async def create_account(self):
-        LOGGER.info("Creating Telegraph Account")
         try:
             await self.telegraph.create_account(
                 short_name=self.short_name,

@@ -47,6 +47,7 @@ async def add_rclone_download(rc_path, config_path, path, name, listener):
         name = rc_path.rsplit('/', 1)[-1]
     size = rsize['bytes']
     gid = token_urlsafe(6)
+    gid = gid.replace('-', '')
 
     msg, button = await stop_duplicate_check(name, listener)
     if msg:

@@ -277,10 +277,9 @@ async def restart(_, message):
         await f.write(f"{restart_message.chat.id}\n{restart_message.id}\n")
     osexecl(executable, executable, "-m", "bot")
 
-@new_thread
 async def ping(_, message):
     start_time = monotonic()
-    reply = await sendMessage(message, "Starting Ping")
+    reply = await sendMessage(message, "Pinging...")
     end_time = monotonic()
     ping_time = int((end_time - start_time) * 1000)
     await editMessage(reply, f'{ping_time} ms')
@@ -426,7 +425,7 @@ async def main():
     bot.add_handler(CallbackQueryHandler(send_sys_stats,    filters=regex("^show_sys_stats")))
     bot.add_handler(CallbackQueryHandler(send_repo_stats,   filters=regex("^show_repo_stats")))
     bot.add_handler(CallbackQueryHandler(send_bot_limits,   filters=regex("^show_bot_limits")))
-    LOGGER.info("Congratulations, Bot Started Successfully!")
+    LOGGER.info("Bot Started Successfully!")
     signal(SIGINT, exit_clean_up)
 
 bot.loop.run_until_complete(main())

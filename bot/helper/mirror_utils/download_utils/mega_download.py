@@ -86,7 +86,7 @@ class MegaAppListener(MegaListener):
             if self.is_cancelled:
                 self.continue_event.set()
             elif transfer.isFinished() and (transfer.isFolderTransfer() or transfer.getFileName() == self.__name):
-                self.completed = True
+                async_to_sync(self.listener.onDownloadComplete)
                 self.continue_event.set()
         except Exception as e:
             LOGGER.error(e)
@@ -165,6 +165,7 @@ async def add_mega_download(mega_link, path, listener, name):
         return
 
     gid = token_urlsafe(6)
+    gid = gid.replace('-', '')
     size = api.getSize(node)
     if limit_exceeded := await limit_checker(size, listener, isMega=True):
         mmsg = await sendMessage(listener.message, limit_exceeded)

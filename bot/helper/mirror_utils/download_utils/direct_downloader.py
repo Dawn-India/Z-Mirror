@@ -42,6 +42,7 @@ async def add_direct_download(details, path, listener, foldername):
             return
 
     gid = token_urlsafe(6)
+    gid = gid.replace('-', '')
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {foldername}")

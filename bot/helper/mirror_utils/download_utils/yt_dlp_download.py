@@ -5,7 +5,7 @@ from logging import getLogger
 from yt_dlp import YoutubeDL, DownloadError
 from re import search as re_search
 
-from bot import config_dict, download_dict_lock, download_dict, non_queued_dl, queue_dict_lock
+from bot import download_dict_lock, download_dict, non_queued_dl, queue_dict_lock
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.telegram_helper.message_utils import sendStatusMessage, delete_links, auto_delete_message
 from ..status_utils.yt_dlp_download_status import YtDlpDownloadStatus
@@ -23,7 +23,7 @@ class MyLogger:
         # Hack to fix changing extension
         if not self.obj.is_playlist:
             if match := re_search(r'.Merger..Merging formats into..(.*?).$', msg) or \
-                    re_search(r'.ExtractAudio..Destination..(.*?)$', msg):
+                        re_search(r'.ExtractAudio..Destination..(.*?)$', msg):
                 LOGGER.info(msg)
                 newname = match.group(1)
                 newname = newname.rsplit("/", 1)[-1]
@@ -198,6 +198,7 @@ class YoutubeDLHelper:
             self.is_playlist = True
 
         self.__gid = token_urlsafe(6)
+        self.__gid = self.__gid.replace('-', '')
 
         await self.__onDownloadStart()
 
