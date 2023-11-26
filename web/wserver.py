@@ -12,9 +12,8 @@ from web.nodes import make_tree
 
 app = Flask(__name__)
 
-basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[FileHandler('Z_logs.txt'), StreamHandler()],
-                    level=INFO)
+basicConfig(format='%(levelname)s | From %(name)s -> %(module)s line no: %(lineno)d | %(message)s',
+                    handlers=[FileHandler('Z_Logs.txt'), StreamHandler()], level=INFO)
 
 aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
 

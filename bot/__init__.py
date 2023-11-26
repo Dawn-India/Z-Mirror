@@ -616,7 +616,7 @@ except Exception as e:
     if 'max_concurrent_transmissions' in e:
         warning("Old pyrogram version detected!")
         warning("Updating PyroFork...")
-        zrun(["pip3", "install", "pyrofork>=2.3.12"])
+        zrun(["pip3", "install", "pyrofork==2.3.12"])
         zrun(["pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone"])
         info("Restarting bot...")
         zrun(["python3", "-m", "bot"])
