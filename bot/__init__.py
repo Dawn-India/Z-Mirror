@@ -602,26 +602,14 @@ else:
         if v in ["", "*"]:
             del qb_opt[k]
     qb_client.app_set_preferences(qb_opt)
-try:
-    bot = tgClient('bot',
-                TELEGRAM_API,
-                TELEGRAM_HASH,
-                bot_token=BOT_TOKEN,
-                workers=1000,
-                max_concurrent_transmissions=10,
-                parse_mode=enums.ParseMode.HTML
-                ).start()
-except Exception as e:
-    e = str(e)
-    if 'max_concurrent_transmissions' in e:
-        warning("Old pyrogram version detected!")
-        warning("Updating PyroFork...")
-        zrun(["pip3", "install", "pyrofork==2.3.12"])
-        zrun(["pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone"])
-        info("Restarting bot...")
-        zrun(["python3", "-m", "bot"])
-    else:
-        exit(1)
+
+bot = tgClient('bot',
+            TELEGRAM_API,
+            TELEGRAM_HASH,
+            bot_token=BOT_TOKEN,
+            workers=1000,
+            parse_mode=enums.ParseMode.HTML
+            ).start()
 
 bot_loop = bot.loop
 bot_name = bot.me.username
