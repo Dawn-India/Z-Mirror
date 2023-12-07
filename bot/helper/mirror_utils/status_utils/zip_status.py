@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from time import time
 
-from bot import LOGGER
+from bot import LOGGER, subprocess_lock
 from bot.helper.ext_utils.bot_utils import (MirrorStatus, async_to_sync,
                                             get_readable_file_size,
                                             get_readable_time)
@@ -73,8 +73,12 @@ class ZipStatus:
 
     async def cancel_download(self):
         LOGGER.info(f'Cancelling Archive: {self.__name}')
-        if self.__listener.suproc:
-            self.__listener.suproc.kill()
-        else:
-            self.__listener.suproc = 'cancelled'
-        await self.__listener.onUploadError('archiving stopped by user!')
+        async with subprocess_lock:
+            if (
+                self.__listener.suproc is not None
+                and self.__listener.suproc.returncode is None
+            ):
+                self.__listener.suproc.kill()
+            else:
+                self.__listener.suproc = "cancelled"
+        await self.__listener.onUploadError('Archiving stopped by user!')

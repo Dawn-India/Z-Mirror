@@ -145,7 +145,7 @@ async def rssSub(_, message, pre_event):
     if msg:
         await sendMessage(message, msg)
     await updateRssMenu(pre_event)
-    is_sudo = await CustomFilters.sudo(client, message)
+    is_sudo = await CustomFilters.sudo(_, message)
     if scheduler.state == 2:
         scheduler.resume()
     elif is_sudo and not scheduler.running:

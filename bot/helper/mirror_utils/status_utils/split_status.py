@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from time import time
-from bot import LOGGER
+from bot import LOGGER, subprocess_lock
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size, MirrorStatus,
                                             get_readable_time, async_to_sync)
 from bot.helper.ext_utils.fs_utils import get_path_size
@@ -68,8 +68,12 @@ class SplitStatus:
 
     async def cancel_download(self):
         LOGGER.info(f'Cancelling Split: {self.__name}')
-        if self.__listener.suproc:
-            self.__listener.suproc.kill()
-        else:
-            self.__listener.suproc = 'cancelled'
-        await self.__listener.onUploadError('splitting stopped by user!')
+        async with subprocess_lock:
+            if (
+                self.__listener.suproc is not None
+                and self.__listener.suproc.returncode is None
+            ):
+                self.__listener.suproc.kill()
+            else:
+                self.__listener.suproc = "cancelled"
+        await self.__listener.onUploadError('Splitting stopped by user!')

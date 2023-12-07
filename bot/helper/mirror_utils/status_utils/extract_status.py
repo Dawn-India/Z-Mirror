@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from time import time
 
-from bot import LOGGER
+from bot import LOGGER, subprocess_lock
 from bot.helper.ext_utils.bot_utils import (MirrorStatus, async_to_sync,
                                             get_readable_file_size,
                                             get_readable_time)
@@ -72,8 +72,12 @@ class ExtractStatus:
 
     async def cancel_download(self):
         LOGGER.info(f'Cancelling Extract: {self.__name}')
-        if self.__listener.suproc is not None:
-            self.__listener.suproc.kill()
-        else:
-            self.__listener.suproc = 'cancelled'
-        await self.__listener.onUploadError('extracting stopped by user!')
+        async with subprocess_lock:
+            if (
+                self.__listener.suproc is not None
+                and self.__listener.suproc.returncode is None
+            ):
+                self.__listener.suproc.kill()
+            else:
+                self.__listener.suproc = "cancelled"
+        await self.__listener.onUploadError('Extracting stopped by user!')

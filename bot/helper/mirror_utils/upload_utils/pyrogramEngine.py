@@ -18,7 +18,9 @@ from tenacity import (RetryError, retry, retry_if_exception_type,
 from bot import GLOBAL_EXTENSION_FILTER, IS_PREMIUM_USER, bot, config_dict, user, user_data
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
 from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, is_archive
-from bot.helper.ext_utils.leech_utils import get_document_type, get_media_info, take_ss, remove_unwanted, get_audio_thumb
+from bot.helper.ext_utils.leech_utils import (get_document_type, get_media_info,
+                                              take_ss, remove_unwanted, get_audio_thumb)
+from bot.helper.telegram_helper.message_utils import deleteMessage
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
@@ -134,7 +136,7 @@ class TgUploader:
             if is_archive(file_):
                 name = get_base_name(file_)
                 ext = file_.split(name, 1)[1]
-            elif match := re_match(r'.+(?=\..+\.0*\d+$)|.+(?=\.part\d+\..+)', file_):
+            elif match := re_match(r".+(?=\..+\.0*\d+$)|.+(?=\.part\d+\..+$)", file_):
                 name = match.group(0)
                 ext = file_.split(name, 1)[1]
             elif len(fsplit := ospath.splitext(file_)) > 1:
@@ -184,7 +186,7 @@ class TgUploader:
         for msg in msgs:
             if msg.link in self.__msgs_dict:
                 del self.__msgs_dict[msg.link]
-            await msg.delete()
+            await deleteMessage(msg)
         del self.__media_dict[key][subkey]
         if self.__listener.isSuperGroup or config_dict['DUMP_CHAT_ID']:
             for m in msgs_list:
@@ -198,8 +200,7 @@ class TgUploader:
                 dm_msgs_list = await self.__sent_DMmsg.reply_media_group(media=grouped_media, quote=True)
                 self.__sent_DMmsg = dm_msgs_list[-1]
             except Exception as err:
-                LOGGER.error(
-                    f"Error while sending media group in dm {err.__class__.__name__}")
+                LOGGER.error(f"Error while sending media group in dm {err.__class__.__name__}")
                 self.__sent_DMmsg = None
 
     async def upload(self, o_files, m_size, size):
@@ -231,7 +232,8 @@ class TgUploader:
                     if self.__last_msg_in_group:
                         group_lists = [x for v in self.__media_dict.values()
                                        for x in v.keys()]
-                        if (match := re_match(r'.+(?=\.0*\d+$)|.+(?=\.part\d+\..+)', self.__up_path)) and match.group(0) not in group_lists:
+                        match = re_match(r".+(?=\.0*\d+$)|.+(?=\.part\d+\..+$)", self.__up_path)
+                        if not match or match and match.group(0) not in group_lists:
                             for key, value in list(self.__media_dict.items()):
                                 for subkey, msgs in list(value.items()):
                                     if len(msgs) > 1:
@@ -262,7 +264,10 @@ class TgUploader:
         for key, value in list(self.__media_dict.items()):
             for subkey, msgs in list(value.items()):
                 if len(msgs) > 1:
-                    await self.__send_media_group(subkey, key, msgs)
+                    try:
+                        await self.__send_media_group(subkey, key, msgs)
+                    except Exception as e:
+                        LOGGER.error(f"While sending media group at the end of task. Error: {e}")
         if self.__is_cancelled:
             return
         if self.__listener.seed and not self.__listener.newDir:
@@ -414,7 +419,7 @@ class TgUploader:
 
             if not self.__is_cancelled and self.__media_group and (self.__sent_msg.video or self.__sent_msg.document):
                 key = 'documents' if self.__sent_msg.document else 'videos'
-                if match := re_match(r'.+(?=\.0*\d+$)|.+(?=\.part\d+\..+)', self.__up_path):
+                if match := re_match(r".+(?=\.0*\d+$)|.+(?=\.part\d+\..+$)", self.__up_path):
                     pname = match.group(0)
                     if pname in self.__media_dict[key].keys():
                         self.__media_dict[key][pname].append(self.__sent_msg)

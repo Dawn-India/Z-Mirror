@@ -30,6 +30,7 @@ basicConfig(format='%(levelname)s | From %(name)s -> %(module)s line no: %(linen
                     handlers=[FileHandler('Z_Logs.txt'), StreamHandler()], level=INFO)
 
 LOGGER = getLogger(__name__)
+
 getLogger("apscheduler").setLevel(ERROR)
 getLogger("httpx").setLevel(ERROR)
 getLogger("pyrogram").setLevel(ERROR)
@@ -40,6 +41,8 @@ getLogger("requests").setLevel(INFO)
 getLogger("urllib3").setLevel(INFO)
 
 load_dotenv('config.env', override=True)
+
+aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
 
 Interval = []
 QbInterval = []
@@ -68,6 +71,7 @@ download_dict_lock = Lock()
 status_reply_dict_lock = Lock()
 queue_dict_lock = Lock()
 qb_listener_lock = Lock()
+subprocess_lock = Lock()
 status_reply_dict = {}
 download_dict = {}
 rss_dict = {}
@@ -558,36 +562,24 @@ zrun(["qbittorrent-nox", "-d", f"--profile={getcwd()}"])
 if not ospath.exists('.netrc'):
     with open('.netrc', 'w'):
         pass
-zrun(["chmod", "600", ".netrc"])
-zrun(["cp", ".netrc", "/root/.netrc"])
-zrun(["chmod", "+x", "aria.sh"])
-zrun("./aria.sh", shell=True)
+zrun("chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x aria.sh && ./aria.sh", shell=True,)
 if ospath.exists('accounts.zip'):
     if ospath.exists('accounts'):
-        zrun(["rm", "-rf", "accounts"])
-    zrun(["7z", "x", "-o.", "-bso0", "-aoa", "accounts.zip", "accounts/*.json"])
-    zrun(["chmod", "-R", "777", "accounts"])
+        zrun("rm -rf accounts")
+    zrun(["7z", "x", "-o.", "-bso0", "-aoa", "accounts.zip", "accounts/*.json", "&&", "chmod", "-R", "777", "accounts"])
     remove('accounts.zip')
 if not ospath.exists('accounts'):
     config_dict['USE_SERVICE_ACCOUNTS'] = False
 sleep(0.5)
 
-aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
-
 
 def get_client():
-    return qbClient(host="localhost", port=8090)
+    return qbClient(host="localhost", port=8090, REQUESTS_ARGS={"timeout": (30, 60)})
 
 
 aria2c_global = ['bt-max-open-files', 'download-result', 'keep-unfinished-download-result', 'log', 'log-level',
                  'max-concurrent-downloads', 'max-download-result', 'max-overall-download-limit', 'save-session',
                  'max-overall-upload-limit', 'optimize-concurrent-downloads', 'save-cookies', 'server-stat-of']
-
-if not aria2_options:
-    aria2_options = aria2.client.get_global_option()
-else:
-    a2c_glo = {op: aria2_options[op] for op in aria2c_global if op in aria2_options}
-    aria2.set_global_options(a2c_glo)
 
 qb_client = get_client()
 if not qbit_options:
@@ -615,3 +607,9 @@ bot_loop = bot.loop
 bot_name = bot.me.username
 info(f"Starting Bot @{bot_name}...")
 scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+
+if not aria2_options:
+    aria2_options = aria2.client.get_global_option()
+else:
+    a2c_glo = {op: aria2_options[op] for op in aria2c_global if op in aria2_options}
+    aria2.set_global_options(a2c_glo)

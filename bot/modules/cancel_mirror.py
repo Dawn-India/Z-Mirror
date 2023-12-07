@@ -89,13 +89,6 @@ async def cancel_all(status, info, listOfTasks):
 
 
 async def cancell_all_buttons(client, message):
-    async with download_dict_lock:
-        count = len(download_dict)
-    if count == 0:
-        tmsg = await sendMessage(message, f"No active tasks!\n\ncc: {tag}")
-        await delete_links(message)
-        await auto_delete_message(message, tmsg)
-        return
     if not message.from_user:
         tag = 'Anonymous'
         message.from_user = await anno_checker(message)
@@ -104,6 +97,13 @@ async def cancell_all_buttons(client, message):
     else:
         tag = message.from_user.mention
     user_id = message.from_user.id
+    async with download_dict_lock:
+        count = len(download_dict)
+    if count == 0:
+        tmsg = await sendMessage(message, f"No active tasks!\n\ncc: {tag}")
+        await delete_links(message)
+        await auto_delete_message(message, tmsg)
+        return
     if await CustomFilters.sudo(client, message):
         if reply_to := message.reply_to_message:
             user_id = reply_to.from_user.id
@@ -137,17 +137,19 @@ async def cancell_all_buttons(client, message):
     buttons.ibutton("All",          f"cnall all {msg_id}")
     buttons.ibutton("Close",        f"cnall close {msg_id}")
     button = buttons.build_menu(2)
-    can_msg = await sendMessage(message, 'Choose tasks to cancel. You have 30 Secounds only', button)
+    can_msg = await sendMessage(message, f"Choose tasks to cancel. You have 30 Secounds only\n\ncc: {tag}", button)
     cancel_listener[msg_id] = [user_id, can_msg, message.from_user.id, tag]
     bot_loop.create_task(_auto_cancel(can_msg, msg_id))
+    await delete_links(message)
 
 
 @new_task
 async def cancel_all_update(_, query):
-    data = query.data.split()
+    data    = query.data.split()
     user_id = query.from_user.id
+    tag     = query.from_user.mention
     message = query.message
-    msg_id = int(data[2])
+    msg_id  = int(data[2])
     if msg_id not in cancel_listener:
         cmsg = await editMessage(message, "This is an old message")
         await auto_delete_message(message, cmsg)
@@ -158,7 +160,9 @@ async def cancel_all_update(_, query):
     if data[1] == 'close':
         await query.answer()
         del cancel_listener[msg_id]
-        return await editMessage(message, "Cancellation Listener Closed.")
+        cmsg = await editMessage(message, f"Cancellation Listener Closed.\n\ncc: {tag}")
+        await auto_delete_message(message, cmsg)
+        return 
     if not (listOfTasks := await getAllDownload(data[1], info[0])):
         return await query.answer(text=f"You don't have any active task in {data[1]}", show_alert=True)
     await query.answer(f"{len(listOfTasks)} will be cancelled in {data[1]}", show_alert=True)
@@ -166,7 +170,6 @@ async def cancel_all_update(_, query):
     await cancel_all(data[1], info, listOfTasks)
 
 
-@new_task
 async def _auto_cancel(msg, msg_id):
     await sleep(30)
     if cancel_listener.get(msg_id):

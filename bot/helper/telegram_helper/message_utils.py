@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from asyncio import sleep
+from asyncio import sleep, create_task
 from datetime import datetime, timedelta, timezone
 from time import time
 from re import match as re_match
@@ -86,11 +86,13 @@ async def deleteMessage(message):
 
 async def auto_delete_message(cmd_message=None, bot_message=None):
     if config_dict['DELETE_LINKS'] and int(config_dict['AUTO_DELETE_MESSAGE_DURATION']) > 0:
-        await sleep(config_dict['AUTO_DELETE_MESSAGE_DURATION'])
-        if cmd_message is not None:
-            await deleteMessage(cmd_message)
-        if bot_message is not None:
-            await deleteMessage(bot_message)
+        async def delete_delay():
+            await sleep(config_dict['AUTO_DELETE_MESSAGE_DURATION'])
+            if cmd_message is not None:
+                await deleteMessage(cmd_message)
+            if bot_message is not None:
+                await deleteMessage(bot_message)
+        create_task(delete_delay())
 
 
 async def delete_all_messages():

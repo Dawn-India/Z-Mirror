@@ -14,7 +14,7 @@ from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (anno_checker, deleteMessage,
+from bot.helper.telegram_helper.message_utils import (anno_checker,
                                                       editMessage, isAdmin,
                                                       auto_delete_message,
                                                       request_limiter,

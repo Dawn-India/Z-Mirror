@@ -3,7 +3,7 @@ from asyncio import create_subprocess_exec, gather
 from asyncio.subprocess import PIPE
 from re import findall as re_findall
 from json import loads
-from aiofiles.os import path as aiopath, mkdir, listdir
+from aiofiles.os import path as aiopath, makedirs, listdir
 from aiofiles import open as aiopen
 from configparser import ConfigParser
 from random import randrange
@@ -80,10 +80,9 @@ class RcloneTransferHelper:
     async def __create_rc_sa(self, remote, remote_opts):
         sa_conf_dir = 'rclone_sa'
         sa_conf_file = f'{sa_conf_dir}/{remote}.conf'
-        if not await aiopath.isdir(sa_conf_dir):
-            await mkdir(sa_conf_dir)
-        elif await aiopath.isfile(sa_conf_file):
+        if await aiopath.isfile(sa_conf_file):
             return sa_conf_file
+        await makedirs(sa_conf_dir, exist_ok=True)
 
         if gd_id := remote_opts.get('team_drive'):
             option = 'team_drive'

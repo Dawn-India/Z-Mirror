@@ -61,7 +61,7 @@ def direct_link_generator(link):
         return streamvid(link)
     elif 'shrdsk.me' in domain:
         return shrdsk(link)
-    elif "u.pcloud.link" in domain:
+    elif any(x in domain for x in ['e.pcloud.link', 'u.pcloud.link']):
         return pcloud(link)
     elif any(x in domain for x in ['akmfiles.com', 'akmfls.xyz']):
         return akmfiles(link)

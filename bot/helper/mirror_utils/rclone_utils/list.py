@@ -16,7 +16,7 @@ from bot.helper.ext_utils.bot_utils import (cmd_exec, get_readable_file_size,
                                             new_thread, update_user_ldata)
 from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
+from bot.helper.telegram_helper.message_utils import editMessage, sendMessage, deleteMessage, auto_delete_message
 
 LIST_LIMIT = 6
 
@@ -25,13 +25,14 @@ LIST_LIMIT = 6
 async def path_updates(_, query, obj):
     await query.answer()
     message = query.message
+    reply_to = message.reply_to_message
     data = query.data.split()
     if data[1] == 'cancel':
         obj.remote = 'Task has been cancelled!'
         obj.path = ''
         obj.is_cancelled = True
         obj.event.set()
-        await message.delete()
+        await deleteMessage(reply_to)
         return
     if obj.query_proc:
         return
@@ -58,7 +59,7 @@ async def path_updates(_, query, obj):
         if data[2] == 'fo':
             await obj.get_path()
         else:
-            await message.delete()
+            await deleteMessage(message)
             obj.event.set()
     elif data[1] == 'ps':
         if obj.page_step == int(data[2]):
@@ -72,7 +73,7 @@ async def path_updates(_, query, obj):
         obj.item_type = data[2]
         await obj.get_path()
     elif data[1] == 'cur':
-        await message.delete()
+        await deleteMessage(message)
         obj.event.set()
     elif data[1] == 'def':
         path = f'{obj.remote}{obj.path}' if obj.config_path == 'rcl.conf' else f'mrcc:{obj.remote}{obj.path}'
@@ -129,8 +130,10 @@ class RcloneList:
         except:
             self.path = ''
             self.remote = 'Timed Out. Task has been cancelled!'
+            LOGGER.info(f'User {self.user_id} timed out while choosing rclone path')
             self.is_cancelled = True
             self.event.set()
+            await deleteMessage(self.__message)
         finally:
             self.__client.remove_handler(*handler)
 
@@ -283,7 +286,7 @@ class RcloneList:
             self.config_path = config_path
             await self.list_remotes()
         await wrap_future(future)
-        await self.__reply_to.delete()
+        await deleteMessage(self.__reply_to)
         if self.config_path != 'rclone.conf' and not self.is_cancelled:
             return f'mrcc:{self.remote}{self.path}'
         return f'{self.remote}{self.path}'

@@ -8,7 +8,7 @@ from os import getcwd, path as ospath
 from re import sub as re_sub
 from time import time
 
-from aiofiles.os import mkdir, path as aiopath, remove as aioremove
+from aiofiles.os import makedirs, path as aiopath, remove as aioremove
 from PIL import Image
 
 from pyrogram.filters import command, create, regex
@@ -170,8 +170,7 @@ async def set_thumb(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     path = "Thumbnails/"
-    if not await aiopath.isdir(path):
-        await mkdir(path)
+    await makedirs(path, exist_ok=True)
     photo_dir = await message.download()
     des_dir = ospath.join(path, f'{user_id}.jpg')
     await sync_to_async(Image.open(photo_dir).convert("RGB").save, des_dir, "JPEG")
@@ -187,8 +186,7 @@ async def add_rclone(_, message, pre_event):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     path = f'{getcwd()}/rclone/'
-    if not await aiopath.isdir(path):
-        await mkdir(path)
+    await makedirs(path, exist_ok=True)
     des_dir = ospath.join(path, f'{user_id}.conf')
     await message.download(file_name=des_dir)
     update_user_ldata(user_id, 'rclone', f'rclone/{user_id}.conf')

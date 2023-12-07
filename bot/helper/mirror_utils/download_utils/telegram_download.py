@@ -3,7 +3,7 @@ from asyncio import Lock
 from logging import ERROR, getLogger
 from time import time
 
-from bot import (config_dict, IS_PREMIUM_USER, LOGGER, bot, download_dict,
+from bot import (IS_PREMIUM_USER, LOGGER, bot, download_dict,
                  download_dict_lock, non_queued_dl, queue_dict_lock, user)
 from bot.helper.ext_utils.task_manager import is_queued, limit_checker, stop_duplicate_check
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus

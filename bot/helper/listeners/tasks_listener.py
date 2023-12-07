@@ -12,7 +12,7 @@ from bot import (DATABASE_URL, DOWNLOAD_DIR, GLOBAL_EXTENSION_FILTER, LOGGER,
                  MAX_SPLIT_SIZE, Interval, aria2, config_dict, download_dict,
                  download_dict_lock, non_queued_dl, non_queued_up,
                  queue_dict_lock, queued_dl, queued_up, status_reply_dict_lock,
-                 user_data)
+                 user_data, subprocess_lock)
 from bot.helper.ext_utils.bot_utils import (extra_btns, get_readable_file_size,
                                             get_readable_time, sync_to_async)
 from bot.helper.ext_utils.db_handler import DbManager
@@ -206,14 +206,17 @@ class MirrorLeechListener:
                                 cmd = ["7z", "x", f"-p{pswd}", f_path, f"-o{t_path}", "-aot", "-xr!@PaxHeader"]
                                 if not pswd:
                                     del cmd[2]
-                                if self.suproc == 'cancelled' or self.suproc is not None and self.suproc.returncode == -9:
-                                    return
-                                self.suproc = await create_subprocess_exec(*cmd)
-                                code = await self.suproc.wait()
+                                async with subprocess_lock:
+                                    if self.suproc == "cancelled":
+                                        return
+                                    self.suproc = await create_subprocess_exec(*cmd)
+                                _, stderr = await self.suproc.communicate()
+                                code = self.suproc.returncode
                                 if code == -9:
                                     return
                                 elif code != 0:
-                                    LOGGER.error('Unable to extract archive splits!')
+                                    stderr = stderr.decode().strip()
+                                    LOGGER.error(f"{stderr}. Unable to extract archive splits!. Path: {f_path}")
                         if not self.seed and self.suproc is not None and self.suproc.returncode == 0:
                             for file_ in files:
                                 if is_archive_split(file_) or is_archive(file_):
@@ -223,16 +226,19 @@ class MirrorLeechListener:
                                     except:
                                         return
                 else:
+                    up_path = get_base_name(dl_path)
                     if self.seed:
                         self.newDir = f"{self.dir}10000"
                         up_path = up_path.replace(self.dir, self.newDir)
                     cmd = ["7z", "x", f"-p{pswd}", dl_path, f"-o{up_path}", "-aot", "-xr!@PaxHeader"]
                     if not pswd:
                         del cmd[2]
-                    if self.suproc == 'cancelled':
-                        return
-                    self.suproc = await create_subprocess_exec(*cmd)
-                    code = await self.suproc.wait()
+                    async with subprocess_lock:
+                        if self.suproc == "cancelled":
+                            return
+                        self.suproc = await create_subprocess_exec(*cmd)
+                    _, stderr = await self.suproc.communicate()
+                    code = self.suproc.returncode
                     if code == -9:
                         return
                     elif code == 0:
@@ -243,11 +249,12 @@ class MirrorLeechListener:
                             except:
                                 return
                     else:
-                        LOGGER.error('Unable to extract archive! Uploading anyway')
+                        stderr = stderr.decode().strip()
+                        LOGGER.error(f"{stderr}. Unable to extract archive! Uploading anyway. Path: {dl_path}")
                         self.newDir = ""
                         up_path = dl_path
             except NotSupportedExtractionArchive:
-                LOGGER.info("Not any valid archive, uploading file as it is.")
+                LOGGER.info(f"Not any valid archive, uploading file as it is. Path: {dl_path}")
                 self.newDir = ""
                 up_path = dl_path
 
@@ -267,25 +274,32 @@ class MirrorLeechListener:
             LEECH_SPLIT_SIZE = min(LEECH_SPLIT_SIZE, MAX_SPLIT_SIZE)
             cmd = ["7z", f"-v{LEECH_SPLIT_SIZE}b", "a", "-mx=0", f"-p{pswd}", up_path, dl_path]
             for ext in GLOBAL_EXTENSION_FILTER:
-                ex_ext = f'-xr!*.{ext}'
+                ex_ext = f"-xr!*.{ext}"
                 cmd.append(ex_ext)
             if self.isLeech and int(size) > LEECH_SPLIT_SIZE:
                 if not pswd:
                     del cmd[4]
-                LOGGER.info(f'Zip: orig_path: {dl_path}, zip_path: {up_path}.0*')
+                LOGGER.info(f"Zip: orig_path: {dl_path}, zip_path: {up_path}.0*")
             else:
                 del cmd[1]
                 if not pswd:
                     del cmd[3]
-                LOGGER.info(f'Zip: orig_path: {dl_path}, zip_path: {up_path}')
-            if self.suproc == 'cancelled':
-                return
-            self.suproc = await create_subprocess_exec(*cmd)
-            code = await self.suproc.wait()
+                LOGGER.info(f"Zip: orig_path: {dl_path}, zip_path: {up_path}")
+            async with subprocess_lock:
+                if self.suproc == "cancelled":
+                    return
+                self.suproc = await create_subprocess_exec(*cmd)
+            _, stderr = await self.suproc.communicate()
+            code = self.suproc.returncode
             if code == -9:
                 return
-            elif not self.seed:
-                await clean_target(dl_path)
+            elif code == 0:
+                if not self.seed:
+                    await clean_target(dl_path)
+            else:
+                stderr = stderr.decode().strip()
+                LOGGER.error(f"{stderr}. Unable to zip this path: {dl_path}")
+                return
 
         if not self.compress and not self.extract:
             up_path = dl_path
@@ -309,7 +323,7 @@ class MirrorLeechListener:
                                 async with download_dict_lock:
                                     download_dict[self.uid] = SplitStatus(up_name, size, gid, self)
                                 LOGGER.info(f"Splitting: {up_name}")
-                            res = await split_file(f_path, f_size, file_, dirpath, LEECH_SPLIT_SIZE, self)
+                            res = await split_file(f_path, f_size, dirpath, LEECH_SPLIT_SIZE, self)
                             if not res:
                                 return
                             if res == "errored":

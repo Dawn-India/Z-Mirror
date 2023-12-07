@@ -34,23 +34,29 @@ async def _list_drive(key, message, item_type, isRecursive):
     LOGGER.info(f"Searching for: {key}")
     start_time = time()
     gdrive = GoogleDriveHelper()
-    telegraph_content, contents_no = await sync_to_async(gdrive.drive_list, key, isRecursive=isRecursive, itemType=item_type)
+    telegraph_content, contents_no = await sync_to_async(
+        gdrive.drive_list, key, isRecursive=isRecursive, itemType=item_type)
     Elapsed = get_readable_time(time() - start_time)
-    gdmsg = None
+    tag = message.from_user.mention
+    msg = ''
     if telegraph_content:
         try:
             button = await get_telegraph_list(telegraph_content)
         except Exception as e:
             await editMessage(message, e)
             return
-        msg = f'<b>Found {contents_no} result for <i>{key}</i></b>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
-        gdmsg = await editMessage(message, msg, button)
+        msg += f'<b>Found {contents_no} result for <i>{key}</i></b>\n\n'
+        msg += f'<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n'
+        msg += f'<b>Elapsed</b>: {Elapsed}\n\ncc: {tag}'
+        await editMessage(message, msg, button)
     else:
-        msg = f'No result found for <i>{key}</i>\n\n<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n<b>Elapsed</b>: {Elapsed}'
-        gdmsg = await editMessage(message, msg)
-    if gdmsg:
+        msg += f'No result found for <i>{key}</i>\n\n'
+        msg += f'<b>Type</b>: {item_type} | <b>Recursive list</b>: {isRecursive}\n'
+        msg += f'<b>Elapsed</b>: {Elapsed}\n\ncc: {tag}'
+        await editMessage(message, msg)
+    if msg:
         await delete_links(message.reply_to_message)
-        await auto_delete_message(message, gdmsg)
+        await auto_delete_message(message)
 
 
 @new_task
