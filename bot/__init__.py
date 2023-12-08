@@ -565,7 +565,7 @@ if not ospath.exists('.netrc'):
 zrun("chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x aria.sh && ./aria.sh", shell=True,)
 if ospath.exists('accounts.zip'):
     if ospath.exists('accounts'):
-        zrun("rm -rf accounts")
+        zrun(["rm", "-rf", "accounts"])
     zrun(["7z", "x", "-o.", "-bso0", "-aoa", "accounts.zip", "accounts/*.json", "&&", "chmod", "-R", "777", "accounts"])
     remove('accounts.zip')
 if not ospath.exists('accounts'):
