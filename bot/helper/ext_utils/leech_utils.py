@@ -71,13 +71,12 @@ async def get_document_type(path):
                                  "json", "-show_streams", path])
         if res := result[1]:
             LOGGER.warning(f"Get Document Type: {res} - File: {path}")
-            return is_video, is_audio, is_image
     except Exception as e:
         LOGGER.error(f"Get Document Type: {e}. Mostly File not found! - File: {path}")
         return is_video, is_audio, is_image
     fields = eval(result[0]).get('streams')
     if fields is None:
-        LOGGER.error(f"get_document_type: {result}")
+        LOGGER.error(f"Get_document_type: {result}")
         return is_video, is_audio, is_image
     for stream in fields:
         if stream.get('codec_type') == 'video':
@@ -129,7 +128,7 @@ async def split_file(path, size, dirpath, split_size, listener, start_time=0, i=
     parts = -(-size // leech_split_size)
     if (user_dict.get('equal_splits') or config_dict['EQUAL_SPLITS'] and 'equal_splits' not in user_dict) and not inLoop:
         split_size = (size // parts) + (size % parts)
-    if (await get_document_type(path))[0]:
+    if not user_dict.get('as_doc') and (await get_document_type(path))[0]:
         if multi_streams:
             multi_streams = await is_multi_streams(path)
         duration = (await get_media_info(path))[0]
