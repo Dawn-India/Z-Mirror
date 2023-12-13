@@ -129,7 +129,7 @@ async def split_file(path, size, dirpath, split_size, listener, start_time=0, i=
     parts = -(-size // leech_split_size)
     if (user_dict.get('equal_splits') or config_dict['EQUAL_SPLITS'] and 'equal_splits' not in user_dict) and not inLoop:
         split_size = (size // parts) + (size % parts)
-    if not user_dict.get('as_doc') and (await get_document_type(path))[0]:
+    if (await get_document_type(path))[0]:
         if multi_streams:
             multi_streams = await is_multi_streams(path)
         duration = (await get_media_info(path))[0]

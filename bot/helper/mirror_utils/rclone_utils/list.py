@@ -195,16 +195,15 @@ class RcloneList:
         msg += f'\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
         await self.__send_list_message(msg, button)
 
-    async def get_path(self, itype=''):
+    async def get_path(self, itype=""):
         if itype:
             self.item_type == itype
-        elif self.list_status == 'rcu':
-            self.item_type == '--dirs-only'
-        cmd = ['rclone', 'lsjson', self.item_type, '--fast-list', '--no-mimetype',
-               '--no-modtime', '--config', self.config_path, f"{self.remote}{self.path}"]
+        elif self.list_status == "rcu":
+            self.item_type == "--dirs-only"
+        cmd = f'rclone lsjson {self.item_type} --fast-list --no-mimetype --no-modtime --config {self.config_path} "{self.remote}{self.path}"'
         if self.is_cancelled:
             return
-        res, err, code = await cmd_exec(cmd)
+        res, err, code = await cmd_exec(cmd, shell=True)
         if code not in [0, -9]:
             LOGGER.error(f'While rclone listing. Path: {self.remote}{self.path}. Stderr: {err}')
             self.remote = err[:4000]
