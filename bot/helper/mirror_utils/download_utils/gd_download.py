@@ -9,7 +9,8 @@ from bot.helper.ext_utils.task_manager import (is_queued, limit_checker,
                                                stop_duplicate_check)
 from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.gdrive_utils.download import gdDownload
+from bot.helper.mirror_utils.gdrive_utils.count import gdCount
 from bot.helper.telegram_helper.message_utils import (delete_links,
                                                       sendMessage,
                                                       sendStatusMessage,
@@ -25,7 +26,7 @@ async def add_gd_download(link, path, listener, newname):
         tag = listener.message.from_user.mention
     LOGGER.info(f'Downloading: {link}')
     start_time = time()
-    drive = GoogleDriveHelper()
+    drive = gdCount()
     name, mime_type, size, _, _ = await sync_to_async(drive.count, link)
     if mime_type is None:
         LOGGER.error(f'Error in downloading: {name}')
@@ -67,7 +68,7 @@ async def add_gd_download(link, path, listener, newname):
     else:
         from_queue = False
 
-    drive = GoogleDriveHelper(name, path, listener)
+    drive = gdDownload(name, path, listener)
     async with download_dict_lock:
         download_dict[listener.uid] = GdriveStatus(drive, size, listener.message, gid, 'dl', listener.extra_details)
 

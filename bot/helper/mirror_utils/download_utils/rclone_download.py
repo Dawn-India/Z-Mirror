@@ -3,7 +3,7 @@ from asyncio import gather
 from json import loads
 from secrets import token_urlsafe
 
-from bot import (config_dict, LOGGER, download_dict, download_dict_lock, non_queued_dl,
+from bot import (LOGGER, download_dict, download_dict_lock, non_queued_dl,
                  queue_dict_lock)
 from bot.helper.ext_utils.bot_utils import cmd_exec
 from bot.helper.ext_utils.task_manager import is_queued, stop_duplicate_check

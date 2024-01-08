@@ -6,7 +6,7 @@ from bot import (LOGGER, config_dict, non_queued_dl, non_queued_up,
 from bot.helper.ext_utils.bot_utils import (get_readable_file_size, get_telegraph_list,
                                             sync_to_async)
 from bot.helper.ext_utils.fs_utils import check_storage_threshold, get_base_name
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.gdrive_utils.search import gdSearch
 
 
 async def stop_duplicate_check(name, listener):
@@ -26,7 +26,7 @@ async def stop_duplicate_check(name, listener):
         except:
             name = None
     if name is not None:
-        telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, stopDup=True)
+        telegraph_content, contents_no = await sync_to_async(gdSearch(stopDup=True).drive_list, name)
         if telegraph_content:
             msg = f"File/Folder is already available in Drive.\nHere are {contents_no} list results:"
             button = await get_telegraph_list(telegraph_content)

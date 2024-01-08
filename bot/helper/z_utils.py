@@ -9,7 +9,7 @@ from bot import DATABASE_URL, LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import (check_user_tasks, checking_access,
                                             is_gdrive_link, is_magnet)
 from bot.helper.ext_utils.db_handler import DbManager
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.gdrive_utils.helper import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import (delete_links, forcesub,
                                                       auto_delete_message,
                                                       message_filter,

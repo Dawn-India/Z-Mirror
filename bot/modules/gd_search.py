@@ -8,7 +8,7 @@ from bot import LOGGER, bot
 from bot.helper.ext_utils.bot_utils import (checking_access, get_readable_time,
                                             get_telegraph_list, new_task,
                                             sync_to_async)
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.gdrive_utils.search import gdSearch
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -33,9 +33,8 @@ async def list_buttons(user_id, isRecursive=True):
 async def _list_drive(key, message, item_type, isRecursive):
     LOGGER.info(f"Searching for: {key}")
     start_time = time()
-    gdrive = GoogleDriveHelper()
     telegraph_content, contents_no = await sync_to_async(
-        gdrive.drive_list, key, isRecursive=isRecursive, itemType=item_type)
+        gdSearch(isRecursive=isRecursive, itemType=item_type).drive_list, key, isRecursive=isRecursive, itemType=item_type)
     Elapsed = get_readable_time(time() - start_time)
     tag = message.from_user.mention
     msg = ''

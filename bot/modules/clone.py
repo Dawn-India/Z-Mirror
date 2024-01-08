@@ -23,7 +23,10 @@ from bot.helper.mirror_utils.rclone_utils.list import RcloneList
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
 from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
 from bot.helper.mirror_utils.status_utils.rclone_status import RcloneStatus
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.gdrive_utils.helper import GoogleDriveHelper
+from bot.helper.mirror_utils.gdrive_utils.clone import gdClone
+from bot.helper.mirror_utils.gdrive_utils.count import gdCount
+from bot.helper.mirror_utils.gdrive_utils.search import gdSearch
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker,
@@ -165,8 +168,7 @@ async def gdcloneNode(message, link, listener):
     if is_gdrive_link(link):
         LOGGER.info(f'Cloning: {link}')
         start_time = time()
-        gd = GoogleDriveHelper()
-        name, mime_type, size, files, _ = await sync_to_async(gd.count, link)
+        name, mime_type, size, files, _ = await sync_to_async(gdCount().count, link)
         if mime_type is None:
             elapsed = time() - start_time
             LOGGER.error(f'Error in cloning: {name}')
@@ -179,7 +181,7 @@ async def gdcloneNode(message, link, listener):
             return
         if config_dict['STOP_DUPLICATE']:
             LOGGER.info('Checking if File/Folder already in Drive...')
-            telegraph_content, contents_no = await sync_to_async(gd.drive_list, name, True)
+            telegraph_content, contents_no = await sync_to_async(gdSearch(stopDup=True, noMulti=True).drive_list, name)
             if telegraph_content:
                 LOGGER.info('File/Folder is already available in Drive.')
                 msg = f"File/Folder is already available in Drive.\nHere are {contents_no} list results:"
@@ -194,7 +196,7 @@ async def gdcloneNode(message, link, listener):
             return
         await listener.onDownloadStart()
         LOGGER.info(f'Clone Started: Name: {name} - Source: {link}')
-        drive = GoogleDriveHelper(name, listener=listener)
+        drive = gdClone(name, listener=listener)
         if files <= 1:
             msg = await sendMessage(message, f"Cloning: <code>{link}</code>")
             link, size, mime_type, files, folders, dir_id = await sync_to_async(drive.clone, link, listener.drive_id)

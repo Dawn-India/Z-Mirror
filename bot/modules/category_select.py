@@ -8,7 +8,7 @@ from bot.helper.ext_utils.bot_utils import (MirrorStatus, arg_parser,
                                             getDownloadByGid, is_gdrive_link,
                                             new_task, sync_to_async)
 from bot.helper.ext_utils.help_messages import CAT_SEL_HELP_MESSAGE
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.mirror_utils.gdrive_utils.helper import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (anno_checker, delete_links,
