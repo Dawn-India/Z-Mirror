@@ -178,7 +178,7 @@ async def gdcloneNode(message, link, listener):
             await auto_delete_message(message, cmsg)
             return
         if config_dict['STOP_DUPLICATE']:
-            LOGGER.info('Checking File/Folder if already in Drive...')
+            LOGGER.info('Checking if File/Folder already in Drive...')
             telegraph_content, contents_no = await sync_to_async(gd.drive_list, name, True)
             if telegraph_content:
                 LOGGER.info('File/Folder is already available in Drive.')
@@ -195,9 +195,9 @@ async def gdcloneNode(message, link, listener):
         await listener.onDownloadStart()
         LOGGER.info(f'Clone Started: Name: {name} - Source: {link}')
         drive = GoogleDriveHelper(name, listener=listener)
-        if files <= 10:
+        if files <= 1:
             msg = await sendMessage(message, f"Cloning: <code>{link}</code>")
-            link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
+            link, size, mime_type, files, folders, dir_id = await sync_to_async(drive.clone, link, listener.drive_id)
             await deleteMessage(msg)
         else:
             gid = token_urlsafe(6)
@@ -205,12 +205,12 @@ async def gdcloneNode(message, link, listener):
             async with download_dict_lock:
                 download_dict[message.id] = GdriveStatus(drive, size, message, gid, 'cl', listener.extra_details)
             await sendStatusMessage(message)
-            link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
+            link, size, mime_type, files, folders, dir_id = await sync_to_async(drive.clone, link, listener.drive_id)
         if not link:
             await delete_links(message)
             return
         LOGGER.info(f'Cloning Done: {name}')
-        await listener.onUploadComplete(link, size, files, folders, mime_type, name)
+        await listener.onUploadComplete(link, size, files, folders, mime_type, name, dir_id=dir_id)
     else:
         cmsg = await sendMessage(message, CLONE_HELP_MESSAGE.format_map({'cmd': message.command[0]}))
         await auto_delete_message(message, cmsg)

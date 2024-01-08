@@ -61,6 +61,8 @@ def direct_link_generator(link):
         return streamvid(link)
     elif 'shrdsk.me' in domain:
         return shrdsk(link)
+    elif 'tmpsend.com' in domain:
+        return tmpsend(link)
     elif any(x in domain for x in ['e.pcloud.link', 'u.pcloud.link']):
         return pcloud(link)
     elif any(x in domain for x in ['akmfiles.com', 'akmfls.xyz']):
@@ -1235,3 +1237,18 @@ def pcloud(url):
     if link := findall(r'.downloadlink.:..(https:.*)..', res.text):
         return link[0].replace('\/', '/')
     raise DirectDownloadLinkException("ERROR: Direct link not found")
+
+def tmpsend(url):
+    parsed_url = urlparse(url)
+    if any(x in parsed_url.path for x in ['thank-you','download']):
+        query_params = parse_qs(parsed_url.query)
+        if file_id := query_params.get('d'):
+            file_id = file_id[0]
+    elif not (file_id := parsed_url.path.strip('/')):
+
+
+        raise DirectDownloadLinkException("ERROR: Invalid URL format")
+    referer_url = f"https://tmpsend.com/thank-you?d={file_id}"
+    header = f"Referer: {referer_url}"
+    download_link = f"https://tmpsend.com/download?d={file_id}"
+    return download_link, header

@@ -36,7 +36,7 @@ async def __onDownloadStarted(api, gid):
                     download = download.live
         return
     else:
-        LOGGER.info(f'onDownloadStarted: {download.name} - Gid: {gid} - Size: {download.total_length}')
+        LOGGER.info(f'onDownloadStarted: {download.name} - Gid: {gid}')
 
     if config_dict['STOP_DUPLICATE']:
         await sleep(1)

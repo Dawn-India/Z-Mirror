@@ -240,7 +240,7 @@ class GoogleDriveHelper:
             elif self.__is_errored:
                 return
             async_to_sync(self.__listener.onUploadComplete, link, size, self.__total_files,
-                          self.__total_folders, mime_type, file_name)
+                          self.__total_folders, mime_type, file_name, dir_id=self.getIdFromUrl(link))
 
     def __upload_dir(self, input_directory, dest_id):
         list_dirs = listdir(input_directory)
@@ -403,7 +403,7 @@ class GoogleDriveHelper:
                 if mime_type is None:
                     mime_type = 'File'
                 size = int(meta.get('size', 0))
-            return durl, size, mime_type, self.__total_files, self.__total_folders
+            return durl, size, mime_type, self.__total_files, self.__total_folders, self.getIdFromUrl(durl)
         except Exception as err:
             if isinstance(err, RetryError):
                 LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
@@ -576,11 +576,7 @@ class GoogleDriveHelper:
                     if not config_dict['DISABLE_DRIVE_LINK']:
                         msg += f"<b><a href={furl}>Drive Link</a></b> | "
                     if index_url:
-                        if isRecur:
-                            url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id)])
-                        else:
-                            url_path = rquote(f'{file.get("name")}', safe='')
-                        url = f'{index_url}/{url_path}/'
+                        url = f'{index_url}findpath?id={file.get("id")}'
                         msg += f'<b><a href="{url}">Index Link</a></b>'
                 elif mime_type == 'application/vnd.google-apps.shortcut':
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
@@ -592,14 +588,10 @@ class GoogleDriveHelper:
                     if not config_dict['DISABLE_DRIVE_LINK']:
                         msg += f"<b><a href={furl}>Drive Link</a></b> | "
                     if index_url:
-                        if isRecur:
-                            url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id))
-                        else:
-                            url_path = rquote(f'{file.get("name")}')
-                        url = f'{index_url}/{url_path}'
+                        url = f'{index_url}findpath?id={file.get("id")}'
                         msg += f'<b><a href="{url}">Index Link</a></b>'
                         if mime_type.startswith(('image', 'video', 'audio')):
-                            urlv = f'{index_url}/{url_path}?a=view'
+                            urlv = f'{index_url}findpath?id={file.get("id")}&view=true'
                             msg += f' | <b><a href="{urlv}">View Link</a></b>'
                 msg += '<br><br>'
                 contents_no += 1
