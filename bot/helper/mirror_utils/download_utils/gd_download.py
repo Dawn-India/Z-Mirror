@@ -2,7 +2,7 @@
 from time import time
 from secrets import token_urlsafe
 
-from bot import (config_dict, LOGGER, download_dict, download_dict_lock, non_queued_dl,
+from bot import (LOGGER, download_dict, download_dict_lock, non_queued_dl,
                  queue_dict_lock)
 from bot.helper.ext_utils.bot_utils import sync_to_async, get_readable_time
 from bot.helper.ext_utils.task_manager import (is_queued, limit_checker,

@@ -59,9 +59,9 @@ class gdSearch(GoogleDriveHelper):
                         query += "mimeType = 'application/vnd.google-apps.folder' and "
                 query += "trashed = false"
                 return self.service.files().list(supportsAllDrives=True, includeItemsFromAllDrives=True,
-                                                   q=query, spaces='drive', pageSize=150,
-                                                   fields='files(id, name, mimeType, size)',
-                                                   orderBy='folder, name asc').execute()
+                                                 q=query, spaces='drive', pageSize=150,
+                                                 fields='files(id, name, mimeType, size)',
+                                                 orderBy='folder, name asc').execute()
         except Exception as err:
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.error(err)

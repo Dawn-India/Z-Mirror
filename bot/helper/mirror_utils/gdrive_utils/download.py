@@ -17,6 +17,7 @@ LOGGER = getLogger(__name__)
 class gdDownload(GoogleDriveHelper):
 
     def __init__(self, name, path, listener):
+        self.listener = listener
         super().__init__(listener, name)
         self.__updater = None
         self.__path = path

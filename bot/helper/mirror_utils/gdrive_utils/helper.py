@@ -117,8 +117,7 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
     def getFileMetadata(self, file_id):
-        return self.service.files().get(fileId=file_id, supportsAllDrives=True,
-                                          fields='name, id, mimeType, size').execute()
+        return self.service.files().get(fileId=file_id, supportsAllDrives=True, fields='name, id, mimeType, size').execute()
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
@@ -137,10 +136,10 @@ class GoogleDriveHelper:
         files = []
         while True:
             response = self.service.files().list(supportsAllDrives=True, includeItemsFromAllDrives=True,
-                                                   q=f"'{folder_id}' in parents and trashed = false",
-                                                   spaces='drive', pageSize=200,
-                                                   fields='nextPageToken, files(id, name, mimeType, size, shortcutDetails)',
-                                                   orderBy='folder, name', pageToken=page_token).execute()
+                                                 q=f"'{folder_id}' in parents and trashed = false",
+                                                 spaces='drive', pageSize=200,
+                                                 fields='nextPageToken, files(id, name, mimeType, size, shortcutDetails)',
+                                                 orderBy='folder, name', pageToken=page_token).execute()
             files.extend(response.get('files', []))
             page_token = response.get('nextPageToken')
             if page_token is None:
@@ -175,6 +174,23 @@ class GoogleDriveHelper:
             y = file.get("id")
         rtnlist.reverse()
         return rtnlist
+
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
+           retry=retry_if_exception_type(Exception))
+    def create_directory(self, directory_name, dest_id):
+        file_metadata = {
+            "name": directory_name,
+            "description": f'Uploaded by {self.listener.message.from_user.id}',
+            "mimeType": self.G_DRIVE_DIR_MIME_TYPE
+        }
+        if dest_id is not None:
+            file_metadata["parents"] = [dest_id]
+        file = self.service.files().create(body=file_metadata, supportsAllDrives=True).execute()
+        file_id = file.get("id")
+        if not config_dict['IS_TEAM_DRIVE']:
+            self.set_permission(file_id)
+        LOGGER.info(f'Created G-Drive Folder:\nName: {file.get("name")}\nID: {file_id}')
+        return file_id
 
     async def cancel_download(self):
         self.is_cancelled = True

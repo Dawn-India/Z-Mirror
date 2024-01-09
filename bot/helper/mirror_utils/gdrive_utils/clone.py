@@ -16,6 +16,7 @@ LOGGER = getLogger(__name__)
 class gdClone(GoogleDriveHelper):
 
     def __init__(self, name, listener):
+        self.listener = listener
         super().__init__(listener, name)
         self.is_cloning = True
         self.__start_time = time()
@@ -34,12 +35,13 @@ class gdClone(GoogleDriveHelper):
             mime_type = meta.get("mimeType")
             if mime_type == self.G_DRIVE_DIR_MIME_TYPE:
                 dir_id = self.create_directory(meta.get('name'), gdrive_id)
-                self.__cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
+                self.__cloneFolder(meta.get('name'), meta.get('id'), dir_id)
                 durl = self.G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.is_cancelled:
                     LOGGER.info("Deleting cloned data from Drive...")
-                    self.deletefile(durl)
-                    return None, None, None, None, None
+                    self.service.files().delete(fileId=dir_id, supportsAllDrives=True).execute()
+                    LOGGER.info("Successfully deleted cloned data from Drive.")
+                    return None, None, None, None, None, None
                 mime_type = 'Folder'
                 size = self.proc_bytes
             else:
@@ -68,24 +70,23 @@ class gdClone(GoogleDriveHelper):
             else:
                 msg = f"Error.\n{err}"
             async_to_sync(self.listener.onUploadError, msg)
-            return None, None, None, None, None
+            return None, None, None, None, None, None
 
-    def __cloneFolder(self, name, local_path, folder_id, dest_id):
-        LOGGER.info(f"Syncing: {local_path}")
+    def __cloneFolder(self, folder_name, folder_id, dest_id):
+        LOGGER.info(f"Syncing: {folder_name}")
         files = self.getFilesByFolderId(folder_id)
         if len(files) == 0:
             return dest_id
         for file in files:
-            if file.get('mimeType') == self.G_DRIVE_DIR_MIME_TYPE:
+            if file.get("mimeType") == self.G_DRIVE_DIR_MIME_TYPE:
                 self.total_folders += 1
-                file_path = ospath.join(local_path, file.get('name'))
-                current_dir_id = self.create_directory(
-                    file.get('name'), dest_id)
-                self.__cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id)
-            elif not file.get('name').lower().endswith(tuple(GLOBAL_EXTENSION_FILTER)):
+                file_path = ospath.join(folder_name, file.get("name"))
+                current_dir_id = self.create_directory(file.get("name"), dest_id)
+                self.__cloneFolder(file_path, file.get("id"), current_dir_id)
+            elif not file.get("name").lower().endswith(tuple(GLOBAL_EXTENSION_FILTER)):
                 self.total_files += 1
-                self.__copyFile(file.get('id'), dest_id)
-                self.proc_bytes += int(file.get('size', 0))
+                self.__copyFile(file.get("id"), dest_id)
+                self.proc_bytes += int(file.get("size", 0))
                 self.total_time = int(time() - self.__start_time)
             if self.is_cancelled:
                 break
