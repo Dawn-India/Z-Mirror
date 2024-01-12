@@ -176,12 +176,14 @@ class RcloneTransferHelper:
         if code == 0:
             result = loads(res)
             fid = next((r['ID'] for r in result if r['Path'] == self.name), 'err')
-            link = f'https://drive.google.com/drive/folders/{fid}' if mime_type == 'Folder' else f'https://drive.google.com/uc?id={fid}&export=download'
-            return link
+            return (
+                f'https://drive.google.com/drive/folders/{fid}'
+                if mime_type == 'Folder'
+                else f'https://drive.google.com/uc?id={fid}&export=download'
+            )
         elif code != -9:
             LOGGER.error(f'while getting drive link. Path: {destination}. Stderr: {err}')
-            link = ''
-            return link
+            return ''
         return link, destination
 
     async def __start_upload(self, cmd, remote_type, spath):

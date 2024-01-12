@@ -26,8 +26,10 @@ async def mirror_status(_, message):
     if count == 0:
         currentTime = get_readable_time(time() - botStartTime)
         free = get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)
-        msg = '<b>Uninstall Telegram and enjoy your life!</b>'
-        msg += '\n\nNo Active Tasks!\n___________________________'
+        msg = (
+            '<b>Uninstall Telegram and enjoy your life!</b>'
+            + '\n\nNo Active Tasks!\n___________________________'
+        )
         msg += f"\n<b>CPU</b>: {cpu_percent()}% | <b>FREE</b>: {free}" \
                f"\n<b>RAM</b>: {virtual_memory().percent}% | <b>UPTIME</b>: {currentTime}"
         reply_message = await sendMessage(message, msg)
@@ -108,10 +110,7 @@ async def stats(_, message, edit_mode=False):
     cpuUsage    = cpu_percent(interval=0.1)
     v_core      = cpu_count(logical=True) - cpu_count(logical=False)
     freq_info   = cpu_freq(percpu=False)
-    if freq_info is not None:
-        frequency = freq_info.current / 1000
-    else:
-        frequency = '-_-'
+    frequency = freq_info.current / 1000 if freq_info is not None else '-_-'
     memory      = virtual_memory()
     mem_p       = memory.percent
     swap        = swap_memory()
@@ -216,8 +215,8 @@ async def send_repo_stats(_, query):
         if version != 'N/A':
             if version != vtag:
                 update_info =  f'⚠️ New Version Update Available ⚠️\n'
-                update_info += f'Update ASAP and experience new features and bug-fixes.'
-        
+                update_info += 'Update ASAP and experience new features and bug-fixes.'
+
     repo_stats = f'<b><i><u>Zee Repository Info</u></i></b> \n\n' \
                  f'<b><i>Official Repository</i></b>        \n'   \
                  f'<code>- Updated   : </code> {commit_date}\n'   \

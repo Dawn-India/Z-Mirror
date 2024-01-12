@@ -413,26 +413,7 @@ class MirrorLeechListener:
             if mime_type != 0:
                 msg += f'<code>Corrupted Files</code> : {mime_type}\n'
             msg_ = '\n<b><i>Files has been sent in your DM.</i></b>'
-            if not self.dmMessage:
-                if not files:
-                    await sendMessage(self.message, lmsg + msg)
-                    if self.logMessage:
-                        await sendMessage(self.logMessage, lmsg + msg)
-                else:
-                    fmsg = '\n'
-                    for index, (link, name) in enumerate(files.items(), start=1):
-                        fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
-                        if len(fmsg.encode() + msg.encode()) > 4000:
-                            if self.logMessage:
-                                await sendMessage(self.logMessage, lmsg + msg + fmsg)
-                            await sendMessage(self.message, lmsg + msg + fmsg)
-                            await sleep(1)
-                            fmsg = '\n'
-                    if fmsg != '\n':
-                        if self.logMessage:
-                            await sendMessage(self.logMessage, lmsg + msg + fmsg)
-                        await sendMessage(self.message, lmsg + msg + fmsg)
-            else:
+            if self.dmMessage:
                 if not files:
                     await sendMessage(self.message, gmsg + msg + msg_)
                     if self.logMessage:
@@ -457,6 +438,24 @@ class MirrorLeechListener:
                             await sendMessage(self.logMessage, lmsg + msg + fmsg)
                         await sendMessage(self.message, gmsg + msg + msg_)
                         await sendMessage(self.dmMessage, gmsg + msg + fmsg)
+            elif not files:
+                await sendMessage(self.message, lmsg + msg)
+                if self.logMessage:
+                    await sendMessage(self.logMessage, lmsg + msg)
+            else:
+                fmsg = '\n'
+                for index, (link, name) in enumerate(files.items(), start=1):
+                    fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
+                    if len(fmsg.encode() + msg.encode()) > 4000:
+                        if self.logMessage:
+                            await sendMessage(self.logMessage, lmsg + msg + fmsg)
+                        await sendMessage(self.message, lmsg + msg + fmsg)
+                        await sleep(1)
+                        fmsg = '\n'
+                if fmsg != '\n':
+                    if self.logMessage:
+                        await sendMessage(self.logMessage, lmsg + msg + fmsg)
+                    await sendMessage(self.message, lmsg + msg + fmsg)
             if self.seed:
                 if self.newDir:
                     await clean_target(self.newDir)

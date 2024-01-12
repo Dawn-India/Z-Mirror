@@ -123,7 +123,6 @@ class YtSelection:
             buttons.ibutton('Cancel', 'ytq cancel', 'footer')
             self.__main_buttons = buttons.build_menu(3)
             msg = f'Choose Playlist Videos Quality:\nTimeout: '
-            msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         else:
             format_dict = result.get('formats')
             if format_dict is not None:
@@ -170,7 +169,7 @@ class YtSelection:
             buttons.ibutton('Cancel', 'ytq cancel', 'footer')
             self.__main_buttons = buttons.build_menu(2)
             msg = f'Choose Video Quality:\nTimeout: '
-            msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
+        msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         self.__reply_to = await sendMessage(self.__message, msg, self.__main_buttons)
         await wrap_future(future)
         if not self.is_cancelled:
@@ -180,10 +179,9 @@ class YtSelection:
     async def back_to_main(self):
         if self.__is_playlist:
             msg = f'Choose Playlist Videos Quality:\nTimeout: '
-            msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         else:
             msg = f'Choose Video Quality:\nTimeout: '
-            msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
+        msg += f'{get_readable_time(self.__timeout-(time()-self.__time))}\n\ncc: {self.__tag}'
         await editMessage(self.__reply_to, msg, self.__main_buttons)
 
     async def qual_subbuttons(self, b_name):
@@ -290,7 +288,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     opt         = args['-o']   or args['-opt']      or args['-options']
     folder_name = args['-sd']  or args['-samedir']
     name        = args['-n']   or args['-name']
-    drive_id    = args['-id'] 
+    drive_id    = args['-id']
     index_link  = args['-index']
     up          = args['-up']  or args['-upload']
     rcf         = args['-rcf']
@@ -322,7 +320,10 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             if len(bulk) == 0:
                 raise ValueError('Bulk Empty!')
         except:
-            ymsg = await sendMessage(message, f'Reply to text file or tg message that have links seperated by new line!')
+            ymsg = await sendMessage(
+                message,
+                'Reply to text file or tg message that have links seperated by new line!',
+            )
             await delete_links(message)
             await auto_delete_message(message, ymsg)
             return
@@ -381,7 +382,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
 
     if not link and (reply_to := message.reply_to_message):
         link = reply_to.text.split('\n', 1)[0].strip()
-    
+
     if not is_url(link):
         ymsg = await sendMessage(message, YT_HELP_MESSAGE.format(cmd = message.command[0]))
         await delete_links(message)

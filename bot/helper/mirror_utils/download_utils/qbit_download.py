@@ -37,8 +37,10 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
                     if len(tor_info) > 0:
                         break
                     elif time() - ADD_TIME >= 120:
-                        msg = "Not added! Check if the link is valid or not."
-                        msg += "\nIf it's torrent file then report, "
+                        msg = (
+                            "Not added! Check if the link is valid or not."
+                            + "\nIf it's torrent file then report, "
+                        )
                         msg += "this happens if torrent file size above 10mb."
                         qmsg = await sendMessage(listener.message, msg)
                         await delete_links(listener.message)
@@ -68,8 +70,10 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
 
         if config_dict['BASE_URL'] and listener.select:
             if link.startswith('magnet:'):
-                metamsg = "Downloading Metadata, please wait!"
-                metamsg += "\nThen you can select files.\n\nUse torrent file to avoid this wait."
+                metamsg = (
+                    "Downloading Metadata, please wait!"
+                    + "\nThen you can select files.\n\nUse torrent file to avoid this wait."
+                )
                 meta = await sendMessage(listener.message, metamsg)
                 while True:
                     tor_info = await sync_to_async(client.torrents_info, tag=f'{listener.uid}')
@@ -91,7 +95,7 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
             SBUTTONS = bt_selection_buttons(ext_hash)
             msg = f"<b>Name</b>: <code>{tor_info.name}</code>"
             msg += f"\n\nYour download paused."
-            msg += f"Choose files then press Done Selecting button to start downloading."
+            msg += "Choose files then press Done Selecting button to start downloading."
             msg += f"\n<b><i>Your download will not start automatically</i></b>"
             await sendMessage(listener.message, msg, SBUTTONS)
         else:

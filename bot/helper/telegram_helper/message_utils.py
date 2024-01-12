@@ -300,7 +300,7 @@ async def forcesub(message, ids, button=None):
     if join_button:
         if button is None:
             button = ButtonMaker()
-        _msg = f"You need to join our channel to use me."
+        _msg = "You need to join our channel to use me."
         for key, value in join_button.items():
             button.ubutton(f'{key}', value, 'footer')
     return _msg, button

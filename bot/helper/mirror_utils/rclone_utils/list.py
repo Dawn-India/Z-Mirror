@@ -25,13 +25,13 @@ LIST_LIMIT = 6
 async def path_updates(_, query, obj):
     await query.answer()
     message = query.message
-    reply_to = message.reply_to_message
     data = query.data.split()
     if data[1] == 'cancel':
         obj.remote = 'Task has been cancelled!'
         obj.path = ''
         obj.is_cancelled = True
         obj.event.set()
+        reply_to = message.reply_to_message
         await deleteMessage(reply_to)
         return
     if obj.query_proc:
