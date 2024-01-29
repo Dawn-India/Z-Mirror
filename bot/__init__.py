@@ -19,6 +19,7 @@ from pyrogram import enums
 from qbittorrentapi import Client as qbClient
 from tzlocal import get_localzone
 from uvloop import install
+from urllib3 import disable_warnings as udw
 
 faulthandler_enable()
 install()
@@ -38,7 +39,8 @@ getLogger("aria2c").setLevel(INFO)
 getLogger("aria2p").setLevel(INFO)
 getLogger("qbittorrentapi").setLevel(INFO)
 getLogger("requests").setLevel(INFO)
-getLogger("urllib3").setLevel(INFO)
+
+udw()
 
 load_dotenv('config.env', override=True)
 
