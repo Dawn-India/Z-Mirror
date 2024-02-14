@@ -175,7 +175,7 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Extract these filetypes.
   > ZIP, RAR, TAR, 7z, ISO, WIM, CAB, GZIP, BZIP2, APM, ARJ, CHM, CPIO, CramFS, DEB, DMG, FAT, HFS, LZH, LZMA, LZMA2, MBR, MSI, MSLZ, NSIS, NTFS, RPM, SquashFS, UDF, VHD, XAR, Z, TAR.XZ
 - Direct links Supported:
-  > mediafire (file/folders), hxfile.co, streamtape.com, streamsb.net, feurl.com, upload.ee, pixeldrain.com, racaty.net, 1fichier.com, 1drv.ms (Only works for file not folder or business account), filelions.com, streamwish.com, send.cm (file/folders), solidfiles.com, linkbox.to (file/folders), shrdsk.me (sharedisk.io), akmfiles.com, wetransfer.com, streamvid.net, gofile.io (file/folders), easyupload.io, mdisk.me (with ytdl), pcloud.link, tmpsend.com, terabox.com (file/folders) (you need to add cookies txt with name) [terabox.txt](https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl), jiodrive.xyz (you need to add [`JIODRIVE_ACCESS_TOKEN`](https://graph.org/Get-JioDrive-Token-10-27)).
+  > mediafire (file/folders), hxfile.co, streamtape.com, streamsb.net, feurl.com, upload.ee, pixeldrain.com, racaty.net, 1fichier.com, 1drv.ms (Only works for file not folder or business account), filelions.com, streamwish.com, send.cm (file/folders), solidfiles.com, linkbox.to (file/folders), shrdsk.me (sharedisk.io), akmfiles.com, wetransfer.com, streamvid.net, gofile.io (file/folders), easyupload.io, mdisk.me (with ytdl), pcloud.link, qiwi.gg, tmpsend.com, terabox.com (file/folders) (you need to add cookies txt with name) [terabox.txt](https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl), jiodrive.xyz (you need to add [`JIODRIVE_ACCESS_TOKEN`](https://graph.org/Get-JioDrive-Token-10-27)).
 
 
 ### Extra

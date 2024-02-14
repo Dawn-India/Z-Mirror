@@ -63,6 +63,8 @@ def direct_link_generator(link):
         return shrdsk(link)
     elif 'tmpsend.com' in domain:
         return tmpsend(link)
+    elif 'qiwi.gg' in domain:
+        return qiwi(link)
     elif any(x in domain for x in ['e.pcloud.link', 'u.pcloud.link']):
         return pcloud(link)
     elif any(x in domain for x in ['akmfiles.com', 'akmfls.xyz']):
@@ -191,7 +193,7 @@ def onedrive(link):
             parsed_link = urlparse(link)
             link_data = parse_qs(parsed_link.query)
         except Exception as e:
-            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
         if not link_data:
             raise DirectDownloadLinkException("ERROR: Unable to find link_data")
         folder_id = link_data.get('resid')
@@ -1252,3 +1254,20 @@ def tmpsend(url):
     header = f"Referer: {referer_url}"
     download_link = f"https://tmpsend.com/download?d={file_id}"
     return download_link, header
+
+def qiwi(url):
+    """qiwi.gg link generator
+    based on https://github.com/aenulrofik"""
+    with Session() as session:
+        file_id = url.split("/")[-1]
+        try:
+            res = session.get(url).text
+        except Exception as e:
+            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+        tree = HTML(res)
+        if name := tree.xpath('//h1[@class="page_TextHeading__VsM7r"]/text()'):
+
+            ext = name[0].split('.')[-1]
+            return f"https://qiwi.lol/{file_id}.{ext}"
+        else:
+            raise DirectDownloadLinkException("ERROR: File not found")
