@@ -1,3 +1,4 @@
+from base64 import b64decode
 from hashlib import sha256
 from http.cookiejar import MozillaCookieJar
 from json import loads
@@ -9,13 +10,13 @@ from uuid import uuid4
 
 from cloudscraper import create_scraper
 from lxml.etree import HTML
-from requests import Session, post
+from requests import Session, post, get
 from requests import session as req_session
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from bot import config_dict
-from bot.helper.ext_utils.bot_utils import (is_share_link, text_size_to_bytes)
+from bot.helper.ext_utils.bot_utils import is_share_link, text_size_to_bytes
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 
@@ -29,6 +30,8 @@ def direct_link_generator(link):
         raise DirectDownloadLinkException("ERROR: Invalid URL")
     if 'youtube.com' in domain or 'youtu.be' in domain:
         raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
+    elif "yadi.sk" in link or "disk.yandex." in link:
+        return yandex_disk(link)
     elif 'mediafire.com' in domain:
         return mediafire(link)
     elif 'osdn.net' in domain:
@@ -65,6 +68,10 @@ def direct_link_generator(link):
         return tmpsend(link)
     elif 'qiwi.gg' in domain:
         return qiwi(link)
+    elif "mp4upload.com" in domain:
+        return mp4upload(link)
+    elif "berkasdrive.com" in domain:
+        return berkasdrive(link)
     elif any(x in domain for x in ['e.pcloud.link', 'u.pcloud.link']):
         return pcloud(link)
     elif any(x in domain for x in ['akmfiles.com', 'akmfls.xyz']):
@@ -80,7 +87,7 @@ def direct_link_generator(link):
     elif any(x in domain for x in ['wetransfer.com', 'we.tl']):
         return wetransfer(link)
     elif any(x in domain for x in ['terabox.com', 'nephobox.com', '4funbox.com', 'mirrobox.com', 'momerybox.com',
-                                   'teraboxapp.com', '1024tera.com', 'terabox.app']):
+                                   'teraboxapp.com', '1024tera.com', 'terabox.app', 'goaibox.com']):
         return terabox(link)
     elif any(x in domain for x in ['cabecabean.lol', 'embedwish.com', 'filelions.co', 'filelions.live',
                                    'filelions.to', 'filelions.online', 'filelions.site', 'kitabmarkaz.xyz',
@@ -148,6 +155,22 @@ def mediafire(url, session=None):
     return final_link[0]
 
 
+def yandex_disk(url: str) -> str:
+    """Yandex.Disk direct link generator
+    Based on https://github.com/wldhx/yadisk-direct"""
+    try:
+        link = findall(r"\b(https?://(yadi\.sk|disk\.yandex\.(com|ru))\S+)", url)[0][0]
+    except IndexError:
+        return "No Yandex.Disk links found\n"
+    api = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={}"
+    try:
+        return get(api.format(link)).json()["href"]
+    except KeyError as e:
+        raise DirectDownloadLinkException(
+            "ERROR: File not found/Download limit reached"
+        ) from e
+
+
 def osdn(url):
     with create_scraper() as session:
         try:
@@ -173,13 +196,27 @@ def github(url):
 
 
 def hxfile(url):
-    with create_scraper() as session:
+    if not path.isfile("hxfile.txt"):
+        raise DirectDownloadLinkException("ERROR: hxfile.txt (cookies) Not Found!")
+    try:
+        jar = MozillaCookieJar()
+        jar.load("hxfile.txt")
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+    cookies = {cookie.name: cookie.value for cookie in jar}
+    with Session() as session:
         try:
-            file_code = url.split('/')[-1]
-            html = HTML(session.post(url, data={'op': 'download2', 'id': file_code}).text)
+            file_code = url.split("/")[-1]
+            html = HTML(
+                session.post(
+                    url,
+                    data={"op": "download2", "id": file_code},
+                    cookies=cookies,
+                ).text
+            )
         except Exception as e:
-            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-    if direct_link:= html.xpath('//a[@class="btn btn-dow"]/@href'):
+            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+    if direct_link := html.xpath("//a[@class='btn btn-dow']/@href"):
         return direct_link[0]
     raise DirectDownloadLinkException("ERROR: Direct download link not found")
 
@@ -1271,3 +1308,50 @@ def qiwi(url):
             return f"https://qiwi.lol/{file_id}.{ext}"
         else:
             raise DirectDownloadLinkException("ERROR: File not found")
+
+def mp4upload(url):
+    with Session() as session:
+        try:
+            url = url.replace("embed-", "")
+            req = session.get(url).text
+            tree = HTML(req)
+            inputs = tree.xpath("//input")
+            header = {"Referer": "https://www.mp4upload.com/"}
+            data = {input.get("name"): input.get("value") for input in inputs}
+            if not data:
+                raise DirectDownloadLinkException("ERROR: File Not Found!")
+            post = session.post(
+                url,
+                data=data,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
+                    "Referer": "https://www.mp4upload.com/",
+                },
+            ).text
+            tree = HTML(post)
+            inputs = tree.xpath('//form[@name="F1"]//input')
+            data = {
+                input.get("name"): input.get("value").replace(" ", "")
+                for input in inputs
+            }
+            if not data:
+                raise DirectDownloadLinkException("ERROR: File Not Found!")
+            data["referer"] = url
+            direct_link = session.post(url, data=data).url
+            return direct_link, header
+        except:
+            raise DirectDownloadLinkException("ERROR: File Not Found!")
+
+def berkasdrive(url):
+    """berkasdrive.com link generator
+    by https://github.com/aenulrofik"""
+    with Session() as session:
+        try:
+            sesi = session.get(url).text
+        except Exception as e:
+            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+    html = HTML(sesi)
+    if link := html.xpath("//script")[0].text.split('"')[1]:
+        return b64decode(link).decode("utf-8")
+    else:
+        raise DirectDownloadLinkException("ERROR: File Not Found!")

@@ -636,8 +636,7 @@ async def edit_variable(_, message, pre_message, key):
     handler_dict[message.chat.id] = False
     value = message.text
     if key == 'RSS_DELAY':
-        value = int(value)
-        addJob(value)
+        addJob()
     elif key == 'DOWNLOAD_DIR':
         if not value.endswith('/'):
             value += '/'
@@ -658,7 +657,11 @@ async def edit_variable(_, message, pre_message, key):
         for download in downloads:
             if not download.is_complete:
                 try:
-                    await sync_to_async(aria2.client.change_option, download.gid, {'bt-stop-timeout': f'{value}'})
+                    await sync_to_async(
+                        aria2.client.change_option,
+                        download.gid,
+                        {'bt-stop-timeout': f'{value}'}
+                    )
                 except Exception as e:
                     LOGGER.error(e)
         aria2_options['bt-stop-timeout'] = f'{value}'

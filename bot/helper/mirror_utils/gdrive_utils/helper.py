@@ -6,6 +6,8 @@ from random import randrange
 from re import search as re_search
 from urllib.parse import parse_qs, urlparse
 
+from googleapiclient.http import build_http
+from google_auth_httplib2 import AuthorizedHttp
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from tenacity import (retry, retry_if_exception_type,
@@ -70,7 +72,9 @@ class GoogleDriveHelper:
         else:
             LOGGER.error('token.pickle not found!')
             return
-        return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+        authorized_http = AuthorizedHttp(credentials, http=build_http())
+        authorized_http.http.disable_ssl_certificate_validation = True
+        return build("drive", "v3", http=authorized_http, cache_discovery=False)
 
     def alt_authorize(self):
         if not self.alt_auth:
@@ -79,7 +83,9 @@ class GoogleDriveHelper:
                 LOGGER.info("Authorize with token.pickle")
                 with open('token.pickle', 'rb') as f:
                     credentials = pload(f)
-                return build('drive', 'v3', credentials=credentials, cache_discovery=False)
+                authorized_http = AuthorizedHttp(credentials, http=build_http())
+                authorized_http.http.disable_ssl_certificate_validation = True
+                return build("drive", "v3", http=authorized_http, cache_discovery=False)
             else:
                 LOGGER.error('token.pickle not found!')
 

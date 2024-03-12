@@ -172,7 +172,6 @@ class RcloneTransferHelper:
         cmd = f'rclone lsjson --fast-list --no-mimetype --no-modtime --config {config_path} "{epath}"'
         res, err, code = await cmd_exec(cmd, shell=True)
 
-        link = ''
         if code == 0:
             result = loads(res)
             fid = next((r['ID'] for r in result if r['Path'] == self.name), 'err')
@@ -181,7 +180,6 @@ class RcloneTransferHelper:
         elif code != -9:
             LOGGER.error(f'while getting drive link. Path: {destination}. Stderr: {err}')
             link = ''
-            return link
         return link, destination
 
     async def __start_upload(self, cmd, remote_type, spath):

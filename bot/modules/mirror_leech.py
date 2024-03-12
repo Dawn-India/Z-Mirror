@@ -174,7 +174,10 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     elif sender_chat := message.sender_chat:
         tag = sender_chat.title
-    if username := message.from_user.username:
+    if not message.from_user:
+        tag = 'Anonymous'
+        message.from_user = await anno_checker(message)
+    elif username := message.from_user.username:
         tag = f"@{username}"
     else:
         tag = message.from_user.mention

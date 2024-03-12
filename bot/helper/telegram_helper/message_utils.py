@@ -45,7 +45,11 @@ async def editMessage(message, text, buttons=None):
 
 async def sendFile(message, file, caption=None):
     try:
-        return await message.reply_document(document=file, quote=True, caption=caption, disable_notification=True)
+        return await message.reply_document(document=file,
+                                            quote=True,
+                                            caption=caption,
+                                            disable_notification=True
+                                        )
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
@@ -59,12 +63,12 @@ async def sendFile(message, file, caption=None):
 
 async def sendRss(text):
     try:
-        if user:
-            return await user.send_message(chat_id=config_dict['RSS_CHAT_ID'], text=text, disable_web_page_preview=True,
-                                           disable_notification=True)
-        else:
-            return await bot.send_message(chat_id=config_dict['RSS_CHAT_ID'], text=text, disable_web_page_preview=True,
-                                          disable_notification=True)
+        client = user if user else bot
+        return await client.send_message(chat_id=config_dict['RSS_CHAT_ID'],
+                                      text=text,
+                                      disable_web_page_preview=True,
+                                      disable_notification=True
+                                    )
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
