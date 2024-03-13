@@ -100,10 +100,11 @@ class gdSearch(GoogleDriveHelper):
         contents_no = 0
         telegraph_content = []
         Title = False
+        self.service = self.authorize()
         if len(list_drives_dict) > 1:
-            token_service = self.authorize()
-            if token_service is not None:
-                self.service = token_service
+            if not self.alt_auth and self.use_sa:
+                self.alt_auth = True
+                self.use_sa = False
         for drive_name, drive_dict in list_drives_dict.items():
             dir_id = drive_dict['drive_id']
             index_url = drive_dict['index_link']

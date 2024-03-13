@@ -27,7 +27,8 @@ class gdClone(GoogleDriveHelper):
         try:
             file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
-            return "Google Drive ID could not be found in the provided link"
+            return "Google Drive ID could not be found in the provided link", None, None, None, None
+        self.service = self.authorize()
         msg = ""
         LOGGER.info(f"File ID: {file_id}")
         try:
@@ -60,12 +61,11 @@ class gdClone(GoogleDriveHelper):
             if "User rate limit exceeded" in err:
                 msg = "User rate limit exceeded."
             elif "File not found" in err:
-                if not self.alt_auth:
-                    token_service = self.alt_authorize()
-                    if token_service is not None:
-                        LOGGER.error('File not found. Trying with token.pickle...')
-                        self.service = token_service
-                        return self.clone(link, gdrive_id)
+                if not self.alt_auth and self.use_sa:
+                    self.alt_auth = True
+                    self.use_sa = False
+                    LOGGER.error('File not found. Trying with token.pickle...')
+                    return self.clone(link, gdrive_id)
                 msg = "File not found."
             else:
                 msg = f"Error.\n{err}"

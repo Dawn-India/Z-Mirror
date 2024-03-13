@@ -35,7 +35,7 @@ class GoogleDriveHelper:
         self.sa_number = 100
         self.alt_auth = False
         self.listener = listener
-        self.service = self.authorize()
+        self.service = None
         self.name = name
         self.total_files = 0
         self.total_folders = 0
@@ -45,6 +45,7 @@ class GoogleDriveHelper:
         self.total_time = 0
         self.status = None
         self.update_interval = 3
+        self.use_sa = config_dict['USE_SERVICE_ACCOUNTS']
 
     @property
     def speed(self):
@@ -59,7 +60,7 @@ class GoogleDriveHelper:
 
     def authorize(self):
         credentials = None
-        if config_dict['USE_SERVICE_ACCOUNTS']:
+        if self.use_sa:
             json_files = listdir("accounts")
             self.sa_number = len(json_files)
             self.sa_index = randrange(self.sa_number)
@@ -75,19 +76,6 @@ class GoogleDriveHelper:
         authorized_http = AuthorizedHttp(credentials, http=build_http())
         authorized_http.http.disable_ssl_certificate_validation = True
         return build("drive", "v3", http=authorized_http, cache_discovery=False)
-
-    def alt_authorize(self):
-        if not self.alt_auth:
-            self.alt_auth = True
-            if ospath.exists('token.pickle'):
-                LOGGER.info("Authorize with token.pickle")
-                with open('token.pickle', 'rb') as f:
-                    credentials = pload(f)
-                authorized_http = AuthorizedHttp(credentials, http=build_http())
-                authorized_http.http.disable_ssl_certificate_validation = True
-                return build("drive", "v3", http=authorized_http, cache_discovery=False)
-            else:
-                LOGGER.error('token.pickle not found!')
 
     def switchServiceAccount(self):
         if self.sa_index == self.sa_number - 1:

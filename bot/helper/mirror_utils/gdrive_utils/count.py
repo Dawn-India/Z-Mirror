@@ -17,6 +17,7 @@ class gdCount(GoogleDriveHelper):
             file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             return "Google Drive ID could not be found in the provided link", None, None, None, None
+        self.service = self.authorize()
         LOGGER.info(f"File ID: {file_id}")
         try:
             return self.__proceed_count(file_id)
@@ -26,12 +27,11 @@ class gdCount(GoogleDriveHelper):
                 err = err.last_attempt.exception()
             err = str(err).replace('>', '').replace('<', '')
             if "File not found" in err:
-                if not self.alt_auth:
-                    token_service = self.alt_authorize()
-                    if token_service is not None:
-                        LOGGER.error('File not found. Trying with token.pickle...')
-                        self.service = token_service
-                        return self.count(link)
+                if not self.alt_auth and self.use_sa:
+                    self.alt_auth = True
+                    self.use_sa = False
+                    LOGGER.error('File not found. Trying with token.pickle...')
+                    return self.count(link)
                 msg = "File not found."
             else:
                 msg = f"Error.\n{err}"
