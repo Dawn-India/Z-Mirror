@@ -26,6 +26,7 @@ class gdUpload(GoogleDriveHelper):
         self.is_uploading = True
 
     def upload(self, file_name, size, gdrive_id):
+        self.service = self.authorize()
         if not gdrive_id:
             gdrive_id = config_dict['GDRIVE_ID']
         item_path = f"{self.__path}/{file_name}"
@@ -142,7 +143,7 @@ class gdUpload(GoogleDriveHelper):
                         'dailyLimitExceeded',
                     ]:
                         raise err
-                    if config_dict['USE_SERVICE_ACCOUNTS']:
+                    if self.use_sa:
                         if reason == 'userRateLimitExceeded':
                             sleep(30)
                         if self.sa_count >= self.sa_number:
