@@ -70,19 +70,24 @@ async def get_document_type(path):
         result = await cmd_exec(["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format",
                                  "json", "-show_streams", path])
         if res := result[1]:
-            LOGGER.warning(f"Get Document Type: {res} - File: {path}")
+            if mime_type.startswith('video'):
+                is_video = True
     except Exception as e:
         LOGGER.error(f"Get Document Type: {e}. Mostly File not found! - File: {path}")
-        return is_video, is_audio, is_image
-    fields = eval(result[0]).get('streams')
-    if fields is None:
-        LOGGER.error(f"Get_document_type: {result}")
-        return is_video, is_audio, is_image
-    for stream in fields:
-        if stream.get('codec_type') == 'video':
+        if mime_type.startswith('video'):
             is_video = True
-        elif stream.get('codec_type') == 'audio':
-            is_audio = True
+        return is_video, is_audio, is_image
+    if result[0] and result[2] == 0:
+        fields = eval(result[0]).get('streams')
+        if fields is None:
+            LOGGER.error(f'get_document_type: {result}')
+            return is_video, is_audio, is_image
+        is_video = False
+        for stream in fields:
+            if stream.get('codec_type') == 'video':
+                is_video = True
+            elif stream.get('codec_type') == 'audio':
+                is_audio = True
     return is_video, is_audio, is_image
 
 
