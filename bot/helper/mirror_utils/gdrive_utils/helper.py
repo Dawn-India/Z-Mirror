@@ -116,6 +116,7 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
     def getFolderData(self, file_id):
+        self.service = self.authorize()
         try:
             meta = self.service.files().get(fileId=file_id, supportsAllDrives=True).execute()
             if meta.get('mimeType', '') == self.G_DRIVE_DIR_MIME_TYPE:
