@@ -5,10 +5,6 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 
 [![Deploy on Heroku](https://www.herokucdn.com/deploy/button.svg)](https://gitlab.com/Dawn-India/Z-Mirror/-/tree/hr_deploy?ref_type=heads#deploy-to-heroku)
 
-## Deploy on Railway
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://gitlab.com/Dawn-India/Z-Mirror/-/tree/hr_deploy?ref_type=heads#deploy-to-railway)
-
 
 # Available features in this REPO:
 
@@ -77,24 +73,28 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 - Storage threshold limit 
 - Leech limit
 - Clone limit
+- Rclone limit
 - Mega limits
 - Torrent limits
 - Direct download limits
 - Yt-dlp limits
 - Google drive limits
 - User task limits
-- Ratelimiter
+- User rate limiter
 
 ### Group Features
-- Force subscribe module
-- Chat restrictions
-- Message filters
 - Bot DM support
+- Message filters
+- Chat restrictions
 - Stop duplicate tasks
+- Mirror/Clone log chat
+- Force subscribe module
 - Enable/Disable drive links
 - Enable/Disable leech function
-- Mirror/Clone log chat
-- Token system for shortners
+- Enable/Disable bulk link function
+- Enable/Disable multi mirror function
+- Enable/Disable torrent seeding system
+- Token system for shortners with database support
 
 ### Status
 
@@ -111,12 +111,14 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 
 ### Database
 
-- Mongo Database support.
-- Store bot settings.
-- Store user settings including thumbnails and rclone config in database.
-- Store private files.
 - Store RSS data.
+- Store private files.
+- Store bot settings.
+- Store user access tokens.
+- Mongo Database support.
+- Store user active tasks with links.
 - Store incompleted task messages.
+- Store user settings including thumbnails and rclone config in database.
 
 ### Torrents Search
 
@@ -181,7 +183,7 @@ This is a Telegram Bot written in Python for mirroring files on the Internet to 
 ### Extra
 - Category wise drive uploads - [Click Here](https://github.com/Dawn-India/Z-Mirror#multi-category-ids) for more info.
 
-# How to deploy?
+# Deploy to VPS
 
 ## Prerequisites
 
@@ -259,14 +261,14 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
   - Example: "format:bv*+mergeall[vcodec=none]|nocheckcertificate:True"
 - `USE_SERVICE_ACCOUNTS`: Whether to use Service Accounts or not, with google-api-python-client. For this to work see [Using Service Accounts](https://github.com/Dawn-India/Z-Mirror#generate-service-accounts-what-is-service-account) section below. Default is `False`. `Bool`
 
-### GDrive Tools
+**3. GDrive Tools**
 
 - `GDRIVE_ID`: This is the Folder/TeamDrive ID of the Google Drive OR `root` to which you want to upload all the mirrors using google-api-python-client. `Str`
 - `IS_TEAM_DRIVE`: Set `True` if uploading to TeamDrive using google-api-python-client. Default is `False`. `Bool`
 - `INDEX_URL`: Refer to <https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index>. `Str`
 - `STOP_DUPLICATE`: Bot will check file/folder name in Drive incase uploading to `GDRIVE_ID`. If it's present in Drive then downloading or cloning will be stopped. (**NOTE**: Item will be checked using name and not hash, so this feature is not perfect yet). Default is `False`. `Bool`
 
-### Rclone
+**4. Rclone**
 
 - `RCLONE_PATH`: Default rclone path to which you want to upload all the files/folders using rclone. `Str`
 - `RCLONE_FLAGS`: key:value|key|key|key:value . Check here all [RcloneFlags](https://rclone.org/flags/). `Str`
@@ -275,13 +277,13 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `RCLONE_SERVE_USER`: Username for rclone serve authentication. `Str`
 - `RCLONE_SERVE_PASS`: Password for rclone serve authentication. `Str`
 
-### Update
+**5. Update**
 
 - `UPSTREAM_REPO`: Your github repository link, if your repo is private add `https://username:{githubtoken}@github.com/{username}/{reponame}` format. Get token from [Github settings](https://github.com/settings/tokens). So you can update your bot from filled repository on each restart. `Str`.
   - **NOTE**: Any change in docker or requirements you need to deploy/build again with updated repo to take effect. DON'T delete .gitignore file. For more information read [THIS](https://github.com/Dawn-India/Z-Mirror#upstream-repo-recommended).
 - `UPSTREAM_BRANCH`: Upstream branch for update. Default is `master`. `Str`
 
-### Leech
+**6. Leech**
 
 - `LEECH_SPLIT_SIZE`: Size of split in bytes. Default is `2GB`. Default is `4GB` if your account is premium. `Int`
 - `AS_DOCUMENT`: Default type of Telegram file upload. Default is `False` mean as media. `Bool`
@@ -292,7 +294,7 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `LEECH_REMOVE_UNWANTED`: Remove unwanted filenames separated with `|` from leeched files. Example: `mltb|jmdkh|wzml`. `Str`
 - `USER_DUMP`: Chat ID to where leeched files would be uploaded. `Int`. **NOTE**: Only available for superGroup/channel. Add bot as `admin` and Add `-100` before channel/superGroup id. In short don't add bot id or your id!
 
-### qBittorrent/Aria2c
+**7. qBittorrent/Aria2c**
 
 - `TORRENT_TIMEOUT`: Timeout of dead torrents downloading with qBittorrent and Aria2c in seconds. `Int`
 - `BASE_URL`: Valid BASE URL where the bot is deployed to use torrent web files selection. Format of URL should be `http://myip`, where `myip` is the IP/Domain(public) of your bot or if you have chosen port other than `80` so write it in this format `http://myip:port` (`http` and not `https`). `Str`
@@ -300,24 +302,24 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `WEB_PINCODE`: Whether to ask for pincode before selecting files from torrent in web or not. Default is `False`. `Bool`.
   - **Qbittorrent NOTE**: If your facing ram issues then set limit for `MaxConnections`, decrease `AsyncIOThreadsCount`, set limit of `DiskWriteCacheSize` to `32` and decrease `MemoryWorkingSetLimit` from qbittorrent.conf or bsetting command.
 
-### RSS
+**8. RSS**
 
 - `RSS_DELAY`: Time in seconds for rss refresh interval. Recommended `900` second at least. Default is `900` in sec. `Int`
 - `RSS_CHAT_ID`: Chat ID where rss links will be sent. If you want message to be sent to the channel then add channel id. Add `-100` before channel id. `Int`
   - **RSS NOTES**: `RSS_CHAT_ID` is required, otherwise monitor will not work. You must use `USER_STRING_SESSION` --OR-- *CHANNEL*. If using channel then bot should be added in both channel and group(linked to channel) and `RSS_CHAT_ID` is the channel id, so messages sent by the bot to channel will be forwarded to group. Otherwise with `USER_STRING_SESSION` add group id for `RSS_CHAT_ID`. If `DATABASE_URL` not added you will miss the feeds while bot offline.
 
-### MEGA
+**9. MEGA**
 
 - `MEGA_EMAIL`: E-Mail used to sign-in on [mega.io](https://mega.io) for using premium account. `Str`
 - `MEGA_PASSWORD`: Password for [mega.io](https://mega.io) account. `Str`
 
-### Queue System
+**10. Queue System**
 
 - `QUEUE_ALL`: Number of parallel tasks of downloads and uploads. For example if 20 task added and `QUEUE_ALL` is `8`, then the summation of uploading and downloading tasks are 8 and the rest in queue. `Int`. **NOTE**: if you want to fill `QUEUE_DOWNLOAD` or `QUEUE_UPLOAD`, then `QUEUE_ALL` value must be greater than or equal to the greatest one and less than or equal to summation of `QUEUE_UPLOAD` and `QUEUE_DOWNLOAD`.
 - `QUEUE_DOWNLOAD`: Number of all parallel downloading tasks. `Int`
 - `QUEUE_UPLOAD`: Number of all parallel uploading tasks. `Int`
 
-### Torrent Search
+**11. Torrent Search**
 
 - `SEARCH_API_LINK`: Search api app link. Get your api from deploying this [repository](https://github.com/Ryuk-me/Torrent-Api-py). `Str`
   - Supported Sites:
@@ -325,18 +327,19 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `SEARCH_LIMIT`: Search limit for search api, limit for each site and not overall result limit. Default is zero (Default api limit for each site). `Int`
 - `SEARCH_PLUGINS`: List of qBittorrent search plugins (github raw links). I have added some plugins, you can remove/add plugins as you want. Main Source: [qBittorrent Search Plugins (Official/Unofficial)](https://github.com/qbittorrent/search-plugins/wiki/Unofficial-search-plugins). `List`
 
-### Limits
+**12. Limits**
 
 - `STORAGE_THRESHOLD`: To leave specific storage free and any download will lead to leave free storage less than this value will be cancelled. Don't add unit, the default unit is `GB`.
 - `LEECH_LIMIT`:  To limit the Torrent/Direct/ytdlp leech size. Don't add unit, the default unit is `GB`.
 - `CLONE_LIMIT`: To limit the size of Google Drive folder/file which you can clone. Don't add unit, the default unit is `GB`.
+- `RCLONE_LIMIT`: To limit the size of Rclone download/upload. Don't add unit, the default unit is `GB`.
 - `MEGA_LIMIT`: To limit the size of Mega download. Don't add unit, the default unit is `GB`.
 - `TORRENT_LIMIT`: To limit the size of torrent download. Don't add unit, the default unit is `GB`.
 - `DIRECT_LIMIT`: To limit the size of direct link download. Don't add unit, the default unit is `GB`.
 - `YTDLP_LIMIT`: To limit the size of ytdlp download. Don't add unit, the default unit is `GB`.
 - `GDRIVE_LIMIT`: To limit the size of Google Drive folder/file link for leech, Zip, Unzip. Don't add unit, the default unit is `GB`.
 
-### Group Features
+**13. Group Features**
 
 - `FSUB_IDS`: Fill chat_id of groups/channel you want to force subscribe. Separate them by space. `Int`
   - it will apply only for member
@@ -348,10 +351,13 @@ Fill up rest of the fields. Meaning of each field is discussed below. **NOTE**: 
 - `STOP_DUPLICATE_TASKS`: To enable stop duplicate task across multiple bots. `Bool`
   - **Note**: All bot must have added same database link.
 - `DISABLE_DRIVE_LINK`: To disable google drive link button in case you need it. `Bool`
+- `DISABLE_BULK`: To disable bulk link extraction in case you need it. `Bool`
+- `DISABLE_MULTI`: To disable multi mirror in case you need it. `Bool`
+- `DISABLE_SEED`: To disable torrent seed feature. `Bool`
 - `TOKEN_TIMEOUT`: Token timeout for each group member in sec. `Int`
   - **Note**: This token system is linked with url shortners, users will have to go through ads to use bot commands (if `shorteners.txt` added, Read more about shortners.txt [Here](https://github.com/Dawn-India/Z-Mirror#multi-shortener) ).
 
-### Extra Features
+**14. Extra Features**
 
 - `SET_COMMANDS`: To set bot commands automatically on every startup. Default is `False`. `Bool`
   - **Note**: You can set commands manually according to your needs few commands are available [here](#bot-commands-to-be-set-in-botfatherhttpstmebotfather)

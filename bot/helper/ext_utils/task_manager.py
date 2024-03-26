@@ -118,13 +118,18 @@ async def list_checker(playlist_count, is_playlist=False):
             if playlist_count > PLAYLIST_LIMIT:
                 return f'Playlist limit is {PLAYLIST_LIMIT}\n⚠ Your Playlist has {playlist_count} items.'
 
-async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False):
+async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False, isRclone=False):
     limit_exceeded = ''
     if listener.isClone:
         if CLONE_LIMIT := config_dict['CLONE_LIMIT']:
             limit = CLONE_LIMIT * 1024**3
             if size > limit:
-                limit_exceeded = f'Clone limit is {get_readable_file_size(limit)}.'
+                limit_exceeded = f'Clone limit is {get_readable_file_size(limit)}'
+    elif isRclone:
+        if RCLONE_LIMIT := config_dict['RCLONE_LIMIT']:
+            limit = RCLONE_LIMIT * 1024**3
+            if size > limit:
+                limit_exceeded = f'Rclone limit is {get_readable_file_size(limit)}'
     elif isMega:
         if MEGA_LIMIT := config_dict['MEGA_LIMIT']:
             limit = MEGA_LIMIT * 1024**3

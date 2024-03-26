@@ -117,6 +117,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         sameDir['tasks'].add(message.id)
 
     if isBulk:
+        if config_dict['DISABLE_BULK']:
+            bmsg = await sendMessage(message, 'Bulk is disabled!')
+            await delete_links(message)
+            await auto_delete_message(message, bmsg)
+            return
         try:
             bulk = await extract_bulk_links(message, bulk_start, bulk_end)
             if len(bulk) == 0:
@@ -138,6 +143,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     @new_task
     async def __run_multi():
         if multi <= 1:
+            return
+        if config_dict['DISABLE_MULTI']:
+            mimsg = await sendMessage(message, 'Multi is disabled!')
+            await delete_links(message)
+            await auto_delete_message(message, mimsg)
             return
         await sleep(5)
         if len(bulk) != 0:

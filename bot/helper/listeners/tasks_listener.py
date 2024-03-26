@@ -127,6 +127,7 @@ class MirrorLeechListener:
             await DbManager().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
     async def onDownloadComplete(self):
+        self.seed = False if config_dict['DISABLE_SEED'] else self.seed
         multi_links = False
         while True:
             if self.sameDir:
@@ -398,6 +399,7 @@ class MirrorLeechListener:
             await DbManager().remove_download(self.raw_url)
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManager().rm_complete_task(self.message.link)
+        self.seed = False if config_dict['DISABLE_SEED'] else self.seed
         LOGGER.info(f'Done Uploading {name}')
         lmsg = f'<b><i>{escape(name)}</i></b>'
         lmsg += f'\n<b>cc</b>: <i>{self.tag}</i>'

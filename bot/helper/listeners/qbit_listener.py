@@ -94,7 +94,7 @@ async def __onDownloadComplete(tor):
         await clean_unwanted(listener.dir)
     await listener.onDownloadComplete()
     client = await sync_to_async(get_client)
-    if listener.seed:
+    if not config_dict['DISABLE_SEED'] and listener.seed:
         async with download_dict_lock:
             if listener.uid in download_dict:
                 removed = False

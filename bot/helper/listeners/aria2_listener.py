@@ -158,7 +158,7 @@ async def __onBtDownloadComplete(api, gid):
                 LOGGER.error(f"{e} GID: {gid}")
         await listener.onDownloadComplete()
         download = download.live
-        if listener.seed:
+        if not config_dict['DISABLE_SEED'] and listener.seed:
             if download.is_complete:
                 if dl := await getDownloadByGid(gid):
                     LOGGER.info(f"Cancelling Seed: {download.name}")
