@@ -268,7 +268,7 @@ def is_url(url):
 
 
 def is_gdrive_link(url):
-    return "drive.google.com" in url
+    return "drive.google.com" in url or "drive.usercontent.google.com" in url
 
 
 def is_telegram_link(url):
