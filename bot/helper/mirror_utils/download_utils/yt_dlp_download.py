@@ -219,10 +219,10 @@ class YoutubeDLHelper:
             else:
                 self.__ext = f'.{audio_format}'
 
-        self.opts['format'] = qual
-
         if options:
             self.__set_options(options)
+
+        self.opts['format'] = qual
 
         await sync_to_async(self.extractMetaData, link, name)
         if self.__is_cancelled:

@@ -30,7 +30,7 @@ from bot.helper.telegram_helper.message_utils import (anno_checker, delete_links
 
 
 @new_task
-async def select_format(client, query, obj):
+async def select_format(_, query, obj):
     data = query.data.split()
     message = query.message
     await query.answer()
@@ -262,6 +262,8 @@ async def _mdisk(link, name):
 
 @new_task
 async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
+    user_id = message.from_user.id
+    user_dict = user_data.get(user_id, {})
     text = message.text.split('\n')
     input_list = text[0].split(' ')
     qual = ''
@@ -317,6 +319,11 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
 
     if isBulk:
+        if config_dict['DISABLE_BULK']:
+            bmsg = await sendMessage(message, 'Bulk is disabled!')
+            await delete_links(message)
+            await auto_delete_message(message, bmsg)
+            return
         try:
             bulk = await extract_bulk_links(message, bulk_start, bulk_end)
             if len(bulk) == 0:
@@ -341,6 +348,11 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     async def __run_multi():
         if multi <= 1:
             return
+        if config_dict['DISABLE_MULTI']:
+            mimsg = await sendMessage(message, 'Multi is disabled!')
+            await delete_links(message)
+            await auto_delete_message(message, mimsg)
+            return
         await sleep(5)
         if len(bulk) != 0:
             msg = input_list[:1]
@@ -363,7 +375,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
 
     path = f'{DOWNLOAD_DIR}{message.id}{folder_name}'
 
-    opt = opt or config_dict['YT_DLP_OPTIONS']
+    opt = opt or user_dict.get('yt_opt') or config_dict['YT_DLP_OPTIONS']
 
     if len(text) > 1 and text[1].startswith('Tag: '):
         tag, id_ = text[1].split('Tag: ')[1].split()

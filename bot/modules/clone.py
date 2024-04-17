@@ -257,17 +257,23 @@ async def clone(client, message):
 
     @new_task
     async def __run_multi():
-        if multi > 1:
-            await sleep(5)
-            msg = [s.strip() for s in input_list]
-            index = msg.index('-m')
-            msg[index+1] = f"{multi - 1}"
-            nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=message.reply_to_message_id + 1)
-            nextmsg = await sendMessage(nextmsg, " ".join(msg))
-            nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
-            nextmsg.from_user = message.from_user
-            await sleep(5)
-            await clone(client, nextmsg)
+        if multi <= 1:
+            return
+        if config_dict['DISABLE_MULTI']:
+            mimsg = await sendMessage(message, 'Multi is disabled!')
+            await delete_links(message)
+            await auto_delete_message(message, mimsg)
+            return
+        await sleep(5)
+        msg = [s.strip() for s in input_list]
+        index = msg.index('-m')
+        msg[index+1] = f"{multi - 1}"
+        nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=message.reply_to_message_id + 1)
+        nextmsg = await sendMessage(nextmsg, " ".join(msg))
+        nextmsg = await client.get_messages(chat_id=message.chat.id, message_ids=nextmsg.id)
+        nextmsg.from_user = message.from_user
+        await sleep(5)
+        await clone(client, nextmsg)
 
     await __run_multi()
 
