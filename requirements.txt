@@ -30,7 +30,7 @@ python-magic
 qbittorrent-api
 requests
 telegraph
-tenacity==8.3.0
+tenacity
 tgcrypto
 typing_extensions
 urllib3
