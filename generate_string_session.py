@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 try:
     from pyrogram import Client
-except Exception as e:
-    print(e)
-    print('\nInstall Pyrogram: pip3 install pyrogram')
+except Exception:
+    print("\nInstall Pyrogram and try again: pip3 install pyrogram --break-system-packages")
     exit(1)
 
-print('Enter your app creds from my.telegram.org/apps below.')
+print("Get your app creds from https://my.telegram.org/apps and enter them below.")
 API_KEY = int(input("Enter API KEY: "))
 API_HASH = input("Enter API HASH: ")
-with Client(name='ZEE', api_id=API_KEY, api_hash=API_HASH, in_memory=True) as app:
+PHONE_NO = input("Enter your phone number including country code. Ex: +917000000001: ")
+
+with Client(
+    name="ZEE",
+    in_memory=True,
+    api_id=API_KEY,
+    api_hash=API_HASH,
+    phone_number=PHONE_NO,
+    app_version="@Z_Mirror Session",
+    device_model="@Z_Mirror Bot",
+    system_version="@Z_Mirror Server",
+) as app:
     app.send_message("me",
                      "**Pyrogram Session String**:\n\n"
                      f"||{app.export_session_string()}||\n\n"
