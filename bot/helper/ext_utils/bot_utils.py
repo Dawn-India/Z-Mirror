@@ -45,7 +45,10 @@ class setInterval:
     async def _set_interval(self, *args, **kwargs):
         while True:
             await sleep(self.interval)
-            await self.action(*args, **kwargs)
+            await self.action(
+                *args,
+                **kwargs
+            )
 
     def cancel(self):
         self.task.cancel()
@@ -240,7 +243,7 @@ async def get_telegraph_list(telegraph_content):
     path = [
         (
             await telegraph.create_page(
-                title="Mirror-Leech-Bot Drive Search",
+                title="Z-Mirror Drive Search",
                 content=content
             )
         )["path"]
@@ -422,7 +425,11 @@ async def sync_to_async(func, *args, wait=True, **kwargs):
         THREADPOOL,
         pfunc
     )
-    return await future if wait else future
+    return (
+        await future
+        if wait
+        else future
+    )
 
 
 def async_to_sync(func, *args, wait=True, **kwargs):
@@ -433,7 +440,11 @@ def async_to_sync(func, *args, wait=True, **kwargs):
         ),
         bot_loop
     )
-    return future.result() if wait else future
+    return (
+        future.result()
+        if wait
+        else future
+    )
 
 
 def new_thread(func):
@@ -450,6 +461,10 @@ def new_thread(func):
             ),
             bot_loop
         )
-        return future.result() if wait else future
+        return (
+            future.result()
+            if wait
+            else future
+        )
 
     return wrapper

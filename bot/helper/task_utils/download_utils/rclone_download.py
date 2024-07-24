@@ -37,7 +37,10 @@ async def add_rclone_download(listener, path):
     else:
         config_path = "rclone.conf"
 
-    remote, listener.link = listener.link.split(":", 1)
+    (
+        remote,
+        listener.link
+    ) = listener.link.split(":", 1)
     listener.link = listener.link.strip("/")
 
     cmd1 = [
@@ -98,7 +101,10 @@ async def add_rclone_download(listener, path):
     listener.size = rsize["bytes"]
     gid = token_urlsafe(12)
 
-    msg, button = await stop_duplicate_check(listener)
+    (
+        msg,
+        button
+    ) = await stop_duplicate_check(listener)
     if msg:
         await listener.onDownloadError(
             msg,
@@ -118,7 +124,10 @@ async def add_rclone_download(listener, path):
         )
         return
 
-    add_to_queue, event = await check_running_tasks(listener)
+    (
+        add_to_queue,
+        event
+    ) = await check_running_tasks(listener)
     if add_to_queue:
         LOGGER.info(f"Added to Queue/Download: {listener.name}")
         async with task_dict_lock:

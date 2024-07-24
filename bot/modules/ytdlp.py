@@ -497,10 +497,10 @@ class YtDlp(TaskListener):
             "-fd": False,
             "-fu": False,
             "-ml": False,
-            "-i": 0,
+            "-m": 0,
             "-sp": 0,
             "link": "",
-            "-m": "",
+            "-sd": "",
             "-opt": "",
             "-n": "",
             "-up": "",
@@ -511,10 +511,13 @@ class YtDlp(TaskListener):
             "-ns": "",
         }
 
-        arg_parser(input_list[1:], args)
+        arg_parser(
+            input_list[1:],
+            args
+        )
 
         try:
-            self.multi = int(args["-i"])
+            self.multi = int(args["-m"])
         except:
             self.multi = 0
 
@@ -537,7 +540,7 @@ class YtDlp(TaskListener):
         self.mixedLeech = args["-ml"]
 
         isBulk = args["-b"]
-        folder_name = args["-m"]
+        folder_name = args["-sd"]
 
         bulk_start = 0
         bulk_end = 0

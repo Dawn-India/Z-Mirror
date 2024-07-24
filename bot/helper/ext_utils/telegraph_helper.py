@@ -90,5 +90,6 @@ class TelegraphHelper:
 
 
 telegraph = TelegraphHelper(
-    "@Z_Mirror", "https://github.com/Dawn-India/Z-Mirror"
+    "@Z_Mirror",
+    "https://github.com/Dawn-India/Z-Mirror"
 )

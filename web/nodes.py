@@ -2,9 +2,12 @@ from anytree import NodeMixin
 from os import environ
 from re import findall as re_findall
 
-DOWNLOAD_DIR = environ.get("DOWNLOAD_DIR", "")
+DOWNLOAD_DIR = environ.get(
+    "DOWNLOAD_DIR",
+    ""
+)
 if len(DOWNLOAD_DIR) == 0:
-    DOWNLOAD_DIR = "/usr/src/app/downloads/"
+    DOWNLOAD_DIR = "/usr/src/app/Downloads/"
 elif not DOWNLOAD_DIR.endswith("/"):
     DOWNLOAD_DIR += "/"
 
@@ -61,7 +64,9 @@ def make_tree(res, tool=False):
                     )
                     if current_node is None:
                         previous_node = TorNode(
-                            folders[j], parent=previous_node, is_folder=True
+                            folders[j],
+                            parent=previous_node,
+                            is_folder=True
                         )
                     else:
                         previous_node = current_node
@@ -100,7 +105,9 @@ def make_tree(res, tool=False):
                     )
                     if current_node is None:
                         previous_node = TorNode(
-                            folders[j], parent=previous_node, is_folder=True
+                            folders[j],
+                            parent=previous_node,
+                            is_folder=True
                         )
                     else:
                         previous_node = current_node
@@ -112,7 +119,8 @@ def make_tree(res, tool=False):
                     priority=priority,
                     file_id=i["index"],
                     progress=round(
-                        (int(i["completedLength"]) / int(i["length"])) * 100, 5
+                        (int(i["completedLength"]) / int(i["length"])) * 100,
+                        5
                     ),
                 )
             else:
@@ -124,7 +132,8 @@ def make_tree(res, tool=False):
                     priority=priority,
                     file_id=i["index"],
                     progress=round(
-                        (int(i["completedLength"]) / int(i["length"])) * 100, 5
+                        (int(i["completedLength"]) / int(i["length"])) * 100,
+                        5
                     ),
                 )
 
@@ -145,7 +154,13 @@ def make_tree(res, tool=False):
                 ),
             )
 
-    return create_list(parent, ["", 0])
+    return create_list(
+        parent,
+        [
+            "",
+            0
+        ]
+    )
 
 
 """

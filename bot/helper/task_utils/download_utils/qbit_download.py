@@ -53,7 +53,10 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
         if await aiopath.exists(listener.link):
             url = None
             tpath = listener.link
-        add_to_queue, event = await check_running_tasks(listener)
+        (
+            add_to_queue,
+            event
+        ) = await check_running_tasks(listener)
         op = await sync_to_async(
             qbittorrent_client.torrents_add,
             url,
@@ -102,7 +105,10 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
 
         await listener.onDownloadStart()
 
-        if config_dict["BASE_URL"] and listener.select:
+        if (
+            config_dict["BASE_URL"]
+            and listener.select
+        ):
             if listener.link.startswith("magnet:"):
                 metamsg = "Downloading Metadata, wait then you can select files. Use torrent file to avoid this wait."
                 meta = await sendMessage(

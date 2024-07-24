@@ -130,11 +130,20 @@ class gdClone(GoogleDriveHelper):
             ):
                 LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}") # type: ignore
                 err = err.last_attempt.exception() # type: ignore
-            err = str(err).replace(">", "").replace("<", "")
+            err = str(err).replace(
+                ">",
+                ""
+            ).replace(
+                "<",
+                ""
+            )
             if "User rate limit exceeded" in err:
                 msg = "User rate limit exceeded."
             elif "File not found" in err:
-                if not self.alt_auth and self.use_sa:
+                if (
+                    not self.alt_auth
+                    and self.use_sa
+                ):
                     self.alt_auth = True
                     self.use_sa = False
                     LOGGER.error("File not found. Trying with token.pickle...")

@@ -91,7 +91,7 @@ default_values = {
     "RSS_DELAY": 600,
     "STATUS_UPDATE_INTERVAL": 15,
     "SEARCH_LIMIT": 0,
-    "UPSTREAM_BRANCH": "master",
+    "UPSTREAM_BRANCH": "main",
     "DEFAULT_UPLOAD": "gd",
 }
 
@@ -421,7 +421,10 @@ Timeout: 60 sec.
         msg = f"Sabnzbd Options | Page: {int(START / 10)} | State: {STATE}"
     elif key == "nzbserver":
         if len(config_dict["USENET_SERVERS"]) > 0:
-            for index, k in enumerate(
+            for (
+                index,
+                k
+            ) in enumerate(
                 config_dict["USENET_SERVERS"][START : 10 + START]
             ):
                 buttons.ibutton(
@@ -508,7 +511,10 @@ Timeout: 60 sec.
 
 
 async def update_buttons(message, key=None, edit_type=None):
-    msg, button = await get_buttons(
+    (
+        msg,
+        button
+    ) = await get_buttons(
         key,
         edit_type
     )
@@ -531,7 +537,10 @@ async def edit_variable(client, message, pre_message, key):
     elif key == "DOWNLOAD_DIR":
         if not value.endswith("/"):
             value += "/"
-    elif key in ["USER_LEECH_DESTINATION", "RSS_CHAT"]:
+    elif key in [
+        "USER_LEECH_DESTINATION",
+        "RSS_CHAT"
+    ]:
         if (
             value.isdigit() or
             value.startswith("-")
@@ -1483,7 +1492,8 @@ async def edit_bot_settings(client, query):
             return
         elif value and data[2] not in [
             "SEARCH_LIMIT",
-            "STATUS_LIMIT"
+            "STATUS_LIMIT",
+            "PLAYLIST_LIMIT"
         ] and data[2].endswith((
             "_THRESHOLD",
             "_LIMIT"
@@ -1995,7 +2005,10 @@ async def load_config():
         len(task_dict) != 0
         and (st := Intervals["status"])
     ):
-        for key, intvl in list(st.items()):
+        for (
+            key,
+            intvl
+        ) in list(st.items()):
             intvl.cancel()
             Intervals["status"][key] = setInterval(
                 STATUS_UPDATE_INTERVAL,

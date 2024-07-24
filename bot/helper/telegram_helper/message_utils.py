@@ -346,9 +346,15 @@ async def sendStatusMessage(msg, user_id=0):
                 )
                 return
             message.text = text
-            status_dict[sid].update({"message": message, "time": time()})
+            status_dict[sid].update({
+                "message": message,
+                "time": time()
+            })
         else:
-            text, buttons = await get_readable_message(
+            (
+                text,
+                buttons
+            ) = await get_readable_message(
                 sid,
                 is_user
             )
@@ -529,7 +535,10 @@ async def forcesub(message, ids, button=None):
         if button is None:
             button = ButtonMaker()
         _msg = f"You need to join our channel to use me."
-        for key, value in join_button.items():
+        for (
+            key,
+            value
+        ) in join_button.items():
             button.ubutton(
                 f"{key}",
                 value,

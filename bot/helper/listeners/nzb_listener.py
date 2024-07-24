@@ -13,13 +13,22 @@ from bot import (
     bot_loop,
 )
 from bot.helper.ext_utils.bot_utils import new_task
-from bot.helper.ext_utils.status_utils import getTaskByGid, speed_string_to_bytes
-from bot.helper.ext_utils.task_manager import limit_checker, stop_duplicate_check
-from bot.helper.telegram_helper.message_utils import auto_delete_message, delete_links
+from bot.helper.ext_utils.status_utils import (
+    getTaskByGid,
+    speed_string_to_bytes
+)
+from bot.helper.ext_utils.task_manager import (
+    limit_checker,
+    stop_duplicate_check
+)
+from bot.helper.telegram_helper.message_utils import auto_delete_message
 
 
 async def _remove_job(nzo_id, mid):
-    res1, _ = await gather(
+    (
+        res1,
+        _
+    ) = await gather(
         sabnzbd_client.delete_history(
             nzo_id,
             delete_files=True

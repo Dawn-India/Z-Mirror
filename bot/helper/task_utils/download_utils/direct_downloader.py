@@ -39,7 +39,10 @@ async def add_direct_download(listener, path):
         listener.name = details["title"]
     path = f"{path}/{listener.name}"
 
-    msg, button = await stop_duplicate_check(listener)
+    (
+        msg,
+        button
+    ) = await stop_duplicate_check(listener)
     if msg:
         await listener.onDownloadError(
             msg,

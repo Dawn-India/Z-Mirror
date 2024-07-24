@@ -6,7 +6,10 @@ from os import (
 from re import search as re_search
 from secrets import token_urlsafe
 from bot.helper.ext_utils.status_utils import get_readable_file_size
-from yt_dlp import YoutubeDL, DownloadError
+from yt_dlp import (
+    YoutubeDL,
+    DownloadError
+)
 
 from bot import (
     task_dict_lock,
@@ -206,7 +209,10 @@ class YoutubeDLHelper:
                         self._listener.size += entry["filesize"]
                     if not self._listener.name:
                         outtmpl_ = "%(series,playlist_title,channel)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d.%(ext)s"
-                        self._listener.name, ext = ospath.splitext(ydl.prepare_filename(
+                        (
+                            self._listener.name,
+                            ext
+                        ) = ospath.splitext(ydl.prepare_filename(
                             entry,
                             outtmpl=outtmpl_
                         ))
@@ -300,7 +306,10 @@ class YoutubeDLHelper:
         if self._listener.isCancelled:
             return
 
-        base_name, ext = ospath.splitext(self._listener.name)
+        (
+            base_name,
+            ext
+        ) = ospath.splitext(self._listener.name)
         trim_name = (
             self._listener.name
             if self.is_playlist
@@ -374,7 +383,10 @@ class YoutubeDLHelper:
         elif not self._listener.isLeech:
             self.opts["writethumbnail"] = False
 
-        msg, button = await stop_duplicate_check(self._listener)
+        (
+            msg,
+            button
+        ) = await stop_duplicate_check(self._listener)
         if msg:
             await self._listener.onDownloadError(
                 msg,
@@ -395,7 +407,10 @@ class YoutubeDLHelper:
             )
             return
 
-        add_to_queue, event = await check_running_tasks(self._listener)
+        (
+            add_to_queue,
+            event
+        ) = await check_running_tasks(self._listener)
         if add_to_queue:
             LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
             async with task_dict_lock:
@@ -426,7 +441,10 @@ class YoutubeDLHelper:
     def _set_options(self, options):
         options = options.split("|")
         for opt in options:
-            key, value = map(str.strip, opt.split(
+            (
+                key,
+                value
+            ) = map(str.strip, opt.split(
                 ":",
                 1
             ))

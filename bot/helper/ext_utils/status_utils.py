@@ -9,8 +9,6 @@ from time import time
 from asyncio import iscoroutinefunction
 
 from bot import (
-    LOGGER,
-    bot,
     DOWNLOAD_DIR,
     task_dict,
     task_dict_lock,
@@ -144,9 +142,15 @@ def get_readable_time(seconds):
         ("s", 1)
     ]
     result = ""
-    for period_name, period_seconds in periods:
+    for (
+        period_name,
+        period_seconds
+    ) in periods:
         if seconds >= period_seconds:
-            period_value, seconds = divmod(
+            (
+                period_value,
+                seconds
+            ) = divmod(
                 seconds,
                 period_seconds
             )
@@ -155,7 +159,11 @@ def get_readable_time(seconds):
 
 
 def time_to_seconds(time_duration):
-    hours, minutes, seconds = map(int, time_duration.split(":"))
+    (
+        hours,
+        minutes,
+        seconds
+    ) = map(int, time_duration.split(":"))
     return hours * 3600 + minutes * 60 + seconds
 
 
@@ -356,7 +364,10 @@ async def get_readable_message(
         status != "All" or
         tasks_no > 20
     ):
-        for label, status_value in list(STATUSES.items())[:9]:
+        for (
+            label,
+            status_value
+        ) in list(STATUSES.items())[:9]:
             if status_value != status:
                 buttons.ibutton(
                     label,
@@ -374,4 +385,7 @@ async def get_readable_message(
         f"<b>RAM</b>: {virtual_memory().percent}% | "
         f"<b>UPTM</b>: {get_readable_time(time() - botStartTime)}"
     )
-    return msg, button
+    return (
+        msg,
+        button
+    )

@@ -48,18 +48,18 @@ Note: Doesn't work with torrents
 """
 
 multi_link = """
-<b>Multi links only by replying to the first link/file</b>: -i
+<b>Multi links only by replying to the first link/file</b>: -m
 
-/cmd -i 10(number of links/files)
+/cmd -m 10(number of links/files)
 
 <b>Join: @Z_Mirror</b>
 """
 
 same_dir = """
-<b>Multi links within the same upload directory only by replying to the first link/file</b>: -m
+<b>Multi links within the same upload directory only by replying to the first link/file</b>: -sd
 
-/cmd -i 10(number of links/files) -m folder name (multi message)
-/cmd -b -m folder name (bulk-message/file)
+/cmd -m 10(number of links/files) -sd folder name (multi message)
+/cmd -b -sd folder name (bulk-message/file)
 
 <b>Join: @Z_Mirror</b>
 """
@@ -130,7 +130,7 @@ Example:
 link1 -n new name -up remote1:path1 -rcf |key:value|key:value
 link2 -z -n new name -up remote2:path2
 link3 -e -n new name -up remote2:path2
-Reply to this example by this cmd -> /cmd -b(bulk) or /cmd -b -m folder name
+Reply to this example by this cmd -> /cmd -b(bulk) or /cmd -b -sd folder name
 You can set the start and end of the links from the bulk like seed, with -b start:end or only end by -b :end or only start by -b start.
 The default start is from zero(first link) to infinity.
 
@@ -163,10 +163,10 @@ Note: When both extract and zip are added with cmd, it will extract first and th
 join = """
 <b>Join Splitted Files</b>: -j
 
-This option will only work before extract and zip, so mostly it will be used with -m argument (samedir)
+This option will only work before extract and zip, so mostly it will be used with -sd argument (samedir)
 By Reply:
-/cmd -i 3 -j -m folder name
-/cmd -b -j -m folder name
+/cmd -m 3 -j -sd folder name
+/cmd -b -j -sd folder name
 If you have a link(folder) that has split files:
 /cmd link -j
 

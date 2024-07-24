@@ -58,7 +58,10 @@ async def extract_link(link, shouldDel=False):
             if link.endswith(".nzb"):
                 tree = ET.parse(link)
                 root = tree.getroot()
-                raw_link = root.get("id", None)
+                raw_link = root.get(
+                    "id",
+                    None
+                )
                 if not raw_link:
                     raw_link = root.findtext(".//segment")
             else:
@@ -136,14 +139,20 @@ async def none_admin_utils(message, isLeech=False):
         !=
         message.chat.type.PRIVATE
     ):
-        token_msg, button = await checking_access(
+        (
+            token_msg,
+            button
+        ) = await checking_access(
             message.from_user.id,
             button
         )
         if token_msg is not None:
             msg.append(token_msg)
         if ids := config_dict["FSUB_IDS"]:
-            _msg, button = await forcesub(
+            (
+                _msg,
+                button
+            ) = await forcesub(
                 message,
                 ids,
                 button

@@ -1,4 +1,7 @@
-from asyncio import Lock, sleep
+from asyncio import (
+    Lock,
+    sleep
+)
 from time import time
 from pyrogram.errors import FloodWait
 
@@ -159,7 +162,10 @@ class TelegramDownloadHelper:
                 self._listener.size = media.file_size
                 gid = media.file_unique_id
 
-                msg, button = await stop_duplicate_check(self._listener)
+                (
+                    msg,
+                    button
+                ) = await stop_duplicate_check(self._listener)
                 if msg:
                     await self._listener.onDownloadError(
                         msg,
@@ -167,7 +173,10 @@ class TelegramDownloadHelper:
                     )
                     return
 
-                add_to_queue, event = await check_running_tasks(self._listener)
+                (
+                    add_to_queue,
+                    event
+                ) = await check_running_tasks(self._listener)
                 if add_to_queue:
                     LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
                     async with task_dict_lock:

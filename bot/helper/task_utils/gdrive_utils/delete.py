@@ -35,7 +35,10 @@ class gdDelete(GoogleDriveHelper):
                 "File not found" in str(err)
                 or "insufficientFilePermissions" in str(err)
             ):
-                if not self.alt_auth and self.use_sa:
+                if (
+                    not self.alt_auth
+                    and self.use_sa
+                ):
                     self.alt_auth = True
                     self.use_sa = False
                     LOGGER.error("File not found. Trying with token.pickle...")

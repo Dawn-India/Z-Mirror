@@ -1,10 +1,20 @@
 # -*- encoding: utf-8 -*-
 from Crypto.Cipher import AES
-from base64 import b64encode, b64decode
+from base64 import (
+    b64encode,
+    b64decode
+)
 from hashlib import sha256
 from hmac import new
-from json import dumps, loads, JSONDecodeError
-from httpx import AsyncClient, RequestError
+from json import (
+    dumps,
+    loads,
+    JSONDecodeError
+)
+from httpx import (
+    AsyncClient,
+    RequestError
+)
 from httpx import AsyncHTTPTransport
 from time import time
 from urllib.parse import quote
@@ -77,7 +87,10 @@ class Config:
         :return:  List<AdvancedConfigAPIEntry>
         """
         if params is None:
-            return await self.device.action(f"{self.url}/list", params)
+            return await self.device.action(
+                f"{self.url}/list",
+                params
+            )
         else:
             return await self.device.action(f"{self.url}/list")
 
@@ -85,7 +98,10 @@ class Config:
         """
         :return:  List<EnumOption>
         """
-        return await self.device.action(f"{self.url}/listEnum", params=[type])
+        return await self.device.action(
+            f"{self.url}/listEnum",
+            params=[type]
+        )
 
     async def get(self, interface_name, storage, key):
         """
@@ -97,7 +113,10 @@ class Config:
         :type: str:
         """
         params = [interface_name, storage, key]
-        return await self.device.action(f"{self.url}/get", params)
+        return await self.device.action(
+            f"{self.url}/get",
+            params
+        )
 
     async def getDefault(self, interfaceName, storage, key):
         """
@@ -109,7 +128,10 @@ class Config:
         :type: str:
         """
         params = [interfaceName, storage, key]
-        return await self.device.action(f"{self.url}/getDefault", params)
+        return await self.device.action(
+            f"{self.url}/getDefault",
+            params
+        )
 
     async def query(self, params=None):
         """
@@ -141,7 +163,10 @@ class Config:
                     "values": True,
                 }
             ]
-        return await self.device.action(f"{self.url}/query", params)
+        return await self.device.action(
+            f"{self.url}/query",
+            params
+        )
 
     async def reset(self, interfaceName, storage, key):
         """
@@ -152,8 +177,15 @@ class Config:
         :param key: a valid key from from List<AdvancedConfigAPIEntry>
         :type: str:
         """
-        params = [interfaceName, storage, key]
-        return await self.device.action(f"{self.url}/reset", params)
+        params = [
+            interfaceName,
+            storage,
+            key
+        ]
+        return await self.device.action(
+            f"{self.url}/reset",
+            params
+        )
 
     async def set(self, interface_name, storage, key, value):
         """
@@ -166,8 +198,16 @@ class Config:
         :param value: a valid value for the given key (see type value from List<AdvancedConfigAPIEntry>)
         :type: Object:
         """
-        params = [interface_name, storage, key, value]
-        return await self.device.action(f"{self.url}/set", params)
+        params = [
+            interface_name,
+            storage,
+            key,
+            value
+        ]
+        return await self.device.action(
+            f"{self.url}/set",
+            params
+        )
 
 
 class DownloadController:
@@ -184,14 +224,23 @@ class DownloadController:
 
     async def pause_downloads(self, value):
         params = [value]
-        return await self.device.action(f"{self.url}/pause", params)
+        return await self.device.action(
+            f"{self.url}/pause",
+            params
+        )
 
     async def get_speed_in_bytes(self):
         return await self.device.action(f"{self.url}/getSpeedInBps")
 
     async def force_download(self, link_ids, package_ids):
-        params = [link_ids, package_ids]
-        return await self.device.action(f"{self.url}/forceDownload", params)
+        params = [
+            link_ids,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/forceDownload",
+            params
+        )
 
     async def get_current_state(self):
         return await self.device.action(f"{self.url}/getCurrentState")
@@ -232,19 +281,34 @@ class Extension:
                     "installed": True,
                 }
             ]
-        return await self.device.action(f"{self.url}/list", params=params)
+        return await self.device.action(
+            f"{self.url}/list",
+            params=params
+        )
 
     async def install(self, id):
-        return await self.device.action(f"{self.url}/install", params=[id])
+        return await self.device.action(
+            f"{self.url}/install",
+            params=[id]
+        )
 
     async def isInstalled(self, id):
-        return await self.device.action(f"{self.url}/isInstalled", params=[id])
+        return await self.device.action(
+            f"{self.url}/isInstalled",
+            params=[id]
+        )
 
     async def isEnabled(self, id):
-        return await self.device.action(f"{self.url}/isEnabled", params=[id])
+        return await self.device.action(
+            f"{self.url}/isEnabled",
+            params=[id]
+        )
 
     async def setEnabled(self, id, enabled):
-        return await self.device.action(f"{self.url}/setEnabled", params=[id, enabled])
+        return await self.device.action(
+            f"{self.url}/setEnabled",
+            params=[id, enabled]
+        )
 
 
 class Linkgrabber:
@@ -254,7 +318,10 @@ class Linkgrabber:
         self.url = "/linkgrabberv2"
 
     async def clear_list(self):
-        return await self.device.action(f"{self.url}/clearList", http_action="POST")
+        return await self.device.action(
+            f"{self.url}/clearList",
+            http_action="POST"
+        )
 
     async def move_to_downloadlist(self, link_ids=None, package_ids=None):
         """
@@ -269,7 +336,10 @@ class Linkgrabber:
         if package_ids is None:
             package_ids = []
         params = [link_ids, package_ids]
-        return await self.device.action(f"{self.url}/moveToDownloadlist", params)
+        return await self.device.action(
+            f"{self.url}/moveToDownloadlist",
+            params
+        )
 
     async def query_links(self, params=None):
         """
@@ -332,10 +402,18 @@ class Linkgrabber:
                     "priority": True,
                 }
             ]
-        return await self.device.action(f"{self.url}/queryLinks", params)
+        return await self.device.action(
+            f"{self.url}/queryLinks",
+            params
+        )
 
     async def cleanup(
-        self, action, mode, selection_type, link_ids=None, package_ids=None
+        self,
+        action,
+        mode,
+        selection_type,
+        link_ids=None,
+        package_ids=None
     ):
         """
         Clean packages and/or links of the linkgrabber list.
@@ -356,9 +434,19 @@ class Linkgrabber:
             link_ids = []
         if package_ids is None:
             package_ids = []
-        params = [link_ids, package_ids]
-        params += [action, mode, selection_type]
-        return await self.device.action(f"{self.url}/cleanup", params)
+        params = [
+            link_ids,
+            package_ids
+        ]
+        params += [
+            action,
+            mode,
+            selection_type
+        ]
+        return await self.device.action(
+            f"{self.url}/cleanup",
+            params
+        )
 
     async def add_container(self, type_, content):
         """
@@ -370,8 +458,14 @@ class Linkgrabber:
         :type: string.
 
         """
-        params = [type_, content]
-        return await self.device.action(f"{self.url}/addContainer", params)
+        params = [
+            type_,
+            content
+        ]
+        return await self.device.action(
+            f"{self.url}/addContainer",
+            params
+        )
 
     async def get_download_urls(self, link_ids, package_ids, url_display_type):
         """
@@ -384,8 +478,15 @@ class Linkgrabber:
         :param url_display_type: No clue. Not documented
         :type: Dictionary
         """
-        params = [package_ids, link_ids, url_display_type]
-        return await self.device.action(f"{self.url}/getDownloadUrls", params)
+        params = [
+            package_ids,
+            link_ids,
+            url_display_type
+        ]
+        return await self.device.action(
+            f"{self.url}/getDownloadUrls",
+            params
+        )
 
     async def set_priority(self, priority, link_ids, package_ids):
         """
@@ -398,8 +499,15 @@ class Linkgrabber:
         :param priority: Priority to set. Priorities: HIGHEST, HIGHER, HIGH, DEFAULT, LOWER;
         :type: str:
         """
-        params = [priority, link_ids, package_ids]
-        return await self.device.action(f"{self.url}/setPriority", params)
+        params = [
+            priority,
+            link_ids,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/setPriority",
+            params
+        )
 
     async def set_enabled(self, enable, link_ids, package_ids):
         """
@@ -412,8 +520,15 @@ class Linkgrabber:
         :param package_ids: Packages UUID.
         :type: list of strings.
         """
-        params = [enable, link_ids, package_ids]
-        return await self.device.action(f"{self.url}/setEnabled", params)
+        params = [
+            enable,
+            link_ids,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/setEnabled",
+            params
+        )
 
     async def get_variants(self, params):
         """
@@ -428,7 +543,10 @@ class Linkgrabber:
         'M4A_256', 'name': '256kbit/s M4A-Audio'}, {'id': 'AAC_256', 'name':
         '256kbit/s AAC-Audio'},.......]
         """
-        return await self.device.action(f"{self.url}/getVariants", params)
+        return await self.device.action(
+            f"{self.url}/getVariants",
+            params
+        )
 
     async def add_links(self, params=None):
         """
@@ -457,7 +575,10 @@ class Linkgrabber:
                     "overwritePackagizerRules": False,
                 }
             ]
-        return await self.device.action(f"{self.url}/addLinks", params)
+        return await self.device.action(
+            f"{self.url}/addLinks",
+            params
+        )
 
     async def is_collecting(self):
         """
@@ -466,19 +587,37 @@ class Linkgrabber:
         return await self.device.action(f"{self.url}/isCollecting")
 
     async def set_download_directory(self, dir: str, package_ids: list):
-        params = [dir, package_ids]
-        return await self.device.action(f"{self.url}/setDownloadDirectory", params)
+        params = [
+            dir,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/setDownloadDirectory",
+            params
+        )
 
     async def move_to_new_package(
-        self, name: str, path: str, link_ids: list = None, package_ids: list = None
+        self,
+        name: str,
+        path: str,
+        link_ids: list = None,
+        package_ids: list = None
     ):
         # Requires at least a link_ids or package_ids list, or both.
         if link_ids is None:
             link_ids = []
         if package_ids is None:
             package_ids = []
-        params = [link_ids, package_ids, name, path]
-        return await self.device.action(f"{self.url}/movetoNewPackage", params)
+        params = [
+            link_ids,
+            package_ids,
+            name,
+            path
+        ]
+        return await self.device.action(
+            f"{self.url}/movetoNewPackage",
+            params
+        )
 
     async def remove_links(self, link_ids=None, package_ids=None):
         """
@@ -494,15 +633,27 @@ class Linkgrabber:
             link_ids = []
         if package_ids is None:
             package_ids = []
-        params = [link_ids, package_ids]
-        return await self.device.action(f"{self.url}/removeLinks", params)
+        params = [
+            link_ids,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/removeLinks",
+            params
+        )
 
     async def rename_link(self, link_id, new_name):
         """
         Renames files related with link_id
         """
-        params = [link_id, new_name]
-        return await self.device.action(f"{self.url}/renameLink", params)
+        params = [
+            link_id,
+            new_name
+        ]
+        return await self.device.action(
+            f"{self.url}/renameLink",
+            params
+        )
 
     async def get_package_count(self):
         return await self.device.action(f"{self.url}/getPackageCount")
@@ -511,8 +662,14 @@ class Linkgrabber:
         """
         Rename package name with package_id
         """
-        params = [package_id, new_name]
-        return await self.device.action(f"{self.url}/renamePackage", params)
+        params = [
+            package_id,
+            new_name
+        ]
+        return await self.device.action(
+            f"{self.url}/renamePackage",
+            params
+        )
 
     async def query_packages(self, params=None):
         if params is None:
@@ -535,7 +692,10 @@ class Linkgrabber:
                     "status": True,
                 }
             ]
-        return await self.device.action(f"{self.url}/queryPackages", params)
+        return await self.device.action(
+            f"{self.url}/queryPackages",
+            params
+        )
 
 
 class Downloads:
@@ -574,7 +734,10 @@ class Downloads:
                     "url": True,
                 }
             ]
-        return await self.device.action(f"{self.url}/queryLinks", params)
+        return await self.device.action(
+            f"{self.url}/queryLinks",
+            params
+        )
 
     async def query_packages(self, params=None):
         if params is None:
@@ -598,10 +761,18 @@ class Downloads:
                     "status": True,
                 }
             ]
-        return await self.device.action(f"{self.url}/queryPackages", params)
+        return await self.device.action(
+            f"{self.url}/queryPackages",
+            params
+        )
 
     async def cleanup(
-        self, action, mode, selection_type, link_ids=None, package_ids=None
+        self,
+        action,
+        mode,
+        selection_type,
+        link_ids=None,
+        package_ids=None
     ):
         """
         Clean packages and/or links of the linkgrabber list.
@@ -622,9 +793,19 @@ class Downloads:
             link_ids = []
         if package_ids is None:
             package_ids = []
-        params = [link_ids, package_ids]
-        params += [action, mode, selection_type]
-        return await self.device.action(f"{self.url}/cleanup", params)
+        params = [
+            link_ids,
+            package_ids
+        ]
+        params += [
+            action,
+            mode,
+            selection_type
+        ]
+        return await self.device.action(
+            f"{self.url}/cleanup",
+            params
+        )
 
     async def set_enabled(self, enable, link_ids, package_ids):
         """
@@ -637,22 +818,41 @@ class Downloads:
         :param package_ids: Packages UUID.
         :type: list of strings.
         """
-        params = [enable, link_ids, package_ids]
-        return await self.device.action(f"{self.url}/setEnabled", params)
+        params = [
+            enable,
+            link_ids,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/setEnabled",
+            params
+        )
 
     async def force_download(self, link_ids=None, package_ids=None):
         if link_ids is None:
             link_ids = []
         if package_ids is None:
             package_ids = []
-        params = [link_ids, package_ids]
-        return await self.device.action(f"{self.url}/forceDownload", params)
+        params = [
+            link_ids,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/forceDownload",
+            params
+        )
 
     async def set_dl_location(self, directory, package_ids=None):
         if package_ids is None:
             package_ids = []
-        params = [directory, package_ids]
-        return await self.device.action(f"{self.url}/setDownloadDirectory", params)
+        params = [
+            directory,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/setDownloadDirectory",
+            params
+        )
 
     async def remove_links(self, link_ids=None, package_ids=None):
         """
@@ -669,18 +869,42 @@ class Downloads:
             link_ids = []
         if package_ids is None:
             package_ids = []
-        params = [link_ids, package_ids]
-        return await self.device.action(f"{self.url}/removeLinks", params)
+        params = [
+            link_ids,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/removeLinks",
+            params
+        )
 
     async def reset_links(self, link_ids, package_ids):
-        params = [link_ids, package_ids]
-        return await self.device.action(f"{self.url}/resetLinks", params)
+        params = [
+            link_ids,
+            package_ids
+        ]
+        return await self.device.action(
+            f"{self.url}/resetLinks",
+            params
+        )
 
     async def move_to_new_package(
-        self, link_ids, package_ids, new_pkg_name, download_path
+        self,
+        link_ids,
+        package_ids,
+        new_pkg_name,
+        download_path
     ):
-        params = link_ids, package_ids, new_pkg_name, download_path
-        return await self.device.action(f"{self.url}/movetoNewPackage", params)
+        params = (
+            link_ids,
+            package_ids,
+            new_pkg_name,
+            download_path
+        )
+        return await self.device.action(
+            f"{self.url}/movetoNewPackage",
+            params
+        )
 
 
 class Captcha:
@@ -690,13 +914,25 @@ class Captcha:
         self.url = "/captcha"
 
     async def list(self):
-        return await self.device.action(f"{self.url}/list", [])
+        return await self.device.action(
+            f"{self.url}/list",
+            []
+        )
 
     async def get(self, captcha_id):
-        return await self.device.action(f"{self.url}/get", (captcha_id,))
+        return await self.device.action(
+            f"{self.url}/get",
+            (captcha_id,)
+        )
 
     async def solve(self, captcha_id, solution):
-        return await self.device.action(f"{self.url}/solve", (captcha_id, solution))
+        return await self.device.action(
+            f"{self.url}/solve",
+            (
+                captcha_id,
+                solution
+            )
+        )
 
 
 class Jddevice:
@@ -726,7 +962,10 @@ class Jddevice:
 
     async def __refresh_direct_connections(self):
         response = await self.myjd.request_api(
-            "/device/getDirectConnectionInfos", "POST", None, self.__action_url()
+            "/device/getDirectConnectionInfos",
+            "POST",
+            None,
+            self.__action_url()
         )
         if (
             response is not None
@@ -742,7 +981,12 @@ class Jddevice:
         """
         tmp = []
         if self.__direct_connection_info is None:
-            tmp.extend({"conn": conn, "cooldown": 0} for conn in direct_info)
+            tmp.extend(
+                {
+                    "conn": conn,
+                    "cooldown": 0
+                } for conn in direct_info
+            )
             self.__direct_connection_info = tmp
             return
         #  We remove old connections not available anymore.
@@ -752,7 +996,12 @@ class Jddevice:
             else:
                 direct_info.remove(i["conn"])
         # We add new connections
-        tmp.extend({"conn": conn, "cooldown": 0} for conn in direct_info)
+        tmp.extend(
+            {
+                "conn": conn,
+                "cooldown": 0
+            } for conn in direct_info
+        )
         self.__direct_connection_info = tmp
 
     async def ping(self):
@@ -773,8 +1022,18 @@ class Jddevice:
             and self.__direct_connection_info is not None
             and time() >= self.__direct_connection_cooldown
         ):
-            return await self.__direct_connect(path, http_action, params, action_url)
-        response = await self.myjd.request_api(path, http_action, params, action_url)
+            return await self.__direct_connect(
+                path,
+                http_action,
+                params,
+                action_url
+            )
+        response = await self.myjd.request_api(
+            path,
+            http_action,
+            params,
+            action_url
+        )
         if response is None:
             raise (MYJDConnectionException("No connection established\n"))
         if (
@@ -785,12 +1044,16 @@ class Jddevice:
         return response["data"]
 
     async def __direct_connect(self, path, http_action, params, action_url):
-        for conn in self.__direct_connection_info:
+        for conn in self.__direct_connection_info: # type: ignore
             if time() > conn["cooldown"]:
                 connection = conn["conn"]
                 api = "http://" + connection["ip"] + ":" + str(connection["port"])
                 response = await self.myjd.request_api(
-                    path, http_action, params, action_url, api
+                    path,
+                    http_action,
+                    params,
+                    action_url,
+                    api
                 )
                 if response is not None:
                     self.__direct_connection_info.remove(conn)
@@ -803,7 +1066,12 @@ class Jddevice:
         self.__direct_connection_cooldown = time() + (
             60 * self.__direct_connection_consecutive_failures
         )
-        response = await self.myjd.request_api(path, http_action, params, action_url)
+        response = await self.myjd.request_api(
+            path,
+            http_action,
+            params,
+            action_url
+        )
         if response is None:
             raise (MYJDConnectionException("No connection established\n"))
         await self.__refresh_direct_connections()
@@ -817,9 +1085,19 @@ class clientSession(AsyncClient):
 
     @wraps(AsyncClient.request)
     async def request(self, method: str, url: str, **kwargs):
-        kwargs.setdefault("timeout", 1.5)
-        kwargs.setdefault("follow_redirects", True)
-        return await super().request(method, url, **kwargs)
+        kwargs.setdefault(
+            "timeout",
+            1.5
+        )
+        kwargs.setdefault(
+            "follow_redirects",
+            True
+        )
+        return await super().request(
+            method,
+            url,
+            **kwargs
+        )
 
 
 class Myjdapi:
@@ -827,7 +1105,7 @@ class Myjdapi:
     def __init__(self):
         self.__request_id = int(time() * 1000)
         self.__api_url = "https://api.jdownloader.org"
-        self.__app_key = "mltb"
+        self.__app_key = "zee"
         self.__api_version = 1
         self.__devices = None
         self.__login_secret = None
@@ -843,7 +1121,10 @@ class Myjdapi:
         if self._http_session is not None:
             return self._http_session
 
-        transport = AsyncHTTPTransport(retries=10, verify=False)
+        transport = AsyncHTTPTransport(
+            retries=10,
+            verify=False
+        )
 
         self._http_session = clientSession(transport=transport)
 
@@ -894,10 +1175,10 @@ class Myjdapi:
         else:
             old_token = self.__server_encryption_token
         new_token = sha256()
-        new_token.update(old_token + bytearray.fromhex(self.__session_token))
+        new_token.update(old_token + bytearray.fromhex(self.__session_token)) # type: ignore
         self.__server_encryption_token = new_token.digest()
         new_token = sha256()
-        new_token.update(self.__device_secret + bytearray.fromhex(self.__session_token))
+        new_token.update(self.__device_secret + bytearray.fromhex(self.__session_token)) # type: ignore
         self.__device_encryption_token = new_token.digest()
 
     def __signature_create(self, key, data):
@@ -907,7 +1188,11 @@ class Myjdapi:
         :param key:
         :param data:
         """
-        signature = new(key, data.encode("utf-8"), sha256)
+        signature = new(
+            key,
+            data.encode("utf-8"),
+            sha256
+        )
         return signature.hexdigest()
 
     def __decrypt(self, secret_token, data):
@@ -919,7 +1204,11 @@ class Myjdapi:
         """
         init_vector = secret_token[: len(secret_token) // 2]
         key = secret_token[len(secret_token) // 2 :]
-        decryptor = AES.new(key, AES.MODE_CBC, init_vector)
+        decryptor = AES.new(
+            key,
+            AES.MODE_CBC,
+            init_vector
+        )
         return UNPAD(decryptor.decrypt(b64decode(data)))
 
     def __encrypt(self, secret_token, data):
@@ -932,7 +1221,11 @@ class Myjdapi:
         data = PAD(data.encode("utf-8"))
         init_vector = secret_token[: len(secret_token) // 2]
         key = secret_token[len(secret_token) // 2 :]
-        encryptor = AES.new(key, AES.MODE_CBC, init_vector)
+        encryptor = AES.new(
+            key,
+            AES.MODE_CBC,
+            init_vector
+        )
         encrypted_data = b64encode(encryptor.encrypt(data))
         return encrypted_data.decode("utf-8")
 
@@ -954,12 +1247,23 @@ class Myjdapi:
         self.__login_secret = self.__secret_create(email, password, "server")
         self.__device_secret = self.__secret_create(email, password, "device")
         response = await self.request_api(
-            "/my/connect", "GET", [("email", email), ("appkey", self.__app_key)]
+            "/my/connect",
+            "GET",
+            [
+                (
+                    "email",
+                    email
+                ),
+                (
+                    "appkey",
+                    self.__app_key
+                )
+            ]
         )
         self.__connected = True
         self.update_request_id()
-        self.__session_token = response["sessiontoken"]
-        self.__regain_token = response["regaintoken"]
+        self.__session_token = response["sessiontoken"] # type: ignore
+        self.__regain_token = response["regaintoken"] # type: ignore
         self.__update_encryption_tokens()
         return response
 
@@ -974,13 +1278,19 @@ class Myjdapi:
             "/my/reconnect",
             "GET",
             [
-                ("sessiontoken", self.__session_token),
-                ("regaintoken", self.__regain_token),
+                (
+                    "sessiontoken",
+                    self.__session_token
+                ),
+                (
+                    "regaintoken",
+                    self.__regain_token
+                ),
             ],
         )
         self.update_request_id()
-        self.__session_token = response["sessiontoken"]
-        self.__regain_token = response["regaintoken"]
+        self.__session_token = response["sessiontoken"] # type: ignore
+        self.__regain_token = response["regaintoken"] # type: ignore
         self.__update_encryption_tokens()
         return response
 
@@ -992,12 +1302,19 @@ class Myjdapi:
 
         """
         response = await self.request_api(
-            "/my/disconnect", "GET", [("sessiontoken", self.__session_token)]
+            "/my/disconnect",
+            "GET",
+            [
+                (
+                    "sessiontoken",
+                    self.__session_token
+                )
+            ]
         )
         self.__clean_resources()
         if self._http_session is not None:
             self._http_session = None
-            await self._http_session.aclose()
+            await self._http_session.aclose() # type: ignore
         return response
 
     def __clean_resources(self):
@@ -1018,10 +1335,17 @@ class Myjdapi:
         :returns: boolean -- True if successful, False if there was any error.
         """
         response = await self.request_api(
-            "/my/listdevices", "GET", [("sessiontoken", self.__session_token)]
+            "/my/listdevices",
+            "GET",
+            [
+                (
+                    "sessiontoken",
+                    self.__session_token
+                )
+            ]
         )
         self.update_request_id()
-        self.__devices = response["list"]
+        self.__devices = response["list"] # type: ignore
 
     def list_devices(self):
         """
@@ -1047,17 +1371,28 @@ class Myjdapi:
         if not self.is_connected():
             raise (MYJDConnectionException("No connection established\n"))
         if device_id is not None:
-            for device in self.__devices:
+            for device in self.__devices: # type: ignore
                 if device["id"] == device_id:
-                    return Jddevice(self, device)
+                    return Jddevice(
+                        self,
+                        device
+                    )
         elif device_name is not None:
-            for device in self.__devices:
+            for device in self.__devices: # type: ignore
                 if device["name"] == device_name:
-                    return Jddevice(self, device)
+                    return Jddevice(
+                        self,
+                        device
+                    )
         raise (MYJDDeviceNotFoundException("Device not found\n"))
 
     async def request_api(
-        self, path, http_method="GET", params=None, action=None, api=None
+        self,
+        path,
+        http_method="GET",
+        params=None,
+        action=None,
+        api=None
     ):
         """
         Makes a request to the API to the 'path' using the 'http_method' with parameters,'params'.
@@ -1103,15 +1438,30 @@ class Myjdapi:
                     )
                 ]
             query = query[0] + "&".join(query[1:])
-            res = await session.request(http_method, api + query)
+            res = await session.request(
+                http_method,
+                api + query
+            ) # type: ignore
             encrypted_response = res.text
         else:
             params_request = []
             if params is not None:
                 for param in params:
-                    if isinstance(param, (str, list)):
+                    if isinstance(
+                        param,
+                        (
+                            str,
+                            list
+                        )
+                    ):
                         params_request += [param]
-                    elif isinstance(param, (dict, bool)):
+                    elif isinstance(
+                        param,
+                        (
+                            dict,
+                            bool
+                        )
+                    ):
                         params_request += [dumps(param)]
                     else:
                         params_request += [str(param)]
@@ -1123,17 +1473,30 @@ class Myjdapi:
             }
             data = dumps(params_request)
             # Removing quotes around null elements.
-            data = data.replace('"null"', "null")
-            data = data.replace("'null'", "null")
-            encrypted_data = self.__encrypt(self.__device_encryption_token, data)
-            request_url = api + action + path if action is not None else api + path
+            data = data.replace(
+                '"null"',
+                "null"
+            )
+            data = data.replace(
+                "'null'",
+                "null"
+            )
+            encrypted_data = self.__encrypt(
+                self.__device_encryption_token,
+                data
+            )
+            request_url = (
+                api + action + path
+                if action is not None
+                else api + path
+            )
             try:
                 res = await session.request(
                     http_method,
                     request_url,
                     headers={"Content-Type": "application/aesjson-jd; charset=utf-8"},
                     content=encrypted_data,
-                )
+                ) # type: ignore
                 encrypted_response = res.text
             except RequestError:
                 return None
@@ -1144,12 +1507,14 @@ class Myjdapi:
                 try:
                     error_msg = loads(
                         self.__decrypt(
-                            self.__device_encryption_token, encrypted_response
+                            self.__device_encryption_token,
+                            encrypted_response
                         )
                     )
                 except JSONDecodeError as exc:
                     raise MYJDDecodeException(
-                        "Failed to decode response: {}", encrypted_response
+                        "Failed to decode response: {}",
+                        encrypted_response
                     ) from exc
             msg = (
                 "\n\tSOURCE: "
@@ -1158,7 +1523,11 @@ class Myjdapi:
                 + error_msg["type"]
                 + "\n------\nREQUEST_URL: "
                 + api
-                + (path if http_method != "GET" else "")
+                + (
+                    path
+                    if http_method != "GET"
+                    else ""
+                )
             )
             if http_method == "GET":
                 msg += query
@@ -1166,18 +1535,27 @@ class Myjdapi:
             if data is not None:
                 msg += "DATA:\n" + data
             raise (
-                MYJDApiException.get_exception(error_msg["src"], error_msg["type"], msg)
+                MYJDApiException.get_exception(
+                    error_msg["src"],
+                    error_msg["type"],
+                    msg
+                )
             )
         if action is None:
             if not self.__server_encryption_token:
-                response = self.__decrypt(self.__login_secret, encrypted_response)
+                response = self.__decrypt(
+                    self.__login_secret,
+                    encrypted_response
+                )
             else:
                 response = self.__decrypt(
-                    self.__server_encryption_token, encrypted_response
+                    self.__server_encryption_token,
+                    encrypted_response
                 )
         else:
             response = self.__decrypt(
-                self.__device_encryption_token, encrypted_response
+                self.__device_encryption_token,
+                encrypted_response
             )
         jsondata = loads(response.decode("utf-8"))
         if jsondata["rid"] != self.__request_id:

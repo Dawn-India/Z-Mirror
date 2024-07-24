@@ -532,7 +532,10 @@ async def set_option(_, message, pre_event, option):
                 )
                 await update_user_settings(pre_event)
                 return
-            name, path = data
+            (
+                name,
+                path
+            ) = data
             user_dict["upload_paths"][name] = path
         value = user_dict["upload_paths"]
     update_user_ldata(
@@ -954,7 +957,10 @@ async def edit_user_settings(client, query):
             if await aiopath.exists(token_pickle)
             else "Not Exists"
         )
-        if user_dict.get("gdrive_id", False):
+        if user_dict.get(
+            "gdrive_id",
+            False
+        ):
             gdrive_id = user_dict["gdrive_id"]
         elif GDID := config_dict["GDRIVE_ID"]:
             gdrive_id = GDID

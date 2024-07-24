@@ -217,7 +217,10 @@ class TaskListener(TaskConfig):
             )
             if self.isCancelled:
                 return
-            up_dir, self.name = up_path.rsplit(
+            (
+                up_dir,
+                self.name
+            ) = up_path.rsplit(
                 "/",
                 1
             )
@@ -233,7 +236,10 @@ class TaskListener(TaskConfig):
             up_path = await self.generateScreenshots(up_path)
             if self.isCancelled:
                 return
-            up_dir, self.name = up_path.rsplit(
+            (
+                up_dir,
+                self.name
+            ) = up_path.rsplit(
                 "/",
                 1
             )
@@ -249,7 +255,10 @@ class TaskListener(TaskConfig):
             )
             if self.isCancelled:
                 return
-            up_dir, self.name = up_path.rsplit(
+            (
+                up_dir,
+                self.name
+            ) = up_path.rsplit(
                 "/",
                 1
             )
@@ -264,7 +273,10 @@ class TaskListener(TaskConfig):
             )
             if self.isCancelled:
                 return
-            up_dir, self.name = up_path.rsplit(
+            (
+                up_dir,
+                self.name
+            ) = up_path.rsplit(
                 "/",
                 1
             )
@@ -280,7 +292,10 @@ class TaskListener(TaskConfig):
             if self.isCancelled:
                 return
 
-        up_dir, self.name = up_path.rsplit(
+        (
+            up_dir,
+            self.name
+        ) = up_path.rsplit(
             "/",
             1
         )
@@ -296,7 +311,10 @@ class TaskListener(TaskConfig):
             if self.isCancelled:
                 return
 
-        add_to_queue, event = await check_running_tasks(
+        (
+            add_to_queue,
+            event
+        ) = await check_running_tasks(
             self,
             "up"
         )
@@ -342,7 +360,10 @@ class TaskListener(TaskConfig):
             )
         elif is_gdrive_id(self.upDest): # type: ignore
             LOGGER.info(f"Gdrive Upload Name: {self.name}")
-            drive = gdUpload(self, up_path)
+            drive = gdUpload(
+                self,
+                up_path
+            )
             async with task_dict_lock:
                 task_dict[self.mid] = GdriveStatus(
                     self,
@@ -409,7 +430,11 @@ class TaskListener(TaskConfig):
             f"\n<code>Past  </code>: {get_readable_time(time() - self.time)}"
             f"\n<code>Mode  </code>: {self.mode}"
         )
-        _msg = "" if rclonePath == "" else f"\n\n<code>Path  </code>: {rclonePath}"
+        _msg = (
+            ""
+            if rclonePath == ""
+            else f"\n\n<code>Path  </code>: {rclonePath}"
+        )
         msg_ = "\n\n<b><i>Link has been sent in your DM.</b></i>"
         if self.isLeech:
             msg += f"\n<code>Files </code>: {folders}</blockquote>\n"

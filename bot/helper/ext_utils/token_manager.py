@@ -57,12 +57,21 @@ async def checking_access(user_id, button=None):
         )
         tmsg = "Your <b>Token</b> is expired. Get a new one."
         tmsg += f"\n<b>Token Validity</b>: {get_readable_time(config_dict["TOKEN_TIMEOUT"])}"
-        return tmsg, button
-    return None, button
+        return (
+            tmsg,
+            button
+        )
+    return (
+        None,
+        button
+    )
 
 
 async def start(client, message):
-    if len(message.command) > 1 and len(message.command[1]) == 36:
+    if (
+        len(message.command) > 1
+        and len(message.command[1]) == 36
+    ):
         userid = message.from_user.id
         input_token = message.command[1]
         if DATABASE_URL:

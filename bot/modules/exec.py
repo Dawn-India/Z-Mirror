@@ -1,7 +1,11 @@
 from aiofiles import open as aiopen
 from contextlib import redirect_stdout
 from io import StringIO, BytesIO
-from os import path as ospath, getcwd, chdir
+from os import (
+    path as ospath,
+    getcwd,
+    chdir
+)
 from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 from textwrap import indent

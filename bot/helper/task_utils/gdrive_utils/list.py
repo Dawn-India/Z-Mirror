@@ -573,7 +573,11 @@ class gdriveList(GoogleDriveHelper):
         self.list_status = status
         future = self._event_handler()
         if token_path is None:
-            self._token_user, self._token_owner, self._sa_owner = await gather(
+            (
+                self._token_user,
+                self._token_owner,
+                self._sa_owner
+            ) = await gather(
                 aiopath.exists(self.user_token_path),
                 aiopath.exists("token.pickle"),
                 aiopath.exists("accounts"),

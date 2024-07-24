@@ -33,7 +33,11 @@ class DirectListener:
 
     @property
     def speed(self):
-        return self.download_task.download_speed if self.download_task else 0
+        return (
+            self.download_task.download_speed
+            if self.download_task
+            else 0
+        )
 
     def download(self, contents):
         self.is_downloading = True

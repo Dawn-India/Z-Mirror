@@ -93,11 +93,18 @@ async def add_aria2c_download(listener, dpath, header, ratio, seed_time):
 
     if (
         not add_to_queue
-        and (not listener.select or not config_dict["BASE_URL"])
+        and (
+            not listener.select or
+            not config_dict["BASE_URL"]
+        )
         and listener.multi <= 1
     ):
         await sendStatusMessage(listener.message)
-    elif listener.select and download.is_torrent and not download.is_metadata:
+    elif (
+        listener.select
+        and download.is_torrent
+        and not download.is_metadata
+    ):
         if not add_to_queue:
             await sync_to_async(
                 aria2.client.force_pause,

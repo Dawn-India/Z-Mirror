@@ -79,7 +79,10 @@ async def stop_duplicate_check(listener):
             button = await get_telegraph_list(telegraph_content)
             return msg, button
 
-    return False, None
+    return (
+        False,
+        None
+    )
 
 
 async def check_running_tasks(listener, state="dl"):
@@ -92,7 +95,10 @@ async def check_running_tasks(listener, state="dl"):
     event = None
     is_over_limit = False
     async with queue_dict_lock:
-        if state == "up" and listener.mid in non_queued_dl:
+        if (
+            state == "up"
+            and listener.mid in non_queued_dl
+        ):
             non_queued_dl.remove(listener.mid)
         if (
             (all_limit or state_limit)
@@ -133,7 +139,10 @@ async def check_running_tasks(listener, state="dl"):
             else:
                 non_queued_dl.add(listener.mid)
 
-    return is_over_limit, event
+    return (
+        is_over_limit,
+        event
+    )
 
 
 async def start_dl_from_queued(mid: int):
@@ -162,7 +171,10 @@ async def start_from_queued():
                     not up_limit
                     or up < up_limit
                 ):
-                    for index, mid in enumerate(
+                    for (
+                        index,
+                        mid
+                    ) in enumerate(
                         list(queued_up.keys()),
                         start=1
                     ):
@@ -193,9 +205,15 @@ async def start_from_queued():
     if up_limit := config_dict["QUEUE_UPLOAD"]:
         async with queue_dict_lock:
             up = len(non_queued_up)
-            if queued_up and up < up_limit:
+            if (
+                queued_up and
+                up < up_limit
+            ):
                 f_tasks = up_limit - up
-                for index, mid in enumerate(
+                for (
+                    index,
+                    mid
+                ) in enumerate(
                     list(queued_up.keys()),
                     start=1
                 ):
@@ -211,9 +229,15 @@ async def start_from_queued():
     if dl_limit := config_dict["QUEUE_DOWNLOAD"]:
         async with queue_dict_lock:
             dl = len(non_queued_dl)
-            if queued_dl and dl < dl_limit:
+            if (
+                queued_dl and
+                dl < dl_limit
+            ):
                 f_tasks = dl_limit - dl
-                for index, mid in enumerate(
+                for (
+                    index,
+                    mid
+                ) in enumerate(
                     list(queued_dl.keys()),
                     start=1
                 ):

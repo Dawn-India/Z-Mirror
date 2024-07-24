@@ -5,7 +5,10 @@ from asyncio import (
     wrap_future,
 )
 from functools import partial
-from pyrogram.filters import regex, user
+from pyrogram.filters import (
+    regex,
+    user
+)
 from pyrogram.handlers import CallbackQueryHandler
 from time import time
 from aiofiles.os import path as aiopath
@@ -56,7 +59,10 @@ async def configureDownload(_, query, obj):
     if data[1] == "sdone":
         obj.event.set()
     elif data[1] == "cancel":
-        await editMessage(message, "Task has been cancelled.")
+        await editMessage(
+            message,
+            "Task has been cancelled."
+        )
         obj.listener.isCancelled = True
         obj.event.set()
 
@@ -174,7 +180,10 @@ async def add_jd_download(listener, path):
             if odl_list := [
                 od["uuid"]
                 for od in odl
-                if od.get("saveTo", "").startswith("/root/Downloads/")
+                if od.get(
+                    "saveTo",
+                    ""
+                ).startswith("/root/Downloads/")
             ]:
                 await retry_function(
                     jdownloader.device.linkgrabber.remove_links,
@@ -257,15 +266,19 @@ async def add_jd_download(listener, path):
                             "/root/Downloads/",
                             "",
                             1
-                        ).split("/", 1)[
-                            0
-                        ]
+                        ).split(
+                            "/",
+                            1
+                        )[0]
                     else:
                         name = save_to.replace(
                             f"{path}/",
                             "",
                             1
-                        ).split("/", 1)[0]
+                        ).split(
+                            "/",
+                            1
+                        )[0]
 
                 if (
                     pack.get("tempUnknownCount", 0) > 0
@@ -342,13 +355,19 @@ async def add_jd_download(listener, path):
 
     listener.name = listener.name or name
 
-    msg, button = await stop_duplicate_check(listener)
+    (
+        msg,
+        button
+    ) = await stop_duplicate_check(listener)
     if msg:
         await retry_function(
             jdownloader.device.linkgrabber.remove_links,
             package_ids=online_packages
         )
-        await listener.onDownloadError(msg, button)
+        await listener.onDownloadError(
+            msg,
+            button
+        )
         async with jd_lock:
             del jd_downloads[gid]
         return
@@ -367,7 +386,10 @@ async def add_jd_download(listener, path):
         )
         return
 
-    if listener.select and await JDownloaderHelper(listener).waitForConfigurations():
+    if (
+        listener.select and
+        await JDownloaderHelper(listener).waitForConfigurations()
+    ):
         await retry_function(
             jdownloader.device.linkgrabber.remove_links,
             package_ids=online_packages,

@@ -112,20 +112,32 @@ async def _jd_listener():
                 for pack
                 in packages
             ]
-            for k, v in list(jd_downloads.items()):
-                if v["status"] == "down" and k not in all_packages:
+            for (
+                k,
+                v
+            ) in list(jd_downloads.items()):
+                if (
+                    v["status"] == "down" and
+                    k not in all_packages
+                ):
                     cdi = jd_downloads[k]["ids"]
                     if len(cdi) > 1:
                         update_download(k, v) # type: ignore
                     else:
                         remove_download(k) # type: ignore
                 else:
-                    for index, pid in enumerate(v["ids"]):
+                    for (
+                        index,
+                        pid
+                    ) in enumerate(v["ids"]):
                         if pid not in all_packages:
                             del jd_downloads[k]["ids"][index]
 
             for gid in finished:
-                if gid in jd_downloads and jd_downloads[gid]["status"] == "down":
+                if (
+                    gid in jd_downloads and
+                    jd_downloads[gid]["status"] == "down"
+                ):
                     is_finished = all(
                         did
                         in finished

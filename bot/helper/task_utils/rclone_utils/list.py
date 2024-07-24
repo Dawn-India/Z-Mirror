@@ -259,7 +259,10 @@ class RcloneList:
                     "rcq itype --dirs-only",
                     position="footer"
                 )
-        if self.list_status == "rcu" or len(self.path_list) > 0:
+        if (
+            self.list_status == "rcu"
+            or len(self.path_list) > 0
+        ):
             buttons.ibutton(
                 "Choose Current Path",
                 "rcq cur",
@@ -332,7 +335,11 @@ class RcloneList:
         ]
         if self.listener.isCancelled:
             return
-        res, err, code = await cmd_exec(cmd)
+        (
+            res,
+            err,
+            code
+        ) = await cmd_exec(cmd)
         if code not in [0, -9]:
             if not err:
                 err = "Use <code>/shell cat rlog.txt</code> to see more information"

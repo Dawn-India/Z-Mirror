@@ -166,7 +166,11 @@ async def clean_unwanted(path, custom_list=None):
     if custom_list is None:
         custom_list = []
     LOGGER.info(f"Cleaning unwanted files/folders: {path}")
-    for dirpath, _, files in await sync_to_async(
+    for (
+        dirpath,
+        _,
+        files
+    ) in await sync_to_async(
         walk,
         path,
         topdown=False
@@ -220,7 +224,11 @@ async def count_files_and_folders(path, extension_filter, unwanted_files=None):
         unwanted_files = []
     total_files = 0
     total_folders = 0
-    for dirpath, dirs, files in await sync_to_async(
+    for (
+        dirpath,
+        dirs,
+        files
+    ) in await sync_to_async(
         walk,
         path
     ):
@@ -236,7 +244,10 @@ async def count_files_and_folders(path, extension_filter, unwanted_files=None):
                 if f_path in unwanted_files:
                     total_files -= 1
         total_folders += len(dirs)
-    return total_folders, total_files
+    return (
+        total_folders,
+        total_files
+    )
 
 
 def get_base_name(orig_path):
@@ -269,17 +280,24 @@ async def join_files(path):
     results = []
     exists = False
     for file_ in files:
-        if re_search(r"\.0+2$", file_) and await sync_to_async(
-            get_mime_type, f"{path}/{file_}"
-        ) not in [
-            "application/x-7z-compressed",
-            "application/zip"
-        ]:
+        if (
+            re_search(r"\.0+2$", file_)
+            and await sync_to_async(
+                get_mime_type,
+                f"{path}/{file_}") not in [
+                    "application/x-7z-compressed",
+                    "application/zip"
+                ]
+            ):
             exists = True
             final_name = file_.rsplit(".", 1)[0]
             fpath = f"{path}/{final_name}"
             cmd = f'cat "{fpath}."* > "{fpath}"'
-            _, stderr, code = await cmd_exec(
+            (
+                _,
+                stderr,
+                code
+            ) = await cmd_exec(
                 cmd,
                 True
             )

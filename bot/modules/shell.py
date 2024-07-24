@@ -28,7 +28,11 @@ async def shell(_, message):
         )
         return
     cmd = cmd[1]
-    stdout, stderr, _ = await cmd_exec(
+    (
+        stdout,
+        stderr,
+        _
+    ) = await cmd_exec(
         cmd,
         shell=True
     )

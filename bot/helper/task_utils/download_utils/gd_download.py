@@ -28,7 +28,13 @@ from bot.helper.telegram_helper.message_utils import (
 
 async def add_gd_download(listener, path):
     drive = gdCount()
-    name, mime_type, listener.size, _, _ = await sync_to_async(
+    (
+        name,
+        mime_type,
+        listener.size,
+        _,
+        _
+    ) = await sync_to_async(
         drive.count,
         listener.link,
         listener.userId
@@ -40,7 +46,10 @@ async def add_gd_download(listener, path):
     listener.name = listener.name or name
     gid = token_urlsafe(12)
 
-    msg, button = await stop_duplicate_check(listener)
+    (
+        msg,
+        button
+    ) = await stop_duplicate_check(listener)
     if msg:
         await listener.onDownloadError(
             msg,
@@ -63,7 +72,10 @@ async def add_gd_download(listener, path):
         )
         return
 
-    add_to_queue, event = await check_running_tasks(listener)
+    (
+        add_to_queue,
+        event
+    ) = await check_running_tasks(listener)
     if add_to_queue:
         LOGGER.info(f"Added to Queue/Download: {listener.name}")
         async with task_dict_lock:

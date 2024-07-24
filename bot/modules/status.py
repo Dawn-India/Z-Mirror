@@ -340,7 +340,10 @@ async def stats(_, message, edit_mode=False):
 
 async def send_bot_stats(_, query):
     buttons = ButtonMaker()
-    bot_stats, _ = await stats(
+    (
+        bot_stats,
+        _
+    ) = await stats(
         _,
         query.message,
         edit_mode=True
@@ -371,7 +374,10 @@ async def send_bot_stats(_, query):
 
 async def send_sys_stats(_, query):
     buttons = ButtonMaker()
-    _, sys_stats = await stats(
+    (
+        _,
+        sys_stats
+    ) = await stats(
         _,
         query.message,
         edit_mode=True
@@ -515,6 +521,7 @@ async def send_bot_limits(_, query):
     JDL = "Unlimited" if config_dict["JD_LIMIT"] == "" else config_dict["JD_LIMIT"]
     NZB = "Unlimited" if config_dict["NZB_LIMIT"] == "" else config_dict["NZB_LIMIT"]
     YTD = "Unlimited" if config_dict["YTDLP_LIMIT"] == "" else config_dict["YTDLP_LIMIT"]
+    YTP = "Unlimited" if config_dict["PLAYLIST_LIMIT"] == "" else config_dict["PLAYLIST_LIMIT"]
     GDL = "Unlimited" if config_dict["GDRIVE_LIMIT"] == "" else config_dict["GDRIVE_LIMIT"]
     TOR = "Unlimited" if config_dict["TORRENT_LIMIT"] == "" else config_dict["TORRENT_LIMIT"]
     CLL = "Unlimited" if config_dict["CLONE_LIMIT"] == "" else config_dict["CLONE_LIMIT"]
@@ -528,6 +535,7 @@ async def send_bot_limits(_, query):
                 f"<code>Torrent   : {TOR}</code> <b>GB</b>\n" \
                 f"<code>G-Drive   : {GDL}</code> <b>GB</b>\n" \
                 f"<code>Yt-Dlp    : {YTD}</code> <b>GB</b>\n" \
+                f"<code>Playlist  : {YTP}</code> <b>NO</b>\n" \
                 f"<code>Direct    : {DIR}</code> <b>GB</b>\n" \
                 f"<code>JDownL    : {JDL}</code> <b>GB</b>\n" \
                 f"<code>NZB       : {NZB}</code> <b>GB</b>\n" \

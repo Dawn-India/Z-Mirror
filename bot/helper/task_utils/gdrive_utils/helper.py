@@ -85,7 +85,10 @@ class GoogleDriveHelper:
             )
         elif ospath.exists(self.token_path):
             LOGGER.info(f"Authorize with {self.token_path}")
-            with open(self.token_path, "rb") as f:
+            with open(
+                self.token_path,
+                "rb"
+            ) as f:
                 credentials = pload(f)
         else:
             LOGGER.error("token.pickle not found!")
@@ -111,7 +114,10 @@ class GoogleDriveHelper:
         self.service = self.authorize()
 
     def getIdFromUrl(self, link, user_id=""):
-        if user_id and link.startswith("mtp:"):
+        if (
+            user_id and
+            link.startswith("mtp:")
+        ):
             self.use_sa = False
             self.token_path = f"tokens/{user_id}.pickle"
             link = link.replace(

@@ -122,7 +122,10 @@ async def convert_audio(listener, audio_file, ext):
         *cmd,
         stderr=PIPE
     )
-    _, stderr = await listener.suproc.communicate()
+    (
+        _,
+        stderr
+    ) = await listener.suproc.communicate()
     if listener.isCancelled:
         return False
     code = listener.suproc.returncode
@@ -493,11 +496,18 @@ async def create_thumbnail(video_file, duration):
         des_dir,
     ]
     try:
-        _, err, code = await wait_for(
+        (
+            _,
+            err,
+            code
+        ) = await wait_for(
             cmd_exec(cmd),
             timeout=60
         )
-        if code != 0 or not await aiopath.exists(des_dir):
+        if (
+            code != 0
+            or not await aiopath.exists(des_dir)
+        ):
             LOGGER.error(
                 f"Error while extracting thumbnail from video. Name: {video_file} stderr: {err}"
             )

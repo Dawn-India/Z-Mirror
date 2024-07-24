@@ -304,7 +304,10 @@ class TaskConfig:
             ):
                 error_msg.append("DM_MODE and User Session need DUMP_CHAT_ID")
 
-            self.dmMessage, error_button = await isBot_canDm(
+            (
+                self.dmMessage,
+                error_button
+            ) = await isBot_canDm(
                 self.message, # type: ignore
                 dmMode,
                 error_button
@@ -358,6 +361,7 @@ class TaskConfig:
         if (
             config_dict["DISABLE_SEED"]
             and self.seed
+            and not await isAdmin(self.message) # type: ignore
         ):
             raise ValueError("Seed is Disabled!")
         self.nameSub = (

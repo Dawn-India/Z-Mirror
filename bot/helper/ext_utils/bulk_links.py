@@ -14,7 +14,10 @@ def filterLinks(links_list: list, bulk_start: int, bulk_end: int) -> list:
 
 def getLinksFromMessage(text: str) -> list:
     links_list = text.split("\n")
-    return [item.strip() for item in links_list if len(item) != 0]
+    return [
+        item.strip() for item in links_list
+        if len(item) != 0
+    ]
 
 
 async def getLinksFromFile(message) -> list:
@@ -40,12 +43,19 @@ async def extractBulkLinks(message, bulk_start: str, bulk_end: str) -> list:
     bulk_end = int(bulk_end) # type: ignore
     links_list = []
     if reply_to := message.reply_to_message:
-        if (file_ := reply_to.document) and (file_.mime_type == "text/plain"):
+        if (
+            (file_ := reply_to.document) and
+            (file_.mime_type == "text/plain")
+        ):
             links_list = await getLinksFromFile(reply_to)
         elif text := reply_to.text:
             links_list = getLinksFromMessage(text)
-    return filterLinks(
-        links_list,
-        bulk_start, # type: ignore
-        bulk_end # type: ignore
-    ) if links_list else links_list
+    return (
+        filterLinks(
+            links_list,
+            bulk_start, # type: ignore
+            bulk_end # type: ignore
+        )
+        if links_list
+        else links_list
+    )

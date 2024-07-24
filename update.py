@@ -31,7 +31,10 @@ if path.exists("rlog.txt"):
 
 basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[FileHandler("Zee_Logs.txt"), StreamHandler()],
+    handlers=[
+        FileHandler("Zee_Logs.txt"),
+        StreamHandler()
+    ],
     level=INFO,
 )
 

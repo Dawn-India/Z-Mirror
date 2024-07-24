@@ -31,8 +31,7 @@ from os import (
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from pyrogram import (
-    Client as tgClient,
-    enums
+    Client as tgClient
 )
 from qbittorrentapi import Client as qbClient
 from sabnzbdapi import sabnzbdClient
@@ -64,7 +63,10 @@ bot_loop = get_event_loop()
 
 basicConfig(
     format="%(levelname)s | From %(name)s -> %(module)s line no: %(lineno)d | %(message)s",
-    handlers=[FileHandler("Zee_Logs.txt"), StreamHandler()],
+    handlers=[
+        FileHandler("Zee_Logs.txt"),
+        StreamHandler()
+    ],
     level=INFO,
 )
 
