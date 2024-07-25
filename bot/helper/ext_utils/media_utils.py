@@ -701,7 +701,6 @@ async def split_file(
 
 
 async def createSampleVideo(listener, video_file, sample_duration, part_duration):
-    filter_complex = ""
     (
         dir,
         name
@@ -734,6 +733,7 @@ async def createSampleVideo(listener, video_file, sample_duration, part_duration
         )
     )
 
+    filter_complex = ""
     for (
         i,
         (start, end)

@@ -325,7 +325,10 @@ class TaskConfig:
         if error_msg:
             final_msg = f"Hey, <b>{self.tag}</b>,\n"
 
-            for _i, _msg in enumerate(
+            for (
+                _i,
+                _msg
+            ) in enumerate(
                 error_msg,
                 1
             ):
@@ -719,7 +722,15 @@ class TaskConfig:
 
     async def getTag(self, text: list):
         if len(text) > 1 and text[1].startswith("Tag: "):
-            self.tag, id_ = text[1].split("Tag: ")[1].split()
+            user_info = text[1].split("Tag: ")
+            if len(user_info) >= 3:
+                id_ = user_info[-1]
+                self.tag = " ".join(user_info[:-1])
+            else:
+                (
+                    self.tag,
+                    id_
+                ) = text[1].split("Tag: ")[1].split()
             self.user = self.message.from_user = await self.client.get_users(id_) # type: ignore
             self.userId = self.user.id
             self.userDict = user_data.get(
@@ -923,7 +934,11 @@ class TaskConfig:
                     up_path = f"{self.newDir}/{self.name}"
                 else:
                     up_path = dl_path
-                for dirpath, _, files in await sync_to_async(
+                for (
+                    dirpath,
+                    _,
+                    files
+                ) in await sync_to_async(
                     walk,
                     dl_path,
                     topdown=False
@@ -964,7 +979,10 @@ class TaskConfig:
                                     *cmd,
                                     stderr=PIPE
                                 )
-                            _, stderr = await self.suproc.communicate()
+                            (
+                                _,
+                                stderr
+                            ) = await self.suproc.communicate()
                             if self.isCancelled:
                                 return ""
                             code = self.suproc.returncode
@@ -1021,7 +1039,10 @@ class TaskConfig:
                         *cmd,
                         stderr=PIPE
                     )
-                _, stderr = await self.suproc.communicate()
+                (
+                    _,
+                    stderr
+                ) = await self.suproc.communicate()
                 if self.isCancelled:
                     return ""
                 code = self.suproc.returncode
@@ -1124,7 +1145,10 @@ class TaskConfig:
                 *cmd,
                 stderr=PIPE
             )
-        _, stderr = await self.suproc.communicate()
+        (
+            _,
+            stderr
+        ) = await self.suproc.communicate()
         if self.isCancelled:
             return ""
         code = self.suproc.returncode
@@ -1390,7 +1414,11 @@ class TaskConfig:
 
         async def proceedConvert(m_path):
             nonlocal checked
-            is_video, is_audio, _ = await get_document_type(m_path)
+            (
+                is_video,
+                is_audio,
+                _
+            ) = await get_document_type(m_path)
             if (
                 is_video
                 and vext
@@ -1488,7 +1516,11 @@ class TaskConfig:
                         pass
                     return output_file
         else:
-            for dirpath, _, files in await sync_to_async(
+            for (
+                dirpath,
+                _,
+                files
+            ) in await sync_to_async(
                 walk,
                 dl_path,
                 topdown=False
@@ -1585,7 +1617,11 @@ class TaskConfig:
                     return newfolder
         else:
             LOGGER.info(f"Creating Screenshot for: {dl_path}")
-            for dirpath, _, files in await sync_to_async(
+            for (
+                dirpath,
+                _,
+                files
+            ) in await sync_to_async(
                 walk,
                 dl_path,
                 topdown=False
@@ -1604,7 +1640,10 @@ class TaskConfig:
 
     async def substitute(self, dl_path):
         if await aiopath.isfile(dl_path):
-            up_dir, name = dl_path.rsplit(
+            (
+                up_dir,
+                name
+            ) = dl_path.rsplit(
                 "/",
                 1
             )
@@ -1634,7 +1673,11 @@ class TaskConfig:
             )
             return new_path
         else:
-            for dirpath, _, files in await sync_to_async(
+            for (
+                dirpath,
+                _,
+                files
+            ) in await sync_to_async(
                 walk,
                 dl_path,
                 topdown=False

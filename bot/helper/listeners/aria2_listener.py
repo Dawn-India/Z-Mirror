@@ -61,7 +61,7 @@ async def _onDownloadStarted(api, gid):
                     if download.is_removed or download.followed_by_ids:
                         await deleteMessage(meta)
                         break
-                    download = download.live
+                    await sync_to_async(download.update)
         return
     else:
         LOGGER.info(f"onAria2DownloadStarted: {download.name} - Gid: {gid}")
@@ -73,7 +73,7 @@ async def _onDownloadStarted(api, gid):
             gid
         )
         await sleep(2)
-        download = download.live
+        await sync_to_async(download.update)
         task.listener.name = download.name
         task.listener.isTorrent = download.is_torrent
         msg, button = await stop_duplicate_check(task.listener)
@@ -97,13 +97,13 @@ async def _onDownloadStarted(api, gid):
                     api.get_download,
                     gid
                 )
-                download = download.live
+                await sync_to_async(download.update)
                 if download.followed_by_ids:
                     download = await sync_to_async(
                         api.get_download,
                         download.followed_by_ids[0]
                     )
-                    download = download.live
+                    await sync_to_async(download.update)
                 if download.total_length > 0:
                     break
         task.listener.size = download.total_length
@@ -232,10 +232,10 @@ async def _onBtDownloadComplete(api, gid):
         await task.listener.onDownloadComplete()
         if Intervals["stopAll"]:
             return
-        download = download.live
+        await sync_to_async(download.update)
         if task.listener.seed:
             if download.is_complete:
-                if task := await getTaskByGid(gid):
+                if await getTaskByGid(gid):
                     LOGGER.info(f"Cancelling Seed: {download.name}")
                     await task.listener.onUploadError(
                         f"Seeding stopped with Ratio: {task.ratio()} and Time: {task.seeding_time()}"
