@@ -106,6 +106,7 @@ class YtSelection:
         self.event = Event()
         self.formats = {}
         self.qual = None
+        self.tag = listener.tag
 
     @new_thread
     async def _event_handler(self):
@@ -195,7 +196,7 @@ class YtSelection:
                 "footer"
             )
             self._main_buttons = buttons.build_menu(3)
-            msg = f"Choose Playlist Videos Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
+            msg = f"Choose Playlist Videos Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}" # type: ignore
         else:
             format_dict = result.get("formats")
             if format_dict is not None:
@@ -284,7 +285,7 @@ class YtSelection:
                 "footer"
             )
             self._main_buttons = buttons.build_menu(2)
-            msg = f"Choose Video Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
+            msg = f"Choose Video Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}" # type: ignore
         self._reply_to = await sendMessage(
             self.listener.message,
             msg,
@@ -297,9 +298,9 @@ class YtSelection:
 
     async def back_to_main(self):
         if self._is_playlist:
-            msg = f"Choose Playlist Videos Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
+            msg = f"Choose Playlist Videos Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}" # type: ignore
         else:
-            msg = f"Choose Video Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
+            msg = f"Choose Video Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}" # type: ignore
         await editMessage(
             self._reply_to,
             msg,
@@ -326,7 +327,7 @@ class YtSelection:
             "footer"
         )
         subbuttons = buttons.build_menu(2)
-        msg = f"Choose Bit rate for <b>{b_name}</b>:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
+        msg = f"Choose Bit rate for <b>{b_name}</b>:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}" # type: ignore
         await editMessage(
             self._reply_to,
             msg,
@@ -356,7 +357,7 @@ class YtSelection:
             "ytq cancel"
         )
         subbuttons = buttons.build_menu(3)
-        msg = f"Choose mp3 Audio{i} Bitrate:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
+        msg = f"Choose mp3 Audio{i} Bitrate:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}" # type: ignore
         await editMessage(
             self._reply_to,
             msg,
@@ -391,7 +392,7 @@ class YtSelection:
             "footer"
         )
         subbuttons = buttons.build_menu(3)
-        msg = f"Choose Audio{i} Format:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
+        msg = f"Choose Audio{i} Format:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}" # type: ignore
         await editMessage(
             self._reply_to,
             msg,
@@ -416,7 +417,7 @@ class YtSelection:
             "ytq aq cancel"
         )
         subbuttons = buttons.build_menu(5)
-        msg = f"Choose Audio{i} Qaulity:\n0 is best and 10 is worst\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
+        msg = f"Choose Audio{i} Qaulity:\n0 is best and 10 is worst\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}" # type: ignore
         await editMessage(
             self._reply_to,
             msg,

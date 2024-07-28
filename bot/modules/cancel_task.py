@@ -246,11 +246,10 @@ async def cancell_all_buttons(_, message):
         "", # type: ignore
         message
     )
-    uid = (
-        message.from_user.id
-        if len(message.text) < 1
-        else message.text.split(" ")[1]
-    )
+    msg_txt = message.text.split()
+    uid = message.from_user.id
+    if len(msg_txt) > 1:
+        uid = msg_txt[1]
     button = create_cancel_buttons(
         isSudo,
         uid
