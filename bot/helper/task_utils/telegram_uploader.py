@@ -73,6 +73,8 @@ class TgUploader:
         self._last_msg_in_group = False
         self._up_path = ""
         self._lprefix = ""
+        self._lsuffix = ""
+        self._lcapfont = ""
         self._media_group = False
         self._is_private = False
         self._sent_msg = None
@@ -98,6 +100,16 @@ class TgUploader:
         self._lprefix = self._listener.userDict.get("lprefix") or (
             config_dict["LEECH_FILENAME_PREFIX"]
             if "lprefix" not in self._listener.userDict
+            else ""
+        )
+        self._lsuffix = self._listener.userDict.get("lsuffix") or (
+            config_dict["LEECH_FILENAME_SUFFIX"]
+            if "lsuffix" not in self._listener.userDict
+            else ""
+        )
+        self._lcapfont = self._listener.userDict.get("lcapfont") or (
+            config_dict["LEECH_CAPTION_FONT"]
+            if "lcapfont" not in self._listener.userDict
             else ""
         )
         if not await aiopath.exists(self._thumb): # type: ignore
@@ -163,13 +175,24 @@ class TgUploader:
         return True
 
     async def _prepare_file(self, file_, dirpath, delete_file):
-        if self._lprefix:
-            cap_mono = f"{self._lprefix} <code>{file_}</code>"
-            self._lprefix = re_sub(
-                "<.*?>",
-                "",
-                self._lprefix
-            )
+        if self._lprefix or self._lsuffix:
+            if self._lprefix:
+                cap_mono = f"{self._lprefix} {file_}"
+                self._lprefix = re_sub(
+                    "<.*?>",
+                    "",
+                    self._lprefix
+                )
+            else:
+                cap_mono = f"{file_}"
+
+            if self._lsuffix:
+                cap_mono = f"{cap_mono} {self._lsuffix}"
+                self._lsuffix = re_sub(
+                    "<.*?>",
+                    "",
+                    self._lsuffix
+                )
             if (
                 self._listener.seed
                 and not self._listener.newDir
@@ -183,7 +206,7 @@ class TgUploader:
                 )
                 new_path = ospath.join(
                     dirpath,
-                    f"{self._lprefix} {file_}"
+                    f"{self._lprefix} {file_} {self._lsuffix}"
                 )
                 self._up_path = await copy(
                     self._up_path,
@@ -192,7 +215,7 @@ class TgUploader:
             else:
                 new_path = ospath.join(
                     dirpath,
-                    f"{self._lprefix} {file_}"
+                    f"{self._lprefix} {file_} {self._lsuffix}"
                 )
                 await rename(
                     self._up_path,
@@ -200,17 +223,24 @@ class TgUploader:
                 )
                 self._up_path = new_path
         else:
-            cap_mono = f"<code>{file_}</code>"
+            cap_mono = f"{file_}"
+
         if len(file_) > 60:
             if is_archive(file_):
                 name = get_base_name(file_)
-                ext = file_.split(name, 1)[1]
+                ext = file_.split(
+                    name,
+                    1
+                )[1]
             elif match := re_match(
                 r".+(?=\..+\.0*\d+$)|.+(?=\.part\d+\..+$)",
                 file_
             ):
                 name = match.group(0)
-                ext = file_.split(name, 1)[1]
+                ext = file_.split(
+                    name,
+                    1
+                )[1]
             elif len(fsplit := ospath.splitext(file_)) > 1:
                 name = fsplit[0]
                 ext = fsplit[1]
@@ -249,6 +279,37 @@ class TgUploader:
                     new_path
                 )
                 self._up_path = new_path
+        return cap_mono
+
+    async def _prepare_caption_font(self, cap_mono):
+        font_styles = {
+            "monospace": "code",
+            "mono": "code",
+            "m": "code",
+            "bold": "b",
+            "b": "b",
+            "italic": "i",
+            "i": "i",
+            "underline": "u",
+            "u": "u",
+            "bi": "bi",
+            "bu": "bu",
+            "iu": "iu",
+            "biu": "biu"
+        }
+
+        style = self._lcapfont.lower()
+        if style in font_styles:
+            tags = font_styles[style]
+            if tags in [
+                "bi",
+                "bu",
+                "iu",
+                "biu"
+            ]:
+                cap_mono = f"<{tags[0]}><{tags[1]}>{cap_mono}</{tags[1]}></{tags[0]}>"
+            else:
+                cap_mono = f"<{tags}>{cap_mono}</{tags}>"
         return cap_mono
 
     def _get_input_media(self, subkey, key, msg_list=None):
@@ -421,6 +482,7 @@ class TgUploader:
                         dirpath,
                         delete_file
                     )
+                    cap_mono = await self._prepare_caption_font(cap_mono)
                     if self._last_msg_in_group:
                         group_lists = [
                             x for v in self._media_dict.values() for x in v.keys()

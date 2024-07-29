@@ -129,6 +129,32 @@ async def get_user_settings(from_user):
         lprefix = "Not Added"
 
     if user_dict.get(
+        "lsuffix",
+        False
+    ):
+        lsuffix = "Added"
+    elif (
+        "lsuffix" not in user_dict
+        and (LS := config_dict["LEECH_FILENAME_SUFFIX"])
+    ):
+        lsuffix = "Added"
+    else:
+        lsuffix = "Not Added"
+
+    if user_dict.get(
+        "lcapfont",
+        False
+    ):
+        lcapfont = "Added"
+    elif (
+        "lcapfont" not in user_dict
+        and (LC := config_dict["LEECH_CAPTION_FONT"])
+    ):
+        lcapfont = "Added"
+    else:
+        lcapfont = "Not Added"
+
+    if user_dict.get(
         "leech_dest",
         False
     ):
@@ -324,6 +350,8 @@ async def get_user_settings(from_user):
 
 <code>Leech Type       :</code> <b>{ltype}</b>
 <code>Leech Prefix     :</code> <b>{lprefix}</b>
+<code>Leech Suffix     :</code> <b>{lsuffix}</b>
+<code>Leech Cap Font   :</code> <b>{lcapfont}</b>
 <code>Leech Split Size :</code> <b>{split_size}</b>
 <code>Leech Destination:</code> <b>{leech_dest}</b>
 
@@ -655,6 +683,8 @@ async def edit_user_settings(client, query):
     elif data[2] in [
         "yt_opt",
         "lprefix",
+        "lsuffix",
+        "lcapfont",
         "index_url",
         "excluded_extensions",
         "name_sub",
@@ -736,6 +766,36 @@ async def edit_user_settings(client, query):
             lprefix = LP
         else:
             lprefix = "None"
+        buttons.ibutton(
+            "Leech Suffix",
+            f"userset {user_id} leech_suffix"
+        )
+        if user_dict.get(
+            "lsuffix",
+            False
+        ):
+            lsuffix = user_dict["lsuffix"]
+        elif "lsuffix" not in user_dict and (
+            LS := config_dict["LEECH_FILENAME_SUFFIX"]
+        ):
+            lsuffix = LS
+        else:
+            lsuffix = "None"
+        buttons.ibutton(
+            "Leech Caption Font",
+            f"userset {user_id} leech_cap_font"
+        )
+        if user_dict.get(
+            "lcapfont",
+            False
+        ):
+            lcapfont = user_dict["lcapfont"]
+        elif "lcapfont" not in user_dict and (
+            LC := config_dict["LEECH_CAPTION_FONT"]
+        ):
+            lcapfont = LC
+        else:
+            lcapfont = "None"
         if (
             user_dict.get(
                 "as_doc",
@@ -853,6 +913,8 @@ async def edit_user_settings(client, query):
 <code>Leech Type       :</code> <b>{ltype}</b>
 <code>Leech Split Size :</code> <b>{split_size}</b>
 <code>Leech Prefix     :</code> <b>{escape(lprefix)}</b>
+<code>Leech Suffix     :</code> <b>{escape(lsuffix)}</b>
+<code>Leech Cap Font   :</code> <b>{escape(lcapfont)}</b>
 <code>Leech Destination:</code> <b>{leech_dest}</b>
 
 <code>Thumbnail        :</code> <b>{thumbmsg}</b>
@@ -1297,6 +1359,97 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             set_option,
             pre_event=query,
             option="lprefix"
+        )
+        await event_handler(
+            client,
+            query,
+            pfunc
+        )
+    elif data[2] == "leech_suffix":
+        await query.answer()
+        buttons = ButtonMaker()
+        if (
+            user_dict.get(
+                "lsuffix",
+                False
+            )
+            or "lsuffix" not in user_dict
+            and config_dict["LEECH_FILENAME_SUFFIX"]
+        ):
+            buttons.ibutton(
+                "Remove Leech Suffix",
+                f"userset {user_id} lsuffix"
+            )
+        buttons.ibutton(
+            "Back",
+            f"userset {user_id} leech"
+        )
+        buttons.ibutton(
+            "Close",
+            f"userset {user_id} close"
+        )
+        await editMessage(
+            message,
+            "Send Leech Filename Suffix. You can add HTML tags. Timeout: 60 sec",
+            buttons.build_menu(1),
+        )
+        pfunc = partial(
+            set_option,
+            pre_event=query,
+            option="lsuffix"
+        )
+        await event_handler(
+            client,
+            query,
+            pfunc
+        )
+    elif data[2] == "leech_cap_font":
+        await query.answer()
+        buttons = ButtonMaker()
+        if (
+            user_dict.get(
+                "lcapfont",
+                False
+            )
+            or "lcapfont" not in user_dict
+            and config_dict["LEECH_CAPTION_FONT"]
+        ):
+            buttons.ibutton(
+                "Remove Leech Caption Font",
+                f"userset {user_id} lcapfont"
+            )
+        buttons.ibutton(
+            "Back",
+            f"userset {user_id} leech"
+        )
+        buttons.ibutton(
+            "Close",
+            f"userset {user_id} close"
+        )
+        msg = """
+Send Leech Caption Font. Default is regular.
+
+Options:
+b or bold for <b>bold</b>
+i or italic for <i>italic</i>
+u or underline for <u>underline</u>
+bi for <b><i>bold italic</i></b>
+bu for <b><u>bold underline</u></b>
+iu for <i><u>italic underline</u></i>
+biu for <b><i><u>bold italic underline</u></i></b>
+m or mono or monospace for <code>monospace</code>
+
+Timeout: 60 sec
+"""
+        await editMessage(
+            message,
+            msg,
+            buttons.build_menu(1),
+        )
+        pfunc = partial(
+            set_option,
+            pre_event=query,
+            option="lcapfont"
         )
         await event_handler(
             client,

@@ -25,7 +25,8 @@ from bot.helper.ext_utils.status_utils import (
 )
 from bot.helper.ext_utils.task_manager import (
     limit_checker,
-    stop_duplicate_check
+    stop_duplicate_check,
+    check_avg_speed
 )
 from bot.helper.task_utils.status_utils.aria2_status import Aria2Status
 from bot.helper.telegram_helper.message_utils import (
@@ -121,6 +122,35 @@ async def _onDownloadStarted(api, gid):
                 await auto_delete_message(
                     task.listener.message,
                     amsg
+                )
+        if config_dict["AVG_SPEED"]:
+            start_time = time()
+            total_speed = 0
+            count = 0
+            while time() - start_time < 600:
+                await sync_to_async(download.update)
+                dl_speed = download.download_speed
+                total_speed += dl_speed
+                count += 1
+                await sleep(10)
+            if min_speed := await check_avg_speed(
+                total_speed,
+                count
+            ):
+                LOGGER.info(
+                    f"Task is slower than minimum download speed: {task.listener.name} | {get_readable_file_size(dl_speed)}ps"
+                )
+                smsg = await task.listener.onDownloadError(min_speed)
+                await sync_to_async(
+                    api.remove,
+                    [download],
+                    force=True,
+                    files=True
+                )
+                await delete_links(task.listener.message)
+                await auto_delete_message(
+                    task.listener.message,
+                    smsg
                 )
 
 

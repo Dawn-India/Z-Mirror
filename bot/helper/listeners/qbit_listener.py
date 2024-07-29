@@ -27,6 +27,7 @@ from bot.helper.ext_utils.status_utils import (
     getTaskByGid
 )
 from bot.helper.ext_utils.task_manager import (
+    check_avg_speed,
     limit_checker,
     stop_duplicate_check
 )
@@ -129,6 +130,40 @@ async def _size_checked(tor):
 
 
 @new_task
+async def _avg_speed_check(tor):
+    if task := await getTaskByGid(tor.hash[:12]):
+        if config_dict["AVG_SPEED"]:
+            start_time = time()
+            total_speed = 0
+            count = 0
+            while time() - start_time < 600:
+                live_dl = await sync_to_async(
+                    qbittorrent_client.torrents_info,
+                    torrent_hashes=tor.hash
+                )
+                dl_speed = live_dl[0].dlspeed
+                total_speed += dl_speed
+                count += 1
+                await sleep(10)
+            if min_speed := await check_avg_speed(
+                total_speed,
+                count
+            ):
+                LOGGER.info(
+                    f"Task is slower than minimum download speed: {task.listener.name} | {get_readable_file_size(dl_speed)}ps"
+                )
+                qmsg = _onDownloadError(
+                    min_speed,
+                    tor
+                )
+                await delete_links(task.listener.message) # type: ignore
+                await auto_delete_message(
+                    task.listener.message, # type: ignore
+                    qmsg
+                )
+
+
+@new_task
 async def _onDownloadComplete(tor):
     ext_hash = tor.hash
     tag = tor.tags
@@ -140,13 +175,19 @@ async def _onDownloadComplete(tor):
                 )
         if task.listener.select: # type: ignore
             await clean_unwanted(task.listener.dir) # type: ignore
-            path = tor.content_path.rsplit("/", 1)[0]
+            path = tor.content_path.rsplit(
+                "/",
+                1
+            )[0]
             res = await sync_to_async(
                 qbittorrent_client.torrents_files,
                 torrent_hash=ext_hash
             )
             for f in res:
-                if f.priority == 0 and await aiopath.exists(f"{path}/{f.name}"):
+                if (
+                    f.priority == 0 and
+                    await aiopath.exists(f"{path}/{f.name}")
+                ):
                     try:
                         await remove(f"{path}/{f.name}")
                     except:
@@ -246,6 +287,7 @@ async def _qb_listener():
                             QbTorrents[tag]["stop_dup_check"] = True
                             _stop_duplicate(tor_info) # type: ignore
                             _size_checked(tor_info) # type: ignore
+                            _avg_speed_check(tor_info) # type: ignore
                     elif state == "stalledDL":
                         TORRENT_TIMEOUT = config_dict["TORRENT_TIMEOUT"]
                         if (

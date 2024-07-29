@@ -347,8 +347,20 @@ async def limit_checker(
             arch
         )
         if not acpt:
-            limit_exceeded = f"Don't have enough free space for your task.\nYou must leave {get_readable_file_size(limit)} free storage"
+            limit_exceeded = "Don't have enough free space for your task."
+            limit_exceeded += f"\nYou must leave {get_readable_file_size(limit)} free storage"
     if limit_exceeded:
         if listener.is_playlist:
             return f"{limit_exceeded}"
         return f"{limit_exceeded}.\n⚠ Your task size is {get_readable_file_size(listener.size)}"
+
+
+async def check_avg_speed(total_speed, count):
+    if AVG_SPEED := config_dict["AVG_SPEED"]:
+        avg_speed = AVG_SPEED * 1024**2
+        task_avg_speed = total_speed / count
+        if task_avg_speed < avg_speed:
+            return(
+                f"⚠ Minimum download speed must be above {get_readable_file_size(avg_speed)}ps."
+                f"\nYour task's average download speed is {get_readable_file_size(task_avg_speed)}ps."
+            )
