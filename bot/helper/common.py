@@ -613,21 +613,15 @@ class TaskConfig:
                             log_chat = await self.client.get_chat(config_dict["LOG_CHAT_ID"]) # type: ignore
                         except:
                             raise ValueError("First add me in LOG_CHAT_ID!")
-                        if log_chat.type.name not in [
-                            "SUPERGROUP",
-                            "CHANNEL"
-                        ]:
+                        if log_chat.type.name != "CHANNEL":
                             raise ValueError(
-                                "LOG_CHAT_ID must be a supergroup or a channel!"
+                                "LOG_CHAT_ID must be a channel!"
                             )
                         member = await log_chat.get_member(uploader_id)
-                        if (
-                            not member.privileges.can_manage_chat
-                            or not member.privileges.can_post_messages 
-                        ):
+                        if not member.privileges.can_post_messages:
                             raise ValueError(
                                 "I don't have enough permission in LOG_CHAT_ID!"
-                                "Allow me 'post messages' and 'manage chat' permissions!"
+                                "Allow me 'post messages' permissions!"
                             )
 
                 if config_dict["DUMP_CHAT_ID"]:
@@ -635,21 +629,15 @@ class TaskConfig:
                             dump_chat = await self.client.get_chat(config_dict["DUMP_CHAT_ID"]) # type: ignore
                         except:
                             raise ValueError("First add me in DUMP_CHAT_ID!")
-                        if dump_chat.type.name not in [
-                            "SUPERGROUP",
-                            "CHANNEL"
-                        ]:
+                        if dump_chat.type.name != "CHANNEL":
                             raise ValueError(
-                                "DUMP_CHAT_ID must be a supergroup or a channel!"
+                                "DUMP_CHAT_ID must be a channel!"
                             )
                         member = await dump_chat.get_member(uploader_id)
-                        if (
-                            not member.privileges.can_manage_chat
-                            or not member.privileges.can_post_messages 
-                        ):
+                        if not member.privileges.can_post_messages:
                             raise ValueError(
                                 "I don't have enough permission in DUMP_CHAT_ID!"
-                                "Allow me 'post messages' and 'manage chat' permissions!"
+                                "Allow me 'post messages' permissions!"
                             )
 
             if self.splitSize:
