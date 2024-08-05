@@ -53,10 +53,14 @@ async def checking_access(user_id, button=None):
             button = ButtonMaker()
         button.ubutton(
             "Get New Token",
-            short_url(f"https://telegram.me/{bot_name}?start={token}")
+            short_url(f"https://redirect.z-mirror.eu.org/{bot_name}/{token}")
         )
-        tmsg = "Your <b>Token</b> is expired. Get a new one."
-        tmsg += f"\n<b>Token Validity</b>: {get_readable_time(config_dict["TOKEN_TIMEOUT"])}"
+        tmsg = (
+            "Your <b>Token</b> is expired. Get a new one."
+            f"\n<b>Token Validity</b>: {get_readable_time(config_dict["TOKEN_TIMEOUT"])}\n\n"
+            "<b>Your Limites:</b>\n"
+            f"{config_dict["USER_MAX_TASKS"]} parallal tasks.\n"
+        )
         return (
             tmsg,
             button
@@ -111,8 +115,12 @@ async def start(client, message):
                 token,
                 ttime
             )
-        msg = "Token refreshed successfully!\n\n"
-        msg += f"Validity: {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}"
+        msg = (
+            "Your token refreshed successfully!\n"
+            f"Validity: {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}\n\n"
+            "<b>Your Limites:</b>\n"
+            f"{config_dict["USER_MAX_TASKS"]} parallal tasks.\n"
+        )
         return await sendMessage(
             message,
             msg

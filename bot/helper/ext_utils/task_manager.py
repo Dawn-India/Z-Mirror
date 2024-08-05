@@ -274,72 +274,114 @@ async def limit_checker(
             return
     except Exception as e:
         LOGGER.error(f"Error while checking if the user is Admin: {e}")
-        pass
+
+    GB = 1024 ** 3
     limit_exceeded = ""
-    if listener.isYtDlp:
-        if YTDLP_LIMIT := config_dict["YTDLP_LIMIT"]:
-            limit = YTDLP_LIMIT * 1024**3
-            if listener.size > limit:
-                limit_exceeded = f"Yt-Dlp limit is {get_readable_file_size(limit)}"
-    elif listener.is_playlist:
-        if PLAYLIST_LIMIT := config_dict["PLAYLIST_LIMIT"]:
-            if listener.playlist_count > PLAYLIST_LIMIT:
-                limit_exceeded = f"Yt-Dlp Playlist limit is {PLAYLIST_LIMIT}\n⚠ Your Playlist has {listener.playlist_count} videos."
-    elif listener.isClone:
-        if CLONE_LIMIT := config_dict["CLONE_LIMIT"]:
-            limit = CLONE_LIMIT * 1024**3
-            if listener.size > limit:
-                limit_exceeded = f"Clone limit is {get_readable_file_size(limit)}"
-    elif isRclone:
-        if RCLONE_LIMIT := config_dict["RCLONE_LIMIT"]:
-            limit = RCLONE_LIMIT * 1024**3
-            if listener.size > limit:
-                limit_exceeded = f"Rclone limit is {get_readable_file_size(limit)}"
-    elif isJd:
-        if JD_LIMIT := config_dict["JD_LIMIT"]:
-            limit = JD_LIMIT * 1024**3
-            if listener.size > limit:
-                limit_exceeded = f"Jdownloader limit is {get_readable_file_size(limit)}"
-    elif isMega:
-        if MEGA_LIMIT := config_dict["MEGA_LIMIT"]:
-            limit = MEGA_LIMIT * 1024**3
-            if listener.size > limit:
-                limit_exceeded = f"Mega limit is {get_readable_file_size(limit)}"
-    elif isDriveLink:
-        if GDRIVE_LIMIT := config_dict["GDRIVE_LIMIT"]:
-            limit = GDRIVE_LIMIT * 1024**3
-            if listener.size > limit:
-                limit_exceeded = f"Google drive limit is {get_readable_file_size(limit)}"
-    elif isNzb:
-        if NZB_LIMIT := config_dict["NZB_LIMIT"]:
-            limit = NZB_LIMIT * 1024**3
-            if listener.size > limit:
-                limit_exceeded = f"NZB limit is {get_readable_file_size(limit)}"
-    elif isTorrent or listener.isTorrent:
-        if TORRENT_LIMIT := config_dict["TORRENT_LIMIT"]:
-            limit = TORRENT_LIMIT * 1024**3
-            if listener.size > limit:
-                limit_exceeded = f"Torrent limit is {get_readable_file_size(limit)}"
-    elif DIRECT_LIMIT := config_dict["DIRECT_LIMIT"]:
-        limit = DIRECT_LIMIT * 1024**3
-        if listener.size > limit:
-            limit_exceeded = f"Direct limit is {get_readable_file_size(limit)}"
-    if not limit_exceeded and (
-        LEECH_LIMIT := config_dict["LEECH_LIMIT"]
-    ) and listener.isLeech:
-        limit = LEECH_LIMIT * 1024**3
-        if listener.size > limit:
-            limit_exceeded = f"Leech limit is {get_readable_file_size(limit)}"
-    if not limit_exceeded and (
-        STORAGE_THRESHOLD := config_dict["STORAGE_THRESHOLD"]
-    ) and not listener.isClone:
-        arch = any(
-            [
-                listener.compress,
-                listener.extract
-            ]
+
+    def check_limit(limit, size, limit_type):
+        limit_bytes = limit * GB
+        if size > limit_bytes:
+            return f"{limit_type} limit is {get_readable_file_size(limit_bytes)}"
+        return ""
+
+    limit_configs = [
+        (
+            listener.isYtDlp,
+            "YTDLP_LIMIT",
+            "Yt-Dlp"
+        ),
+        (
+            listener.is_playlist,
+            "PLAYLIST_LIMIT",
+            "Yt-Dlp Playlist",
+            "playlist_count"
+        ),
+        (
+            listener.isClone,
+            "CLONE_LIMIT",
+            "Clone"
+        ),
+        (
+            isRclone,
+            "RCLONE_LIMIT",
+            "Rclone"
+        ),
+        (
+            isJd,
+            "JD_LIMIT",
+            "Jdownloader"
+        ),
+        (
+            isMega,
+            "MEGA_LIMIT",
+            "Mega"
+        ),
+        (
+            isDriveLink,
+            "GDRIVE_LIMIT",
+            "Google drive"
+        ),
+        (
+            isNzb,
+            "NZB_LIMIT",
+            "NZB"
+        ),
+        (
+            isTorrent or listener.isTorrent,
+            "TORRENT_LIMIT",
+            "Torrent"
+        ),
+        (
+            True,
+            "DIRECT_LIMIT",
+            "Direct"
         )
-        limit = STORAGE_THRESHOLD * 1024**3
+    ]
+
+    for (
+        condition,
+        limit_key,
+        limit_type,
+        *optional
+    ) in limit_configs:
+        if condition:
+            limit = config_dict.get(limit_key)
+            if limit:
+                size = getattr(
+                    listener,
+                    optional[0],
+                    listener.size
+                ) if optional else listener.size
+                limit_exceeded = check_limit(
+                    limit,
+                    size,
+                    limit_type
+                )
+                if limit_exceeded:
+                    break
+
+    if (
+        not limit_exceeded
+        and listener.isLeech
+    ):
+        limit = config_dict.get("LEECH_LIMIT")
+        if limit:
+            limit_exceeded = check_limit(
+                limit,
+                listener.size,
+                "Leech"
+            )
+
+    if (
+        not limit_exceeded
+        and config_dict.get("STORAGE_THRESHOLD")
+        and not listener.isClone
+    ):
+        arch = any([
+            listener.compress,
+            listener.extract
+        ])
+        limit = config_dict["STORAGE_THRESHOLD"] * GB
         acpt = await sync_to_async(
             check_storage_threshold,
             listener.size,
@@ -347,11 +389,11 @@ async def limit_checker(
             arch
         )
         if not acpt:
-            limit_exceeded = "Don't have enough free space for your task."
-            limit_exceeded += f"\nYou must leave {get_readable_file_size(limit)} free storage"
+            limit_exceeded = f"Don't have enough free space for your task.\nYou must leave {get_readable_file_size(limit)} free storage"
+
     if limit_exceeded:
         if listener.is_playlist:
-            return f"{limit_exceeded}"
+            return limit_exceeded
         return f"{limit_exceeded}.\n⚠ Your task size is {get_readable_file_size(listener.size)}"
 
 

@@ -190,7 +190,10 @@ async def add_jd_download(listener, path):
                     package_ids=odl_list,
                 )
         if await aiopath.exists(listener.link):
-            async with aiopen(listener.link, "rb") as dlc:
+            async with aiopen(
+                listener.link,
+                "rb"
+            ) as dlc:
                 content = await dlc.read()
             content = b64encode(content)
             await retry_function(

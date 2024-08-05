@@ -141,7 +141,10 @@ async def _avg_speed_check(tor):
                     qbittorrent_client.torrents_info,
                     torrent_hashes=tor.hash
                 )
-                dl_speed = live_dl[0].dlspeed
+                try:
+                    dl_speed = live_dl[0].dlspeed
+                except:
+                    dl_speed = 0
                 total_speed += dl_speed
                 count += 1
                 await sleep(10)
