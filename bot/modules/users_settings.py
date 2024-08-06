@@ -693,7 +693,7 @@ async def edit_user_settings(client, query):
         update_user_ldata(
             user_id,
             data[2],
-            f"{GLOBAL_EXTENSION_FILTER}"
+            ""
         )
         await update_user_settings(query)
         if DATABASE_URL:
