@@ -8,4 +8,6 @@ RUN pip3 install --break-system-packages --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN rm -rf py_generators config_sample.env Dockerfile LICENSE README.md requirements.txt
+
 CMD ["bash", "start.sh"]

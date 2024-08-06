@@ -580,6 +580,7 @@ sudo docker logs <container_id> --follow
   > **NOTE**: If you have created SAs in past from this script, you can also just re download the keys by running:
 
   ```
+  cd py_generators
   python3 gen_sa_accounts.py --download-keys $PROJECTID
   ```
 
@@ -599,30 +600,35 @@ sudo docker logs <container_id> --follow
   - List your projects ids
 
   ```
+  cd py_generators
   python3 gen_sa_accounts.py --list-projects
   ```
 
   - Enable services automatically by this command
 
   ```
+  cd py_generators
   python3 gen_sa_accounts.py --enable-services $PROJECTID
   ```
 
   - Create Sevice Accounts to current project
 
   ```
+  cd py_generators
   python3 gen_sa_accounts.py --create-sas $PROJECTID
   ```
 
   - Download Sevice Accounts as accounts folder
 
   ```
+  cd py_generators
   python3 gen_sa_accounts.py --download-keys $PROJECTID
   ```
 
   ##### 2. Create Service Accounts in New Project
 
   ```
+  cd py_generators
   python3 gen_sa_accounts.py --quick-setup 1 --new-only
   ```
 
@@ -669,6 +675,7 @@ sudo docker logs <container_id> --follow
   - Run:
 
   ```
+  cd py_generators
   python3 add_to_team_drive.py -d SharedTeamDriveSrcID
   ```
 
