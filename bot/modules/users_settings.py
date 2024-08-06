@@ -686,7 +686,6 @@ async def edit_user_settings(client, query):
         "lsuffix",
         "lcapfont",
         "index_url",
-        "excluded_extensions",
         "name_sub",
     ]:
         await query.answer()
@@ -694,6 +693,16 @@ async def edit_user_settings(client, query):
             user_id,
             data[2],
             ""
+        )
+        await update_user_settings(query)
+        if DATABASE_URL:
+            await DbManager().update_user_data(user_id)
+    elif data[2] == "excluded_extensions":
+        await query.answer()
+        update_user_ldata(
+            user_id,
+            data[2],
+            f"{GLOBAL_EXTENSION_FILTER}"
         )
         await update_user_settings(query)
         if DATABASE_URL:
