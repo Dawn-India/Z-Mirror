@@ -359,12 +359,12 @@ class DbManager:
         )
         self._conn.close # type: ignore
 
-    async def update_user_token(self, user_id, token):
+    async def update_user_token(self, user_id, token, inittime):
         if self._err:
             return
         await self._db.access_token.update_one( # type: ignore
             {"_id": user_id},
-            {"$set": {"token": token}},
+            {"$set": {"token": token, "inittime": inittime}},
             upsert=True
         )
         self._conn.close # type: ignore
@@ -384,6 +384,15 @@ class DbManager:
         user_data = await self._db.access_token.find_one({"_id": user_id}) # type: ignore
         if user_data:
             return user_data.get("token")
+        self._conn.close # type: ignore
+        return None
+
+    async def get_token_init_time(self, user_id):
+        if self._err:
+            return None
+        user_data = await self._db.access_token.find_one({"_id": user_id}) # type: ignore
+        if user_data:
+            return user_data.get("inittime")
         self._conn.close # type: ignore
         return None
 

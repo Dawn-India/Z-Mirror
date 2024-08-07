@@ -2416,6 +2416,15 @@ async def load_config():
     else:
         TOKEN_TIMEOUT = ""
 
+    MINIMUM_DURATOIN = environ.get(
+        "MINIMUM_DURATOIN",
+        ""
+    )
+    if MINIMUM_DURATOIN.isdigit():
+        MINIMUM_DURATOIN = int(MINIMUM_DURATOIN)
+    else:
+        MINIMUM_DURATOIN = ""
+
     FSUB_IDS = environ.get(
         "FSUB_IDS",
         ""
@@ -2695,6 +2704,7 @@ async def load_config():
             "CLONE_LIMIT": CLONE_LIMIT,
             "RCLONE_LIMIT": RCLONE_LIMIT,
             "MEGA_LIMIT": MEGA_LIMIT,
+            "MINIMUM_DURATOIN": MINIMUM_DURATOIN,
             "LEECH_LIMIT": LEECH_LIMIT,
             "JD_LIMIT": JD_LIMIT,
             "NZB_LIMIT": NZB_LIMIT,

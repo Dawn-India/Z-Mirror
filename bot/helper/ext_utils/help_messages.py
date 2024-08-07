@@ -1,5 +1,5 @@
 mirror = """
-<b>Send link along with command line or </b>
+<b>Send link along with command line</b>:
 
 /cmd link
 
@@ -9,8 +9,6 @@ mirror = """
 
 <b>NOTE:</b>
 1. Commands that start with <b>qb</b> are ONLY for torrents.
-
-<b>Join: @Z_Mirror</b>
 """
 
 yt = """
@@ -24,8 +22,6 @@ yt = """
 
 Check all supported <a href='https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md'>SITES</a>
 Check all yt-dlp API options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a> or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to convert CLI arguments to API options.
-
-<b>Join: @Z_Mirror</b>
 """
 
 clone = """
@@ -34,25 +30,19 @@ Send Gdrive link or rclone path along with command or by replying to the link/rc
 Use -sync to use sync method in rclone.
 
 Example: /cmd rcl/rclone_path -up rcl/rclone_path/rc -sync
-
-<b>Join: @Z_Mirror</b>
 """
 
 new_name = """
-<b>New Name</b>: -n
+<b>Rename</b>: -n
 
-/cmd link -n new name
+/cmd link -n new_name
 Note: Doesn't work with torrents
-
-<b>Join: @Z_Mirror</b>
 """
 
 multi_link = """
 <b>Multi links only by replying to the first link/file</b>: -m
 
 /cmd -m 10(number of links/files)
-
-<b>Join: @Z_Mirror</b>
 """
 
 same_dir = """
@@ -60,16 +50,12 @@ same_dir = """
 
 /cmd -m 10(number of links/files) -sd folder name (multi message)
 /cmd -b -sd folder name (bulk-message/file)
-
-<b>Join: @Z_Mirror</b>
 """
 
 thumb = """
 <b>Thumbnail for the current task</b>: -t
 
 /cmd link -t tg-message-link(doc or photo)
-
-<b>Join: @Z_Mirror</b>
 """
 
 split_size = """
@@ -77,8 +63,6 @@ split_size = """
 
 /cmd link -sp (500mb or 2gb or 4000000000)
 Note: Only mb and gb are supported or write in bytes without unit!
-
-<b>Join: @Z_Mirror</b>
 """
 
 upload = """
@@ -94,8 +78,6 @@ If you want to add path or gdrive manually from your config/token (uploaded from
 
 In case you want to specify whether using token.pickle or service accounts you can add tp:gdrive_id or sa:gdrive_id or mtp:gdrive_id.
 DEFAULT_UPLOAD has no effect on leech cmds.
-
-<b>Join: @Z_Mirror</b>
 """
 
 user_download = """
@@ -107,8 +89,6 @@ user_download = """
 /cmd sa:gdrive_id to download using service account and file_id in case service account disabled.
 /cmd mtp:gdrive_id or mtp:link to download using user token.pickle uploaded from usetting
 /cmd mrcc:remote:path to download using user rclone config uploaded from usetting
-
-<b>Join: @Z_Mirror</b>
 """
 
 rcf = """
@@ -117,8 +97,6 @@ rcf = """
 /cmd link|path|rcl -up path|rcl -rcf --buffer-size:8M|--drive-starred-only|key|key:value
 This will override all other flags except --exclude.
 Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
-
-<b>Join: @Z_Mirror</b>
 """
 
 bulk = """
@@ -133,8 +111,6 @@ link3 -e -n new name -up remote2:path2
 Reply to this example by this cmd -> /cmd -b(bulk) or /cmd -b -sd folder name
 You can set the start and end of the links from the bulk like seed, with -b start:end or only end by -b :end or only start by -b start.
 The default start is from zero(first link) to infinity.
-
-<b>Join: @Z_Mirror</b>
 """
 
 rlone_dl = """
@@ -145,19 +121,16 @@ Treat rclone paths exactly like links
 Users can add their own rclone from user settings
 If you want to add a path manually from your config add mrcc: before the path without space
 /cmd mrcc:main:dump/ubuntu.iso
-
-<b>Join: @Z_Mirror</b>
 """
 
 extract_zip = """
 <b>Extract/Zip</b>: -e -z
 
+/cmd link -e (extract)
 /cmd link -e password (extract password protected)
-/cmd link -z password (zip password protected)
+
 /cmd link -z password -e (extract and zip password protected)
 Note: When both extract and zip are added with cmd, it will extract first and then zip, so always extract first.
-
-<b>Join: @Z_Mirror</b>
 """
 
 join = """
@@ -169,8 +142,6 @@ By Reply:
 /cmd -b -j -sd folder name
 If you have a link(folder) that has split files:
 /cmd link -j
-
-<b>Join: @Z_Mirror</b>
 """
 
 tg_links = """
@@ -185,8 +156,6 @@ Super: https://t.me/c/channel_id/message_id
 Range: https://t.me/channel_name/first_message_id-last_message_id
 Range Example: tg://openmessage?user_id=xxxxxx&message_id=555-560 or https://t.me/channel_name/100-150
 Note: Range link will work only by replying cmd to it.
-
-<b>Join: @Z_Mirror</b>
 """
 
 sample_video = """
@@ -195,8 +164,6 @@ sample_video = """
 Create a sample video for one video or a folder of videos.
 /cmd -sv (it will take the default values which are 60sec sample duration and part duration is 4sec).
 You can control those values. Example: /cmd -sv 70:5(sample-duration:part-duration) or /cmd -sv :5 or /cmd -sv 70.
-
-<b>Join: @Z_Mirror</b>
 """
 
 screenshot = """
@@ -205,8 +172,6 @@ screenshot = """
 Create up to 10 screenshots for one video or a folder of videos.
 /cmd -ss (it will take the default values which are 10 photos).
 You can control this value. Example: /cmd -ss 6.
-
-<b>Join: @Z_Mirror</b>
 """
 
 seed = """
@@ -215,8 +180,6 @@ seed = """
 /cmd link -d ratio:seed_time or by replying to file/link
 To specify ratio and seed time add -d ratio:time.
 Example: -d 0.7:10 (ratio and time) or -d 0.7 (only ratio) or -d :10 (only time) where time is in minutes.
-
-<b>Join: @Z_Mirror</b>
 """
 
 zip_arg = """
@@ -225,7 +188,8 @@ zip_arg = """
 /cmd link -z (zip)
 /cmd link -z password (zip password protected)
 
-<b>Join: @Z_Mirror</b>
+/cmd link -z password -e (extract and zip password protected)
+Note: When both extract and zip are added with cmd, it will extract first and then zip, so always extract first.
 """
 
 qual = """
@@ -233,8 +197,6 @@ qual = """
 
 In case default quality is added from yt-dlp options using format option and you need to select quality for specific link or links with multi links feature.
 /cmd link -s
-
-<b>Join: @Z_Mirror</b>
 """
 
 yt_opt = """
@@ -244,67 +206,59 @@ yt_opt = """
 Note: Add `^` before integer or float, some values must be numeric and some string.
 Like playlist_items:10 works with string, so no need to add `^` before the number but playlistend works only with integer so you must add `^` before the number like example above.
 You can add tuple and dict also. Use double quotes inside dict.
-
-<b>Join: @Z_Mirror</b>
 """
 
 convert_media = """
 <b>Convert Media</b>: -ca -cv
+
 /cmd link -ca mp3 -cv mp4 (convert all audios to mp3 and all videos to mp4)
 /cmd link -ca mp3 (convert all audios to mp3)
 /cmd link -cv mp4 (convert all videos to mp4)
 /cmd link -ca mp3 + flac ogg (convert only flac and ogg audios to mp3)
 /cmd link -cv mp4 - webm flv (convert all videos to mp4 except webm and flv)
-
-<b>Join: @Z_Mirror</b>
 """
 
 force_start = """
 <b>Force Start</b>: -f -fd -fu
+
 /cmd link -f (force download and upload)
 /cmd link -fd (force download only)
 /cmd link -fu (force upload directly after download finishes)
-
-<b>Join: @Z_Mirror</b>
 """
 
 gdrive = """
 <b>Gdrive</b>: link
 If DEFAULT_UPLOAD is `rc` then you can pass up: `gd` to upload using gdrive tools to GDRIVE_ID.
+
 /cmd gdriveLink or gdl or gdriveId -up gdl or gdriveId or gd
 /cmd tp:gdriveLink or tp:gdriveId -up tp:gdriveId or gdl or gd (to use token.pickle if service account enabled)
 /cmd sa:gdriveLink or sa:gdriveId -p sa:gdriveId or gdl or gd (to use service account if service account disabled)
 /cmd mtp:gdriveLink or mtp:gdriveId -up mtp:gdriveId or gdl or gd(if you have added upload gdriveId from usetting) (to use user token.pickle that uploaded by usetting)
-
-<b>Join: @Z_Mirror</b>
 """
 
 rclone_cl = """
 <b>Rclone</b>: path
 If DEFAULT_UPLOAD is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
+
 /cmd rcl/rclone_path -up rcl/rclone_path/rc -rcf flagkey:flagvalue|flagkey|flagkey:flagvalue
 /cmd rcl or rclonePath -up rclonePath or rc or rcl
 /cmd mrcc:rclonePath -up rcl or rc(if you have added rclone path from usetting) (to use user config)
-
-<b>Join: @Z_Mirror</b>
 """
 
 name_sub = """
 <b>Name Substitution</b>: -ns
+
 /cmd link -ns tea : coffee : s|ACC :  : s|mP4
 This will affect all files. Format: wordToReplace : wordToReplaceWith : sensitiveCase
 1. tea will get replaced by coffee with sensitive case because I have added `s` last of the option.
 2. ACC will get removed because I have added nothing between to replace with sensitive case because I have added `s` last of the option.
 3. mP4 will get removed because I have added nothing to replace with
-
-<b>Join: @Z_Mirror</b>
 """
 
 mixed_leech = """
 <b>Mixed Leech</b>: -ml
-/cmd link -ml (leech by user and bot session with respect to size)
 
-<b>Join: @Z_Mirror</b>
+/cmd link -ml (leech by user and bot session with respect to size)
 """
 
 YT_HELP_DICT = {
@@ -385,8 +339,6 @@ Filter Notes:
 3. You can add `or` and `|` as much as you want.
 4. Take a look at the title if it has a static special character after or before the qualities or extensions or whatever and use them in the filter to avoid wrong match.
 Timeout: 60 sec.
-
-<b>Join: @Z_Mirror</b>
 """
 
 PASSWORD_ERROR_MESSAGE = """
@@ -394,6 +346,4 @@ PASSWORD_ERROR_MESSAGE = """
 - Insert <b>::</b> after the link and write the password after the sign.
 
 <b>Example:</b> link::my password
-
-<b>Join: @Z_Mirror</b>
 """

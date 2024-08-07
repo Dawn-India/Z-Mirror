@@ -113,6 +113,8 @@ programming in Python.
   - Enable/Disable multi mirror function
   - Enable/Disable torrent seeding system
   - Token system for shortners with database support
+  - Shortner link bypass detection
+  - Minimum average download speed limit
 
   ## Status
 
@@ -270,97 +272,38 @@ programming in Python.
 
   **2. Optional Fields**
 
-  - `USER_SESSION_STRING`: To download/upload from your telegram account if user is `PREMIUM` and to send rss. To generate
-    session string use this command `python3 generate_string_session.py` after mounting repo folder for sure. `Str`. *
-    *NOTE**: You can't use bot with private message. Use it with superGroup.
+  - `AUTHORIZED_CHATS`: Fill user_id and chat_id of groups/users you want to authorize. Separate them by space. `Int`
+  - `SUDO_USERS`: Fill user_id of users whom you want to give sudo permission. Separate them by space. `Int`
   - `DATABASE_URL`: Your Mongo Database URL (Connection string). Follow
     this [Generate Database](https://github.com/Dawn-India/Z-Mirror/tree/main#generate-database) to
     generate database. Data will be saved in Database: auth and sudo users, users settings including thumbnails for each
     user, rss data and incomplete tasks. **NOTE**: You can always edit all settings that saved in database from the
     official site -> (Browse collections). `Str`
-  - `DOWNLOAD_DIR`: The path to the local folder where the downloads should be downloaded to. `Str`
-  - `CMD_SUFFIX`: commands index number. This number will added at the end all commands. `Str`|`Int`
-  - `AUTHORIZED_CHATS`: Fill user_id and chat_id of groups/users you want to authorize. Separate them by space. `Int`
-  - `SUDO_USERS`: Fill user_id of users whom you want to give sudo permission. Separate them by space. `Int`
-  - `DEFAULT_UPLOAD`: Whether `rc` to upload to `RCLONE_PATH` or `gd` to upload to `GDRIVE_ID`. Default is `gd`. Read
-    More [HERE](https://github.com/Dawn-India/Z-Mirror/tree/main#upload).`Str`
-  - `STATUS_UPDATE_INTERVAL`: Time in seconds after which the progress/status message will be updated. Recommended `10`
-    seconds at least. `Int`
-  - `STATUS_LIMIT`: Limit the no. of tasks shown in status message with buttons. Default is `10`. **NOTE**: Recommended
-    limit is `4` tasks. `Int`
-  - `EXTENSION_FILTER`: File extensions that won't upload/clone. Separate them by space. `Str`
-  - `INCOMPLETE_TASK_NOTIFIER`: Get incomplete task messages after restart. Require database and superGroup. Default
-    is `False`. `Bool`
+  - `USER_SESSION_STRING`: To download/upload from your telegram account if user is `PREMIUM` and to send rss. To generate
+    session string use this command `python3 generate_string_session.py` after mounting repo folder for sure. `Str`. *
+  
+  **3. Optional APIs**
   - `FILELION_API`: Filelion api key to mirror Filelion links. Get it
     from [Filelion](https://vidhide.com/?op=my_account). `str`
   - `STREAMWISH_API`: Streamwish api key to mirror Streamwish links. Get it
     from [Streamwish](https://streamwish.com/?op=my_account). `str`
-  - `YT_DLP_OPTIONS`: Default yt-dlp options. Check all possible
-    options [HERE](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184) or use
-    this [script](https://t.me/mltb_official_channel/177) to convert cli arguments to api options. Format: key:value|key:
-    value|key:value. Add `^` before integer or float, some numbers must be numeric and some string. `str`
-      - Example: "format:bv*+mergeall[vcodec=none]|nocheckcertificate:True"
-  - `USE_SERVICE_ACCOUNTS`: Whether to use Service Accounts or not, with google-api-python-client. For this to work
-    see [Using Service Accounts](https://github.com/Dawn-India/Z-Mirror#generate-service-accounts-what-is-service-account)
-    section below. Default is `False`. `Bool`
-  - `NAME_SUBSTITUTE`: Add word/letter/sentense/pattern to remove or replace with other words with sensitive case or without.**Notes**: 
-    1. Seed will get disbaled while using this option
-    2. Before any character you must add \, those are the characters: `\^$.|?*+()[]{}-`
-    * Example-1: `text : code : s | mirror : leech | tea :  : s | clone`
-      - text will get replaced by code with sensitive case
-      - mirror will get replaced by leech
-      - tea will get removed with sensitive case
-      - clone will get removed
-    * Example-2: `\(text\) | \[test\] : test | \\text\\ : text : s`
-      - `(text)` will get removed
-      - `[test]` will get replaced by test
-      - `\text\` will get replaced by text with sensitive case
+  
 
-  **3. GDrive Tools**
+  **4. GDrive Tools**
 
   - `GDRIVE_ID`: This is the Folder/TeamDrive ID of the Google Drive OR `root` to which you want to upload all the mirrors
     using google-api-python-client. `Str`
-  - `IS_TEAM_DRIVE`: Set `True` if uploading to TeamDrive using google-api-python-client. Default is `False`. `Bool`
   - `INDEX_URL`: Refer to <https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index>. `Str`
+  - `IS_TEAM_DRIVE`: Set `True` if uploading to TeamDrive using google-api-python-client. Default is `False`. `Bool`
   - `STOP_DUPLICATE`: Bot will check file/folder name in Drive incase uploading to `GDRIVE_ID`. If it's present in Drive
     then downloading or cloning will be stopped. (**NOTE**: Item will be checked using name and not hash, so this feature
     is not perfect yet). Default is `False`. `Bool`
-
-  **4. Rclone**
-
-  - `RCLONE_PATH`: Default rclone path to which you want to upload all the files/folders using rclone. `Str`
-  - `RCLONE_FLAGS`: key:value|key|key|key:value . Check here all [RcloneFlags](https://rclone.org/flags/). `Str`
-  - `RCLONE_SERVE_URL`: Valid URL where the bot is deployed to use rclone serve. Format of URL should be `http://myip`,
-    where `myip` is the IP/Domain(public) of your bot or if you have chosen port other than `80` so write it in this
-    format `http://myip:port` (`http` and not `https`). `Str`
-  - `RCLONE_SERVE_PORT`: Which is the **RCLONE_SERVE_URL** Port. Default is `8080`. `Int`
-  - `RCLONE_SERVE_USER`: Username for rclone serve authentication. `Str`
-  - `RCLONE_SERVE_PASS`: Password for rclone serve authentication. `Str`
-
-  **5. Update**
-
-  - `UPSTREAM_REPO`: Your github repository link, if your repo is private
-    add `https://username:{githubtoken}@github.com/{username}/{reponame}` format. Get token
-    from [Github settings](https://github.com/settings/tokens). So you can update your bot from filled repository on each
-    restart. `Str`.
-      - **NOTE**: Any change in docker or requirements you need to deploy/build again with updated repo to take effect.
-        DON'T delete .gitignore file. For more information
-        read [THIS](https://github.com/Dawn-India/Z-Mirror/tree/main#upstream-repo-recommended).
-  - `UPSTREAM_BRANCH`: Upstream branch for update. Default is `main`. `Str`
-
-  **6. Leech**
-
-  - `LEECH_SPLIT_SIZE`: Size of split in bytes. Default is `2GB`. Default is `4GB` if your account is premium. `Int`
-  - `AS_DOCUMENT`: Default type of Telegram file upload. Default is `False` mean as media. `Bool`
-  - `EQUAL_SPLITS`: Split files larger than **LEECH_SPLIT_SIZE** into equal parts size (Not working with zip cmd). Default
-    is `False`. `Bool`
-  - `MEDIA_GROUP`: View Uploaded splitted file parts in media group. Default is `False`. `Bool`.
-  - `USER_TRANSMISSION`: Upload/Download by user session. Only in superChat. Default is `False`. `Bool`
-  - `MIXED_LEECH`: Upload by user and bot session with respect to file size. Only in superChat. Default is `False`. `Bool`
-  - `LEECH_FILENAME_PREFIX`: Add custom word to leeched file name. `Str`
-  - `LEECH_DUMP_CHAT`: ID or USERNAME or PM(private message) to where files would be uploaded. `Int`|`Str`. Add `-100` before channel/superGroup id.
-
-  **7. qBittorrent/Aria2c/Sabnzbd**
+  - `DISABLE_DRIVE_LINK`: Disable drive links for all users. Default is `False`. `Bool`
+  - `USE_SERVICE_ACCOUNTS`: Whether to use Service Accounts or not, with google-api-python-client. For this to work
+    see [Using Service Accounts](https://github.com/Dawn-India/Z-Mirror#generate-service-accounts-what-is-service-account)
+    section below. Default is `False`. `Bool`
+  
+  **5. qBittorrent/Aria2c/Sabnzbd**
 
   - `TORRENT_TIMEOUT`: Timeout of dead torrents downloading with qBittorrent and Aria2c in seconds. `Int`
   - `BASE_URL`: Valid BASE URL where the bot is deployed to use torrent web files selection. Format of URL should
@@ -374,10 +317,25 @@ programming in Python.
         from qbittorrent.conf or bsetting command.
       - Open port 8090 in your vps to access webui from any device. username: zee, password: @Z_Mirror
 
-  **8. JDownloader**
+  **6. Rclone**
+
+  - `RCLONE_PATH`: Default rclone path to which you want to upload all the files/folders using rclone. `Str`
+  - `RCLONE_FLAGS`: key:value|key|key|key:value . Check here all [RcloneFlags](https://rclone.org/flags/). `Str`
+  - `RCLONE_SERVE_URL`: Valid URL where the bot is deployed to use rclone serve. Format of URL should be `http://myip`,
+    where `myip` is the IP/Domain(public) of your bot or if you have chosen port other than `80` so write it in this
+    format `http://myip:port` (`http` and not `https`). `Str`
+  - `RCLONE_SERVE_PORT`: Which is the **RCLONE_SERVE_URL** Port. Default is `8080`. `Int`
+  - `RCLONE_SERVE_USER`: Username for rclone serve authentication. `Str`
+  - `RCLONE_SERVE_PASS`: Password for rclone serve authentication. `Str`
+
+  **7. JDownloader**
 
   - `JD_EMAIL`: jdownlaoder email sign up on [JDownloader](https://my.jdownloader.org/)
   - `JD_PASS`: jdownlaoder password
+
+  **8. MEGA Sdk**
+  - `MEGA_EMAIL`: Mega email sign up on [Mega](https://mega.nz/)
+  - `MEGA_PASS`: Mega password
 
   **9. Sabnzbd**
 
@@ -390,7 +348,113 @@ programming in Python.
     - **NOTE**: Enable port 8070 in your vps to access sabnzbd full web interface
     - Open port 8070 in your vps to access web interface from any device. Use it like http://ip:8070/sabnzbd/.
 
-  **10. RSS**
+  **10. Update**
+
+  - `UPSTREAM_REPO`: Your github repository link, if your repo is private
+    add `https://username:{githubtoken}@github.com/{username}/{reponame}` format. Get token
+    from [Github settings](https://github.com/settings/tokens). So you can update your bot from filled repository on each
+    restart. `Str`.
+      - **NOTE**: Any change in docker or requirements you need to deploy/build again with updated repo to take effect.
+        DON'T delete .gitignore file. For more information
+        read [THIS](https://github.com/Dawn-India/Z-Mirror/tree/main#upstream-repo-recommended).
+  - `UPSTREAM_BRANCH`: Upstream branch for update. Default is `main`. `Str`
+
+  **11. Leech**
+
+  - `AS_DOCUMENT`: Default type of Telegram file upload. Default is `False` mean as media. `Bool`
+  - `LEECH_SPLIT_SIZE`: Size of split in bytes. Default is `2GB`. Default is `4GB` if your account is premium. `Int`
+  - `LEECH_FILENAME_PREFIX`: Add custom word to the beginning of the leeched file name/caption. `Str`
+  - `LEECH_FILENAME_SUFFIX`: Add custom word to the end of the leeched file name/caption. `Str`
+  - `LEECH_CAPTION_FONT` : Font style for caption. Default is `regular`. `Str`
+  - `EQUAL_SPLITS`: Split files larger than **LEECH_SPLIT_SIZE** into equal parts size (Not working with zip cmd). Default
+    is `False`. `Bool`
+  - `MEDIA_GROUP`: View Uploaded splitted file parts in media group. Default is `False`. `Bool`.
+  - `USER_TRANSMISSION`: Upload/Download by user session. Only in superChat. Default is `False`. `Bool`
+  - `MIXED_LEECH`: Upload by user and bot session with respect to file size. Only in superChat. Default is `False`. `Bool`
+  - `USER_LEECH_DESTINATION`: ID or USERNAME or PM(private message) to where files would be uploaded. `Int`|`Str`. Add `-100` before channel/superGroup id.
+  - `NAME_SUBSTITUTE`: Add word/letter/sentense/pattern to remove or replace with other words with sensitive case or without.**Notes**: 
+    1. Seed will get disbaled while using this option
+    2. Before any character you must add \, those are the characters: `\^$.|?*+()[]{}-`
+    * Example-1: `text : code : s | mirror : leech | tea :  : s | clone`
+      - text will get replaced by code with sensitive case
+      - mirror will get replaced by leech
+      - tea will get removed with sensitive case
+      - clone will get removed
+    * Example-2: `\(text\) | \[test\] : test | \\text\\ : text : s`
+      - `(text)` will get removed
+      - `[test]` will get replaced by test
+      - `\text\` will get replaced by text with sensitive case
+
+**12. Super Group Features**
+
+  - `REQUEST_LIMITS`: Limit the no. of requests per user. Default is `0`. `Int`
+  - `TOKEN_TIMEOUT`: Time in seconds for token timeout. Default is `0` seconds. `Int`
+  - `MINIMUM_DURATOIN`: Minimum duration for the shortner links. Open your shorturl and count the minimum time to reach to the end. If a user completes the shortener faster than the minimum required time then the bot will reject his token. Default is `0` seconds. `Int`
+  - `USER_MAX_TASKS`: Maximum tasks per user. Default is `0`. `Int`
+  - `AUTO_DELETE_MESSAGE_DURATION`: Time in seconds for auto delete message. Default is `0` seconds. `Int`
+  - `ENABLE_MESSAGE_FILTER`: Enable message filter to stop users from sending foroward messages. Default is `False`. `Bool`
+  - `DELETE_LINKS`: Enable it to delete all links from the chat to avoid copyright
+    issues. Default is `False`. `Bool`
+  - `DM_MODE`: Enable it to allow users to receive files in DM. Default is `False`. `Bool`
+  - `STOP_DUPLICATE_TASKS`: Stop duplicate tasks for all users from all bots under the same database. Default is `False`. `Bool`
+  - `INCOMPLETE_TASK_NOTIFIER`: Get incomplete task messages after restart. Require database and superGroup. Default
+    is `False`. `Bool`
+
+**13. Extras**
+
+  - `EXTENSION_FILTER`: File extensions that won't upload/clone. Separate them by space. `Str`
+  - `YT_DLP_OPTIONS`: Default yt-dlp options. Check all possible
+    options [HERE](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184) or use
+    this [script](https://t.me/mltb_official_channel/177) to convert cli arguments to api options. Format: key:value|key:
+    value|key:value. Add `^` before integer or float, some numbers must be numeric and some string. `str`
+      - Example: "format:bv*+mergeall[vcodec=none]|nocheckcertificate:True"
+  - `SET_COMMANDS`: Auto set bot commands. Default is `False`. `Bool`
+  - `CMD_SUFFIX`: commands index number. This number will added at the end all commands. `Str`|`Int`
+  - `DEFAULT_UPLOAD`: Whether `rc` to upload to `RCLONE_PATH` or `gd` to upload to `GDRIVE_ID`. Default is `gd`. Read
+    More [HERE](https://github.com/Dawn-India/Z-Mirror/tree/main#upload).`Str`
+  - `STATUS_LIMIT`: Limit the no. of tasks shown in status message with buttons. Default is `10`. **NOTE**: Recommended
+    limit is `4` tasks. `Int`
+  - `STATUS_UPDATE_INTERVAL`: Time in seconds after which the progress/status message will be updated. Recommended `10`
+    seconds at least. `Int`
+  - `DOWNLOAD_DIR`: The path to the local folder where the downloads should be downloaded to. `Str`
+
+**14. Feature Control**
+  - `DISABLE_BULK`: Disable bulk link function. Default is `False`. `Bool`
+  - `DISABLE_MULTI`: Disable multi mirror function. Default is `False`. `Bool`
+  - `DISABLE_SEED`: Disable torrent seeding system. Default is `False`. `Bool`
+  - `DISABLE_LEECH`: Disable leech function. Default is `False`. `Bool`
+
+**15. Chat IDs**
+  - `FSUB_IDS`: Chat ID/USERNAME where force subscribe module will work. Force users to join the channel before using the
+    bot. `str`
+  - `LOG_CHAT_ID`: Chat ID/USERNAME where all logs will be sent. `str`
+  - `DUMP_CHAT_ID`: Chat ID/USERNAME where all leeched files will be sent. `str`
+
+**16. Limits**
+  - `STORAGE_THRESHOLD`: Storage threshold limit in GB. Default is `0`. `Int`
+  - `TORRENT_LIMIT`: Torrent limit in GB. Default is `0`. `Int`
+  - `DIRECT_LIMIT`: Direct download limit in GB. Default is `0`. `Int`
+  - `YTDLP_LIMIT`: Yt-dlp limit in GB. Default is `0`. `Int`
+  - `PLAYLIST_LIMIT`: Yt-dlp playlist limit. Default is `0`. `Int`
+  - `GDRIVE_LIMIT`: Google drive limit in GB. Default is `0`. `Int`
+  - `MEGA_LIMIT`: Mega limit in GB. Default is `0`. `Int`
+  - `LEECH_LIMIT`: Leech limit in GB. Default is `0`. `Int`
+  - `CLONE_LIMIT`: Clone limit in GB. Default is `0`. `Int`
+  - `RCLONE_LIMIT`: Rclone limit in GB. Default is `0`. `Int`
+  - `JD_LIMIT`: JDownloader limit in GB. Default is `0`. `Int`
+  - `NZB_LIMIT`: Sabnzbd limit in GB. Default is `0`. `Int`
+  - `AVG_SPEED`: Minimun average download speed limit in MB(aria2/qbit). Default is `0`. `Int`
+
+  **17. Queue System**
+
+  - `QUEUE_ALL`: Number of parallel tasks of downloads and uploads. For example if 20 task added and `QUEUE_ALL` is `8`,
+    then the summation of uploading and downloading tasks are 8 and the rest in queue. `Int`. **NOTE**: if you want to
+    fill `QUEUE_DOWNLOAD` or `QUEUE_UPLOAD`, then `QUEUE_ALL` value must be greater than or equal to the greatest one and
+    less than or equal to summation of `QUEUE_UPLOAD` and `QUEUE_DOWNLOAD`.
+  - `QUEUE_DOWNLOAD`: Number of all parallel downloading tasks. `Int`
+  - `QUEUE_UPLOAD`: Number of all parallel uploading tasks. `Int`
+
+  **18. RSS**
 
   - `RSS_DELAY`: Time in seconds for rss refresh interval. Recommended `600` second at least. Default is `600` in
     sec. `Int`
@@ -402,16 +466,7 @@ programming in Python.
         with `USER_STRING_SESSION` add group id for `RSS_CHAT`. If `DATABASE_URL` not added you will miss the feeds while
         bot offline.
 
-  **11. Queue System**
-
-  - `QUEUE_ALL`: Number of parallel tasks of downloads and uploads. For example if 20 task added and `QUEUE_ALL` is `8`,
-    then the summation of uploading and downloading tasks are 8 and the rest in queue. `Int`. **NOTE**: if you want to
-    fill `QUEUE_DOWNLOAD` or `QUEUE_UPLOAD`, then `QUEUE_ALL` value must be greater than or equal to the greatest one and
-    less than or equal to summation of `QUEUE_UPLOAD` and `QUEUE_DOWNLOAD`.
-  - `QUEUE_DOWNLOAD`: Number of all parallel downloading tasks. `Int`
-  - `QUEUE_UPLOAD`: Number of all parallel uploading tasks. `Int`
-
-  **12. Torrent Search**
+  **19. Torrent Search**
 
   - `SEARCH_API_LINK`: Search api app link. Get your api from deploying
     this [repository](https://github.com/Ryuk-me/Torrent-Api-py). `Str`
