@@ -100,39 +100,40 @@ async def get_buttons(key=None, edit_type=None):
     buttons = ButtonMaker()
     if key is None:
         buttons.ibutton(
-            "Config Variables",
+            "ᴄᴏɴꜰɪɢ\nᴠᴀʀɪᴀʙʟᴇꜱ",
             "botset var"
         )
         buttons.ibutton(
-            "Private Files",
+            "ᴘʀɪᴠᴀᴛᴇ\nꜰɪʟᴇꜱ",
             "botset private"
         )
         buttons.ibutton(
-            "Qbit Settings",
+            "Qʙɪᴛᴛᴏʀʀᴇɴᴛ\nꜱᴇᴛᴛɪɴɢꜱ",
             "botset qbit"
         )
         buttons.ibutton(
-            "Aria2c Settings",
+            "ᴀʀɪᴀ2ᴄ\nꜱᴇᴛᴛɪɴɢꜱ",
             "botset aria"
         )
         buttons.ibutton(
-            "Sabnzbd Settings",
+            "ꜱᴀʙɴᴢʙᴅ\nꜱᴇᴛᴛɪɴɢꜱ",
             "botset nzb"
         )
         buttons.ibutton(
-            "JDownloader Sync",
+            "ᴊᴅᴏᴡɴʟᴏᴀᴅᴇʀ\nꜱʏɴᴄ",
             "botset syncjd"
         )
         buttons.ibutton(
-            "Close",
-            "botset close"
+            "ᴄʟᴏꜱᴇ",
+            "botset close",
+            position="footer"
         )
-        msg = "Bot Settings:"
+        msg = "<b>Bot Settings</b>\n\nPress any button to view or edit settings."
     elif edit_type is not None:
         if edit_type == "botvar":
             msg = ""
             buttons.ibutton(
-                "Back",
+                "ʙᴀᴄᴋ",
                 "botset var"
             )
             if key not in [
@@ -142,11 +143,11 @@ async def get_buttons(key=None, edit_type=None):
                 "BOT_TOKEN"
             ]:
                 buttons.ibutton(
-                    "Default",
+                    "ᴅᴇꜰᴀᴜʟᴛ",
                     f"botset resetvar {key}"
                 )
             buttons.ibutton(
-                "Close",
+                "ᴄʟᴏꜱᴇ",
                 "botset close"
             )
             if key in [
@@ -165,20 +166,20 @@ async def get_buttons(key=None, edit_type=None):
             msg += f"Send a valid value for {key}. Current value is '{config_dict[key]}'. Timeout: 60 sec"
         elif edit_type == "ariavar":
             buttons.ibutton(
-                "Back",
+                "ʙᴀᴄᴋ",
                 "botset aria"
             )
             if key != "newkey":
                 buttons.ibutton(
-                    "Default",
+                    "ᴅᴇꜰᴀᴜʟᴛ",
                     f"botset resetaria {key}"
                 )
                 buttons.ibutton(
-                    "Empty String",
+                    "ᴇᴍᴘᴛʏ\nꜱᴛʀɪɴɢ",
                     f"botset emptyaria {key}"
                 )
             buttons.ibutton(
-                "Close",
+                "ᴄʟᴏꜱᴇ",
                 "botset close"
             )
             msg = (
@@ -188,33 +189,33 @@ async def get_buttons(key=None, edit_type=None):
             )
         elif edit_type == "qbitvar":
             buttons.ibutton(
-                "Back",
+                "ʙᴀᴄᴋ",
                 "botset qbit"
             )
             buttons.ibutton(
-                "Empty String",
+                "ᴇᴍᴘᴛʏ\nꜱᴛʀɪɴɢ",
                 f"botset emptyqbit {key}"
             )
             buttons.ibutton(
-                "Close",
+                "ᴄʟᴏꜱᴇ",
                 "botset close"
             )
             msg = f"Send a valid value for {key}. Current value is '{qbit_options[key]}'. Timeout: 60 sec"
         elif edit_type == "nzbvar":
             buttons.ibutton(
-                "Back",
+                "ʙᴀᴄᴋ",
                 "botset nzb"
             )
             buttons.ibutton(
-                "Default",
+                "ᴅᴇꜰᴀᴜʟᴛ",
                 f"botset resetnzb {key}"
             )
             buttons.ibutton(
-                "Empty String",
+                "ᴇᴍᴘᴛʏ\nꜱᴛʀɪɴɢ",
                 f"botset emptynzb {key}"
             )
             buttons.ibutton(
-                "Close",
+                "ᴄʟᴏꜱᴇ",
                 "botset close"
             )
             msg = f"Send a valid value for {key}. Current value is '{nzb_options[key]}'.\nIf the value is list then seperate them by space or ,\nExample: .exe,info or .exe .info\nTimeout: 60 sec"
@@ -230,16 +231,16 @@ async def get_buttons(key=None, edit_type=None):
                 )
             )
             buttons.ibutton(
-                "Back",
+                "ʙᴀᴄᴋ",
                 f"botset nzbser{index}"
             )
             if key != "newser":
                 buttons.ibutton(
-                    "Empty",
+                    "ᴇᴍᴘᴛʏ",
                     f"botset emptyserkey {index} {key}"
                 )
             buttons.ibutton(
-                "Close",
+                "ᴄʟᴏꜱᴇ",
                 "botset close"
             )
             if key == "newser":
@@ -254,20 +255,20 @@ async def get_buttons(key=None, edit_type=None):
             )
         if STATE == "view":
             buttons.ibutton(
-                "Edit",
+                "ᴇᴅɪᴛ",
                 "botset edit var"
             )
         else:
             buttons.ibutton(
-                "View",
+                "ᴠɪᴇᴡ",
                 "botset view var"
             )
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "botset back"
         )
         buttons.ibutton(
-            "Close",
+            "ᴄʟᴏꜱᴇ",
             "botset close"
         )
         for x in range(
@@ -283,15 +284,16 @@ async def get_buttons(key=None, edit_type=None):
         msg = f"Config Variables | Page: {int(START / 10)} | State: {STATE}"
     elif key == "private":
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "botset back"
         )
         buttons.ibutton(
-            "Close",
+            "ᴄʟᴏꜱᴇ",
             "botset close"
         )
         msg = """
-Send private file: config.env, token.pickle, rclone.conf, accounts.zip, list_drives.txt, cookies.txt, terabox.txt, .netrc or any other private file!
+Send private file: config.env, token.pickle, rclone.conf, accounts.zip,
+list_drives.txt, cookies.txt, terabox.txt, .netrc or any other private file!
 
 To delete private file send only the file name as text message.
 Note: Changing .netrc will not take effect for aria2c until restart.
@@ -306,24 +308,24 @@ Timeout: 60 sec.
             )
         if STATE == "view":
             buttons.ibutton(
-                "Edit",
+                "ᴇᴅɪᴛ",
                 "botset edit aria"
             )
         else:
             buttons.ibutton(
-                "View",
+                "ᴠɪᴇᴡ",
                 "botset view aria"
             )
         buttons.ibutton(
-            "Add new key",
+            "ᴀᴅᴅ ɴᴇᴡ ᴋᴇʏ",
             "botset ariavar newkey"
         )
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "botset back"
         )
         buttons.ibutton(
-            "Close",
+            "ᴄʟᴏꜱᴇ",
             "botset close"
         )
         for x in range(
@@ -345,24 +347,24 @@ Timeout: 60 sec.
             )
         if STATE == "view":
             buttons.ibutton(
-                "Edit",
+                "ᴇᴅɪᴛ",
                 "botset edit qbit"
             )
         else:
             buttons.ibutton(
-                "View",
+                "ᴠɪᴇᴡ",
                 "botset view qbit"
             )
         buttons.ibutton(
-            "Sync Qbittorrent",
+            "Qʙɪᴛᴛᴏʀʀᴇɴᴛ\nꜱʏɴᴄ",
             "botset syncqbit"
         )
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "botset back"
         )
         buttons.ibutton(
-            "Close",
+            "ᴄʟᴏꜱᴇ",
             "botset close"
         )
         for x in range(
@@ -384,28 +386,28 @@ Timeout: 60 sec.
             )
         if STATE == "view":
             buttons.ibutton(
-                "Edit",
+                "ᴇᴅɪᴛ",
                 "botset edit nzb"
             )
         else:
             buttons.ibutton(
-                "View",
+                "ᴠɪᴇᴡ",
                 "botset view nzb"
             )
         buttons.ibutton(
-            "Servers",
+            "ꜱᴇʀᴠᴇʀꜱ",
             "botset nzbserver"
         )
         buttons.ibutton(
-            "Sync Sabnzbd",
+            "ꜱᴀʙɴᴢʙᴅ\nꜱʏɴᴄ",
             "botset syncnzb"
         )
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "botset back"
         )
         buttons.ibutton(
-            "Close",
+            "ᴄʟᴏꜱᴇ",
             "botset close"
         )
         for x in range(
@@ -432,15 +434,15 @@ Timeout: 60 sec.
                     f"botset nzbser{index}"
                 )
         buttons.ibutton(
-            "Add New",
+            "ᴀᴅᴅ\nɴᴇᴡ",
             "botset nzbsevar newser"
         )
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "botset nzb"
         )
         buttons.ibutton(
-            "Close",
+            "ᴄʟᴏꜱᴇ",
             "botset close"
         )
         if len(config_dict["USENET_SERVERS"]) > 10:
@@ -467,24 +469,24 @@ Timeout: 60 sec.
             )
         if STATE == "view":
             buttons.ibutton(
-                "Edit",
+                "ᴇᴅɪᴛ",
                 f"botset edit {key}"
             )
         else:
             buttons.ibutton(
-                "View",
+                "ᴠɪᴇᴡ",
                 f"botset view {key}"
             )
         buttons.ibutton(
-            "Remove Server",
+            "ʀᴇᴍᴏᴠᴇ\nꜱᴇʀᴠᴇʀ",
             f"botset remser {index}"
         )
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "botset nzbserver"
         )
         buttons.ibutton(
-            "Close",
+            "ᴄʟᴏꜱᴇ",
             "botset close"
         )
         if len(config_dict["USENET_SERVERS"][index].keys()) > 10:
@@ -500,10 +502,7 @@ Timeout: 60 sec.
                 )
         msg = f"Server Keys | Page: {int(START / 10)} | State: {STATE}"
 
-    button = (
-        buttons.build_menu(1)
-        if key is None
-        else buttons.build_menu(2))
+    button = buttons.build_menu(2)
     return (
         msg,
         button
@@ -552,7 +551,10 @@ async def edit_variable(client, message, pre_message, key):
             len(task_dict) != 0
             and (st := Intervals["status"])
         ):
-            for cid, intvl in list(st.items()):
+            for (
+                cid,
+                intvl
+            ) in list(st.items()):
                 intvl.cancel()
                 Intervals["status"][cid] = setInterval(
                     value,
@@ -1068,11 +1070,11 @@ async def update_private_file(_, message, pre_message):
             buttons = ButtonMaker()
             msg = "Push to UPSTREAM_REPO ?"
             buttons.ibutton(
-                "Yes!",
+                "ʏᴇꜱ!",
                 f"botset push {file_name}"
             )
             buttons.ibutton(
-                "No",
+                "ɴᴏ",
                 "botset close"
             )
             await sendMessage(
@@ -1780,7 +1782,10 @@ async def edit_bot_settings(client, query):
 
 async def bot_settings(_, message):
     handler_dict[message.chat.id] = False
-    msg, button = await get_buttons()
+    (
+        msg,
+        button
+    ) = await get_buttons()
     globals()["START"] = 0
     await sendMessage(
         message,

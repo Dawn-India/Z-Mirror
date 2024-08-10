@@ -194,12 +194,12 @@ async def get_user_settings(from_user):
         mixed_leech = "Disabled"
 
     buttons.ibutton(
-        "Leech Settings",
+        "ʟᴇᴇᴄʜ\nꜱᴇᴛᴛɪɴɢꜱ",
         f"userset {user_id} leech"
     )
 
     buttons.ibutton(
-        "Rclone Tools",
+        "ʀᴄʟᴏɴᴇ\nᴛᴏᴏʟꜱ",
         f"userset {user_id} rclone"
     )
     rccmsg = (
@@ -218,7 +218,7 @@ async def get_user_settings(from_user):
         rccpath = "Not Added"
 
     buttons.ibutton(
-        "Gdrive Tools",
+        "ɢᴅʀɪᴠᴇ\nᴛᴏᴏʟꜱ",
         f"userset {user_id} gdrive"
     )
     tokenmsg = (
@@ -263,7 +263,7 @@ async def get_user_settings(from_user):
         else "Not Added"
     )
     buttons.ibutton(
-        "Upload Paths",
+        "ᴜᴘʟᴏᴀᴅ\nᴘᴀᴛʜꜱ",
         f"userset {user_id} upload_paths"
     )
 
@@ -285,12 +285,12 @@ async def get_user_settings(from_user):
         else "Rclone"
     )
     buttons.ibutton(
-        f"Upload using {dub}",
+        f"ᴜᴘʟᴏᴀᴅ\nᴜꜱɪɴɢ {dub}",
         f"userset {user_id} {default_upload}"
     )
 
     buttons.ibutton(
-        "Extension Filter",
+        "ᴇxᴛᴇɴꜱɪᴏɴ\nꜰɪʟᴛᴇʀ",
         f"userset {user_id} ex_ex"
     )
     ex_ex = (
@@ -311,12 +311,12 @@ async def get_user_settings(from_user):
         else "Not Added"
     )
     buttons.ibutton(
-        "Name Substitute",
+        "ɴᴀᴍᴇ\nꜱᴜʙꜱᴛɪᴛᴜᴛᴇ",
         f"userset {user_id} name_substitute"
     )
 
     buttons.ibutton(
-        "YT-DLP Options",
+        "ʏᴛ-ᴅʟᴘ\nᴏᴘᴛɪᴏɴꜱ",
         f"userset {user_id} yto"
     )
     if user_dict.get(
@@ -334,13 +334,14 @@ async def get_user_settings(from_user):
 
     if user_dict:
         buttons.ibutton(
-            "Reset All",
+            "ʀᴇꜱᴇᴛ ᴀʟʟ\nᴄʜᴀɴɢᴇꜱ",
             f"userset {user_id} reset"
         )
 
     buttons.ibutton(
-        "Close",
-        f"userset {user_id} close"
+        "ᴄʟᴏꜱᴇ",
+        f"userset {user_id} close",
+        position="footer"
     )
 
     text = f"""
@@ -378,7 +379,7 @@ async def get_user_settings(from_user):
 
     return (
         text,
-        buttons.build_menu(1)
+        buttons.build_menu(2)
     )
 
 
@@ -724,7 +725,7 @@ async def edit_user_settings(client, query):
         thumbpath = f"Thumbnails/{user_id}.jpg"
         buttons = ButtonMaker()
         buttons.ibutton(
-            "Thumbnail",
+            "ᴛʜᴜᴍʙ",
             f"userset {user_id} sthumb"
         )
         thumbmsg = (
@@ -733,7 +734,7 @@ async def edit_user_settings(client, query):
             else "Not Exists"
         )
         buttons.ibutton(
-            "Leech Split Size",
+            "ꜱᴘʟɪᴛ\nꜱɪᴢᴇ",
             f"userset {user_id} lss"
         )
         if user_dict.get(
@@ -745,7 +746,7 @@ async def edit_user_settings(client, query):
             split_size = config_dict["LEECH_SPLIT_SIZE"]
         split_size = get_readable_file_size(split_size)
         buttons.ibutton(
-            "Leech Destination",
+            "ʟᴇᴇᴄʜ\nᴅᴇꜱᴛ",
             f"userset {user_id} ldest"
         )
         if user_dict.get(
@@ -761,7 +762,7 @@ async def edit_user_settings(client, query):
         else:
             leech_dest = "None"
         buttons.ibutton(
-            "Leech Prefix",
+            "ᴘʀᴇꜰɪx",
             f"userset {user_id} leech_prefix"
         )
         if user_dict.get(
@@ -776,7 +777,7 @@ async def edit_user_settings(client, query):
         else:
             lprefix = "None"
         buttons.ibutton(
-            "Leech Suffix",
+            "ꜱᴜꜰꜰɪx",
             f"userset {user_id} leech_suffix"
         )
         if user_dict.get(
@@ -791,7 +792,7 @@ async def edit_user_settings(client, query):
         else:
             lsuffix = "None"
         buttons.ibutton(
-            "Leech Caption Font",
+            "ᴄᴀᴘ\nꜰᴏɴᴛ",
             f"userset {user_id} leech_cap_font"
         )
         if user_dict.get(
@@ -815,13 +816,13 @@ async def edit_user_settings(client, query):
         ):
             ltype = "DOCUMENT"
             buttons.ibutton(
-                "Send As Media",
+                "ᴜᴘʟᴏᴀᴅ\nᴀꜱ ᴍᴇᴅɪᴀ",
                 f"userset {user_id} as_doc false"
             )
         else:
             ltype = "MEDIA"
             buttons.ibutton(
-                "Send As Document",
+                "ᴜᴘʟᴏᴀᴅ\nᴀꜱ ᴅᴏᴄᴜᴍᴇɴᴛ",
                 f"userset {user_id} as_doc true"
             )
         if (
@@ -833,13 +834,13 @@ async def edit_user_settings(client, query):
             and config_dict["EQUAL_SPLITS"]
         ):
             buttons.ibutton(
-                "Disable Equal Splits",
+                "ᴅɪꜱᴀʙʟᴇ\nᴇQᴜᴀʟ ꜱᴘʟɪᴛꜱ",
                 f"userset {user_id} equal_splits false"
             )
             equal_splits = "Enabled"
         else:
             buttons.ibutton(
-                "Enable Equal Splits",
+                "ᴇɴᴀʙʟᴇ\nᴇQᴜᴀʟ ꜱᴘʟɪᴛꜱ",
                 f"userset {user_id} equal_splits true"
             )
             equal_splits = "Disabled"
@@ -852,13 +853,13 @@ async def edit_user_settings(client, query):
             and config_dict["MEDIA_GROUP"]
         ):
             buttons.ibutton(
-                "Disable Media Group",
+                "ᴅɪꜱᴀʙʟᴇ\nᴍᴇᴅɪᴀ ɢʀᴏᴜᴘ",
                 f"userset {user_id} media_group false"
             )
             media_group = "Enabled"
         else:
             buttons.ibutton(
-                "Enable Media Group",
+                "ᴇɴᴀʙʟᴇ\nᴍᴇᴅɪᴀ ɢʀᴏᴜᴘ",
                 f"userset {user_id} media_group true"
             )
             media_group = "Disabled"
@@ -872,14 +873,14 @@ async def edit_user_settings(client, query):
             and config_dict["USER_TRANSMISSION"]
         ):
             buttons.ibutton(
-                "Upload with Bot",
+                "ᴜᴘʟᴏᴀᴅ\nᴡɪᴛʜ ʙᴏᴛ",
                 f"userset {user_id} user_transmission false"
             )
             leech_method = "user"
         elif IS_PREMIUM_USER:
             leech_method = "bot"
             buttons.ibutton(
-                "Upload with User",
+                "ᴜᴘʟᴏᴀᴅ\nᴡɪᴛʜ ᴜꜱᴇʀ",
                 f"userset {user_id} user_transmission true"
             )
         else:
@@ -896,25 +897,27 @@ async def edit_user_settings(client, query):
         ):
             mixed_leech = "Enabled"
             buttons.ibutton(
-                "Disable Hybrid Upload",
+                "ᴅɪꜱᴀʙʟᴇ\nʜʏʙʀɪᴅ ᴜᴘʟᴏᴀᴅ",
                 f"userset {user_id} mixed_leech false"
             )
         elif IS_PREMIUM_USER:
             mixed_leech = "Disabled"
             buttons.ibutton(
-                "Enable Hybrid Upload",
+                "ᴇɴᴀʙʟᴇ\nʜʏʙʀɪᴅ ᴜᴘʟᴏᴀᴅ",
                 f"userset {user_id} mixed_leech true"
             )
         else:
             mixed_leech = "Disabled"
 
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} back"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} back",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         text = f"""
 <b><u>Leech Settings for {name}</u></b>
@@ -935,26 +938,28 @@ async def edit_user_settings(client, query):
         await editMessage(
             message,
             text,
-            buttons.build_menu(1)
+            buttons.build_menu(3)
         )
     elif data[2] == "rclone":
         await query.answer()
         buttons = ButtonMaker()
         buttons.ibutton(
-            "Rclone Config",
+            "ʀᴄʟᴏɴᴇ\nᴄᴏɴꜰɪɢ",
             f"userset {user_id} rcc"
         )
         buttons.ibutton(
-            "Default Rclone Path",
+            "ᴅᴇꜰᴀᴜʟᴛ\nʀᴄʟᴏɴᴇ ᴘᴀᴛʜ",
             f"userset {user_id} rcp"
         )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} back"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} back",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         rccmsg = (
             "Exists"
@@ -979,21 +984,21 @@ async def edit_user_settings(client, query):
         await editMessage(
             message,
             text,
-            buttons.build_menu(1)
+            buttons.build_menu(2)
         )
     elif data[2] == "gdrive":
         await query.answer()
         buttons = ButtonMaker()
         buttons.ibutton(
-            "token.pickle",
+            "ᴜᴘʟᴏᴀᴅ\nᴛᴏᴋᴇɴ ᴘɪᴄᴋʟᴇ",
             f"userset {user_id} token"
         )
         buttons.ibutton(
-            "Default Gdrive ID",
+            "ᴅᴇꜰᴀᴜʟᴛ\nɢᴅʀɪᴠᴇ ɪᴅ",
             f"userset {user_id} gdid"
         )
         buttons.ibutton(
-            "Index URL",
+            "ɪɴᴅᴇx ᴜʀʟ",
             f"userset {user_id} index"
         )
         if (
@@ -1005,23 +1010,25 @@ async def edit_user_settings(client, query):
             and config_dict["STOP_DUPLICATE"]
         ):
             buttons.ibutton(
-                "Disable Stop Duplicate",
+                "ᴅɪꜱᴀʙʟᴇ\nꜱᴛᴏᴘ ᴅᴜᴘʟɪᴄᴀᴛᴇ",
                 f"userset {user_id} stop_duplicate false"
             )
             sd_msg = "Enabled"
         else:
             buttons.ibutton(
-                "Enable Stop Duplicate",
+                "ᴇɴᴀʙʟᴇ\nꜱᴛᴏᴘ ᴅᴜᴘʟɪᴄᴀᴛᴇ",
                 f"userset {user_id} stop_duplicate true"
             )
             sd_msg = "Disabled"
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} back"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} back",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         tokenmsg = (
             "Exists"
@@ -1058,28 +1065,30 @@ async def edit_user_settings(client, query):
         await editMessage(
             message,
             text,
-            buttons.build_menu(1)
+            buttons.build_menu(2)
         )
     elif data[2] == "sthumb":
         await query.answer()
         buttons = ButtonMaker()
         if await aiopath.exists(thumb_path):
             buttons.ibutton(
-                "Delete Thumbnail",
+                "ᴅᴇʟᴇᴛᴇ\nᴛʜᴜᴍʙɴᴀɪʟ",
                 f"userset {user_id} thumb"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} leech"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
             message,
             "Send a photo to save it as custom thumbnail. Timeout: 60 sec",
-            buttons.build_menu(1),
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_thumb,
@@ -1099,17 +1108,19 @@ async def edit_user_settings(client, query):
             False
         ) or config_dict["YT_DLP_OPTIONS"]:
             buttons.ibutton(
-                "Remove YT-DLP Options",
+                "ʀᴇᴍᴏᴠᴇ\nʏᴛ-ᴅʟᴘ ᴏᴘᴛɪᴏɴꜱ",
                 f"userset {user_id} yt_opt",
                 "header"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} back"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} back",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         rmsg = """
 Send YT-DLP Options. Timeout: 60 sec
@@ -1124,7 +1135,7 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
         await editMessage(
             message,
             rmsg,
-            buttons.build_menu(1)
+            buttons.build_menu(2)
         )
         pfunc = partial(
             set_option,
@@ -1144,23 +1155,25 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             False
         ):
             buttons.ibutton(
-                "Reset Split Size",
+                "ʀᴇꜱᴇᴛ\nꜱᴘʟɪᴛ ꜱɪᴢᴇ",
                 f"userset {user_id} split_size"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} leech"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         sp_msg = "Send Leech split size.\nDon't add unit(MB, GB), default unit is <b>GB</b>\n"
         sp_msg += "\nExamples:\nSend 4 for 4GB\nor 0.5 for 512MB\n\nTimeout: 60 sec"
         await editMessage(
             message,
             sp_msg,
-            buttons.build_menu(1),
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_option,
@@ -1177,19 +1190,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
         buttons = ButtonMaker()
         if await aiopath.exists(rclone_conf):
             buttons.ibutton(
-                "Delete rclone.conf",
+                "ᴅᴇʟᴇᴛᴇ\nʀᴄʟᴏɴᴇ.ᴄᴏɴꜰ",
                 f"userset {user_id} rclone_config"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} rclone"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} rclone",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
-            message, "Send rclone.conf. Timeout: 60 sec", buttons.build_menu(1)
+            message,
+            "Send rclone.conf. Timeout: 60 sec",
+            buttons.build_menu(2)
         )
         pfunc = partial(
             add_rclone,
@@ -1209,22 +1226,24 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             False
         ):
             buttons.ibutton(
-                "Reset Rclone Path",
+                "ʀᴇꜱᴇᴛ\nʀᴄʟᴏɴᴇ ᴘᴀᴛʜ",
                 f"userset {user_id} rclone_path"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} rclone"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} rclone",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         rmsg = "Send Rclone Path. Timeout: 60 sec"
         await editMessage(
             message,
             rmsg,
-            buttons.build_menu(1)
+            buttons.build_menu(2)
         )
         pfunc = partial(
             set_option,
@@ -1241,20 +1260,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
         buttons = ButtonMaker()
         if await aiopath.exists(token_pickle):
             buttons.ibutton(
-                "Delete token.pickle",
+                "ᴅᴇʟᴇᴛᴇ\nᴛᴏᴋᴇɴ.ᴘɪᴄᴋʟᴇ",
                 f"userset {user_id} token_pickle"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} gdrive"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} gdrive",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
-            message, "Send token.pickle. Timeout: 60 sec",
-            buttons.build_menu(1)
+            message,
+            "Send token.pickle.\n\nTimeout: 60 sec",
+            buttons.build_menu(2)
         )
         pfunc = partial(
             add_token_pickle,
@@ -1274,22 +1296,24 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             False
         ):
             buttons.ibutton(
-                "Reset Gdrive ID",
+                "ʀᴇꜱᴇᴛ\nɢᴅʀɪᴠᴇ ɪᴅ",
                 f"userset {user_id} gdrive_id"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} gdrive"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} gdrive",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
-        rmsg = "Send Gdrive ID. Timeout: 60 sec"
+        rmsg = "Send Gdrive ID.\n\nTimeout: 60 sec"
         await editMessage(
             message,
             rmsg,
-            buttons.build_menu(1)
+            buttons.build_menu(2)
         )
         pfunc = partial(
             set_option,
@@ -1309,22 +1333,24 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             False
         ):
             buttons.ibutton(
-                "Remove Index URL",
+                "ʀᴇᴍᴏᴠᴇ\nɪɴᴅᴇx ᴜʀʟ",
                 f"userset {user_id} index_url"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} gdrive"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} gdrive",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
-        rmsg = "Send Index URL. Timeout: 60 sec"
+        rmsg = "Send Index URL.\n\nTimeout: 60 sec"
         await editMessage(
             message,
             rmsg,
-            buttons.build_menu(1)
+            buttons.build_menu(2)
         )
         pfunc = partial(
             set_option,
@@ -1348,21 +1374,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             and config_dict["LEECH_FILENAME_PREFIX"]
         ):
             buttons.ibutton(
-                "Remove Leech Prefix",
+                "ʀᴇᴍᴏᴠᴇ\nᴘʀᴇꜰɪx",
                 f"userset {user_id} lprefix"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} leech"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
             message,
-            "Send Leech Filename Prefix. You can add HTML tags. Timeout: 60 sec",
-            buttons.build_menu(1),
+            "Send Leech Filename Prefix.\nYou can add HTML tags.\n\nTimeout: 60 sec",
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_option,
@@ -1386,21 +1414,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             and config_dict["LEECH_FILENAME_SUFFIX"]
         ):
             buttons.ibutton(
-                "Remove Leech Suffix",
+                "ʀᴇᴍᴏᴠᴇ\nꜱᴜꜰꜰɪx",
                 f"userset {user_id} lsuffix"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} leech"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
             message,
-            "Send Leech Filename Suffix. You can add HTML tags. Timeout: 60 sec",
-            buttons.build_menu(1),
+            "Send Leech Filename Suffix.\nYou can add HTML tags.\n\nTimeout: 60 sec",
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_option,
@@ -1424,16 +1454,18 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             and config_dict["LEECH_CAPTION_FONT"]
         ):
             buttons.ibutton(
-                "Remove Leech Caption Font",
+                "ʀᴇᴍᴏᴠᴇ\nᴄᴀᴘᴛɪᴏɴ ꜰᴏɴᴛ",
                 f"userset {user_id} lcapfont"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} leech"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         msg = """
 Send Leech Caption Font. Default is regular.
@@ -1453,7 +1485,7 @@ Timeout: 60 sec
         await editMessage(
             message,
             msg,
-            buttons.build_menu(1),
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_option,
@@ -1477,21 +1509,23 @@ Timeout: 60 sec
             and config_dict["USER_LEECH_DESTINATION"]
         ):
             buttons.ibutton(
-                "Reset Leech Destination",
+                "ʀᴇꜱᴇᴛ\nʟᴇᴇᴄʜ ᴅᴇꜱᴛɪɴᴀᴛɪᴏɴ",
                 f"userset {user_id} leech_dest"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} leech"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
             message,
-            "Send leech destination ID/USERNAME/PM. Timeout: 60 sec",
-            buttons.build_menu(1),
+            "Send leech destination\nID or USERNAME or PM.\n\nTimeout: 60 sec",
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_option,
@@ -1515,16 +1549,18 @@ Timeout: 60 sec
             and GLOBAL_EXTENSION_FILTER
         ):
             buttons.ibutton(
-                "Remove Excluded Extensions",
+                "ʀᴇᴍᴏᴠᴇ\nᴇxᴄʟᴜᴅᴇᴅ ᴇxᴛᴇɴꜱɪᴏɴꜱ",
                 f"userset {user_id} excluded_extensions"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} back"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} back",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         ex_msg = "<b>Send exluded extenions seperated by space without dot at beginning.</b>\n"
         ex_msg += "<b>Ex:</b> <code>zip mp4 jpg</code>\n<b>Timeout:</b> 60 sec\n\n"
@@ -1532,7 +1568,7 @@ Timeout: 60 sec
         await editMessage(
             message,
             ex_msg,
-            buttons.build_menu(1),
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_option,
@@ -1552,16 +1588,18 @@ Timeout: 60 sec
             False
         ):
             buttons.ibutton(
-                "Remove Name Substitute",
+                "ʀᴇᴍᴏᴠᴇ\nɴᴀᴍᴇ ꜱᴜʙꜱᴛɪᴛᴜᴛᴇ",
                 f"userset {user_id} name_sub"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} back"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} back",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         emsg = r"""
 Word Substitutions. You can add pattern instead of normal text. Timeout: 60 sec
@@ -1584,7 +1622,7 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
         await editMessage(
             message,
             emsg,
-            buttons.build_menu(1),
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_option,
@@ -1618,7 +1656,7 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
         await query.answer()
         buttons = ButtonMaker()
         buttons.ibutton(
-            "New Path",
+            "ɴᴇᴡ\nᴘᴀᴛʜ",
             f"userset {user_id} new_path"
         )
         if user_dict.get(
@@ -1626,41 +1664,49 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
             False
         ):
             buttons.ibutton(
-                "Show All Paths",
+                "ꜱʜᴏᴡ\nᴀʟʟ ᴘᴀᴛʜꜱ",
                 f"userset {user_id} show_path"
             )
             buttons.ibutton(
-                "Remove Path",
+                "ʀᴇᴍᴏᴠᴇ\nᴘᴀᴛʜ",
                 f"userset {user_id} rm_path"
             )
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} back"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} back",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
             message,
             "Add or remove upload path.\n",
-            buttons.build_menu(1),
+            buttons.build_menu(2),
         )
     elif data[2] == "new_path":
         await query.answer()
         buttons = ButtonMaker()
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} upload_paths"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} upload_paths",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
             message,
-            "Send path name(no space in name) which you will use it as a shortcut and the path/id seperated by space. You can add multiple names and paths separated by new line. Timeout: 60 sec",
-            buttons.build_menu(1),
+            (
+                "Send path name(no space in name) which you will use it as"
+                " a shortcut and the path/id seperated by space. You can add"
+                " multiple names and paths separated by new line. Timeout: 60 sec"
+            ),
+            buttons.build_menu(2),
         )
         pfunc = partial(
             set_option,
@@ -1676,17 +1722,19 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
         await query.answer()
         buttons = ButtonMaker()
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} upload_paths"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} upload_paths",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         await editMessage(
             message,
-            "Send paths names which you want to delete, separated by space. Timeout: 60 sec",
-            buttons.build_menu(1),
+            "Send paths names which you want to delete, separated by space.\n\nTimeout: 60 sec",
+            buttons.build_menu(2),
         )
         pfunc = partial(
             delete_path,
@@ -1701,12 +1749,14 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
         await query.answer()
         buttons = ButtonMaker()
         buttons.ibutton(
-            "Back",
-            f"userset {user_id} upload_paths"
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} upload_paths",
+            position="footer"
         )
         buttons.ibutton(
-            "Close",
-            f"userset {user_id} close"
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close",
+            position="footer"
         )
         user_dict = user_data.get(
             user_id,
@@ -1719,7 +1769,7 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
         await editMessage(
             message,
             msg,
-            buttons.build_menu(1),
+            buttons.build_menu(2),
         )
     elif data[2] == "reset":
         await query.answer()

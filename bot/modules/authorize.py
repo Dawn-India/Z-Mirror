@@ -137,7 +137,10 @@ async def removeSudo(client, message):
         msg = "Demoted"
     else:
         msg = "Give ID or Reply To message of whom you want to remove from Sudo"
-    await sendMessage(message, msg)
+    await sendMessage(
+        message,
+        msg
+    )
 
 
 bot.add_handler( # type: ignore

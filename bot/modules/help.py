@@ -1,7 +1,7 @@
 from pyrogram.filters import regex
 from pyrogram.handlers import CallbackQueryHandler
 
-from bot import bot
+from bot import bot, LOGGER
 from bot.helper.ext_utils.bot_utils import COMMAND_USAGE
 from bot.helper.ext_utils.help_messages import (
     YT_HELP_DICT,
@@ -44,37 +44,37 @@ async def argUsage(_, query):
     elif data[1] == "mirror":
         buttons = ButtonMaker()
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "help back m"
         )
         button = buttons.build_menu()
         await editMessage(
             message,
-            MIRROR_HELP_DICT[data[2]],
+            MIRROR_HELP_DICT[data[2] + "\n" + data[3]],
             button
         )
     elif data[1] == "yt":
         buttons = ButtonMaker()
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "help back y"
         )
         button = buttons.build_menu()
         await editMessage(
             message,
-            YT_HELP_DICT[data[2]],
+            YT_HELP_DICT[data[2] + "\n" + data[3]],
             button
         )
     elif data[1] == "clone":
         buttons = ButtonMaker()
         buttons.ibutton(
-            "Back",
+            "ʙᴀᴄᴋ",
             "help back c"
         )
         button = buttons.build_menu()
         await editMessage(
             message,
-            CLONE_HELP_DICT[data[2]],
+            CLONE_HELP_DICT[data[2] + "\n" + data[3]],
             button
         )
 

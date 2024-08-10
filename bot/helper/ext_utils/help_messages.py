@@ -263,58 +263,58 @@ mixed_leech = """
 
 YT_HELP_DICT = {
     "main": yt,
-    "New-Name": f"{new_name}\nNote: Don't add file extension",
-    "Zip": zip_arg,
-    "Quality": qual,
-    "Options": yt_opt,
-    "Multi-Link": multi_link,
-    "Same-Directory": same_dir,
-    "Thumb": thumb,
-    "Split-Size": split_size,
-    "Upload-Destination": upload,
-    "Rclone-Flags": rcf,
-    "Bulk": bulk,
-    "Sample-Video": sample_video,
-    "Screenshot": screenshot,
-    "Convert-Media": convert_media,
-    "Force-Start": force_start,
-    "Name-Substitute": name_sub,
-    "Mixed-Leech": mixed_leech,
+    "ʀᴇɴᴀᴍᴇ\nꜰɪʟᴇ": f"{new_name}\nNote: Don't add file extension",
+    "ᴢɪᴘ\nꜰɪʟᴇꜱ": zip_arg,
+    "Qᴜᴀʟɪᴛʏ\nᴏᴘᴛ": qual,
+    "ʏᴛ\nᴏᴘᴛɪᴏɴꜱ": yt_opt,
+    "ᴍᴜʟᴛɪ\nʟɪɴᴋ": multi_link,
+    "ꜱᴀᴍᴇ\nᴅɪʀᴇᴄᴛᴏʀʏ": same_dir,
+    "ᴀᴅᴅ\nᴛʜᴜᴍʙ": thumb,
+    "ꜱᴘʟɪᴛ\nꜱɪᴢᴇ": split_size,
+    "ᴜᴘʟᴏᴀᴅ\nᴅᴇꜱᴛɪɴᴀᴛɪᴏɴ": upload,
+    "ʀᴄʟᴏɴᴇ\nꜰʟᴀɢꜱ": rcf,
+    "ʙᴜʟᴋ\nʟɪɴᴋꜱ": bulk,
+    "ꜱᴀᴍᴘʟᴇ\nᴠɪᴅᴇᴏ": sample_video,
+    "ꜱᴄʀᴇᴇɴ\nꜱʜᴏᴛ": screenshot,
+    "ᴄᴏɴᴠᴇʀᴛ\nᴍᴇᴅɪᴀ": convert_media,
+    "ꜰᴏʀᴄᴇ\nꜱᴛᴀʀᴛ": force_start,
+    "ɴᴀᴍᴇ\nꜱᴜʙꜱᴛɪᴛᴜᴛᴇ": name_sub,
+    "ʜʏʙʀɪᴅ\nʟᴇᴇᴄʜ": mixed_leech,
 }
 
 MIRROR_HELP_DICT = {
     "main": mirror,
-    "New-Name": new_name,
-    "DL-Auth": "<b>Direct link authorization</b>: -au -ap\n\n/cmd link -au username -ap password",
-    "Headers": "<b>Direct link custom headers</b>: -h\n\n/cmd link -h key: value key1: value1",
-    "Extract/Zip": extract_zip,
-    "Select-Files": "<b>Bittorrent/JDownloader/Sabnzbd File Selection</b>: -s\n\n/cmd link -s or by replying to file/link",
-    "Torrent-Seed": seed,
-    "Multi-Link": multi_link,
-    "Same-Directory": same_dir,
-    "Thumb": thumb,
-    "Split-Size": split_size,
-    "Upload-Destination": upload,
-    "Rclone-Flags": rcf,
-    "Bulk": bulk,
-    "Join": join,
-    "Rclone-DL": rlone_dl,
-    "Tg-Links": tg_links,
-    "Sample-Video": sample_video,
-    "Screenshot": screenshot,
-    "Convert-Media": convert_media,
-    "Force-Start": force_start,
-    "User-Download": user_download,
-    "Name-Substitute": name_sub,
-    "Mixed-Leech": mixed_leech,
+    "ʀᴇɴᴀᴍᴇ\nꜰɪʟᴇ": new_name,
+    "ᴅᴏᴡɴʟᴏᴀᴅ\nᴀᴜᴛʜ": "<b>Direct link authorization</b>: -au -ap\n\n/cmd link -au username -ap password",
+    "ᴅᴅʟ\nʜᴇᴀᴅᴇʀꜱ": "<b>Direct link custom headers</b>: -h\n\n/cmd link -h key: value key1: value1",
+    "ᴇxᴛʀᴀᴄᴛ\nᴢɪᴘ": extract_zip,
+    "ꜱᴇʟᴇᴄᴛ\nꜰɪʟᴇꜱ": "<b>Bittorrent/JDownloader/Sabnzbd File Selection</b>: -s\n\n/cmd link -s or by replying to file/link",
+    "ᴛᴏʀʀᴇɴᴛ\nꜱᴇᴇᴅ": seed,
+    "ᴍᴜʟᴛɪ\nʟɪɴᴋ": multi_link,
+    "ꜱᴀᴍᴇ\nᴅɪʀᴇᴄᴛᴏʀʏ": same_dir,
+    "ᴀᴅᴅ\nᴛʜᴜᴍʙ": thumb,
+    "ꜱᴘʟɪᴛ\nꜱɪᴢᴇ": split_size,
+    "ᴜᴘʟᴏᴀᴅ\nᴅᴇꜱᴛɪɴᴀᴛɪᴏɴ": upload,
+    "ʀᴄʟᴏɴᴇ\nꜰʟᴀɢꜱ": rcf,
+    "ʙᴜʟᴋ\nʟɪɴᴋꜱ": bulk,
+    "ᴊᴏɪɴ\nꜰɪʟᴇꜱ": join,
+    "ʀᴄʟᴏɴᴇ\nᴅʟ": rlone_dl,
+    "ᴛᴇʟᴇɢʀᴀᴍ\nʟɪɴᴋꜱ": tg_links,
+    "ꜱᴀᴍᴘʟᴇ\nᴠɪᴅᴇᴏ": sample_video,
+    "ꜱᴄʀᴇᴇɴ\nꜱʜᴏᴛ": screenshot,
+    "ᴄᴏɴᴠᴇʀᴛ\nᴍᴇᴅɪᴀ": convert_media,
+    "ꜰᴏʀᴄᴇ\nꜱᴛᴀʀᴛ": force_start,
+    "ᴜꜱᴇʀ\nᴅᴏᴡɴʟᴏᴀᴅ": user_download,
+    "ɴᴀᴍᴇ\nꜱᴜʙꜱᴛɪᴛᴜᴛᴇ": name_sub,
+    "ʜʏʙʀɪᴅ\nʟᴇᴇᴄʜ": mixed_leech,
 }
 
 CLONE_HELP_DICT = {
     "main": clone,
-    "Multi-Link": multi_link,
-    "Bulk": bulk,
-    "Gdrive": gdrive,
-    "Rclone": rclone_cl,
+    "ᴍᴜʟᴛɪ\nʟɪɴᴋ": multi_link,
+    "ʙᴜʟᴋ\nʟɪɴᴋꜱ": bulk,
+    "ɢᴏᴏɢʟᴇ\nᴅʀɪᴠᴇ": gdrive,
+    "ʀᴄʟᴏɴᴇ\nᴅʟ": rclone_cl,
 }
 
 RSS_HELP_MESSAGE = """
@@ -342,7 +342,8 @@ Timeout: 60 sec.
 """
 
 PASSWORD_ERROR_MESSAGE = """
-<b>This link requires a password!</b>
+<b>Links require a password!</b>
+
 - Insert <b>::</b> after the link and write the password after the sign.
 
 <b>Example:</b> link::my password

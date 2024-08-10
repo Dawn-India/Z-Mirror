@@ -61,12 +61,12 @@ async def checking_access(user_id, button=None):
         if button is None:
             button = ButtonMaker()
         button.ubutton(
-            "Get New Token",
+            "ɢᴇɴᴇʀᴀᴛᴇ\nɴᴇᴡ ᴛᴏᴋᴇɴ",
             short_url(f"https://redirect.z-mirror.eu.org/{bot_name}/{token}")
         )
         tmsg = (
-            "Your <b>Token</b> is expired. Get a new one."
-            f"\n<b>Token Validity</b>: {get_readable_time(config_dict["TOKEN_TIMEOUT"])}\n"
+            "You need to generate a new <b>Token</b>."
+            f"\n➜ <b>Validity</b>: {get_readable_time(config_dict["TOKEN_TIMEOUT"])}"
         )
         return (
             tmsg,
@@ -118,7 +118,14 @@ async def start(client, message):
                 )
                 return await sendMessage(
                     message,
-                    "Shortener bypass detected.\n\nPlease generate a new token.\n\n<b>Don't try to bypass it, next time ban.</b>"
+                    (
+                        "Shortener bypass detected.\nPlease generate a new token.\n\n"
+                        "<b>Don't try to bypass it, else next time BAN.</b>\n\n"
+                        "Don't use any <b>Adblocker</b> or <b>VPN</b> or <b>Proxy</b>\n"
+                        "or <b>Incognito</b> or <b>DNS</b> or <b>Extensions</b>\n"
+                        "or <b>Any other Bypass methods</b>.\n\nFor your safety and my "
+                        "profit, use telegram's inbuilt browser or chrome without any extensions."
+                    )
                 )
         if userid not in user_data:
             return await sendMessage(
@@ -149,7 +156,14 @@ async def start(client, message):
             )
             return await sendMessage(
                 message,
-                "Shortener bypass detected.\n\nPlease generate a new token.\n\n<b>Don't try to bypass it, next time ban.</b>"
+                (
+                    "Shortener bypass detected.\nPlease generate a new token.\n\n"
+                    "<b>Don't try to bypass it, else next time BAN.</b>\n\n"
+                    "Don't use any <b>Adblocker</b> or <b>VPN</b> or <b>Proxy</b>\n"
+                    "or <b>Incognito</b> or <b>DNS</b> or <b>Extensions</b>\n"
+                    "or <b>Any other Bypass methods</b>.\n\nFor your safety and my"
+                    "profit, use telegram's inbuilt browser or chrome without any extensions."
+                )
             )
         token = str(uuid4())
         ttime = time()
@@ -163,10 +177,10 @@ async def start(client, message):
                 ttime
             )
         msg = (
-            "Your token refreshed successfully!\n"
-            f"Validity: {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}\n\n"
+            "<b>Your token refreshed successfully!</b>\n"
+            f"➜ Validity: {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}\n\n"
             "<b>Your Limites:</b>\n"
-            f"{config_dict["USER_MAX_TASKS"]} parallal tasks.\n"
+            f"➜ {config_dict["USER_MAX_TASKS"]} parallal tasks.\n"
         )
         return await sendMessage(
             message,

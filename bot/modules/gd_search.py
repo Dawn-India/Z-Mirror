@@ -35,25 +35,25 @@ from bot.helper.telegram_helper.message_utils import (
 async def list_buttons(user_id, isRecursive=True, user_token=False):
     buttons = ButtonMaker()
     buttons.ibutton(
-        "Folders",
+        "ꜰᴏʟᴅᴇʀꜱ",
         f"list_types {user_id} folders {isRecursive} {user_token}"
     )
     buttons.ibutton(
-        "Files",
+        "ꜰɪʟᴇꜱ",
         f"list_types {user_id} files {isRecursive} {user_token}")
     buttons.ibutton(
-        "Both",
+        "ʙᴏᴛʜ",
         f"list_types {user_id} both {isRecursive} {user_token}")
     buttons.ibutton(
-        f"Recursive: {isRecursive}",
+        f"ʀᴇᴄᴜʀꜱɪᴠᴇ: {isRecursive}",
         f"list_types {user_id} rec {isRecursive} {user_token}",
     )
     buttons.ibutton(
-        f"User Token: {user_token}",
+        f"ᴜꜱᴇʀ\nᴛᴏᴋᴇɴ: {user_token}",
         f"list_types {user_id} ut {isRecursive} {user_token}",
     )
     buttons.ibutton(
-        "Cancel",
+        "ᴄᴀɴᴄᴇʟ",
         f"list_types {user_id} cancel")
     return buttons.build_menu(2)
 
