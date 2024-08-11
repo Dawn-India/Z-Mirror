@@ -76,8 +76,8 @@ class DbManager:
                 upsert=True
             )
         # User Data
-        if await self._db.users.find_one(): # type: ignore
-            rows = self._db.users.find({}) # type: ignore
+        if await self._db.users[bot_id].find_one(): # type: ignore
+            rows = self._db.users[bot_id].find({}) # type: ignore
             # return a dict ==> {_id, is_sudo, is_auth, as_doc, thumb, yt_opt, media_group, equal_splits, split_size, rclone, rclone_path, token_pickle, gdrive_id, leech_dest, lperfix, lprefix, excluded_extensions, user_transmission, index_url, default_upload}
             async for row in rows:
                 uid = row["_id"]
@@ -218,7 +218,7 @@ class DbManager:
             del data["rclone_config"]
         if data.get("token_pickle"):
             del data["token_pickle"]
-        await self._db.users.replace_one( # type: ignore
+        await self._db.users[bot_id].replace_one( # type: ignore
             {"_id": user_id},
             data,
             upsert=True
@@ -236,7 +236,7 @@ class DbManager:
                 doc_bin = await doc.read()
         else:
             doc_bin = ""
-        await self._db.users.update_one( # type: ignore
+        await self._db.users[bot_id].update_one( # type: ignore
             {"_id": user_id},
             {"$set": {key: doc_bin}},
             upsert=True

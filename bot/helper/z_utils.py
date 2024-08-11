@@ -53,7 +53,7 @@ async def extract_link(link, shouldDel=False):
                 link
             ).group(0).lower() # type: ignore
         elif is_gdrive_link(link):
-            raw_link = GoogleDriveHelper.getIdFromUrl(link) # type: ignore
+            raw_link = GoogleDriveHelper().getIdFromUrl(link) # type: ignore
         elif path.exists(link):
             if link.endswith(".nzb"):
                 tree = ET.parse(link)
