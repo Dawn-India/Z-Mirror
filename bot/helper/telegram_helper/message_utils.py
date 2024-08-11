@@ -411,7 +411,7 @@ async def isBot_canDm(message, dmMode, button=None):
             button = ButtonMaker()
         _msg = "You need to <b>Start</b> me in <b>DM</b>."
         button.ubutton(
-            "Start Me",
+            "ꜱᴛᴀʀᴛ\nᴍᴇ",
             f"https://t.me/{bot_name}?start=start",
             "header"
         )
@@ -579,11 +579,11 @@ async def anno_checker(message, pmsg=None):
     msg_id = message.id
     buttons = ButtonMaker()
     buttons.ibutton(
-        "Verify",
+        "ᴠᴇʀɪꜰʏ",
         f"verify admin {msg_id}"
     )
     buttons.ibutton(
-        "Cancel",
+        "ᴄᴀɴᴄᴇʟ",
         f"verify no {msg_id}"
     )
     user = None
