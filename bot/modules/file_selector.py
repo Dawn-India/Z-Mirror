@@ -302,7 +302,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         select,
         filters=command(
-            BotCommands.SelectCommand
+            BotCommands.SelectCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized
     )
 )

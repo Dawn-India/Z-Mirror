@@ -316,7 +316,8 @@ async def main():
         MessageHandler(
             log,
             filters=command(
-                BotCommands.LogCommand
+                BotCommands.LogCommand,
+                case_sensitive=True
             ) & CustomFilters.sudo
         )
     )
@@ -324,7 +325,8 @@ async def main():
         MessageHandler(
             restart,
             filters=command(
-                BotCommands.RestartCommand
+                BotCommands.RestartCommand,
+                case_sensitive=True
             ) & CustomFilters.sudo
         )
     )
@@ -332,7 +334,8 @@ async def main():
         MessageHandler(
             ping,
             filters=command(
-                BotCommands.PingCommand
+                BotCommands.PingCommand,
+                case_sensitive=True
             ) & CustomFilters.sudo
         )
     )
@@ -340,7 +343,8 @@ async def main():
         MessageHandler(
             bot_help,
             filters=command(
-                BotCommands.HelpCommand
+                BotCommands.HelpCommand,
+                case_sensitive=True
             ) & CustomFilters.authorized,
         )
     )

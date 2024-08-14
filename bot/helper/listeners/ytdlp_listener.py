@@ -3,13 +3,8 @@ from functools import partial
 from asyncio import (
     Event,
     wait_for,
-    wrap_future
 )
 
-from bot.helper.ext_utils.bot_utils import (
-    new_task,
-    new_thread
-)
 from bot.helper.ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time
@@ -33,7 +28,6 @@ from httpx import AsyncClient
 from yt_dlp import YoutubeDL
 
 
-@new_task
 async def select_format(_, query, obj):
     data = query.data.split()
     message = query.message
@@ -92,7 +86,6 @@ class YtSelection:
         self.qual = None
         self.tag = listener.tag
 
-    @new_thread
     async def _event_handler(self):
         pfunc = partial(
             select_format,
@@ -130,7 +123,6 @@ class YtSelection:
                 await delete_links(self.listener.message)
 
     async def get_quality(self, result):
-        future = self._event_handler()
         buttons = ButtonMaker()
         if "entries" in result:
             self._is_playlist = True
@@ -278,7 +270,7 @@ class YtSelection:
             msg,
             self._main_buttons
         )
-        await wrap_future(future) # type: ignore
+        await self._event_handler()
         if not self.listener.isCancelled:
             await deleteMessage(self._reply_to)
         return self.qual

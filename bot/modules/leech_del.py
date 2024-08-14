@@ -108,7 +108,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         delete_leech,
         filters=command(
-            f"leech{BotCommands.DeleteCommand}"
+            f"leech{BotCommands.DeleteCommand}",
+            case_sensitive=True
         ) & CustomFilters.sudo
     )
 )

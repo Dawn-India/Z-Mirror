@@ -92,7 +92,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         countNode,
         filters=command(
-            BotCommands.CountCommand
+            BotCommands.CountCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized
     )
 )

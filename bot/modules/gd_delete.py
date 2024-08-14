@@ -54,7 +54,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         deletefile,
         filters=command(
-            BotCommands.DeleteCommand
+            BotCommands.DeleteCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )

@@ -19,7 +19,9 @@ from os import (
 )
 from pyrogram.errors import (
     FloodWait,
-    RPCError
+    FloodPremiumWait,
+    RPCError,
+    SlowmodeWait
 )
 from pyrogram.types import (
     InputMediaVideo,
@@ -810,7 +812,11 @@ class TgUploader:
                 and await aiopath.exists(thumb)
             ):
                 await remove(thumb)
-        except FloodWait as f:
+        except (
+            FloodWait,
+            FloodPremiumWait,
+            SlowmodeWait
+        ) as f:
             LOGGER.warning(str(f))
             await sleep(f.value * 1.3) # type: ignore
             if (

@@ -234,7 +234,10 @@ def direct_link_generator(link):
 
 def get_captcha_token(session, params):
     recaptcha_api = "https://www.google.com/recaptcha/api2"
-    res = session.get(f"{recaptcha_api}/anchor", params=params)
+    res = session.get(
+        f"{recaptcha_api}/anchor",
+        params=params
+    )
     anchor_html = HTML(res.text)
     if not (anchor_token := anchor_html.xpath('//input[@id="recaptcha-token"]/@value')):
         return

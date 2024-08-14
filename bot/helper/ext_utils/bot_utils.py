@@ -5,7 +5,6 @@ from asyncio import (
     sleep,
 )
 from asyncio.subprocess import PIPE
-from concurrent.futures import ThreadPoolExecutor
 from functools import partial, wraps
 
 from pyrogram.types import BotCommand
@@ -25,8 +24,6 @@ from bot.helper.ext_utils.help_messages import (
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.bot_commands import BotCommands
-
-THREADPOOL = ThreadPoolExecutor(max_workers=1000)
 
 COMMAND_USAGE = {}
 
@@ -210,10 +207,6 @@ async def set_commands(client):
             BotCommand(
                 f"{BotCommands.StatsCommand[0]}",
                 "ᴄʜᴇᴄᴋ ʙᴏᴛ ꜱᴛᴀᴛꜱ"
-            ),
-            BotCommand(
-                f"{BotCommands.SelectCommand}",
-                "ꜱᴇʟᴇᴄᴛ ꜰɪʟᴇꜱ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ"
             ),
             BotCommand(
                 f"{BotCommands.CancelTaskCommand[0]}",
@@ -435,7 +428,7 @@ async def sync_to_async(func, *args, wait=True, **kwargs):
         **kwargs
     )
     future = bot_loop.run_in_executor(
-        THREADPOOL,
+        None,
         pfunc
     )
     return (

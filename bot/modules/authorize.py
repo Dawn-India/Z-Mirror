@@ -147,7 +147,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         authorize,
         filters=command(
-            BotCommands.AuthorizeCommand
+            BotCommands.AuthorizeCommand,
+            case_sensitive=True
         ) & CustomFilters.sudo
     )
 )
@@ -155,7 +156,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         unauthorize,
         filters=command(
-            BotCommands.UnAuthorizeCommand
+            BotCommands.UnAuthorizeCommand,
+            case_sensitive=True
         ) & CustomFilters.sudo,
     )
 )
@@ -163,7 +165,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         addSudo,
         filters=command(
-            BotCommands.AddSudoCommand
+            BotCommands.AddSudoCommand,
+            case_sensitive=True
         ) & CustomFilters.sudo
     )
 )
@@ -171,7 +174,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         removeSudo,
         filters=command(
-            BotCommands.RmSudoCommand
+            BotCommands.RmSudoCommand,
+            case_sensitive=True
         ) & CustomFilters.sudo
     )
 )

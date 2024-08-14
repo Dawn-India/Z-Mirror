@@ -233,15 +233,20 @@ class TaskConfig:
         )
 
     async def isTokenExists(self, path, status):
+        if not self.upDest:
+            raise ValueError("No Upload Destination!")
+        if (
+            not is_gdrive_id(self.upDest) # type: ignore
+            and not is_rclone_path(self.upDest) # type: ignore
+        ):
+            raise ValueError("Wrong Upload Destination!")
         if is_rclone_path(path):
             config_path = self.getConfigPath(path)
-
             if (
                 config_path != "rclone.conf"
                 and status == "up"
             ):
                 self.privateLink = True
-
             if not await aiopath.exists(config_path):
                 raise ValueError(f"Rclone Config: {config_path} not Exists!")
 
@@ -401,6 +406,11 @@ class TaskConfig:
             if (
                 not self.isYtDlp
                 and not self.isJd
+                and (
+                    is_gdrive_id(self.link)
+                    or is_rclone_path(self.link)
+                    or is_gdrive_link(self.link)
+                )
             ):
                 await self.isTokenExists(
                     self.link,
@@ -467,13 +477,6 @@ class TaskConfig:
                     self.userDict.get("gdrive_id")
                     or config_dict["GDRIVE_ID"]
                 )
-            if not self.upDest:
-                raise ValueError("No Upload Destination!")
-            if (
-                not is_gdrive_id(str(self.upDest))
-                and not is_rclone_path(str(self.upDest))
-            ):
-                raise ValueError("Wrong Upload Destination!")
             if (
                 self.upDest
                 not in [

@@ -518,7 +518,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         torrentSearch,
         filters=command(
-            BotCommands.SearchCommand
+            BotCommands.SearchCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )

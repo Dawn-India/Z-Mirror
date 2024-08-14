@@ -175,7 +175,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         aioexecute,
         filters=command(
-            BotCommands.AExecCommand
+            BotCommands.AExecCommand,
+            case_sensitive=True
         ) & CustomFilters.owner
     )
 )
@@ -183,7 +184,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         execute,
         filters=command(
-            BotCommands.ExecCommand
+            BotCommands.ExecCommand,
+            case_sensitive=True
         ) & CustomFilters.owner
     )
 )
@@ -191,7 +193,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         clear,
         filters=command(
-            BotCommands.ClearLocalsCommand
+            BotCommands.ClearLocalsCommand,
+            case_sensitive=True
         ) & CustomFilters.owner
     )
 )

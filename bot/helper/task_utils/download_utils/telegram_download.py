@@ -3,7 +3,10 @@ from asyncio import (
     sleep
 )
 from time import time
-from pyrogram.errors import FloodWait
+from pyrogram.errors import (
+    FloodWait,
+    FloodPremiumWait
+)
 
 from bot import (
     config_dict,
@@ -15,10 +18,16 @@ from bot import (
     bot,
     user,
 )
-from bot.helper.ext_utils.task_manager import check_running_tasks, stop_duplicate_check
+from bot.helper.ext_utils.task_manager import (
+    check_running_tasks,
+    stop_duplicate_check
+)
 from bot.helper.task_utils.status_utils.queue_status import QueueStatus
 from bot.helper.task_utils.status_utils.telegram_status import TelegramStatus
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage
+from bot.helper.telegram_helper.message_utils import (
+    sendMessage,
+    sendStatusMessage
+)
 
 global_lock = Lock()
 GLOBAL_GID = set()
@@ -89,7 +98,11 @@ class TelegramDownloadHelper:
             if self._listener.isCancelled:
                 await self._onDownloadError("Cancelled by user!")
                 return
-        except FloodWait as f:
+        
+        except (
+            FloodWait,
+            FloodPremiumWait
+        ) as f:
             LOGGER.warning(str(f))
             await sleep(f.value) # type: ignore
         except Exception as e:

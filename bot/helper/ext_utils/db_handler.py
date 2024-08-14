@@ -51,7 +51,6 @@ class DbManager:
             )
         except Exception as e:
             LOGGER.error(f"DataBase Collection Error: {e}")
-            self._conn.close # type: ignore
             return
         # Save Aria2c options
         if await self._db.settings.aria2c.find_one({"_id": bot_id}) is None: # type: ignore
@@ -121,7 +120,6 @@ class DbManager:
                 user_id = row["_id"]
                 del row["_id"]
                 rss_dict[user_id] = row
-        self._conn.close # type: ignore
 
     async def update_deploy_config(self):
         if self._err:
@@ -132,7 +130,6 @@ class DbManager:
             current_config,
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def update_config(self, dict_):
         if self._err:
@@ -142,7 +139,6 @@ class DbManager:
             {"$set": dict_},
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def update_aria2(self, key, value):
         if self._err:
@@ -152,7 +148,6 @@ class DbManager:
             {"$set": {key: value}},
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def update_qbittorrent(self, key, value):
         if self._err:
@@ -162,7 +157,6 @@ class DbManager:
             {"$set": {key: value}},
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def save_qbit_settings(self):
         if self._err:
@@ -172,7 +166,6 @@ class DbManager:
             qbit_options,
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def update_private_file(self, path):
         if self._err:
@@ -190,8 +183,6 @@ class DbManager:
         )
         if path == "config.env":
             await self.update_deploy_config()
-        else:
-            self._conn.close # type: ignore
 
     async def update_nzb_config(self):
         async with aiopen(
@@ -223,7 +214,6 @@ class DbManager:
             data,
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def update_user_doc(self, user_id, key, path=""):
         if self._err:
@@ -241,7 +231,6 @@ class DbManager:
             {"$set": {key: doc_bin}},
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def rss_update_all(self):
         if self._err:
@@ -252,7 +241,6 @@ class DbManager:
                 rss_dict[user_id],
                 upsert=True
             )
-        self._conn.close # type: ignore
 
     async def rss_update(self, user_id):
         if self._err:
@@ -262,13 +250,11 @@ class DbManager:
             rss_dict[user_id],
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def rss_delete(self, user_id):
         if self._err:
             return
         await self._db.rss[bot_id].delete_one({"_id": user_id}) # type: ignore
-        self._conn.close # type: ignore
 
     async def add_incomplete_task(self, cid, link, tag):
         if self._err:
@@ -280,13 +266,11 @@ class DbManager:
                 "tag": tag
             }
         )
-        self._conn.close # type: ignore
 
     async def rm_complete_task(self, link):
         if self._err:
             return
         await self._db.tasks[bot_id].delete_one({"_id": link}) # type: ignore
-        self._conn.close # type: ignore
 
     async def get_incomplete_tasks(self):
         notifier_dict = {}
@@ -304,14 +288,12 @@ class DbManager:
                 else:
                     notifier_dict[row["cid"]] = {row["tag"]: [row["_id"]]}
         await self._db.tasks[bot_id].drop() # type: ignore
-        self._conn.close # type: ignore
         return notifier_dict  # return a dict ==> {cid: {tag: [_id, _id, ...]}}
 
     async def trunc_table(self, name):
         if self._err:
             return
         await self._db[name][bot_id].drop() # type: ignore
-        self._conn.close # type: ignore
 
     async def add_download_url(self, url: str, tag: str):
         if self._err:
@@ -326,13 +308,11 @@ class DbManager:
             {"$set": download},
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def check_download(self, url: str):
         if self._err:
             return
         exist = await self._db.download_links.find_one({"_id": url}) # type: ignore
-        self._conn.close # type: ignore
         return exist
 
     async def clear_download_links(self, botName=None):
@@ -341,13 +321,11 @@ class DbManager:
         if not botName:
             botName = bot_name
         await self._db.download_links.delete_many({"botname": botName}) # type: ignore
-        self._conn.close # type: ignore
 
     async def remove_download(self, url: str):
         if self._err:
             return
         await self._db.download_links.delete_one({"_id": url}) # type: ignore
-        self._conn.close # type: ignore
 
     async def update_user_tdata(self, user_id, token, time):
         if self._err:
@@ -357,7 +335,6 @@ class DbManager:
             {"$set": {"token": token, "time": time}},
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def update_user_token(self, user_id, token, inittime):
         if self._err:
@@ -367,7 +344,6 @@ class DbManager:
             {"$set": {"token": token, "inittime": inittime}},
             upsert=True
         )
-        self._conn.close # type: ignore
 
     async def get_token_expire_time(self, user_id):
         if self._err:
@@ -375,7 +351,6 @@ class DbManager:
         user_data = await self._db.access_token.find_one({"_id": user_id}) # type: ignore
         if user_data:
             return user_data.get("time")
-        self._conn.close # type: ignore
         return None
 
     async def get_user_token(self, user_id):
@@ -384,7 +359,6 @@ class DbManager:
         user_data = await self._db.access_token.find_one({"_id": user_id}) # type: ignore
         if user_data:
             return user_data.get("token")
-        self._conn.close # type: ignore
         return None
 
     async def get_token_init_time(self, user_id):
@@ -393,11 +367,9 @@ class DbManager:
         user_data = await self._db.access_token.find_one({"_id": user_id}) # type: ignore
         if user_data:
             return user_data.get("inittime")
-        self._conn.close # type: ignore
         return None
 
     async def delete_all_access_tokens(self):
         if self._err:
             return
         await self._db.access_token.delete_many({}) # type: ignore
-        self._conn.close # type: ignore

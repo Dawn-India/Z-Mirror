@@ -122,7 +122,8 @@ if DATABASE_URL:
         MessageHandler(
             rmdbNode,
             filters=command(
-                BotCommands.RmdbCommand
+                BotCommands.RmdbCommand,
+                case_sensitive=True
             ) & CustomFilters.sudo
         )
     )
@@ -130,7 +131,8 @@ if DATABASE_URL:
         MessageHandler(
             rmAllTokens,
             filters=command(
-                BotCommands.RmalltokensCommand
+                BotCommands.RmalltokensCommand,
+                case_sensitive=True
             ) & CustomFilters.sudo
         )
     )

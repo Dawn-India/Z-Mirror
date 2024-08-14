@@ -16,6 +16,7 @@ from os import path, environ, remove
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from subprocess import run as srun
+from sys import exit
 
 getLogger("pymongo").setLevel(ERROR)
 

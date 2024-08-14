@@ -239,7 +239,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         gdrive_search,
         filters=command(
-            BotCommands.ListCommand
+            BotCommands.ListCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )

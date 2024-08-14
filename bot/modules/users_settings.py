@@ -1,26 +1,24 @@
+from asyncio import gather
 from aiofiles.os import (
     remove,
     path as aiopath,
     makedirs
 )
-from asyncio import sleep
-from functools import partial
 from html import escape
 from io import BytesIO
 from math import ceil
 from os import getcwd, path as os_path
-from pyrogram.filters import (
-    command,
-    regex,
-    create
-)
+from pyrogram import filters
 from pyrogram.handlers import (
     MessageHandler,
     CallbackQueryHandler
 )
 from pyrogram.types import InputMediaPhoto
 from re import search as re_search
-from time import time
+from pyrogram.errors import (
+    ListenerTimeout,
+    ListenerStopped
+)
 
 from bot import (
     bot,
@@ -32,10 +30,7 @@ from bot import (
     MAX_SPLIT_SIZE,
     GLOBAL_EXTENSION_FILTER,
 )
-from bot.helper.ext_utils.bot_utils import (
-    update_user_ldata,
-    new_thread,
-)
+from bot.helper.ext_utils.bot_utils import update_user_ldata
 from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.ext_utils.media_utils import createThumb
 from bot.helper.ext_utils.status_utils import get_readable_file_size
@@ -51,8 +46,6 @@ from bot.helper.telegram_helper.message_utils import (
     deleteMessage,
 )
 from bot.helper.z_utils import def_media
-
-handler_dict = {}
 
 
 async def get_user_settings(from_user):
@@ -400,13 +393,15 @@ async def update_user_settings(query):
     )
 
 
-@new_thread
-async def user_settings(_, message):
+async def user_settings(client, message):
+    await client.stop_listening(
+        chat_id=message.chat.id,
+        user_id=message.from_user.id
+    )
     from_user = message.from_user
     if not from_user:
         from_user = await anno_checker(message)
     user_id = from_user.id
-    handler_dict[user_id] = False
     msg, button = await get_user_settings(from_user)
     media = (
         f"Thumbnails/{user_id}.jpg"
@@ -424,9 +419,8 @@ async def user_settings(_, message):
     )
 
 
-async def set_thumb(_, message, pre_event):
+async def set_thumb(message):
     user_id = message.from_user.id
-    handler_dict[user_id] = False
     des_dir = await createThumb(
         message,
         user_id
@@ -437,7 +431,6 @@ async def set_thumb(_, message, pre_event):
         des_dir
     )
     await deleteMessage(message)
-    await update_user_settings(pre_event)
     if DATABASE_URL:
         await DbManager().update_user_doc(
             user_id,
@@ -446,9 +439,8 @@ async def set_thumb(_, message, pre_event):
         )
 
 
-async def add_rclone(_, message, pre_event):
+async def add_rclone(message):
     user_id = message.from_user.id
-    handler_dict[user_id] = False
     rpath = f"{getcwd()}/rclone/"
     await makedirs(rpath, exist_ok=True)
     des_dir = f"{rpath}{user_id}.conf"
@@ -459,7 +451,6 @@ async def add_rclone(_, message, pre_event):
         f"rclone/{user_id}.conf"
     )
     await deleteMessage(message)
-    await update_user_settings(pre_event)
     if DATABASE_URL:
         await DbManager().update_user_doc(
             user_id,
@@ -468,9 +459,8 @@ async def add_rclone(_, message, pre_event):
         )
 
 
-async def add_token_pickle(_, message, pre_event):
+async def add_token_pickle(message):
     user_id = message.from_user.id
-    handler_dict[user_id] = False
     tpath = f"{getcwd()}/tokens/"
     await makedirs(tpath, exist_ok=True)
     des_dir = f"{tpath}{user_id}.pickle"
@@ -481,7 +471,6 @@ async def add_token_pickle(_, message, pre_event):
         f"tokens/{user_id}.pickle"
     )
     await deleteMessage(message)
-    await update_user_settings(pre_event)
     if DATABASE_URL:
         await DbManager().update_user_doc(
             user_id,
@@ -490,9 +479,8 @@ async def add_token_pickle(_, message, pre_event):
         )
 
 
-async def delete_path(_, message, pre_event):
+async def delete_path(message):
     user_id = message.from_user.id
-    handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
     names = message.text.split()
     for name in names:
@@ -505,7 +493,6 @@ async def delete_path(_, message, pre_event):
         new_value
     )
     await deleteMessage(message)
-    await update_user_settings(pre_event)
     if DATABASE_URL:
         await DbManager().update_user_doc(
             user_id,
@@ -514,9 +501,8 @@ async def delete_path(_, message, pre_event):
         )
 
 
-async def set_option(_, message, pre_event, option):
+async def set_option(message, option):
     user_id = message.from_user.id
-    handler_dict[user_id] = False
     value = message.text
     if option == "split_size":
         if re_search(r"[a-zA-Z]", value):
@@ -528,7 +514,6 @@ async def set_option(_, message, pre_event, option):
                 message,
                 smsg
             )
-            await update_user_settings(pre_event)
             return
         value = min(
             ceil(float(value) * 1024 ** 3),
@@ -559,7 +544,6 @@ async def set_option(_, message, pre_event, option):
                     message,
                     smsg
                 )
-                await update_user_settings(pre_event)
                 return
             (
                 name,
@@ -573,61 +557,42 @@ async def set_option(_, message, pre_event, option):
         value
     )
     await deleteMessage(message)
-    await update_user_settings(pre_event)
     if DATABASE_URL:
         await DbManager().update_user_data(user_id)
 
 
-async def event_handler(client, query, pfunc, photo=False, document=False):
-    user_id = query.from_user.id
-    handler_dict[user_id] = True
-    start_time = time()
-
-    async def event_filter(_, __, event):
-        if photo:
-            mtype = event.photo
-        elif document:
-            mtype = event.document
-        else:
-            mtype = event.text
-        user = (
-            event.from_user or
-            event.sender_chat
-        )
-        return bool(
-            user.id == user_id
-            and event.chat.id == query.message.chat.id
-            and mtype
-        )
-
-    handler = client.add_handler(
-        MessageHandler(
-            pfunc,
-            filters=create(event_filter)
-        ),
-        group=-1
+async def event_handler(client, query, photo=False, document=False):
+    if photo:
+        event_filter = filters.photo
+    elif document:
+        event_filter = filters.document
+    else:
+        event_filter = filters.text
+    return await client.listen(
+        chat_id=query.message.chat.id,
+        user_id=query.from_user.id,
+        filters=event_filter,
+        timeout=60,
     )
 
-    while handler_dict[user_id]:
-        await sleep(0.5)
-        if time() - start_time > 60:
-            handler_dict[user_id] = False
-            await update_user_settings(query)
-    client.remove_handler(*handler)
 
-
-@new_thread
 async def edit_user_settings(client, query):
     from_user = query.from_user
     user_id = from_user.id
     name = from_user.mention
     message = query.message
     data = query.data.split()
-    handler_dict[user_id] = False
     thumb_path = f"Thumbnails/{user_id}.jpg"
     rclone_conf = f"rclone/{user_id}.conf"
     token_pickle = f"tokens/{user_id}.pickle"
-    user_dict = user_data.get(user_id, {})
+    user_dict = user_data.get(
+        user_id,
+        {}
+    )
+    await client.stop_listening(
+        chat_id=message.chat.id,
+        user_id=query.from_user.id
+    )
     if user_id != int(data[1]):
         await query.answer(
             "Not Yours!",
@@ -1090,16 +1055,21 @@ async def edit_user_settings(client, query):
             "Send a photo to save it as custom thumbnail. Timeout: 60 sec",
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_thumb,
-            pre_event=query
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc,
-            True
-        )
+        try:
+            event = await event_handler(
+                client,
+                query,
+                True
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_thumb(event),
+                update_user_settings(query)
+            )
     elif data[2] == "yto":
         await query.answer()
         buttons = ButtonMaker()
@@ -1137,16 +1107,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             rmsg,
             buttons.build_menu(2)
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="yt_opt"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "yt_opt"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "lss":
         await query.answer()
         buttons = ButtonMaker()
@@ -1175,16 +1152,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             sp_msg,
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="split_size"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "split_size"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "rcc":
         await query.answer()
         buttons = ButtonMaker()
@@ -1208,16 +1192,21 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             "Send rclone.conf. Timeout: 60 sec",
             buttons.build_menu(2)
         )
-        pfunc = partial(
-            add_rclone,
-            pre_event=query
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc,
-            document=True
-        )
+        try:
+            event = await event_handler(
+                client,
+                query,
+                document=True
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                add_rclone(event),
+                update_user_settings(query)
+            )
     elif data[2] == "rcp":
         await query.answer()
         buttons = ButtonMaker()
@@ -1245,16 +1234,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             rmsg,
             buttons.build_menu(2)
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="rclone_path"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "rclone_path"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "token":
         await query.answer()
         buttons = ButtonMaker()
@@ -1278,16 +1274,21 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             "Send token.pickle.\n\nTimeout: 60 sec",
             buttons.build_menu(2)
         )
-        pfunc = partial(
-            add_token_pickle,
-            pre_event=query
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc,
-            document=True
-        )
+        try:
+            event = await event_handler(
+                client,
+                query,
+                document=True
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                add_token_pickle(event),
+                update_user_settings(query)
+            )
     elif data[2] == "gdid":
         await query.answer()
         buttons = ButtonMaker()
@@ -1315,16 +1316,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             rmsg,
             buttons.build_menu(2)
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="gdrive_id"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "gdrive_id"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "index":
         await query.answer()
         buttons = ButtonMaker()
@@ -1352,16 +1360,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             rmsg,
             buttons.build_menu(2)
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="index_url"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "index_url"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "leech_prefix":
         await query.answer()
         buttons = ButtonMaker()
@@ -1392,16 +1407,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             "Send Leech Filename Prefix.\nYou can add HTML tags.\n\nTimeout: 60 sec",
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="lprefix"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "lprefix"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "leech_suffix":
         await query.answer()
         buttons = ButtonMaker()
@@ -1432,16 +1454,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             "Send Leech Filename Suffix.\nYou can add HTML tags.\n\nTimeout: 60 sec",
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="lsuffix"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "lsuffix"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "leech_cap_font":
         await query.answer()
         buttons = ButtonMaker()
@@ -1487,16 +1516,23 @@ Timeout: 60 sec
             msg,
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="lcapfont"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "lcapfont"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "ldest":
         await query.answer()
         buttons = ButtonMaker()
@@ -1527,16 +1563,23 @@ Timeout: 60 sec
             "Send leech destination\nID or USERNAME or PM.\n\nTimeout: 60 sec",
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="leech_dest"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "leech_dest"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "ex_ex":
         await query.answer()
         buttons = ButtonMaker()
@@ -1570,16 +1613,23 @@ Timeout: 60 sec
             ex_msg,
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="excluded_extensions"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "excluded_extensions"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "name_substitute":
         await query.answer()
         buttons = ButtonMaker()
@@ -1624,16 +1674,23 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
             emsg,
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="name_sub"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "name_sub"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] in [
         "gd",
         "rc"
@@ -1708,16 +1765,23 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
             ),
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            set_option,
-            pre_event=query,
-            option="upload_paths"
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "upload_paths"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "rm_path":
         await query.answer()
         buttons = ButtonMaker()
@@ -1736,15 +1800,20 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
             "Send paths names which you want to delete, separated by space.\n\nTimeout: 60 sec",
             buttons.build_menu(2),
         )
-        pfunc = partial(
-            delete_path,
-            pre_event=query
-        )
-        await event_handler(
-            client,
-            query,
-            pfunc
-        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                delete_path(event),
+                update_user_settings(query)
+            )
     elif data[2] == "show_path":
         await query.answer()
         buttons = ButtonMaker()
@@ -1843,22 +1912,24 @@ async def send_users_settings(_, message):
 bot.add_handler( # type: ignore
     MessageHandler(
         send_users_settings,
-        filters=command(
-            BotCommands.UsersCommand
+        filters=filters.command(
+            BotCommands.UsersCommand,
+            case_sensitive=True
         ) & CustomFilters.sudo,
     )
 )
 bot.add_handler( # type: ignore
     MessageHandler(
         user_settings,
-        filters=command(
-            BotCommands.UserSetCommand
+        filters=filters.command(
+            BotCommands.UserSetCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )
 bot.add_handler( # type: ignore
     CallbackQueryHandler(
         edit_user_settings,
-        filters=regex("^userset")
+        filters=filters.regex("^userset")
     )
 )

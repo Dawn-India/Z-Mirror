@@ -374,7 +374,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         cancel_task,
         filters=command(
-            BotCommands.CancelTaskCommand
+            BotCommands.CancelTaskCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )
@@ -390,7 +391,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         cancell_all_buttons,
         filters=command(
-            BotCommands.CancelAllCommand
+            BotCommands.CancelAllCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )

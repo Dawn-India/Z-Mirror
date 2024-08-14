@@ -350,7 +350,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         ytdl,
         filters=command(
-            BotCommands.YtdlCommand
+            BotCommands.YtdlCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized
     )
 )
@@ -359,7 +360,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         ytdlleech,
         filters=command(
-            BotCommands.YtdlLeechCommand
+            BotCommands.YtdlLeechCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )

@@ -2,7 +2,6 @@ from asyncio import (
     Event,
     sleep,
     wait_for,
-    wrap_future,
 )
 from functools import partial
 from pyrogram.filters import (
@@ -24,11 +23,7 @@ from bot import (
     jd_lock,
     jd_downloads,
 )
-from bot.helper.ext_utils.bot_utils import (
-    new_thread,
-    retry_function,
-    new_task
-)
+from bot.helper.ext_utils.bot_utils import retry_function
 from bot.helper.ext_utils.jdownloader_booter import jdownloader
 from bot.helper.ext_utils.task_manager import (
     check_running_tasks,
@@ -51,7 +46,6 @@ from bot.helper.telegram_helper.message_utils import (
 )
 
 
-@new_task
 async def configureDownload(_, query, obj):
     data = query.data.split()
     message = query.message
@@ -74,7 +68,6 @@ class JDownloaderHelper:
         self.listener = listener
         self.event = Event()
 
-    @new_thread
     async def _event_handler(self):
         pfunc = partial(
             configureDownload,
@@ -108,7 +101,6 @@ class JDownloaderHelper:
             self.listener.client.remove_handler(*handler)
 
     async def waitForConfigurations(self):
-        future = self._event_handler()
         buttons = ButtonMaker()
         buttons.ubutton(
             "Select",
@@ -131,7 +123,7 @@ class JDownloaderHelper:
             msg,
             button
         )
-        await wrap_future(future) # type: ignore
+        await self._event_handler()
         if not self.listener.isCancelled:
             await deleteMessage(self._reply_to)
         return self.listener.isCancelled

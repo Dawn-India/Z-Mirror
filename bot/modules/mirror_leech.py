@@ -603,7 +603,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         mirror,
         filters=command(
-            BotCommands.MirrorCommand
+            BotCommands.MirrorCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized
     )
 )
@@ -611,7 +612,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         qb_mirror,
         filters=command(
-            BotCommands.QbMirrorCommand
+            BotCommands.QbMirrorCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )
@@ -619,7 +621,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         jd_mirror,
         filters=command(
-            BotCommands.JdMirrorCommand
+            BotCommands.JdMirrorCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )
@@ -627,7 +630,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         nzb_mirror,
         filters=command(
-            BotCommands.NzbMirrorCommand
+            BotCommands.NzbMirrorCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )
@@ -635,7 +639,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         leech,
         filters=command(
-            BotCommands.LeechCommand
+            BotCommands.LeechCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized
     )
 )
@@ -643,7 +648,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         qb_leech,
         filters=command(
-            BotCommands.QbLeechCommand
+            BotCommands.QbLeechCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized
     )
 )
@@ -651,7 +657,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         jd_leech,
         filters=command(
-            BotCommands.JdLeechCommand
+            BotCommands.JdLeechCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized
     )
 )
@@ -659,7 +666,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         nzb_leech,
         filters=command(
-            BotCommands.NzbLeechCommand
+            BotCommands.NzbLeechCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )

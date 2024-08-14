@@ -22,7 +22,7 @@ from shutil import (
     rmtree
 )
 from subprocess import run as srun
-from sys import exit as sexit
+from sys import exit
 
 from bot import (
     aria2,
@@ -156,10 +156,10 @@ def exit_clean_up(signal, frame):
             "-f",
             "gunicorn|aria2c|qbittorrent-nox|ffmpeg|java"
         ])
-        sexit(0)
+        exit(0)
     except KeyboardInterrupt:
         LOGGER.warning("Force Exiting before the cleanup finishes!")
-        sexit(1)
+        exit(1)
 
 
 async def clean_unwanted(path, custom_list=None):

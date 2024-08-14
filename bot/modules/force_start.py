@@ -140,7 +140,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         remove_from_queue,
         filters=command(
-            BotCommands.ForceStartCommand
+            BotCommands.ForceStartCommand,
+            case_sensitive=True
         ) & CustomFilters.authorized,
     )
 )

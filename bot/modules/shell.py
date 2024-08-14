@@ -66,7 +66,8 @@ bot.add_handler( # type: ignore
     MessageHandler(
         shell,
         filters=command(
-            BotCommands.ShellCommand
+            BotCommands.ShellCommand,
+            case_sensitive=True
         ) & CustomFilters.owner
     )
 )
@@ -74,7 +75,8 @@ bot.add_handler( # type: ignore
     EditedMessageHandler(
         shell,
         filters=command(
-            BotCommands.ShellCommand
+            BotCommands.ShellCommand,
+            case_sensitive=True
         ) & CustomFilters.owner
     )
 )
