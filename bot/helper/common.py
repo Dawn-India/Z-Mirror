@@ -233,13 +233,6 @@ class TaskConfig:
         )
 
     async def isTokenExists(self, path, status):
-        if not self.upDest:
-            raise ValueError("No Upload Destination!")
-        if (
-            not is_gdrive_id(self.upDest) # type: ignore
-            and not is_rclone_path(self.upDest) # type: ignore
-        ):
-            raise ValueError("Wrong Upload Destination!")
         if is_rclone_path(path):
             config_path = self.getConfigPath(path)
             if (
@@ -477,6 +470,13 @@ class TaskConfig:
                     self.userDict.get("gdrive_id")
                     or config_dict["GDRIVE_ID"]
                 )
+            if not self.upDest:
+                raise ValueError("No Upload Destination!")
+            if (
+                not is_gdrive_id(str(self.upDest))
+                and not is_rclone_path(str(self.upDest))
+            ):
+                raise ValueError("Wrong Upload Destination!")
             if (
                 self.upDest
                 not in [
