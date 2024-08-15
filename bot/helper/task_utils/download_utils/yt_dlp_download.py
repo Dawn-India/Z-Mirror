@@ -24,6 +24,7 @@ from bot.helper.ext_utils.bot_utils import (
 from bot.helper.ext_utils.task_manager import (
     check_running_tasks,
     limit_checker,
+    list_checker,
     stop_duplicate_check
 )
 from bot.helper.task_utils.status_utils.queue_status import QueueStatus
@@ -400,6 +401,17 @@ class YoutubeDLHelper:
                 f"Yt-Dlp Limit Exceeded: {self._listener.name} | {get_readable_file_size(self._listener.size)} | {self.playlist_count}"
             )
             ymsg = await self._listener.onDownloadError(limit_exceeded)
+            await delete_links(self._listener.message)
+            await auto_delete_message(
+                self._listener.message,
+                ymsg
+            )
+            return
+        if list_exceeded := await list_checker(self._listener):
+            LOGGER.info(
+                f"Yt-Dlp Limit Exceeded: {self._listener.name} | {get_readable_file_size(self._listener.size)} | {self.playlist_count}"
+            )
+            ymsg = await self._listener.onDownloadError(list_exceeded)
             await delete_links(self._listener.message)
             await auto_delete_message(
                 self._listener.message,

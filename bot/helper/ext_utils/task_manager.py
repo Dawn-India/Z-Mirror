@@ -260,6 +260,18 @@ async def check_user_tasks(user_id, maxtask):
     return len(all_tasks) >= maxtask
 
 
+async def list_checker(listener):
+    try:
+        if await isAdmin(listener.message):
+            return
+    except Exception as e:
+        LOGGER.error(f"Error while checking if the user is Admin: {e}")
+    if listener.is_playlist:
+        if PLAYLIST_LIMIT := config_dict["PLAYLIST_LIMIT"]:
+            if listener.playlist_count > PLAYLIST_LIMIT:
+                return f"Playlist limit is {PLAYLIST_LIMIT}\n⚠ Your Playlist has {listener.playlist_count} items."
+
+
 async def limit_checker(
         listener,
         isTorrent=False,

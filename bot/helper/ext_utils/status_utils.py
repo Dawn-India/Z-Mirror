@@ -393,10 +393,10 @@ async def get_readable_message(
     button = buttons.build_menu(8)
     msg += (
         "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-        f"<b>ᴄᴘᴜ</b>: {cpu_percent()}% | "
-        f"<b>ꜰʀᴇᴇ</b>: {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}\n"
-        f"<b>ʀᴀᴍ</b>: {virtual_memory().percent}% | "
-        f"<b>ᴜᴘᴛᴍ</b>: {get_readable_time(time() - botStartTime)}"
+        f"<b>CPU</b>: {cpu_percent()}% | "
+        f"<b>FREE</b>: {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}\n"
+        f"<b>RAM</b>: {virtual_memory().percent}% | "
+        f"<b>UPTM</b>: {get_readable_time(time() - botStartTime)}"
     )
     return (
         msg,
