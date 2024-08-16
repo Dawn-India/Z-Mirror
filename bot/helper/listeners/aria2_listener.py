@@ -127,7 +127,7 @@ async def _onDownloadStarted(api, gid):
             start_time = time()
             total_speed = 0
             count = 0
-            while time() - start_time < 600:
+            while time() - start_time < 1800:
                 await sync_to_async(download.update)
                 dl_speed = download.download_speed
                 total_speed += dl_speed

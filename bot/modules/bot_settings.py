@@ -289,7 +289,7 @@ async def get_buttons(key=None, edit_type=None):
         )
         msg = """
 Send private file: config.env, token.pickle, rclone.conf, accounts.zip,
-list_drives.txt, cookies.txt, terabox.txt, .netrc or any other private file!
+list_drives.txt, cookies.txt, .netrc or any other private file!
 
 To delete private file send only the file name as text message.
 Note: Changing .netrc will not take effect for aria2c until restart.
