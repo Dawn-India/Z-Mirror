@@ -231,7 +231,10 @@ class YtSelection:
                     tbr_dict
                 ) in self.formats.items():
                     if len(tbr_dict) == 1:
-                        tbr, v_list = next(iter(tbr_dict.items()))
+                        (
+                            tbr,
+                            v_list
+                        ) = next(iter(tbr_dict.items()))
                         buttonName = f"{b_name} ({get_readable_file_size(v_list[0])})"
                         buttons.ibutton(
                             buttonName,
@@ -289,7 +292,10 @@ class YtSelection:
     async def qual_subbuttons(self, b_name):
         buttons = ButtonMaker()
         tbr_dict = self.formats[b_name]
-        for tbr, d_data in tbr_dict.items():
+        for (
+            tbr,
+            d_data
+        ) in tbr_dict.items():
             button_name = f"{tbr}K ({get_readable_file_size(d_data[0])})"
             buttons.ibutton(
                 button_name,
@@ -350,13 +356,13 @@ class YtSelection:
         i = "s" if self._is_playlist else ""
         buttons = ButtonMaker()
         for frmt in [
-            "ᴀᴀᴄ",
-            "ᴀʟᴀᴄ",
-            "ꜰʟᴀᴄ",
-            "ᴍ4ᴀ",
-            "ᴏᴘᴜꜱ",
-            "ᴠᴏʀʙɪꜱ",
-            "ᴡᴀᴠ"
+            "aac",
+            "alac",
+            "flac",
+            "m4a",
+            "opus",
+            "vorbis",
+            "wav"
         ]:
             audio_format = f"ba/b-{frmt}-"
             buttons.ibutton(
