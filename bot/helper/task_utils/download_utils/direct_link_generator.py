@@ -642,7 +642,7 @@ def uploadee(url):
 
 def terabox(url):
     """Terabox direct link generator
-    By: https://github.com/Dawn-India"""
+    By: https://github.com/Dawn-India/Z-Mirror"""
 
     pattern1 = r"/s/(\w+)"
     pattern2 = r"surl=(\w+)"
