@@ -16,7 +16,7 @@ from urllib3.util.retry import Retry
 from uuid import uuid4
 from base64 import b64decode
 
-from bot import config_dict
+from bot import LOGGER, config_dict
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 from bot.helper.ext_utils.links_utils import is_share_link
@@ -158,6 +158,7 @@ def direct_link_generator(link):
             "terabox.app",
             "gibibox.com",
             "goaibox.com",
+            "terasharelink.com",
         ]
     ):
         return terabox(link)
@@ -641,7 +642,6 @@ def uploadee(url):
 
 def terabox(url):
     """Terabox direct link generator
-    Based on https://github.com/r0ld3x/terabox-downloader-bot
     By: https://github.com/Dawn-India"""
 
     pattern1 = r"/s/(\w+)"
@@ -661,12 +661,11 @@ def terabox(url):
     netloc = urlparse(url).netloc
     url = url.replace(
         netloc,
-        "1024terabox.com"
+        "1024tera.com"
     )
-
     response = get(url)
     if response.status_code != 200:
-        raise DirectDownloadLinkException("ERROR: Unable to fetch the page")
+        raise DirectDownloadLinkException("ERROR: Unable to fetch the webpage")
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
@@ -686,38 +685,32 @@ def terabox(url):
         json={"url": url}
     )
     if response.status_code != 200:
-        raise DirectDownloadLinkException("ERROR: Unable to fetch the page")
-    
-    response_data = response.json()
-    responses = response_data.get(
-        "response",
-        []
-    )
-    if not responses:
-        raise DirectDownloadLinkException("ERROR: No response found")
-    
-    resolutions = responses[0].get(
-        "resolutions",
-        {}
-    )
-    if not resolutions:
-        raise DirectDownloadLinkException("ERROR: No resolutions found")
+        raise DirectDownloadLinkException("ERROR: Unable to fetch the JSON data")
 
-    download = resolutions.get(
-        "Fast Download",
-        ""
-    )
-    video = resolutions.get(
-        "HD Video",
-        ""
-    )
+    data = response.json()
+    details = {"contents": [], "title": "", "total_size": 0}
 
-    return (
-        download
-        if download
-        else video
-    )
+    for item in data["response"]:
+        title = item["title"]
+        resolutions = item.get(
+            "resolutions",
+            {}
+        )
+        zlink = resolutions.get("HD Video")
+        if zlink:
+            details["contents"].append({
+                "url": zlink,
+                "filename": title,
+                "path": ospath.join(
+                    title,
+                    "HD_Video"
+                )
+            })
+        details["title"] = title
 
+    if len(details["contents"]) == 1:
+        return details["contents"][0]["url"]
+    return details
 
 
 def filepress(url):
