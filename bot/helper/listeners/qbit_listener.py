@@ -98,7 +98,10 @@ async def _stop_duplicate(tor):
                 ".!qB",
                 1
             )[0]
-            msg, button = await stop_duplicate_check(task.listener) # type: ignore
+            (
+                msg,
+                button
+            ) = await stop_duplicate_check(task.listener) # type: ignore
             if msg:
                 _onDownloadError(
                     msg,

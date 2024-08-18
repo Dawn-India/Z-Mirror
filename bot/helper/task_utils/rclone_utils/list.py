@@ -20,7 +20,6 @@ from bot import LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import (
     cmd_exec,
     new_thread,
-    new_task,
     update_user_ldata,
 )
 from bot.helper.ext_utils.db_handler import DbManager
@@ -39,7 +38,6 @@ from bot.helper.telegram_helper.message_utils import (
 LIST_LIMIT = 6
 
 
-@new_task
 async def path_updates(_, query, obj):
     await query.answer()
     message = query.message

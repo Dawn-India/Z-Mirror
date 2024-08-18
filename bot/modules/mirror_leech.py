@@ -10,11 +10,11 @@ from re import match as re_match
 from bot import (
     bot,
     DOWNLOAD_DIR,
-    LOGGER
+    LOGGER,
+    bot_loop
 )
 from bot.helper.ext_utils.bot_utils import (
     get_content_type,
-    new_task,
     sync_to_async,
     arg_parser,
     COMMAND_USAGE,
@@ -93,7 +93,6 @@ class Mirror(TaskListener):
         self.isNzb = isNzb
         self.file_ = None
 
-    @new_task
     async def newEvent(self):
         self.pmsg = await sendMessage(
             self.message,
@@ -534,69 +533,69 @@ class Mirror(TaskListener):
 
 
 async def mirror(client, message):
-    Mirror(
+    bot_loop.create_task(Mirror(
         client,
         message
-    ).newEvent() # type: ignore
+    ).newEvent()) # type: ignore
 
 
 async def qb_mirror(client, message):
-    Mirror(
+    bot_loop.create_task(Mirror(
         client,
         message,
         isQbit=True
-    ).newEvent() # type: ignore
+    ).newEvent()) # type: ignore
 
 
 async def jd_mirror(client, message):
-    Mirror(
+    bot_loop.create_task(Mirror(
         client,
         message,
         isJd=True
-    ).newEvent() # type: ignore
+    ).newEvent()) # type: ignore
 
 
 async def nzb_mirror(client, message):
-    Mirror(
+    bot_loop.create_task(Mirror(
         client,
         message,
         isNzb=True
-    ).newEvent() # type: ignore
+    ).newEvent()) # type: ignore
 
 
 async def leech(client, message):
-    Mirror(
+    bot_loop.create_task(Mirror(
         client,
         message,
         isLeech=True
-    ).newEvent() # type: ignore
+    ).newEvent()) # type: ignore
 
 
 async def qb_leech(client, message):
-    Mirror(
+    bot_loop.create_task(Mirror(
         client,
         message,
         isQbit=True,
         isLeech=True
-    ).newEvent() # type: ignore
+    ).newEvent()) # type: ignore
 
 
 async def jd_leech(client, message):
-    Mirror(
+    bot_loop.create_task(Mirror(
         client,
         message,
         isLeech=True,
         isJd=True
-    ).newEvent() # type: ignore
+    ).newEvent()) # type: ignore
 
 
 async def nzb_leech(client, message):
-    Mirror(
+    bot_loop.create_task(Mirror(
         client,
         message,
         isLeech=True,
         isNzb=True
-    ).newEvent() # type: ignore
+    ).newEvent()) # type: ignore
 
 
 bot.add_handler( # type: ignore

@@ -16,9 +16,8 @@ from bot import (
     OWNER_ID,
     task_dict,
     task_dict_lock,
-    user_data,
+    user_data
 )
-from bot.helper.ext_utils.bot_utils import new_task
 from bot.helper.ext_utils.status_utils import (
     getTaskByGid,
     getAllTasks,
@@ -33,7 +32,7 @@ from bot.helper.telegram_helper.message_utils import (
     sendMessage,
     auto_delete_message,
     deleteMessage,
-    editMessage,
+    editMessage
 )
 
 
@@ -183,7 +182,7 @@ def create_cancel_buttons(isSudo, userId=""):
         f"canall ms {(MirrorStatus.STATUS_EXTRACTING).split(' ')[0]} {userId}"
     )
     buttons.ibutton(
-        "Archiving",
+        "ᴀʀᴄʜɪᴠɪɴɢ",
         f"canall ms {(MirrorStatus.STATUS_ARCHIVING).split(' ')[0]} {userId}"
     )
     buttons.ibutton(
@@ -266,7 +265,6 @@ async def cancell_all_buttons(_, message):
     )
 
 
-@new_task
 async def cancel_all_update(_, query):
     data = query.data.split()
     message = query.message

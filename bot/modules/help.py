@@ -1,7 +1,7 @@
 from pyrogram.filters import regex
 from pyrogram.handlers import CallbackQueryHandler
 
-from bot import bot, LOGGER
+from bot import bot
 from bot.helper.ext_utils.bot_utils import COMMAND_USAGE
 from bot.helper.ext_utils.help_messages import (
     YT_HELP_DICT,

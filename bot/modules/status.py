@@ -37,7 +37,6 @@ from bot import (
 )
 from bot.helper.ext_utils.bot_utils import (
     cmd_exec,
-    new_task,
     sync_to_async
 )
 from bot.helper.ext_utils.status_utils import (
@@ -62,7 +61,6 @@ from bot.helper.telegram_helper.message_utils import (
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 
-@new_task
 async def mirror_status(_, message):
     async with task_dict_lock:
         count = len(task_dict)
@@ -104,7 +102,6 @@ async def mirror_status(_, message):
         await deleteMessage(message)
 
 
-@new_task
 async def status_pages(_, query):
     user_id = query.from_user.id
     spam = (

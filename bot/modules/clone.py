@@ -4,21 +4,25 @@ from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 from secrets import token_urlsafe
 
-from bot import LOGGER, task_dict, task_dict_lock, bot
+from bot import (
+    LOGGER,
+    task_dict,
+    task_dict_lock,
+    bot,
+    bot_loop
+)
 from bot.helper.ext_utils.bot_utils import (
-    new_task,
     sync_to_async,
-    new_task,
     cmd_exec,
     arg_parser,
-    COMMAND_USAGE,
+    COMMAND_USAGE
 )
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.links_utils import (
     is_gdrive_link,
     is_share_link,
     is_rclone_path,
-    is_gdrive_id,
+    is_gdrive_id
 )
 from bot.helper.ext_utils.task_manager import (
     limit_checker,
@@ -26,7 +30,7 @@ from bot.helper.ext_utils.task_manager import (
 )
 from bot.helper.listeners.task_listener import TaskListener
 from bot.helper.task_utils.download_utils.direct_link_generator import (
-    direct_link_generator,
+    direct_link_generator
 )
 from bot.helper.task_utils.gdrive_utils.clone import gdClone
 from bot.helper.task_utils.gdrive_utils.count import gdCount
@@ -40,7 +44,7 @@ from bot.helper.telegram_helper.message_utils import (
     delete_links,
     sendMessage,
     deleteMessage,
-    sendStatusMessage,
+    sendStatusMessage
 )
 
 
@@ -69,7 +73,6 @@ class Clone(TaskListener):
         super().__init__()
         self.isClone = True
 
-    @new_task
     async def newEvent(self):
         self.pmsg = await sendMessage(
             self.message,
@@ -454,10 +457,11 @@ class Clone(TaskListener):
 
 
 async def clone(client, message):
-    Clone(
-        client,
-        message
-    ).newEvent() # type: ignore
+    bot_loop.create_task(
+        Clone(
+            client,
+            message
+        ).newEvent())
 
 
 bot.add_handler( # type: ignore

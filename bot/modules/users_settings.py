@@ -7,7 +7,11 @@ from aiofiles.os import (
 from html import escape
 from io import BytesIO
 from math import ceil
-from os import getcwd, path as os_path
+from os import (
+    getcwd,
+    path as os_path
+)
+
 from pyrogram import filters
 from pyrogram.handlers import (
     MessageHandler,

@@ -397,13 +397,8 @@ class TaskConfig:
             "gdl"
         ]:
             if (
-                not self.isYtDlp
-                and not self.isJd
-                and (
-                    is_gdrive_id(self.link)
-                    or is_rclone_path(self.link)
-                    or is_gdrive_link(self.link)
-                )
+                is_rclone_path(self.link) or
+                is_gdrive_link(self.link)
             ):
                 await self.isTokenExists(
                     self.link,
@@ -831,7 +826,7 @@ class TaskConfig:
             nextmsg.sender_chat = self.user
         if Intervals["stopAll"]:
             return
-        obj(
+        await obj(
             self.client, # type: ignore
             nextmsg,
             self.isQbit,
@@ -886,7 +881,7 @@ class TaskConfig:
                 nextmsg.from_user = self.user
             else:
                 nextmsg.sender_chat = self.user
-            obj(
+            await obj(
                 self.client, # type: ignore
                 nextmsg,
                 self.isQbit,

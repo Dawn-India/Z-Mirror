@@ -2,10 +2,7 @@ from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
 from bot import bot, LOGGER
-from bot.helper.ext_utils.bot_utils import (
-    sync_to_async,
-    new_task
-)
+from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.ext_utils.links_utils import is_gdrive_link
 from bot.helper.task_utils.gdrive_utils.delete import gdDelete
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -17,7 +14,6 @@ from bot.helper.telegram_helper.message_utils import (
 )
 
 
-@new_task
 async def deletefile(_, message):
     args = message.text.split()
     from_user = message.from_user

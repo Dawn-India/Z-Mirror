@@ -2,10 +2,7 @@ from pyrogram.filters import command
 from pyrogram.handlers import MessageHandler
 
 from bot import bot
-from bot.helper.ext_utils.bot_utils import (
-    sync_to_async,
-    new_task
-)
+from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.ext_utils.links_utils import is_gdrive_link
 from bot.helper.ext_utils.status_utils import get_readable_file_size
 from bot.helper.task_utils.gdrive_utils.count import gdCount
@@ -19,7 +16,6 @@ from bot.helper.telegram_helper.message_utils import (
 )
 
 
-@new_task
 async def countNode(_, message):
     args = message.text.split()
     from_user = message.from_user

@@ -4,6 +4,7 @@ from asyncio import (
 )
 from pyrogram.errors import (
     FloodWait,
+    FloodPremiumWait,
     PeerIdInvalid,
     RPCError,
     UserNotParticipant,
@@ -111,7 +112,7 @@ async def sendRss(text):
             disable_web_page_preview=True,
             disable_notification=True,
         )
-    except FloodWait as f:
+    except (FloodWait, FloodPremiumWait) as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2) # type: ignore
         return await sendRss(text)

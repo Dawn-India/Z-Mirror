@@ -15,7 +15,7 @@ from bot.helper.telegram_helper.message_utils import (
 
 delete = set()
 
-@new_task
+
 async def delete_leech(client, message):
     args = message.text.split()
     if len(args) > 1:
@@ -53,8 +53,7 @@ async def delete_leech(client, message):
         message_id,
         reply_message
     )
-    
-@new_task
+
 async def deleting(client, chat_id, message_id, message):
     delete.add(message_id)
     try:

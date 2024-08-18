@@ -16,7 +16,6 @@ from bot import (
 )
 from bot.helper.ext_utils.bot_utils import (
     sync_to_async,
-    new_task,
     get_telegraph_list
 )
 from bot.helper.ext_utils.status_utils import get_readable_time
@@ -135,7 +134,6 @@ async def _list_drive(
         )
 
 
-@new_task
 async def select_type(_, query):
     user_id = query.from_user.id
     message = query.message

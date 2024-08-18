@@ -12,10 +12,7 @@ from textwrap import indent
 from traceback import format_exc
 
 from bot import LOGGER, bot
-from bot.helper.ext_utils.bot_utils import (
-    sync_to_async,
-    new_task
-)
+from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (
@@ -61,7 +58,6 @@ async def send(msg, message):
         )
 
 
-@new_task
 async def aioexecute(_, message):
     await send(
         await do(
@@ -72,7 +68,6 @@ async def aioexecute(_, message):
     )
 
 
-@new_task
 async def execute(_, message):
     await send(
         await do(

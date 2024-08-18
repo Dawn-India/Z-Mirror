@@ -295,6 +295,7 @@ if len(USER_SESSION_STRING) != 0:
             app_version="@Z_Mirror Session",
             device_model="@Z_Mirror Bot",
             system_version="@Z_Mirror Server",
+            max_concurrent_transmissions=10,
         ).start()
         IS_PREMIUM_USER = user.me.is_premium # type: ignore
         log_info(f"Successfully logged into @{user.me.username} DC: {user.session.dc_id}.") # type: ignore
@@ -1275,7 +1276,7 @@ bot = tgClient(
     app_version="@Z_Mirror Session",
     device_model="@Z_Mirror Bot",
     system_version="@Z_Mirror Server",
-    workers=99999,
+    max_concurrent_transmissions=10,
 ).start()
 
 BASE += ("oAtiUyppVYRQkuWg8DG2p")

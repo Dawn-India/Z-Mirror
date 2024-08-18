@@ -16,10 +16,7 @@ from bot import (
     config_dict,
     qbittorrent_client
 )
-from bot.helper.ext_utils.bot_utils import (
-    sync_to_async,
-    new_task
-)
+from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.ext_utils.status_utils import get_readable_file_size
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -429,7 +426,6 @@ async def torrentSearch(_, message):
         )
 
 
-@new_task
 async def torrentSearchUpdate(_, query):
     user_id = query.from_user.id
     message = query.message
