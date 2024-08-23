@@ -26,8 +26,8 @@ from bot.helper.telegram_helper.message_utils import (
     sendMessage,
 )
 
-from pyrogram.filters import command
-from pyrogram.handlers import MessageHandler
+from nekozee.filters import command
+from nekozee.handlers import MessageHandler
 
 
 class YtDlp(TaskListener):

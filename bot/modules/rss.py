@@ -8,15 +8,15 @@ from asyncio import (
 from datetime import datetime, timedelta
 from feedparser import parse as feedparse
 from io import BytesIO
-from pyrogram.filters import (
+from nekozee.filters import (
     command,
     regex
 )
-from pyrogram.handlers import (
+from nekozee.handlers import (
     MessageHandler,
     CallbackQueryHandler
 )
-from pyrogram.errors import (
+from nekozee.errors import (
     ListenerTimeout,
     ListenerStopped
 )

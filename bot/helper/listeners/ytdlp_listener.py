@@ -18,8 +18,8 @@ from bot.helper.telegram_helper.message_utils import (
     sendMessage
 )
 
-from pyrogram.handlers import CallbackQueryHandler
-from pyrogram.filters import (
+from nekozee.handlers import CallbackQueryHandler
+from nekozee.filters import (
     regex,
     user
 )

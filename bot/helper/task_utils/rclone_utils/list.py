@@ -9,11 +9,11 @@ from asyncio import (
 from configparser import ConfigParser
 from functools import partial
 from json import loads
-from pyrogram.filters import (
+from nekozee.filters import (
     regex,
     user
 )
-from pyrogram.handlers import CallbackQueryHandler
+from nekozee.handlers import CallbackQueryHandler
 from time import time
 
 from bot import LOGGER, config_dict

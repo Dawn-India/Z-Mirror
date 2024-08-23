@@ -252,15 +252,15 @@ async def get_readable_message(
             and int(config_dict["AUTO_DELETE_MESSAGE_DURATION"]) > 0
         ):
             msg += (
-                f"<pre>\r\n{index + start_position} ➜ "
-                f"{escape(f"{task.name()}")}\n</pre>"
+                f"<b><i>\n#Zee{index + start_position}: "
+                f"{escape(f"{task.name()}")}\n</i></b>"
                 if elapse <= config_dict["AUTO_DELETE_MESSAGE_DURATION"]
-                else f"\n<blockquote>{index + start_position} ➜ (Processing)</blockquote>"
+                else f"\n<b>#Zee{index + start_position}...(Processing)</b>"
             )
         else:
             msg += (
-                f"<pre>\r\n{index + start_position} ➜ "
-                f"{escape(f"{task.name()}")}\n</pre>"
+                f"<b><i>\n#Zee{index + start_position}: "
+                f"{escape(f"{task.name()}")}\n</i></b>"
             )
         if tstatus not in [
             MirrorStatus.STATUS_SEEDING,
@@ -318,7 +318,7 @@ async def get_readable_message(
                 f"\n<code>UserID :</code> ||{task.listener.userId}||"
                 f"\n<code>Engine :</code> {task.engine}"
             )
-        msg += f"\n<blockquote>⚠️ {cancel_task}</blockquote>\n\n"
+        msg += f"\n⚠️ {cancel_task}\n\n"
 
     if len(msg) == 0:
         if status == "All":

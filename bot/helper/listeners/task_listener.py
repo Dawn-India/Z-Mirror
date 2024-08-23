@@ -426,7 +426,7 @@ class TaskListener(TaskConfig):
         )
         gmsg = f"\n<b>Hey {self.tag}!\nYour job is done.</b>"
         msg = (
-            f"\n\n<blockquote><code>Size  </code>: {get_readable_file_size(self.size)}"
+            f"\n\n<code>Size  </code>: {get_readable_file_size(self.size)}"
             f"\n<code>Past  </code>: {get_readable_time(time() - self.time)}"
             f"\n<code>Mode  </code>: {self.mode}"
         )
@@ -437,7 +437,7 @@ class TaskListener(TaskConfig):
         )
         msg_ = "\n\n<b><i>Link has been sent in your DM.</b></i>"
         if self.isLeech:
-            msg += f"\n<code>Files </code>: {folders}</blockquote>\n"
+            msg += f"\n<code>Files </code>: {folders}\n"
             if mime_type != 0:
                 msg += f"<code>Error </code>: {mime_type}\n"
             msg_ = "\n<b><i>Files has been sent in your DM.</b></i>"
@@ -537,7 +537,7 @@ class TaskListener(TaskConfig):
                             gmsg + msg + msg_
                         )
         else:
-            msg += f"\n<code>Type  </code>: {mime_type}</blockquote>"
+            msg += f"\n<code>Type  </code>: {mime_type}"
             if mime_type == "Folder":
                 msg += f"\n<code>Files </code>: {files}"
                 msg += f"\n<code>Folder</code>: {folders}"

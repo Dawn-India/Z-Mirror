@@ -8,8 +8,8 @@ from asyncio import (
     create_subprocess_exec
 )
 from os import execl as osexecl
-from pyrogram.filters import command
-from pyrogram.handlers import MessageHandler
+from nekozee.filters import command
+from nekozee.handlers import MessageHandler
 from signal import signal, SIGINT
 from sys import executable
 from time import time

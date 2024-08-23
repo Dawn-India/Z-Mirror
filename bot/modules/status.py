@@ -1,8 +1,8 @@
-from pyrogram.filters import (
+from nekozee.filters import (
     command,
     regex
 )
-from pyrogram.handlers import (
+from nekozee.handlers import (
     MessageHandler,
     CallbackQueryHandler
 )

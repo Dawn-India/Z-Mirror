@@ -17,13 +17,11 @@ from os import (
     walk,
     path as ospath
 )
-from pyrogram.errors import (
+from nekozee.errors import (
     FloodWait,
-    FloodPremiumWait,
-    RPCError,
-    SlowmodeWait
+    RPCError
 )
-from pyrogram.types import (
+from nekozee.types import (
     InputMediaVideo,
     InputMediaDocument,
     InputMediaPhoto
@@ -812,11 +810,7 @@ class TgUploader:
                 and await aiopath.exists(thumb)
             ):
                 await remove(thumb)
-        except (
-            FloodWait,
-            FloodPremiumWait,
-            SlowmodeWait
-        ) as f:
+        except FloodWait as f:
             LOGGER.warning(str(f))
             await sleep(f.value * 1.3) # type: ignore
             if (

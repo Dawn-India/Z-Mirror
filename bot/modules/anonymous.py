@@ -1,5 +1,5 @@
-from pyrogram.filters import regex
-from pyrogram.handlers import CallbackQueryHandler
+from nekozee.filters import regex
+from nekozee.handlers import CallbackQueryHandler
 
 from bot import (
     bot,

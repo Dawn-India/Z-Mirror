@@ -4,11 +4,11 @@ from asyncio import (
     wait_for,
 )
 from functools import partial
-from pyrogram.filters import (
+from nekozee.filters import (
     regex,
     user
 )
-from pyrogram.handlers import CallbackQueryHandler
+from nekozee.handlers import CallbackQueryHandler
 from time import time
 from aiofiles.os import path as aiopath
 from aiofiles import open as aiopen

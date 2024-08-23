@@ -12,14 +12,14 @@ from os import (
     path as os_path
 )
 
-from pyrogram import filters
-from pyrogram.handlers import (
+from nekozee import filters
+from nekozee.handlers import (
     MessageHandler,
     CallbackQueryHandler
 )
-from pyrogram.types import InputMediaPhoto
+from nekozee.types import InputMediaPhoto
 from re import search as re_search
-from pyrogram.errors import (
+from nekozee.errors import (
     ListenerTimeout,
     ListenerStopped
 )

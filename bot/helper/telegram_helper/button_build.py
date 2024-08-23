@@ -1,4 +1,4 @@
-from pyrogram.types import (
+from nekozee.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton
 )
