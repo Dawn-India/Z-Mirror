@@ -1442,7 +1442,8 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
                 ),
                 update_user_settings(query)
             )
-     elif data[2] == "metadata_text":
+
+    elif data[2] == "metadata_text":
         await query.answer()
         buttons = ButtonMaker()
         if (
