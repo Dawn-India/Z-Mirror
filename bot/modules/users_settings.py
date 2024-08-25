@@ -898,7 +898,7 @@ async def edit_user_settings(client, query):
         else:
             metadatatext = "None"
 
-         buttons.ibutton("Attachment Url", f"userset {user_id} attachment_url")
+        buttons.ibutton("Attachment Url", f"userset {user_id} attachment_url")
         if user_dict.get("attachmenturl", False):
             attachmenturl = user_dict["attachmenturl"]
         else:
@@ -1457,6 +1457,9 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
                 update_user_settings(query)
             )
      elif data[2] == "metadata_text":
+     """Metadata Add
+     Basic Code - https://github.com/5hojib/Aeon
+     Edit By - https://github.com/SN-Abdullah-Al-Noman"""
         await query.answer()
         buttons = ButtonMaker()
         if (
@@ -1472,12 +1475,10 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
         buttons.ibutton(
             "Back",
             f"userset {user_id} leech"
-            position="footer"
         )
         buttons.ibutton(
             "Close",
             f"userset {user_id} close"
-            position="footer"
         )
         await editMessage(
             message,
@@ -1503,6 +1504,9 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             )
 
     elif data[2] == "attachment_url":
+    """Advanced Metadata(Attachment Url) Add
+    Basic Code - https://github.com/5hojib/Aeon
+    Edit By - https://github.com/SonGoku1972"""
         await query.answer()
         buttons = ButtonMaker()
         if (
@@ -1518,16 +1522,14 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
         buttons.ibutton(
             "Back",
             f"userset {user_id} leech"
-            position="footer"
         )
         buttons.ibutton(
             "Close",
             f"userset {user_id} close"
-            position="footer"
         )
         await editMessage(
             message,
-            "Send Leech Attachment Url,Which you want to get embedded with the video. Timeout: 60 sec",
+            "Send Leech Attachment Url, which you want to get embedded with the video. Timeout: 60 sec",
             buttons.build_menu(1),
         )
         try:
