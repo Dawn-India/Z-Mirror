@@ -45,6 +45,9 @@ bot_name = bot.me.username
 
 
 async def edit_video_metadata(user_id, file_path):
+    """Metadata Add
+    Basic Code - https://github.com/5hojib/Aeon
+    Edit By - https://github.com/SN-Abdullah-Al-Noman"""
     if not file_path.lower().endswith(('.mp4', '.mkv')):
         return
 
@@ -144,6 +147,9 @@ async def edit_video_metadata(user_id, file_path):
     print(f"Metadata modified successfully for file: {file_name}")
 
 async def add_attachment(user_id, file_path):
+    """Advanced Metadata(Attachment Url) Add
+    Basic Code - https://github.com/5hojib/Aeon
+    Edit By - https://github.com/SonGoku1972"""
     if not file_path.lower().endswith(('.mp4', '.mkv')):
         return
 
