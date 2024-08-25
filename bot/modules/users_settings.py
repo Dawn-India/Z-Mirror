@@ -1457,9 +1457,6 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
                 update_user_settings(query)
             )
      elif data[2] == "metadata_text":
-     """Metadata Add
-     Basic Code - https://github.com/5hojib/Aeon
-     Edit By - https://github.com/SN-Abdullah-Al-Noman"""
         await query.answer()
         buttons = ButtonMaker()
         if (
@@ -1504,9 +1501,6 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             )
 
     elif data[2] == "attachment_url":
-    """Advanced Metadata(Attachment Url) Add
-    Basic Code - https://github.com/5hojib/Aeon
-    Edit By - https://github.com/SonGoku1972"""
         await query.answer()
         buttons = ButtonMaker()
         if (
