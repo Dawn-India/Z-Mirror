@@ -372,7 +372,10 @@ class TgUploader:
                 self._sent_DMmsg = None
 
     async def _send_media_group(self, subkey, key, msgs):
-        for index, msg in enumerate(msgs):
+        for (
+            index,
+            msg
+        ) in enumerate(msgs):
             if self._listener.mixedLeech or not self._user_session: # type: ignore
                 msgs[index] = await self._listener.client.get_messages(
                     chat_id=msg[0],
@@ -429,7 +432,11 @@ class TgUploader:
         res = await self._msg_to_reply()
         if not res:
             return
-        for dirpath, _, files in natsorted(
+        for (
+            dirpath,
+            _,
+            files
+        ) in natsorted(
             await sync_to_async(
                 walk,
                 self._path
@@ -497,8 +504,14 @@ class TgUploader:
                             and match.group(0)
                             not in group_lists
                         ):
-                            for key, value in list(self._media_dict.items()):
-                                for subkey, msgs in list(value.items()):
+                            for (
+                                key,
+                                value
+                            ) in list(self._media_dict.items()):
+                                for (
+                                    subkey,
+                                    msgs
+                                ) in list(value.items()):
                                     if len(msgs) > 1:
                                         await self._send_media_group(
                                             subkey,
@@ -560,7 +573,10 @@ class TgUploader:
                         )
                     ):
                         await remove(self._up_path)
-        for key, value in list(self._media_dict.items()):
+        for (
+            key,
+            value
+        ) in list(self._media_dict.items()):
             for subkey, msgs in list(value.items()):
                 if len(msgs) > 1:
                     try:
@@ -635,7 +651,7 @@ class TgUploader:
         except Exception as err:
             if isinstance(err, RPCError):
                 LOGGER.error(
-                    f"Error while sending dm {err.NAME}: {err.MESSAGE}")
+                    f"Error while sending dm {err.NAME}: {err.MESSAGE}") # type: ignore
             else:
                 LOGGER.error(
                     f"Error while sending dm {err.__class__.__name__}")
@@ -659,7 +675,11 @@ class TgUploader:
         thumb = self._thumb
         self._is_corrupted = False
         try:
-            is_video, is_audio, is_image = await get_document_type(self._up_path)
+            (
+                is_video,
+                is_audio,
+                is_image
+            ) = await get_document_type(self._up_path)
 
             if not is_image and thumb is None:
                 file_name = ospath.splitext(file)[0]
@@ -706,7 +726,10 @@ class TgUploader:
                     )
                 if thumb is not None:
                     with Image.open(thumb) as img:
-                        width, height = img.size
+                        (
+                            width,
+                            height
+                        ) = img.size
                 else:
                     width = 480
                     height = 320

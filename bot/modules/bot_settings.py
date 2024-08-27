@@ -1968,6 +1968,20 @@ async def load_config():
     if len(LEECH_CAPTION_FONT) == 0:
         LEECH_CAPTION_FONT = ""
 
+    METADATA_TXT = environ.get(
+        "METADATA_TXT",
+        ""
+    )
+    if len(METADATA_TXT) == 0:
+        METADATA_TXT = ""
+
+    META_ATTACHMENT = environ.get(
+        "META_ATTACHMENT",
+        ""
+    )
+    if len(META_ATTACHMENT) == 0:
+        META_ATTACHMENT = ""
+
     SEARCH_PLUGINS = environ.get(
         "SEARCH_PLUGINS",
         ""
@@ -2724,6 +2738,8 @@ async def load_config():
             "LEECH_SPLIT_SIZE": LEECH_SPLIT_SIZE,
             "MEDIA_GROUP": MEDIA_GROUP,
             "MIXED_LEECH": MIXED_LEECH,
+            "METADATA_TXT": METADATA_TXT,
+            "META_ATTACHMENT": META_ATTACHMENT,
             "NAME_SUBSTITUTE": NAME_SUBSTITUTE,
             "OWNER_ID": OWNER_ID,
             "QUEUE_ALL": QUEUE_ALL,

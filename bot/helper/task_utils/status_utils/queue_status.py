@@ -35,18 +35,6 @@ class QueueStatus:
             return MirrorStatus.STATUS_QUEUEDL
         return MirrorStatus.STATUS_QUEUEUP
 
-    def processed_bytes(self):
-        return 0
-
-    def progress(self):
-        return "0%"
-
-    def speed(self):
-        return "0B/s"
-
-    def eta(self):
-        return "-"
-
     def task(self):
         return self
 

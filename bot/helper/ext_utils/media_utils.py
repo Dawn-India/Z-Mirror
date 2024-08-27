@@ -1,3 +1,4 @@
+from pathlib import Path
 from PIL import Image
 from aiofiles.os import (
     remove,
@@ -165,7 +166,7 @@ async def createThumb(msg, _id=""):
     await remove(photo_dir)
     return des_dir
 
-
+global_streams = {}
 async def is_multi_streams(path):
     try:
         result = await cmd_exec(
@@ -189,8 +190,8 @@ async def is_multi_streams(path):
     ):
         fields = eval(result[0]).get("streams")
         if fields is None:
-            LOGGER.error(f"get_video_streams: {result}")
             return False
+        global_streams["stream"] = fields
         videos = 0
         audios = 0
         for stream in fields:
@@ -804,3 +805,260 @@ async def createSampleVideo(listener, video_file, sample_duration, part_duration
         if await aiopath.exists(output_file):
             await remove(output_file)
         return False
+
+
+SUPPORTED_VIDEO_EXTENSIONS = {
+    ".mp4",
+    ".mkv"
+}
+
+
+async def edit_video_metadata(listener, dir):
+
+    data = listener.metaData
+    dir_path = Path(dir)
+
+    if dir_path.suffix.lower() not in SUPPORTED_VIDEO_EXTENSIONS:
+        return dir
+
+    file_name = dir_path.name
+    work_path = dir_path.with_suffix(".temp.mkv")
+
+    await is_multi_streams(dir)
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        dir,
+        "-c",
+        "copy",
+        "-metadata",
+        f"title={data}",
+        "-threads",
+        f"{cpu_count() // 2}", # type: ignore
+    ]
+
+    meta_info = [
+        "copyright",
+        "description",
+        "license",
+        "LICENSE",
+        "author",
+        "summary",
+        "comment",
+        "artist",
+        "album",
+        "genre",
+        "date",
+        "creation_time",
+        "language",
+        "publisher",
+        "encoder",
+        "SUMMARY",
+        "AUTHOR",
+        "WEBSITE",
+        "COMMENT",
+        "ENCODER",
+        "FILENAME",
+        "MIMETYPE",
+        "PURL",
+        "ALBUM"
+    ]
+
+    for field in meta_info:
+        cmd.extend([
+            "-metadata",
+            f"{field}="
+        ])
+
+    audio_index = 0
+    subtitle_index = 0
+    first_video = False
+
+    if global_streams:
+        for stream in global_streams["stream"]:
+            stream_index = stream["index"]
+            stream_type = stream["codec_type"]
+
+            if stream_type == "video":
+                if not first_video:
+                    cmd.extend([
+                        "-map",
+                        f"0:{stream_index}"
+                    ])
+                    first_video = True
+                cmd.extend([
+                    f"-metadata:s:v:{stream_index}",
+                    f"title={data}"
+                ])
+
+            elif stream_type == "audio":
+                cmd.extend([
+                    "-map",
+                    f"0:{stream_index}",
+                    f"-metadata:s:a:{audio_index}",
+                    f"title={data}"
+                ])
+                audio_index += 1
+
+            elif stream_type == "subtitle":
+                codec_name = stream.get(
+                    "codec_name",
+                    "unknown"
+                )
+                if codec_name not in [
+                    "webvtt",
+                    "unknown"
+                ]:
+                    cmd.extend([
+                        "-map", f"0:{stream_index}",
+                        f"-metadata:s:s:{subtitle_index}",
+                        f"title={data}"
+                    ])
+                    subtitle_index += 1
+                else:
+                    LOGGER.info(f"Skipping unsupported subtitle metadata modification: {codec_name} for stream {stream_index}")
+
+            else:
+                cmd.extend([
+                    "-map",
+                    f"0:{stream_index}"
+                ])
+
+    else:
+        LOGGER.info("No streams found. Skipping stream metadata modification.")
+        return dir
+
+    cmd.append(work_path)
+    LOGGER.info(f"Modifying metadata for file: {file_name}")
+
+    try:
+        async with subprocess_lock:
+            if listener.isCancelled:
+                if work_path.exists():
+                    work_path.unlink()
+                return
+            listener.suproc = await create_subprocess_exec(
+                *cmd,
+                stderr=PIPE,
+                stdout=PIPE
+            )
+        (
+            _,
+            stderr
+        ) = await listener.suproc.communicate()
+
+        if listener.suproc.returncode != 0:
+            if work_path.exists():
+                work_path.unlink()
+            if listener.isCancelled:
+                return
+            err = stderr.decode().strip()
+            LOGGER.error(f"Error modifying metadata for file: {file_name} | {err}")
+            return dir
+
+        if work_path.exists():
+            work_path.replace(dir_path)
+            LOGGER.info(f"Metadata modified successfully for file: {file_name}")
+        else:
+            LOGGER.error(f"Temporary file {work_path} not found. Metadata modification failed.")
+
+    except (
+        RuntimeError,
+        OSError
+    ) as e:
+        LOGGER.error(f"Error modifying metadata: {str(e)}")
+        if work_path.exists():
+            work_path.unlink()
+        return dir
+    
+    finally:
+        if work_path.exists():
+            work_path.unlink()
+
+    return dir
+
+
+async def add_attachment(listener, dir):
+
+    MIME_TYPES = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+    }
+
+    data = listener.metaAttachment
+    dir_path = Path(dir)
+
+    if dir_path.suffix.lower() not in SUPPORTED_VIDEO_EXTENSIONS:
+        return dir
+
+    file_name = dir_path.name
+    work_path = dir_path.with_suffix(".temp.mkv")
+
+    data_ext = data.split(".")[-1].lower()
+    if not (mime_type := MIME_TYPES.get(data_ext)):
+        LOGGER.error(f"Unsupported attachment type: {data_ext}")
+        return dir
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        dir,
+        "-attach",
+        data,
+        "-metadata:s:t",
+        f"mimetype={mime_type}",
+        "-c",
+        "copy",
+        "-map",
+        "0",
+        work_path
+    ]
+
+    try:
+        async with subprocess_lock:
+            if listener.isCancelled:
+                if work_path.exists():
+                    work_path.unlink()
+                return
+            listener.suproc = await create_subprocess_exec(
+                *cmd,
+                stderr=PIPE,
+                stdout=PIPE
+            )
+        (
+            _,
+            _
+        ) = await listener.suproc.communicate()
+
+        if listener.suproc.returncode != 0:
+            if work_path.exists():
+                work_path.unlink()
+            if listener.isCancelled:
+                return
+            LOGGER.error(f"Error adding photo attachment to file: {file_name}")
+            return dir
+
+        if work_path.exists():
+            work_path.replace(dir_path)
+            LOGGER.info(f"Photo attachment added successfully to file: {file_name}")
+        else:
+            LOGGER.error(f"Temporary file {work_path} not found. Adding photo attachment failed.")
+
+    except (
+        RuntimeError,
+        OSError
+    ) as e:
+        LOGGER.error(f"Error adding photo attachment: {str(e)}")
+        if work_path.exists():
+            work_path.unlink()
+        return dir
+    
+    finally:
+        if work_path.exists():
+            work_path.unlink()
+
+    return dir
