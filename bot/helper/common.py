@@ -1723,22 +1723,16 @@ class TaskConfig:
             return dl_path
 
     async def proceedMetadata(self, up_path, gid):
-        (
-            is_video,
-            _,
-            _
-        ) = await get_document_type(up_path)
-        if is_video:
-            async with task_dict_lock:
-                task_dict[self.mid] = MetaStatus(
-                    self,
-                    gid
-                )
-            LOGGER.info(f"Editing Metadata: {self.metaData} into {up_path}")
-            await edit_video_metadata(
+        async with task_dict_lock:
+            task_dict[self.mid] = MetaStatus(
                 self,
-                up_path
+                gid
             )
+        LOGGER.info(f"Editing Metadata: {self.metaData} into {up_path}")
+        await edit_video_metadata(
+            self,
+            up_path
+        )
         return up_path
 
     async def proceedAttachment(self, up_path, gid):
