@@ -35,6 +35,9 @@ class QueueStatus:
             return MirrorStatus.STATUS_QUEUEDL
         return MirrorStatus.STATUS_QUEUEUP
 
+    def speed(self):
+        return "0B/s"
+
     def task(self):
         return self
 

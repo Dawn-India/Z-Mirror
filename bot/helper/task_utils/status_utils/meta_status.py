@@ -48,6 +48,9 @@ class MetaStatus:
     def status(self):
         return MirrorStatus.STATUS_METADATA
 
+    def speed(self):
+        return "0B/s"
+
     def task(self):
         return self
 
