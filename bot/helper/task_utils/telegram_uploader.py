@@ -1,5 +1,3 @@
-from PIL import Image
-from html import escape
 from aiofiles.os import (
     remove,
     path as aiopath,
@@ -11,21 +9,14 @@ from aioshutil import (
     rmtree
 )
 from asyncio import sleep
+from html import escape
 from logging import getLogger
 from natsort import natsorted
 from os import (
     walk,
     path as ospath
 )
-from nekozee.errors import (
-    FloodWait,
-    RPCError
-)
-from nekozee.types import (
-    InputMediaVideo,
-    InputMediaDocument,
-    InputMediaPhoto
-)
+from PIL import Image
 from re import (
     match as re_match,
     sub as re_sub
@@ -39,25 +30,41 @@ from tenacity import (
 )
 from time import time
 
-from bot import bot, config_dict, user, IS_PREMIUM_USER
-from bot.helper.ext_utils.bot_utils import sync_to_async
-from bot.helper.ext_utils.files_utils import (
-    clean_unwanted,
-    is_archive,
-    get_base_name
+from nekozee.errors import (
+    FloodWait,
+    RPCError
 )
-from bot.helper.ext_utils.media_utils import (
+from nekozee.types import (
+    InputMediaVideo,
+    InputMediaDocument,
+    InputMediaPhoto
+)
+
+from bot import (
+    IS_PREMIUM_USER,
+    bot,
+    config_dict,
+    user
+)
+from ..ext_utils.bot_utils import sync_to_async
+from ..ext_utils.files_utils import (
+    clean_unwanted,
+    get_base_name,
+    is_archive
+)
+from ..ext_utils.media_utils import (
     get_media_info,
     get_document_type,
-    create_thumbnail,
-    get_audio_thumb,
+    get_video_thumbnail,
+    get_audio_thumbnail,
+    get_multiple_frames_thumbnail
 )
-from bot.helper.telegram_helper.message_utils import deleteMessage
+from ..telegram_helper.message_utils import delete_message
 
 LOGGER = getLogger(__name__)
 
 
-class TgUploader:
+class TelegramUploader:
     def __init__(self, listener, path):
         self._last_uploaded = 0
         self._processed_bytes = 0
@@ -65,7 +72,7 @@ class TgUploader:
         self._path = path
         self._start_time = time()
         self._total_files = 0
-        self._thumb = self._listener.thumb or f"Thumbnails/{listener.userId}.jpg"
+        self._thumb = self._listener.thumb or f"Thumbnails/{listener.user_id}.jpg"
         self._msgs_dict = {}
         self._corrupted = 0
         self._is_corrupted = False
@@ -79,10 +86,10 @@ class TgUploader:
         self._is_private = False
         self._sent_msg = None
         self._sent_DMmsg = None
-        self._user_session = self._listener.userTransmission
+        self._user_session = self._listener.user_transmission
 
     async def _upload_progress(self, current, _):
-        if self._listener.isCancelled:
+        if self._listener.is_cancelled:
             if self._user_session:
                 user.stop_transmission() # type: ignore
             else:
@@ -92,24 +99,24 @@ class TgUploader:
         self._processed_bytes += chunk_size
 
     async def _user_settings(self):
-        self._media_group = self._listener.userDict.get("media_group") or (
+        self._media_group = self._listener.user_dict.get("media_group") or (
             config_dict["MEDIA_GROUP"]
-            if "media_group" not in self._listener.userDict
+            if "media_group" not in self._listener.user_dict
             else False
         )
-        self._lprefix = self._listener.userDict.get("lprefix") or (
+        self._lprefix = self._listener.user_dict.get("lprefix") or (
             config_dict["LEECH_FILENAME_PREFIX"]
-            if "lprefix" not in self._listener.userDict
+            if "lprefix" not in self._listener.user_dict
             else ""
         )
-        self._lsuffix = self._listener.userDict.get("lsuffix") or (
+        self._lsuffix = self._listener.user_dict.get("lsuffix") or (
             config_dict["LEECH_FILENAME_SUFFIX"]
-            if "lsuffix" not in self._listener.userDict
+            if "lsuffix" not in self._listener.user_dict
             else ""
         )
-        self._lcapfont = self._listener.userDict.get("lcapfont") or (
+        self._lcapfont = self._listener.user_dict.get("lcapfont") or (
             config_dict["LEECH_CAPTION_FONT"]
-            if "lcapfont" not in self._listener.userDict
+            if "lcapfont" not in self._listener.user_dict
             else ""
         )
         if not await aiopath.exists(self._thumb): # type: ignore
@@ -117,8 +124,8 @@ class TgUploader:
 
     async def _msg_to_reply(self):
         if DUMP_CHAT_ID := config_dict["DUMP_CHAT_ID"]:
-            if self._listener.logMessage:
-                self._sent_msg = await self._listener.logMessage.copy(DUMP_CHAT_ID)
+            if self._listener.log_message:
+                self._sent_msg = await self._listener.log_message.copy(DUMP_CHAT_ID)
             else:
                 msg = f"<b>File Name</b>: <code>{escape(self._listener.name)}</code>\n\n"
                 msg += f"<b>#Leech_Started!</b>\n"
@@ -129,8 +136,8 @@ class TgUploader:
                     msg,
                     disable_web_page_preview=True
                 )
-            if self._listener.dmMessage:
-                self._sent_DMmsg = self._listener.dmMessage
+            if self._listener.dm_message:
+                self._sent_DMmsg = self._listener.dm_message
             if IS_PREMIUM_USER:
                 try:
                     self._sent_msg = await user.get_messages( # type: ignore
@@ -138,14 +145,14 @@ class TgUploader:
                         message_ids=self._sent_msg.id
                     )
                 except RPCError as e:
-                    await self._listener.onUploadError(
+                    await self._listener.on_upload_error(
                         f"{e.NAME} [{e.CODE}]: {e.MESSAGE}"
                     )
                 except Exception as e:
-                    await self._listener.onUploadError(e)
+                    await self._listener.on_upload_error(e)
         elif IS_PREMIUM_USER:
-            if not self._listener.isSuperChat:
-                await self._listener.onUploadError(
+            if not self._listener.is_super_chat:
+                await self._listener.on_upload_error(
                     "Use SuperGroup to leech with User!"
                 )
                 return False
@@ -156,19 +163,19 @@ class TgUploader:
                     message_ids=self._sent_msg.id
                 )
             except RPCError as e:
-                await self._listener.onUploadError(
+                await self._listener.on_upload_error(
                     f"{e.NAME} [{e.CODE}]: {e.MESSAGE}"
                 )
             except Exception as e:
-                await self._listener.onUploadError(e)
-            if self._listener.dmMessage:
-                self._sent_DMmsg = self._listener.dmMessage
-        elif self._listener.dmMessage:
-            self._sent_msg = self._listener.dmMessage
+                await self._listener.on_upload_error(e)
+            if self._listener.dm_message:
+                self._sent_DMmsg = self._listener.dm_message
+        elif self._listener.dm_message:
+            self._sent_msg = self._listener.dm_message
         else:
             self._sent_msg = self._listener.message
         if self._sent_msg is None:
-            await self._listener.onUploadError(
+            await self._listener.on_upload_error(
                 "Cannot find the message to reply"
             )
             return False
@@ -195,7 +202,7 @@ class TgUploader:
                 )
             if (
                 self._listener.seed
-                and not self._listener.newDir
+                and not self._listener.new_dir
                 and not dirpath.endswith("/splited_files_zee")
                 and not delete_file
             ):
@@ -252,7 +259,7 @@ class TgUploader:
             name = name[:remain]
             if (
                 self._listener.seed
-                and not self._listener.newDir
+                and not self._listener.new_dir
                 and not dirpath.endswith("/splited_files_zee")
                 and not delete_file
             ):
@@ -349,13 +356,19 @@ class TgUploader:
             )
             for p in outputs
         ]
-        self._sent_msg = (
-            await self._sent_msg.reply_media_group( # type: ignore
-                media=inputs,
-                quote=True,
-                disable_notification=True,
-            )
-        )[-1]
+        for i in range(
+            0,
+            len(inputs),
+            10
+        ):
+            batch = inputs[i : i + 10]
+            self._sent_msg = (
+                await self._sent_msg.reply_media_group( # type: ignore
+                    media=batch,
+                    quote=True,
+                    disable_notification=True,
+                )
+            )[-1]
         if self._sent_DMmsg:
             try:
                 self._sent_DMmsg = (
@@ -376,7 +389,7 @@ class TgUploader:
             index,
             msg
         ) in enumerate(msgs):
-            if self._listener.mixedLeech or not self._user_session: # type: ignore
+            if self._listener.mixed_leech or not self._user_session: # type: ignore
                 msgs[index] = await self._listener.client.get_messages(
                     chat_id=msg[0],
                     message_ids=msg[1]
@@ -397,11 +410,11 @@ class TgUploader:
         for msg in msgs:
             if msg.link in self._msgs_dict:
                 del self._msgs_dict[msg.link]
-            await deleteMessage(msg)
+            await delete_message(msg)
         del self._media_dict[key][subkey]
         if (
-            self._listener.isSuperChat
-            or self._listener.upDest
+            self._listener.is_super_chat
+            or self._listener.up_dest
             or config_dict["DUMP_CHAT_ID"]
         ):
             for m in msgs_list:
@@ -465,11 +478,11 @@ class TgUploader:
                 if self._up_path in o_files:
                     continue
                 if file_.lower().endswith(
-                    tuple(self._listener.extensionFilter)
+                    tuple(self._listener.extension_filter)
                 ):
                     if (
                         not self._listener.seed
-                        or self._listener.newDir
+                        or self._listener.new_dir
                     ):
                         await remove(self._up_path)
                     continue
@@ -482,7 +495,7 @@ class TgUploader:
                         )
                         self._corrupted += 1
                         continue
-                    if self._listener.isCancelled:
+                    if self._listener.is_cancelled:
                         return
                     cap_mono = await self._prepare_file(
                         file_,
@@ -518,12 +531,12 @@ class TgUploader:
                                             key,
                                             msgs
                                         )
-                    if self._listener.mixedLeech:
+                    if self._listener.mixed_leech:
                         self._user_session = f_size > 2097152000
                         if self._user_session:
                             self._sent_msg = await user.get_messages( # type: ignore
-                                chat_id=self._sent_msg.chat.id,
-                                message_ids=self._sent_msg.id,
+                                chat_id=self._sent_msg.chat.id, # type: ignore
+                                message_ids=self._sent_msg.id, # type: ignore
                             )
                         else:
                             self._sent_msg = await self._listener.client.get_messages(
@@ -537,11 +550,11 @@ class TgUploader:
                         file_,
                         f_path
                     )
-                    if self._listener.isCancelled:
+                    if self._listener.is_cancelled:
                         return
                     if (
                         not self._is_corrupted
-                        and (self._listener.isSuperChat or self._listener.upDest)
+                        and (self._listener.is_super_chat or self._listener.up_dest)
                         and not self._is_private
                     ):
                         self._msgs_dict[self._sent_msg.link] = file_ # type: ignore
@@ -557,16 +570,16 @@ class TgUploader:
                         err = err.last_attempt.exception() # type: ignore
                     LOGGER.error(f"{err}. Path: {self._up_path}")
                     self._corrupted += 1
-                    if self._listener.isCancelled:
+                    if self._listener.is_cancelled:
                         return
                     continue
                 finally:
                     if (
-                        not self._listener.isCancelled
+                        not self._listener.is_cancelled
                         and await aiopath.exists(self._up_path)
                         and (
                             not self._listener.seed
-                            or self._listener.newDir
+                            or self._listener.new_dir
                             or dirpath.endswith("/splited_files_zee")
                             or "/copied_zee/" in self._up_path
                             or delete_file
@@ -589,20 +602,20 @@ class TgUploader:
                         LOGGER.info(
                             f"While sending media group at the end of task. Error: {e}"
                         )
-        if self._listener.isCancelled:
+        if self._listener.is_cancelled:
             return
         if (
             self._listener.seed
-            and not self._listener.newDir
+            and not self._listener.new_dir
         ):
             await clean_unwanted(self._path)
         if self._total_files == 0:
-            await self._listener.onUploadError(
+            await self._listener.on_upload_error(
                 "No files to upload. In case you have filled EXTENSION_FILTER, then check if all files have those extensions or not."
             )
             return
         if self._total_files <= self._corrupted:
-            await self._listener.onUploadError(
+            await self._listener.on_upload_error(
                 "Files Corrupted or unable to upload. Check logs!"
             )
             return
@@ -687,10 +700,10 @@ class TgUploader:
                 if await aiopath.isfile(thumb_path):
                     thumb = thumb_path
                 elif is_audio and not is_video:
-                    thumb = await get_audio_thumb(self._up_path)
+                    thumb = await get_audio_thumbnail(self._up_path)
 
             if (
-                self._listener.asDoc
+                self._listener.as_doc
                 or force_document
                 or (
                     not is_video
@@ -700,12 +713,12 @@ class TgUploader:
             ):
                 key = "documents"
                 if is_video and thumb is None:
-                    thumb = await create_thumbnail(
+                    thumb = await get_video_thumbnail(
                         self._up_path,
                         None
                     )
 
-                if self._listener.isCancelled:
+                if self._listener.is_cancelled:
                     return
                 self._sent_msg = await self._sent_msg.reply_document( # type: ignore
                     document=self._up_path,
@@ -719,8 +732,14 @@ class TgUploader:
             elif is_video:
                 key = "videos"
                 duration = (await get_media_info(self._up_path))[0]
+                if thumb is None and self._listener.thumbnail_layout:
+                    thumb = await get_multiple_frames_thumbnail(
+                        self._up_path,
+                        self._listener.thumbnail_layout,
+                        self._listener.screen_shots,
+                    )
                 if thumb is None:
-                    thumb = await create_thumbnail(
+                    thumb = await get_video_thumbnail(
                         self._up_path,
                         duration
                     )
@@ -733,7 +752,7 @@ class TgUploader:
                 else:
                     width = 480
                     height = 320
-                if self._listener.isCancelled:
+                if self._listener.is_cancelled:
                     return
                 self._sent_msg = await self._sent_msg.reply_video( # type: ignore
                     video=self._up_path,
@@ -750,7 +769,7 @@ class TgUploader:
             elif is_audio:
                 key = "audios"
                 duration, artist, title = await get_media_info(self._up_path)
-                if self._listener.isCancelled:
+                if self._listener.is_cancelled:
                     return
                 self._sent_msg = await self._sent_msg.reply_audio( # type: ignore
                     audio=self._up_path,
@@ -765,7 +784,7 @@ class TgUploader:
                 )
             else:
                 key = "photos"
-                if self._listener.isCancelled:
+                if self._listener.is_cancelled:
                     return
                 self._sent_msg = await self._sent_msg.reply_photo( # type: ignore
                     photo=self._up_path,
@@ -776,7 +795,7 @@ class TgUploader:
                 )
 
             if (
-                not self._listener.isCancelled
+                not self._listener.is_cancelled
                 and self._media_group
                 and (
                     self._sent_msg.video
@@ -817,12 +836,12 @@ class TgUploader:
                     else:
                         self._last_msg_in_group = True
                 elif (
-                    not self._listener.isCancelled
+                    not self._listener.is_cancelled
                     and self._sent_DMmsg
                 ):
                     await self._send_dm()
             elif (
-                not self._listener.isCancelled
+                not self._listener.is_cancelled
                 and self._sent_DMmsg
             ):
                 await self._send_dm()
@@ -888,6 +907,6 @@ class TgUploader:
         return self._processed_bytes
 
     async def cancel_task(self):
-        self._listener.isCancelled = True
+        self._listener.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self._listener.name}")
-        await self._listener.onUploadError("Your upload has been cancelled!")
+        await self._listener.on_upload_error("Your upload has been cancelled!")

@@ -2,17 +2,21 @@ from nekozee.filters import command
 from nekozee.handlers import MessageHandler
 
 from bot import (
-    user_data,
-    DATABASE_URL,
-    bot
+    bot,
+    config_dict,
+    user_data
 )
-from bot.helper.ext_utils.bot_utils import update_user_ldata
-from bot.helper.ext_utils.db_handler import DbManager
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage
+from ..helper.ext_utils.bot_utils import (
+    new_task,
+    update_user_ldata
+)
+from ..helper.ext_utils.db_handler import database
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import send_message
 
 
+@new_task
 async def authorize(client, message):
     msg = message.text.split()
     if len(msg) > 1:
@@ -36,15 +40,16 @@ async def authorize(client, message):
             "is_auth",
             True
         )
-        if DATABASE_URL:
-            await DbManager().update_user_data(id_)
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_data(id_)
         msg = "Authorized"
-    await sendMessage(
+    await send_message(
         message,
         msg
     )
 
 
+@new_task
 async def unauthorize(client, message):
     msg = message.text.split()
     if len(msg) > 1:
@@ -66,17 +71,18 @@ async def unauthorize(client, message):
             "is_auth",
             False
         )
-        if DATABASE_URL:
-            await DbManager().update_user_data(id_)
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_data(id_)
         msg = "Unauthorized"
     else:
         msg = "Already Unauthorized!"
-    await sendMessage(
+    await send_message(
         message,
         msg
     )
 
 
+@new_task
 async def addSudo(client, message):
     id_ = ""
     msg = message.text.split()
@@ -100,17 +106,18 @@ async def addSudo(client, message):
                 "is_sudo",
                 True
             )
-            if DATABASE_URL:
-                await DbManager().update_user_data(id_)
+            if config_dict["DATABASE_URL"]:
+                await database.update_user_data(id_)
             msg = "Promoted as Sudo"
     else:
         msg = "Give ID or Reply To message of whom you want to Promote."
-    await sendMessage(
+    await send_message(
         message,
         msg
     )
 
 
+@new_task
 async def removeSudo(client, message):
     id_ = ""
     msg = message.text.split()
@@ -132,12 +139,12 @@ async def removeSudo(client, message):
             "is_sudo",
             False
         )
-        if DATABASE_URL:
-            await DbManager().update_user_data(id_)
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_data(id_)
         msg = "Demoted"
     else:
         msg = "Give ID or Reply To message of whom you want to remove from Sudo"
-    await sendMessage(
+    await send_message(
         message,
         msg
     )

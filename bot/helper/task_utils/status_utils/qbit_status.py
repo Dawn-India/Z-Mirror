@@ -3,11 +3,11 @@ from asyncio import sleep, gather
 from bot import (
     LOGGER,
     qbittorrent_client,
-    QbTorrents,
+    qb_torrents,
     qb_listener_lock
 )
-from bot.helper.ext_utils.bot_utils import sync_to_async
-from bot.helper.ext_utils.status_utils import (
+from ...ext_utils.bot_utils import sync_to_async
+from ...ext_utils.status_utils import (
     MirrorStatus,
     get_readable_file_size,
     get_readable_time,
@@ -131,7 +131,7 @@ class QbittorrentStatus:
         return self._info.hash # type: ignore
 
     async def cancel_task(self):
-        self.listener.isCancelled = True
+        self.listener.is_cancelled = True
         await sync_to_async(self.update)
         await sync_to_async(
             qbittorrent_client.torrents_pause,
@@ -146,7 +146,7 @@ class QbittorrentStatus:
                 msg = "Download stopped by user!"
             await sleep(0.3)
             await gather(
-                self.listener.onDownloadError(msg),
+                self.listener.on_download_error(msg),
                 sync_to_async(
                     qbittorrent_client.torrents_delete,
                     torrent_hashes=self._info.hash, # type: ignore
@@ -158,5 +158,5 @@ class QbittorrentStatus:
                 ),
             )
             async with qb_listener_lock:
-                if self._info.tags in QbTorrents: # type: ignore
-                    del QbTorrents[self._info.tags] # type: ignore
+                if self._info.tags in qb_torrents: # type: ignore
+                    del qb_torrents[self._info.tags] # type: ignore

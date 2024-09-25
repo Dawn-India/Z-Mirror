@@ -15,49 +15,53 @@ from aiofiles import open as aiopen
 from base64 import b64encode
 
 from bot import (
-    task_dict,
-    task_dict_lock,
     LOGGER,
+    jd_downloads,
+    jd_lock,
     non_queued_dl,
     queue_dict_lock,
-    jd_lock,
-    jd_downloads,
+    task_dict,
+    task_dict_lock,
 )
-from bot.helper.ext_utils.bot_utils import retry_function
-from bot.helper.ext_utils.jdownloader_booter import jdownloader
-from bot.helper.ext_utils.task_manager import (
+from ...ext_utils.bot_utils import (
+    new_task,
+    retry_function
+)
+from ...ext_utils.jdownloader_booter import jdownloader
+from ...ext_utils.task_manager import (
     check_running_tasks,
     limit_checker,
     stop_duplicate_check,
 )
-from bot.helper.listeners.jdownloader_listener import onDownloadStart
-from bot.helper.task_utils.status_utils.jdownloader_status import (
+from ...listeners.jdownloader_listener import on_download_start
+from ...task_utils.status_utils.jdownloader_status import (
     JDownloaderStatus,
 )
-from bot.helper.task_utils.status_utils.queue_status import QueueStatus
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import (
+from ...task_utils.status_utils.queue_status import QueueStatus
+from ...telegram_helper.button_build import ButtonMaker
+from ...telegram_helper.message_utils import (
     auto_delete_message,
     delete_links,
-    sendMessage,
-    sendStatusMessage,
-    editMessage,
-    deleteMessage,
+    send_message,
+    send_status_message,
+    edit_message,
+    delete_message,
 )
 
 
-async def configureDownload(_, query, obj):
+@new_task
+async def configure_download(_, query, obj):
     data = query.data.split()
     message = query.message
     await query.answer()
     if data[1] == "sdone":
         obj.event.set()
     elif data[1] == "cancel":
-        await editMessage(
+        await edit_message(
             message,
             "Task has been cancelled."
         )
-        obj.listener.isCancelled = True
+        obj.listener.is_cancelled = True
         obj.event.set()
 
 
@@ -70,14 +74,14 @@ class JDownloaderHelper:
 
     async def _event_handler(self):
         pfunc = partial(
-            configureDownload,
+            configure_download,
             obj=self
         )
         handler = self.listener.client.add_handler(
             CallbackQueryHandler(
                 pfunc,
                 filters=regex("^jdq")
-                & user(self.listener.userId)
+                & user(self.listener.user_id)
             ),
             group=-1,
         )
@@ -87,11 +91,11 @@ class JDownloaderHelper:
                 timeout=self._timeout
             )
         except:
-            await editMessage(
+            await edit_message(
                 self._reply_to,
                 "Timed Out. Task has been cancelled!"
             )
-            self.listener.isCancelled = True
+            self.listener.is_cancelled = True
             await auto_delete_message(
                 self.listener.message,
                 self._reply_to
@@ -100,17 +104,17 @@ class JDownloaderHelper:
         finally:
             self.listener.client.remove_handler(*handler)
 
-    async def waitForConfigurations(self):
+    async def wait_for_configurations(self):
         buttons = ButtonMaker()
-        buttons.ubutton(
+        buttons.url_button(
             "Select",
             "https://my.jdownloader.org"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "Done Selecting",
             "jdq sdone"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "Cancel",
             "jdq cancel"
         )
@@ -118,21 +122,21 @@ class JDownloaderHelper:
         msg = "Disable/Remove the unwanted files or change variants or "
         msg += f"edit files names from myJdownloader site for <b>{self.listener.name}</b> "
         msg += "but don't start it manually!\n\nAfter finish press Done Selecting!\nTimeout: 300s"
-        self._reply_to = await sendMessage(
+        self._reply_to = await send_message(
             self.listener.message,
             msg,
             button
         )
         await self._event_handler()
-        if not self.listener.isCancelled:
-            await deleteMessage(self._reply_to)
-        return self.listener.isCancelled
+        if not self.listener.is_cancelled:
+            await delete_message(self._reply_to)
+        return self.listener.is_cancelled
 
 
 async def add_jd_download(listener, path):
     async with jd_lock:
         if jdownloader.device is None:
-            await listener.onDownloadError(jdownloader.error)
+            await listener.on_download_error(jdownloader.error)
             return
 
         try:
@@ -143,12 +147,12 @@ async def add_jd_download(listener, path):
         except:
             is_connected = await jdownloader.jdconnect()
             if not is_connected:
-                await listener.onDownloadError(jdownloader.error)
+                await listener.on_download_error(jdownloader.error)
                 return
             jdownloader.boot() # type: ignore
             isDeviceConnected = await jdownloader.connectToDevice()
             if not isDeviceConnected:
-                await listener.onDownloadError(jdownloader.error)
+                await listener.on_download_error(jdownloader.error)
                 return
 
         if not jd_downloads:
@@ -232,7 +236,7 @@ async def add_jd_download(listener, path):
             )
 
             if not online_packages and corrupted_packages and error:
-                await listener.onDownloadError(error)
+                await listener.on_download_error(error)
                 await retry_function(
                     jdownloader.device.linkgrabber.remove_links,
                     package_ids=corrupted_packages,
@@ -299,7 +303,7 @@ async def add_jd_download(listener, path):
 
             if online_packages:
                 if listener.join and len(online_packages) > 1:
-                    listener.name = listener.sameDir["name"]
+                    listener.name = listener.same_dir["name"]
                     await retry_function(
                         jdownloader.device.linkgrabber.move_to_new_package,
                         listener.name,
@@ -312,7 +316,7 @@ async def add_jd_download(listener, path):
             error = (
                 name or "Download Not Added! Maybe some issues in jdownloader or site!"
             )
-            await listener.onDownloadError(error)
+            await listener.on_download_error(error)
             if corrupted_packages or online_packages:
                 packages_to_remove = corrupted_packages + online_packages
                 await retry_function(
@@ -359,7 +363,7 @@ async def add_jd_download(listener, path):
             jdownloader.device.linkgrabber.remove_links,
             package_ids=online_packages
         )
-        await listener.onDownloadError(
+        await listener.on_download_error(
             msg,
             button
         )
@@ -368,12 +372,12 @@ async def add_jd_download(listener, path):
         return
     if limit_exceeded := await limit_checker(
         listener,
-        isJd=True
+        is_jd=True
     ):
         LOGGER.info(
             f"JDownloader Limit Exceeded: {listener.name} | {listener.size}"
         )
-        jdmsg = await listener.onDownloadError(limit_exceeded)
+        jdmsg = await listener.on_download_error(limit_exceeded)
         await delete_links(listener.message)
         await auto_delete_message(
             listener.message,
@@ -383,13 +387,13 @@ async def add_jd_download(listener, path):
 
     if (
         listener.select and
-        await JDownloaderHelper(listener).waitForConfigurations()
+        await JDownloaderHelper(listener).wait_for_configurations()
     ):
         await retry_function(
             jdownloader.device.linkgrabber.remove_links,
             package_ids=online_packages,
         )
-        listener.removeFromSameDir()
+        listener.remove_from_same_dir()
         return
 
     add_to_queue, event = await check_running_tasks(listener)
@@ -401,11 +405,11 @@ async def add_jd_download(listener, path):
                 f"{gid}",
                 "dl"
             )
-        await listener.onDownloadStart()
+        await listener.on_download_start()
         if listener.multi <= 1:
-            await sendStatusMessage(listener.message)
+            await send_status_message(listener.message)
         await event.wait() # type: ignore
-        if listener.isCancelled:
+        if listener.is_cancelled:
             return
         async with queue_dict_lock:
             non_queued_dl.add(listener.mid)
@@ -434,7 +438,7 @@ async def add_jd_download(listener, path):
             jd_downloads[gid]["ids"] = packages
 
     if not packages:
-        await listener.onDownloadError("This Download have been removed manually!")
+        await listener.on_download_error("This Download have been removed manually!")
         async with jd_lock:
             del jd_downloads[gid]
         return
@@ -450,12 +454,12 @@ async def add_jd_download(listener, path):
             f"{gid}",
         )
 
-    await onDownloadStart()
+    await on_download_start()
 
     if add_to_queue:
         LOGGER.info(f"Start Queued Download from JDownloader: {listener.name}")
     else:
         LOGGER.info(f"Download with JDownloader: {listener.name}")
-        await listener.onDownloadStart()
+        await listener.on_download_start()
         if listener.multi <= 1:
-            await sendStatusMessage(listener.message)
+            await send_status_message(listener.message)

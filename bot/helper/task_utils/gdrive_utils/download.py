@@ -11,14 +11,15 @@ from tenacity import (
     RetryError,
 )
 
-from bot.helper.ext_utils.bot_utils import async_to_sync
-from bot.helper.ext_utils.bot_utils import setInterval
-from bot.helper.task_utils.gdrive_utils.helper import GoogleDriveHelper
+from ...ext_utils.bot_utils import async_to_sync
+from ...ext_utils.bot_utils import SetInterval
+from ...task_utils.gdrive_utils.helper import GoogleDriveHelper
 
 LOGGER = getLogger(__name__)
 
 
-class gdDownload(GoogleDriveHelper):
+class GoogleDriveDownload(GoogleDriveHelper):
+
     def __init__(
             self,
             listener,
@@ -31,17 +32,17 @@ class gdDownload(GoogleDriveHelper):
         self.is_downloading = True
 
     def download(self):
-        file_id = self.getIdFromUrl(
+        file_id = self.get_id_from_url(
             self.listener.link,
-            self.listener.userId
+            self.listener.user_id
         )
         self.service = self.authorize()
-        self._updater = setInterval(
+        self._updater = SetInterval(
             self.update_interval,
             self.progress
         )
         try:
-            meta = self.getFileMetadata(file_id)
+            meta = self.get_file_metadata(file_id)
             if meta.get("mimeType") == self.G_DRIVE_DIR_MIME_TYPE:
                 self._download_folder(
                     file_id,
@@ -87,15 +88,15 @@ class gdDownload(GoogleDriveHelper):
                     return self.download()
                 err = "File not found!"
             async_to_sync(
-                self.listener.onDownloadError,
+                self.listener.on_download_error,
                 err
             )
-            self.listener.isCancelled = True
+            self.listener.is_cancelled = True
         finally:
             self._updater.cancel()
-            if self.listener.isCancelled:
+            if self.listener.is_cancelled:
                 return
-            async_to_sync(self.listener.onDownloadComplete)
+            async_to_sync(self.listener.on_download_complete)
 
     def _download_folder(self, folder_id, path, folder_name):
         folder_name = folder_name.replace(
@@ -105,7 +106,7 @@ class gdDownload(GoogleDriveHelper):
         if not ospath.exists(f"{path}/{folder_name}"):
             makedirs(f"{path}/{folder_name}")
         path += f"/{folder_name}"
-        result = self.getFilesByFolderId(folder_id)
+        result = self.get_files_by_folder_id(folder_id)
         if len(result) == 0:
             return
         result = sorted(
@@ -129,7 +130,7 @@ class gdDownload(GoogleDriveHelper):
                 )
             elif (
                 not ospath.isfile(f"{path}{filename}")
-                and not filename.lower().endswith(tuple(self.listener.extensionFilter))
+                and not filename.lower().endswith(tuple(self.listener.extension_filter))
             ):
                 self._download_file(
                     file_id,
@@ -137,7 +138,7 @@ class gdDownload(GoogleDriveHelper):
                     filename,
                     mime_type
                 )
-            if self.listener.isCancelled:
+            if self.listener.is_cancelled:
                 break
 
     @retry(
@@ -163,7 +164,7 @@ class gdDownload(GoogleDriveHelper):
             filename = f"{filename[:245]}{ext}"
             if self.listener.name.endswith(ext):
                 self.listener.name = filename
-        if self.listener.isCancelled:
+        if self.listener.is_cancelled:
             return
         fh = FileIO(
             f"{path}/{filename}",
@@ -177,7 +178,7 @@ class gdDownload(GoogleDriveHelper):
         done = False
         retries = 0
         while not done:
-            if self.listener.isCancelled:
+            if self.listener.is_cancelled:
                 fh.close()
                 break
             try:
@@ -211,9 +212,9 @@ class gdDownload(GoogleDriveHelper):
                             )
                             raise err
                         else:
-                            if self.listener.isCancelled:
+                            if self.listener.is_cancelled:
                                 return
-                            self.switchServiceAccount()
+                            self.switch_service_account()
                             LOGGER.info(f"Got: {reason}, Trying Again...")
                             return self._download_file(
                                 file_id,

@@ -1,20 +1,20 @@
 from bot import (
     DOWNLOAD_DIR,
-    bot,
-    config_dict,
     LOGGER,
-    bot_loop
+    bot,
+    bot_loop,
+    config_dict
 )
 from bot.helper.ext_utils.bot_utils import (
-    sync_to_async,
-    arg_parser,
     COMMAND_USAGE,
+    arg_parser,
+    sync_to_async
 )
 from bot.helper.ext_utils.links_utils import is_url
 from bot.helper.listeners.ytdlp_listener import (
-    YtSelection,
+    extract_info,
     mdisk,
-    extract_info
+    YtSelection
 )
 from bot.helper.listeners.task_listener import TaskListener
 from bot.helper.task_utils.download_utils.yt_dlp_download import YoutubeDLHelper
@@ -22,8 +22,8 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import (
     auto_delete_message,
-    deleteMessage,
-    sendMessage,
+    delete_message,
+    send_message,
 )
 
 from nekozee.filters import command
@@ -36,30 +36,30 @@ class YtDlp(TaskListener):
         client,
         message,
         _=None,
-        isLeech=False,
+        is_leech=False,
         __=None,
         ___=None,
-        sameDir=None,
+        same_dir=None,
         bulk=None,
-        multiTag=None,
+        multi_tag=None,
         options="",
     ):
-        if sameDir is None:
-            sameDir = {}
+        if same_dir is None:
+            same_dir = {}
         if bulk is None:
             bulk = []
         self.message = message
         self.client = client
-        self.multiTag = multiTag
+        self.multi_tag = multi_tag
         self.options = options
-        self.sameDir = sameDir
+        self.same_dir = same_dir
         self.bulk = bulk
         super().__init__()
-        self.isYtDlp = True
-        self.isLeech = isLeech
+        self.is_ytdlp = True
+        self.is_leech = is_leech
 
-    async def newEvent(self):
-        self.pmsg = await sendMessage(
+    async def new_event(self):
+        self.pmsg = await send_message(
             self.message,
             "Processing your request..."
         )
@@ -68,6 +68,8 @@ class YtDlp(TaskListener):
         qual = ""
 
         args = {
+            "-doc": False,
+            "-med": False,
             "-s": False,
             "-b": False,
             "-z": False,
@@ -89,6 +91,7 @@ class YtDlp(TaskListener):
             "-ca": "",
             "-cv": "",
             "-ns": "",
+            "-tl": "",
         }
 
         arg_parser(
@@ -103,23 +106,26 @@ class YtDlp(TaskListener):
 
         self.select = args["-s"]
         self.name = args["-n"]
-        self.upDest = args["-up"]
-        self.rcFlags = args["-rcf"]
+        self.up_dest = args["-up"]
+        self.rc_flags = args["-rcf"]
         self.link = args["link"]
         self.compress = args["-z"]
         self.thumb = args["-t"]
-        self.splitSize = args["-sp"]
-        self.sampleVideo = args["-sv"]
-        self.screenShots = args["-ss"]
-        self.forceRun = args["-f"]
-        self.forceDownload = args["-fd"]
-        self.forceUpload = args["-fu"]
-        self.convertAudio = args["-ca"]
-        self.convertVideo = args["-cv"]
-        self.nameSub = args["-ns"]
-        self.mixedLeech = args["-ml"]
+        self.split_size = args["-sp"]
+        self.sample_video = args["-sv"]
+        self.screen_shots = args["-ss"]
+        self.force_run = args["-f"]
+        self.force_download = args["-fd"]
+        self.force_upload = args["-fu"]
+        self.convert_audio = args["-ca"]
+        self.convert_video = args["-cv"]
+        self.name_sub = args["-ns"]
+        self.mixed_leech = args["-ml"]
+        self.thumbnail_layout = args["-tl"]
+        self.as_doc = args["-doc"]
+        self.as_med = args["-med"]
 
-        isBulk = args["-b"]
+        is_bulk = args["-b"]
         folder_name = args["-sd"]
 
         bulk_start = 0
@@ -128,30 +134,30 @@ class YtDlp(TaskListener):
         opt = args["-opt"]
         self.file_ = None
 
-        await self.getId()
+        await self.get_id()
 
-        if not isinstance(isBulk, bool):
-            dargs = isBulk.split(":")
+        if not isinstance(is_bulk, bool):
+            dargs = is_bulk.split(":")
             bulk_start = dargs[0] or None
             if len(dargs) == 2:
                 bulk_end = dargs[1] or None
-            isBulk = True
+            is_bulk = True
 
-        if not isBulk:
+        if not is_bulk:
             if folder_name:
                 folder_name = f"/{folder_name}"
-                if not self.sameDir:
-                    self.sameDir = {
+                if not self.same_dir:
+                    self.same_dir = {
                         "total": self.multi,
                         "tasks": set(),
                         "name": folder_name,
                     }
-                self.sameDir["tasks"].add(self.mid)
-            elif self.sameDir:
-                self.sameDir["total"] -= 1
+                self.same_dir["tasks"].add(self.mid)
+            elif self.same_dir:
+                self.same_dir["total"] -= 1
         else:
-            await deleteMessage(self.pmsg)
-            await self.initBulk(
+            await delete_message(self.pmsg)
+            await self.init_bulk(
                 input_list,
                 bulk_start,
                 bulk_end,
@@ -164,11 +170,11 @@ class YtDlp(TaskListener):
 
         path = f"{DOWNLOAD_DIR}{self.mid}{folder_name}"
 
-        await self.getTag(text)
+        await self.get_tag(text)
 
         opt = (
             opt
-            or self.userDict.get("yt_opt")
+            or self.user_dict.get("yt_opt")
             or config_dict["YT_DLP_OPTIONS"]
         )
 
@@ -182,13 +188,13 @@ class YtDlp(TaskListener):
             )[0].strip()
 
         if not is_url(self.link):
-            hmsg = await sendMessage(
+            hmsg = await send_message(
                 self.message,
                 COMMAND_USAGE["yt"][0],
                 COMMAND_USAGE["yt"][1]
             )
-            self.removeFromSameDir()
-            await deleteMessage(self.pmsg)
+            self.remove_from_same_dir()
+            await delete_message(self.pmsg)
             await auto_delete_message(
                 self.message,
                 hmsg
@@ -204,18 +210,18 @@ class YtDlp(TaskListener):
                 self.name
             )
 
-        if await self.permissionCheck() != True:
+        if await self.permission_check() != True:
             return
-        await deleteMessage(self.pmsg)
+        await delete_message(self.pmsg)
 
         try:
-            await self.beforeStart()
+            await self.before_start()
         except Exception as e:
-            emsg = await sendMessage(
+            emsg = await send_message(
                 self.message,
                 e
             )
-            self.removeFromSameDir()
+            self.remove_from_same_dir()
             await auto_delete_message(
                 self.message,
                 emsg
@@ -239,7 +245,10 @@ class YtDlp(TaskListener):
                         1
                     )
                 )
-                if key == "postprocessors":
+                if key in [
+                    "postprocessors",
+                    "download_ranges"
+                ]:
                     continue
                 if key == "format" and not self.select:
                     if value.startswith("ba/b-"):
@@ -294,30 +303,30 @@ class YtDlp(TaskListener):
                 ">",
                 " "
             )
-            emsg = await sendMessage(
+            emsg = await send_message(
                 self.message,
                 f"{self.tag} {msg}"
             )
-            self.removeFromSameDir()
+            self.remove_from_same_dir()
             await auto_delete_message(
                 self.message,
                 emsg
             )
             return
         finally:
-            self.run_multi(
+            await self.run_multi(
                 input_list,
                 folder_name,
                 YtDlp
-            ) # type: ignore
+            )
 
         if not qual:
             qual = await YtSelection(self).get_quality(result)
             if qual is None:
-                self.removeFromSameDir()
+                self.remove_from_same_dir()
                 return
 
-        await deleteMessage(self.pmsg)
+        await delete_message(self.pmsg)
 
         LOGGER.info(f"Downloading with YT-DLP: {self.link}")
         playlist = "entries" in result
@@ -334,15 +343,15 @@ async def ytdl(client, message):
     bot_loop.create_task(YtDlp(
         client,
         message
-    ).newEvent()) # type: ignore
+    ).new_event()) # type: ignore
 
 
-async def ytdlleech(client, message):
+async def ytdl_leech(client, message):
     bot_loop.create_task(YtDlp(
         client,
         message,
-        isLeech=True
-    ).newEvent()) # type: ignore
+        is_leech=True
+    ).new_event()) # type: ignore
 
 
 bot.add_handler( # type: ignore
@@ -357,7 +366,7 @@ bot.add_handler( # type: ignore
 
 bot.add_handler( # type: ignore
     MessageHandler(
-        ytdlleech,
+        ytdl_leech,
         filters=command(
             BotCommands.YtdlLeechCommand,
             case_sensitive=True

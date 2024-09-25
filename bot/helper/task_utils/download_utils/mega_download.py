@@ -11,23 +11,23 @@ from bot import (
     non_queued_dl,
     queue_dict_lock
 )
-from bot.helper.ext_utils.links_utils import get_mega_link_type
-from bot.helper.ext_utils.bot_utils import sync_to_async
+from ...ext_utils.links_utils import get_mega_link_type
+from ...ext_utils.bot_utils import sync_to_async
 
-from bot.helper.ext_utils.task_manager import (
+from ...ext_utils.task_manager import (
     check_running_tasks,
     limit_checker,
     stop_duplicate_check
 )
-from bot.helper.task_utils.status_utils.mega_download_status import MegaDownloadStatus
-from bot.helper.task_utils.status_utils.queue_status import QueueStatus
-from bot.helper.telegram_helper.message_utils import (
+from ...task_utils.status_utils.mega_download_status import MegaDownloadStatus
+from ...task_utils.status_utils.queue_status import QueueStatus
+from ...telegram_helper.message_utils import (
     auto_delete_message,
     delete_links,
-    sendMessage,
-    sendStatusMessage
+    send_message,
+    send_status_message
 )
-from bot.helper.listeners.mega_listener import (
+from ...listeners.mega_listener import (
     MegaAppListener,
     AsyncExecutor,
     mega_login,
@@ -87,7 +87,7 @@ async def add_mega_download(listener, path):
         )
 
     if mega_listener.error:
-        mmsg = await sendMessage(
+        mmsg = await send_message(
             listener.message,
             str(mega_listener.error)
         )
@@ -112,7 +112,7 @@ async def add_mega_download(listener, path):
         button
     ) = await stop_duplicate_check(listener)
     if msg:
-        mmsg = await sendMessage(
+        mmsg = await send_message(
             listener.message,
             msg,
             button
@@ -136,9 +136,9 @@ async def add_mega_download(listener, path):
     listener.size = api.getSize(node)
     if limit_exceeded := await limit_checker(
         listener,
-        isMega=True
+        is_mega=True
     ):
-        mmsg = await sendMessage(
+        mmsg = await send_message(
             listener.message,
             limit_exceeded
         )
@@ -166,8 +166,8 @@ async def add_mega_download(listener, path):
                 gid,
                 "Dl"
             )
-        await listener.onDownloadStart()
-        await sendStatusMessage(listener.message)
+        await listener.on_download_start()
+        await send_status_message(listener.message)
         await event.wait() # type: ignore
         async with task_dict_lock:
             if listener.mid not in task_dict:
@@ -195,8 +195,8 @@ async def add_mega_download(listener, path):
     if from_queue:
         LOGGER.info(f"Start Queued Download from Mega: {listener.name}")
     else:
-        await listener.onDownloadStart()
-        await sendStatusMessage(listener.message)
+        await listener.on_download_start()
+        await send_status_message(listener.message)
         LOGGER.info(f"Download from Mega: {listener.name}")
 
     await makedirs(

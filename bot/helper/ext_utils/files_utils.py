@@ -30,7 +30,7 @@ from bot import (
     DOWNLOAD_DIR,
     qbittorrent_client
 )
-from bot.helper.ext_utils.bot_utils import (
+from .bot_utils import (
     sync_to_async,
     cmd_exec
 )
@@ -74,6 +74,7 @@ ARCH_EXT = [
     ".udf",
     ".vhd",
     ".xar",
+    ".zst",
 ]
 
 FIRST_SPLIT_REGEX = r"(\.|_)part0*1\.rar$|(\.|_)7z\.0*1$|(\.|_)zip\.0*1$|^(?!.*(\.|_)part\d+\.rar$).*\.rar$"

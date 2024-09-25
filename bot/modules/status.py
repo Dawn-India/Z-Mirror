@@ -1,3 +1,18 @@
+from aiofiles.os import path as aiopath
+from datetime import datetime as dt
+from httpx import AsyncClient as xclient
+from psutil import (
+    boot_time,
+    cpu_count,
+    cpu_freq,
+    cpu_percent,
+    disk_usage,
+    net_io_counters,
+    swap_memory,
+    virtual_memory
+)
+from time import time
+
 from nekozee.filters import (
     command,
     regex
@@ -6,74 +21,60 @@ from nekozee.handlers import (
     MessageHandler,
     CallbackQueryHandler
 )
-from time import time
-from datetime import datetime as dt
-from bot.helper.z_utils import def_media
-from httpx import AsyncClient as xclient
-from aiofiles.os import path as aiopath
-
-from psutil import (
-    boot_time,
-    cpu_count,
-    cpu_freq,
-    cpu_percent,
-    disk_usage,
-    swap_memory,
-    virtual_memory,
-    net_io_counters
-)
 
 from bot import (
     BASE,
-    config_dict,
     LOGGER,
-    task_dict_lock,
+    bot,
+    bot_start_time,
+    config_dict,
+    intervals,
     status_dict,
     task_dict,
-    botStartTime,
-    DOWNLOAD_DIR,
-    Intervals,
-    bot,
+    task_dict_lock
 )
-from bot.helper.ext_utils.bot_utils import (
+from ..helper.ext_utils.bot_utils import (
     cmd_exec,
+    new_task,
     sync_to_async
 )
-from bot.helper.ext_utils.status_utils import (
+from ..helper.ext_utils.status_utils import (
     MirrorStatus,
     get_progress_bar_string,
     get_readable_file_size,
     get_readable_time,
-    getSpecificTasks,
+    get_specific_tasks,
     speed_string_to_bytes,
 )
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
-    isAdmin,
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import (
+    is_admin,
     request_limiter,
-    sendMessage,
-    deleteMessage,
+    send_message,
+    delete_message,
     auto_delete_message,
-    sendStatusMessage,
+    send_status_message,
     update_status_message,
 )
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.z_utils import def_media
 
 
+@new_task
 async def mirror_status(_, message):
     async with task_dict_lock:
         count = len(task_dict)
     if count == 0:
-        currentTime = get_readable_time(time() - botStartTime) # type: ignore
-        free = get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)
+        currentTime = get_readable_time(time() - bot_start_time) # type: ignore
+        free = get_readable_file_size(disk_usage(config_dict["DOWNLOAD_DIR"]).free)
         msg = "Stop it!\nGet some help!\n\nNo Active Tasks!\n\n"
         msg += f"Get your tasks status by adding me or user_id after cmd: /{BotCommands.StatusCommand[0]} me\n\n"
         msg += (
             f"\n<b>CPU:</b> {cpu_percent()}% | <b>FREE:</b> {free}"
             f"\n<b>RAM:</b> {virtual_memory().percent}% | <b>UPTIME:</b> {currentTime}"
         )
-        reply_message = await sendMessage(
+        reply_message = await send_message(
             message,
             msg
         )
@@ -92,20 +93,21 @@ async def mirror_status(_, message):
         else:
             user_id = 0
             sid = message.chat.id
-            if obj := Intervals["status"].get(sid):
+            if obj := intervals["status"].get(sid):
                 obj.cancel()
-                del Intervals["status"][sid]
-        await sendStatusMessage(
+                del intervals["status"][sid]
+        await send_status_message(
             message,
             user_id
         )
-        await deleteMessage(message)
+        await delete_message(message)
 
 
+@new_task
 async def status_pages(_, query):
     user_id = query.from_user.id
     spam = (
-        not await isAdmin(
+        not await is_admin(
             query.message,
             user_id
         )
@@ -114,13 +116,13 @@ async def status_pages(_, query):
     if spam:
         return
     if (
-        not await isAdmin(
+        not await is_admin(
             query.message,
             user_id
         )
         and user_id
         and not await sync_to_async(
-            getSpecificTasks,
+            get_specific_tasks,
             "All",
             user_id
         )
@@ -265,8 +267,13 @@ def bot_sys_stats():
 async def stats(_, message, edit_mode=False):
     buttons = ButtonMaker()
     sysTime = get_readable_time(time() - boot_time()) # type: ignore
-    botTime = get_readable_time(time() - botStartTime) # type: ignore
-    total, used, free, disk = disk_usage("/")
+    botTime = get_readable_time(time() - bot_start_time) # type: ignore
+    (
+        total,
+        used,
+        free,
+        disk
+    ) = disk_usage("/")
     total = get_readable_file_size(total)
     used = get_readable_file_size(used)
     free = get_readable_file_size(free)
@@ -310,19 +317,19 @@ async def stats(_, message, edit_mode=False):
                 f"<b>DISK:</b> {get_progress_bar_string(disk)}<code> {disk}%</code>\n" \
                 f"<b>Total:</b> <code>{total}</code> | <b>Free:</b> <code>{free}</code>"
 
-    buttons.ibutton(
+    buttons.data_button(
         "ꜱʏꜱᴛᴇᴍ\nꜱᴛᴀᴛꜱ",
         "show_sys_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʀᴇᴘᴏ\nꜱᴛᴀᴛꜱ",
         "show_repo_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʙᴏᴛ\nʟɪᴍɪᴛꜱ",
         "show_bot_limits"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
         "close_signal"
     )
@@ -335,6 +342,7 @@ async def stats(_, message, edit_mode=False):
     return bot_stats, sys_stats
 
 
+@new_task
 async def send_bot_stats(_, query):
     buttons = ButtonMaker()
     (
@@ -345,19 +353,19 @@ async def send_bot_stats(_, query):
         query.message,
         edit_mode=True
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ꜱʏꜱᴛᴇᴍ\nꜱᴛᴀᴛꜱ",
         "show_sys_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʀᴇᴘᴏ\nꜱᴛᴀᴛꜱ",
         "show_repo_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʙᴏᴛ\nʟɪᴍɪᴛꜱ",
         "show_bot_limits"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
         "close_signal"
     )
@@ -369,6 +377,7 @@ async def send_bot_stats(_, query):
     )
 
 
+@new_task
 async def send_sys_stats(_, query):
     buttons = ButtonMaker()
     (
@@ -379,19 +388,19 @@ async def send_sys_stats(_, query):
         query.message,
         edit_mode=True
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʙᴏᴛ\nꜱᴛᴀᴛꜱ",
         "show_bot_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʀᴇᴘᴏ\nꜱᴛᴀᴛꜱ",
         "show_repo_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʙᴏᴛ\nʟɪᴍɪᴛꜱ",
         "show_bot_limits"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
         "close_signal"
     )
@@ -403,6 +412,7 @@ async def send_sys_stats(_, query):
     )
 
 
+@new_task
 async def send_repo_stats(_, query):
     buttons = ButtonMaker()
     commit_date = "Official Repo not available"
@@ -488,19 +498,19 @@ async def send_repo_stats(_, query):
                  f"<code>- Changelog : </code> {change_log} \n\n" \
                  f"<b>{update_info}</b>"
 
-    buttons.ibutton(
+    buttons.data_button(
         "ʙᴏᴛ\nꜱᴛᴀᴛꜱ", 
         "show_bot_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ꜱʏꜱᴛᴇᴍ\nꜱᴛᴀᴛꜱ",
         "show_sys_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʙᴏᴛ\nʟɪᴍɪᴛꜱ",
         "show_bot_limits"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
         "close_signal"
     )
@@ -512,6 +522,7 @@ async def send_repo_stats(_, query):
     )
 
 
+@new_task
 async def send_bot_limits(_, query):
     buttons = ButtonMaker()
     DIR = "Unlimited" if config_dict["DIRECT_LIMIT"] == "" else config_dict["DIRECT_LIMIT"]
@@ -543,19 +554,19 @@ async def send_bot_limits(_, query):
                 f"<code>User Tasks: {UMT}</code>\n" \
                 f"<code>Bot Tasks : {BMT}</code>"
 
-    buttons.ibutton(
+    buttons.data_button(
         "ʙᴏᴛ\nꜱᴛᴀᴛꜱ",
         "show_bot_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ꜱʏꜱᴛᴇᴍ\nꜱᴛᴀᴛꜱ",
         "show_sys_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ʀᴇᴘᴏ\nꜱᴛᴀᴛꜱ",
         "show_repo_stats"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
         "close_signal"
     )
@@ -570,10 +581,10 @@ async def send_bot_limits(_, query):
 async def send_close_signal(_, query):
     await query.answer()
     try:
-        await deleteMessage(query.message.reply_to_message)
+        await delete_message(query.message.reply_to_message)
     except Exception as e:
         LOGGER.error(e)
-    await deleteMessage(query.message)
+    await delete_message(query.message)
 
 
 bot.add_handler( # type: ignore

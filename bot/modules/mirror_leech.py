@@ -3,24 +3,25 @@ from aiofiles.os import (
     remove
 )
 from base64 import b64encode
-from nekozee.filters import command
-from nekozee.handlers import MessageHandler
 from re import match as re_match
 
+from nekozee.filters import command
+from nekozee.handlers import MessageHandler
+
 from bot import (
-    bot,
     DOWNLOAD_DIR,
     LOGGER,
+    bot,
     bot_loop
 )
-from bot.helper.ext_utils.bot_utils import (
+from ..helper.ext_utils.bot_utils import (
+    COMMAND_USAGE,
     get_content_type,
     sync_to_async,
-    arg_parser,
-    COMMAND_USAGE,
+    arg_parser
 )
-from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from bot.helper.ext_utils.links_utils import (
+from ..helper.ext_utils.exceptions import DirectDownloadLinkException
+from ..helper.ext_utils.links_utils import (
     is_url,
     is_magnet,
     is_gdrive_id,
@@ -29,35 +30,25 @@ from bot.helper.ext_utils.links_utils import (
     is_rclone_path,
     is_telegram_link,
 )
-from bot.helper.listeners.task_listener import TaskListener
-from bot.helper.task_utils.download_utils.aria2_download import (
-    add_aria2c_download,
-)
-from bot.helper.task_utils.download_utils.direct_downloader import (
-    add_direct_download,
-)
-from bot.helper.task_utils.download_utils.direct_link_generator import (
-    direct_link_generator,
-)
-from bot.helper.task_utils.download_utils.gd_download import add_gd_download
-from bot.helper.task_utils.download_utils.jd_download import add_jd_download
-from bot.helper.task_utils.download_utils.mega_download import add_mega_download
-from bot.helper.task_utils.download_utils.qbit_download import add_qb_torrent
-from bot.helper.task_utils.download_utils.nzb_downloader import add_nzb
-from bot.helper.task_utils.download_utils.rclone_download import (
-    add_rclone_download,
-)
-from bot.helper.task_utils.download_utils.telegram_download import (
-    TelegramDownloadHelper,
-)
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
+from ..helper.listeners.task_listener import TaskListener
+from ..helper.task_utils.download_utils.aria2_download import add_aria2c_download
+from ..helper.task_utils.download_utils.direct_downloader import add_direct_download
+from ..helper.task_utils.download_utils.direct_link_generator import direct_link_generator
+from ..helper.task_utils.download_utils.gd_download import add_gd_download
+from ..helper.task_utils.download_utils.jd_download import add_jd_download
+from ..helper.task_utils.download_utils.mega_download import add_mega_download
+from ..helper.task_utils.download_utils.qbit_download import add_qb_torrent
+from ..helper.task_utils.download_utils.nzb_downloader import add_nzb
+from ..helper.task_utils.download_utils.rclone_download import add_rclone_download
+from ..helper.task_utils.download_utils.telegram_download import TelegramDownloadHelper
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import (
     auto_delete_message,
-    deleteMessage,
+    delete_message,
     get_tg_link_message,
-    sendMessage,
-    editMessage,
+    send_message,
+    edit_message,
 )
 from myjd.exception import MYJDException
 
@@ -67,34 +58,34 @@ class Mirror(TaskListener):
         self,
         client,
         message,
-        isQbit=False,
-        isLeech=False,
-        isJd=False,
-        isNzb=False,
-        sameDir=None,
+        is_qbit=False,
+        is_leech=False,
+        is_jd=False,
+        is_nzb=False,
+        same_dir=None,
         bulk=None,
-        multiTag=None,
+        multi_tag=None,
         options="",
     ):
-        if sameDir is None:
-            sameDir = {}
+        if same_dir is None:
+            same_dir = {}
         if bulk is None:
             bulk = []
         self.message = message
         self.client = client
-        self.multiTag = multiTag
+        self.multi_tag = multi_tag
         self.options = options
-        self.sameDir = sameDir
+        self.same_dir = same_dir
         self.bulk = bulk
         super().__init__()
-        self.isQbit = isQbit
-        self.isLeech = isLeech
-        self.isJd = isJd
-        self.isNzb = isNzb
+        self.is_qbit = is_qbit
+        self.is_leech = is_leech
+        self.is_jd = is_jd
+        self.is_nzb = is_nzb
         self.file_ = None
 
-    async def newEvent(self):
-        self.pmsg = await sendMessage(
+    async def new_event(self):
+        self.pmsg = await send_message(
             self.message,
             "Processing your request..."
         )
@@ -106,7 +97,7 @@ class Mirror(TaskListener):
             )
         except Exception as e:
             LOGGER.error(e)
-            await editMessage(
+            await edit_message(
                 self.pmsg,
                 f"ERROR: {e}"
             )
@@ -126,6 +117,8 @@ class Mirror(TaskListener):
             "-fd": False, "-forcedownload": False,
             "-fu": False, "-forceupload": False,
             "-ml": False, "-mixedleech": False,
+            "-doc": False, "-document": False,
+            "-med": False, "-media": False,
             "-m": 0,
             "-sp": 0, "-splitsize": 0,
             "link": "",
@@ -142,6 +135,7 @@ class Mirror(TaskListener):
             "-ns": "", "-namesub": "",
             "-md": "", "-metadata": "",
             "-mda": "", "-metaattachment": "",
+            "-tl": "", "-thumblayout": "",
         }
 
         arg_parser(
@@ -152,28 +146,31 @@ class Mirror(TaskListener):
         self.select = args["-s"] or args["-select"]
         self.seed = args["-d"] or args["-seed"]
         self.name = args["-n"] or args["-rename"]
-        self.upDest = args["-up"] or args["-upload"]
-        self.rcFlags = args["-rcf"]
+        self.up_dest = args["-up"] or args["-upload"]
+        self.rc_flags = args["-rcf"]
         self.link = args["link"]
         self.compress = args["-z"] or args["-zip"] or args["-compress"]
         self.extract = args["-e"] or args["-extract"] or args["-uz"] or args["-unzip"]
         self.join = args["-j"] or args["-join"]
         self.thumb = args["-t"] or args["-thumb"]
-        self.splitSize = args["-sp"] or args["-splitsize"]
-        self.sampleVideo = args["-sv"] or args["-samplevideo"]
-        self.screenShots = args["-ss"] or args["-screenshot"]
-        self.forceRun = args["-f"] or args["-forcerun"]
-        self.forceDownload = args["-fd"] or args["-forcedownload"]
-        self.forceUpload = args["-fu"] or args["-forceupload"]
-        self.convertAudio = args["-ca"] or args["-convertaudio"]
-        self.convertVideo = args["-cv"] or args["-convertvideo"]
-        self.nameSub = args["-ns"] or args["-namesub"]
-        self.mixedLeech = args["-ml"] or args["-mixedleech"]
-        self.metaData = args["-md"] or args["-metadata"]
-        self.metaAttachment = args["-mda"] or args["-metaattachment"]
+        self.split_size = args["-sp"] or args["-splitsize"]
+        self.sample_video = args["-sv"] or args["-samplevideo"]
+        self.screen_shots = args["-ss"] or args["-screenshot"]
+        self.force_run = args["-f"] or args["-forcerun"]
+        self.force_download = args["-fd"] or args["-forcedownload"]
+        self.force_upload = args["-fu"] or args["-forceupload"]
+        self.convert_audio = args["-ca"] or args["-convertaudio"]
+        self.convert_video = args["-cv"] or args["-convertvideo"]
+        self.name_sub = args["-ns"] or args["-namesub"]
+        self.mixed_leech = args["-ml"] or args["-mixedleech"]
+        self.metadata = args["-md"] or args["-metadata"]
+        self.m_attachment = args["-mda"] or args["-metaattachment"]
+        self.thumbnail_layout = args["-tl"] or args["-thumblayout"]
+        self.as_doc = args["-doc"] or args["-document"]
+        self.as_med = args["-med"] or args["-media"]
 
         headers = args["-h"] or args["-headers"]
-        isBulk = args["-b"] or args["-bulk"]
+        is_bulk = args["-b"] or args["-bulk"]
         folder_name = args["-sd"] or args["-samedir"]
 
         bulk_start = 0
@@ -183,9 +180,8 @@ class Mirror(TaskListener):
         reply_to = None
         session = ""
 
-        await self.getId()
-
-        await self.getTag(text)
+        await self.get_id()
+        await self.get_tag(text)
 
         try:
             self.multi = int(args["-m"])
@@ -205,8 +201,8 @@ class Mirror(TaskListener):
                 )
             self.seed = True
 
-        if not isinstance(isBulk, bool):
-            dargs = isBulk.split(":")
+        if not isinstance(is_bulk, bool):
+            dargs = is_bulk.split(":")
             bulk_start = (
                 dargs[0]
                 or 0
@@ -216,27 +212,27 @@ class Mirror(TaskListener):
                     dargs[1]
                     or 0
                 )
-            isBulk = True
+            is_bulk = True
 
-        if not isBulk:
+        if not is_bulk:
             if folder_name:
                 self.seed = False
                 ratio = None
                 seed_time = None
                 folder_name = f"/{folder_name}"
-                if not self.sameDir:
-                    self.sameDir = {
+                if not self.same_dir:
+                    self.same_dir = {
                         "total": self.multi,
                         "tasks": set(),
                         "name": folder_name,
                     }
-                self.sameDir["tasks"].add(self.mid)
-            elif self.sameDir:
-                self.sameDir["total"] -= 1
+                self.same_dir["tasks"].add(self.mid)
+            elif self.same_dir:
+                self.same_dir["total"] -= 1
 
         else:
-            await deleteMessage(self.pmsg)
-            await self.initBulk(
+            await delete_message(self.pmsg)
+            await self.init_bulk(
                 input_list,
                 bulk_start,
                 bulk_end,
@@ -247,11 +243,11 @@ class Mirror(TaskListener):
         if len(self.bulk) != 0:
             del self.bulk[0]
 
-        self.run_multi(
+        await self.run_multi(
             input_list,
             folder_name,
             Mirror
-        ) # type: ignore
+        )
 
         path = f"{DOWNLOAD_DIR}{self.mid}{folder_name}"
 
@@ -264,6 +260,7 @@ class Mirror(TaskListener):
                     "\n",
                     1
                 )[0].strip()
+
         if is_telegram_link(self.link):
             try:
                 result = await get_tg_link_message(self.link)
@@ -272,12 +269,12 @@ class Mirror(TaskListener):
             except Exception as e:
                 e = str(e)
                 if "group" in e:
-                    tmsg = await sendMessage(
+                    tmsg = await send_message(
                         self.message,
                         f"ERROR: This is a TG invite link.\nSend media links to download.\n\ncc: {self.tag}"
                     )
                     return tmsg
-                tmsg = await sendMessage(
+                tmsg = await send_message(
                     self.message,
                     f"ERROR: {e}\n\ncc: {self.tag}"
                 )
@@ -285,19 +282,17 @@ class Mirror(TaskListener):
                     self.message,
                     tmsg
                 )
-                self.removeFromSameDir()
-                await deleteMessage(self.pmsg)
+                self.remove_from_same_dir()
+                await delete_message(self.pmsg)
                 return
 
         if isinstance(reply_to, list):
             self.bulk = reply_to
-            self.sameDir = {}
+            self.same_dir = {}
             b_msg = input_list[:1]
             self.options = " ".join(input_list[1:])
-            b_msg.append(
-                f"{self.bulk[0]} -m {len(self.bulk)} {self.options}"
-            )
-            nextmsg = await sendMessage(
+            b_msg.append(f"{self.bulk[0]} -m {len(self.bulk)} {self.options}")
+            nextmsg = await send_message(
                 self.message,
                 " ".join(b_msg)
             )
@@ -305,22 +300,24 @@ class Mirror(TaskListener):
                 chat_id=self.message.chat.id,
                 message_ids=nextmsg.id # type: ignore
             )
+
             if self.message.from_user:
                 nextmsg.from_user = self.user
             else:
                 nextmsg.sender_chat = self.user
+
             await Mirror(
                 self.client,
                 nextmsg,
-                self.isQbit,
-                self.isLeech,
-                self.isJd,
-                self.isNzb,
-                self.sameDir,
+                self.is_qbit,
+                self.is_leech,
+                self.is_jd,
+                self.is_nzb,
+                self.same_dir,
                 self.bulk,
-                self.multiTag,
+                self.multi_tag,
                 self.options,
-            ).newEvent()
+            ).new_event()
             return
 
         if reply_to:
@@ -369,35 +366,35 @@ class Mirror(TaskListener):
             and not is_gdrive_link(self.link)
             and not is_mega_link(self.link)
         ):
-            cmsg = await sendMessage(
+            cmsg = await send_message(
                 self.message,
                 COMMAND_USAGE["mirror"][0],
                 COMMAND_USAGE["mirror"][1]
             )
-            self.removeFromSameDir()
-            await deleteMessage(self.pmsg)
+            self.remove_from_same_dir()
+            await delete_message(self.pmsg)
             await auto_delete_message(
                 self.message,
                 cmsg
             )
             return
 
-        if self.link:
+        if len(self.link) > 0:
             LOGGER.info(self.link)
 
-        if await self.permissionCheck() != True:
+        if await self.permission_check() != True:
             return
-        await deleteMessage(self.pmsg)
+        await delete_message(self.pmsg)
 
         try:
-            await self.beforeStart()
+            await self.before_start()
         except Exception as e:
-            emsg = await sendMessage(
+            emsg = await send_message(
                 self.message,
                 e
             )
-            self.removeFromSameDir()
-            await deleteMessage(self.pmsg)
+            self.remove_from_same_dir()
+            await delete_message(self.pmsg)
             await auto_delete_message(
                 self.message,
                 emsg
@@ -405,9 +402,9 @@ class Mirror(TaskListener):
             return
 
         if (
-            not self.isJd
-            and not self.isNzb
-            and not self.isQbit
+            not self.is_jd
+            and not self.is_nzb
+            and not self.is_qbit
             and not is_magnet(self.link)
             and not is_rclone_path(self.link)
             and not is_gdrive_link(self.link)
@@ -441,11 +438,11 @@ class Mirror(TaskListener):
                     if "This link requires a password!" not in e:
                         LOGGER.info(e)
                     if e.startswith("ERROR:"):
-                        dmsg = await sendMessage(
+                        dmsg = await send_message(
                             self.message,
                             e
                         )
-                        self.removeFromSameDir()
+                        self.remove_from_same_dir()
                         await auto_delete_message(
                             self.message,
                             dmsg
@@ -466,7 +463,7 @@ class Mirror(TaskListener):
                 self,
                 path
             )
-        elif self.isJd:
+        elif self.is_jd:
             try:
                 await add_jd_download(
                     self,
@@ -476,11 +473,11 @@ class Mirror(TaskListener):
                 Exception,
                 MYJDException
             ) as e:
-                jmsg = await sendMessage(
+                jmsg = await send_message(
                     self.message,
                     f"{e}".strip()
                 )
-                self.removeFromSameDir()
+                self.remove_from_same_dir()
                 await auto_delete_message(
                     self.message,
                     jmsg
@@ -489,14 +486,14 @@ class Mirror(TaskListener):
             finally:
                 if await aiopath.exists(str(self.link)):
                     await remove(str(self.link))
-        elif self.isQbit:
+        elif self.is_qbit:
             await add_qb_torrent(
                 self,
                 path,
                 ratio,
                 seed_time
             )
-        elif self.isNzb:
+        elif self.is_nzb:
             await add_nzb(
                 self,
                 path
@@ -540,66 +537,66 @@ async def mirror(client, message):
     bot_loop.create_task(Mirror(
         client,
         message
-    ).newEvent()) # type: ignore
+    ).new_event()) # type: ignore
 
 
 async def qb_mirror(client, message):
     bot_loop.create_task(Mirror(
         client,
         message,
-        isQbit=True
-    ).newEvent()) # type: ignore
+        is_qbit=True
+    ).new_event()) # type: ignore
 
 
 async def jd_mirror(client, message):
     bot_loop.create_task(Mirror(
         client,
         message,
-        isJd=True
-    ).newEvent()) # type: ignore
+        is_jd=True
+    ).new_event()) # type: ignore
 
 
 async def nzb_mirror(client, message):
     bot_loop.create_task(Mirror(
         client,
         message,
-        isNzb=True
-    ).newEvent()) # type: ignore
+        is_nzb=True
+    ).new_event()) # type: ignore
 
 
 async def leech(client, message):
     bot_loop.create_task(Mirror(
         client,
         message,
-        isLeech=True
-    ).newEvent()) # type: ignore
+        is_leech=True
+    ).new_event()) # type: ignore
 
 
 async def qb_leech(client, message):
     bot_loop.create_task(Mirror(
         client,
         message,
-        isQbit=True,
-        isLeech=True
-    ).newEvent()) # type: ignore
+        is_qbit=True,
+        is_leech=True
+    ).new_event()) # type: ignore
 
 
 async def jd_leech(client, message):
     bot_loop.create_task(Mirror(
         client,
         message,
-        isLeech=True,
-        isJd=True
-    ).newEvent()) # type: ignore
+        is_leech=True,
+        is_jd=True
+    ).new_event()) # type: ignore
 
 
 async def nzb_leech(client, message):
     bot_loop.create_task(Mirror(
         client,
         message,
-        isLeech=True,
-        isNzb=True
-    ).newEvent()) # type: ignore
+        is_leech=True,
+        is_nzb=True
+    ).new_event()) # type: ignore
 
 
 bot.add_handler( # type: ignore

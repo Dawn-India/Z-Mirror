@@ -1,5 +1,6 @@
 from asyncio import sleep
 from re import search as re_search
+
 from nekozee.filters import (
     command,
     regex
@@ -10,32 +11,34 @@ from nekozee.handlers import (
 )
 
 from bot import (
+    OWNER_ID,
     bot,
     bot_name,
     multi_tags,
-    OWNER_ID,
     task_dict,
     task_dict_lock,
     user_data
 )
-from bot.helper.ext_utils.status_utils import (
-    getTaskByGid,
-    getAllTasks,
+from ..helper.ext_utils.bot_utils import new_task
+from ..helper.ext_utils.status_utils import (
+    get_task_by_gid,
+    get_all_tasks,
     MirrorStatus
 )
-from bot.helper.telegram_helper import button_build
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
+from ..helper.telegram_helper import button_build
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import (
     anno_checker,
     delete_links,
-    sendMessage,
+    send_message,
     auto_delete_message,
-    deleteMessage,
-    editMessage
+    delete_message,
+    edit_message
 )
 
 
+@new_task
 async def cancel_task(_, message):
     if not message.from_user:
         message.from_user = await anno_checker(message)
@@ -53,9 +56,9 @@ async def cancel_task(_, message):
             multi_tags.discard(gid)
             return
         else:
-            task = await getTaskByGid(gid)
+            task = await get_task_by_gid(gid)
             if task is None:
-                tmsg = await sendMessage(
+                tmsg = await send_message(
                     message,
                     f"GID: <code>{gid}</code> Not Found."
                 )
@@ -68,7 +71,7 @@ async def cancel_task(_, message):
         async with task_dict_lock:
             task = task_dict.get(reply_to_id)
         if task is None:
-            tmsg = await sendMessage(
+            tmsg = await send_message(
                 message,
                 "This is not an active task!"
             )
@@ -82,7 +85,7 @@ async def cancel_task(_, message):
             "Reply to an active Command message which was used to start the download"
             f" or send <code>/{BotCommands.CancelTaskCommand[0]} GID</code> to cancel it!"
         )
-        tmsg = await sendMessage(
+        tmsg = await send_message(
             message,
             msg
         )
@@ -93,13 +96,13 @@ async def cancel_task(_, message):
         return
     if (
         OWNER_ID != user_id
-        and task.listener.userId != user_id
+        and task.listener.user_id != user_id
         and (
             user_id not in user_data
             or not user_data[user_id].get("is_sudo")
         )
     ):
-        tmsg = await sendMessage(
+        tmsg = await send_message(
             message,
             "This task is not for you!"
         )
@@ -113,6 +116,7 @@ async def cancel_task(_, message):
     await delete_links(message)
 
 
+@new_task
 async def cancel_multi(_, query):
     data = query.data.split()
     user_id = query.from_user.id
@@ -138,13 +142,13 @@ async def cancel_multi(_, query):
         msg,
         show_alert=True
     )
-    await deleteMessage(query.message)
+    await delete_message(query.message)
 
 
-async def cancel_all(status, userId):
-    matches = await getAllTasks(
+async def cancel_all(status, user_id):
+    matches = await get_all_tasks(
         status.strip(),
-        userId
+        user_id
     )
     if not matches:
         return False
@@ -155,83 +159,84 @@ async def cancel_all(status, userId):
     return True
 
 
-def create_cancel_buttons(isSudo, userId=""):
+def create_cancel_buttons(isSudo, user_id=""):
     buttons = button_build.ButtonMaker()
-    buttons.ibutton(
+    buttons.data_button(
         "ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ",
-        f"canall ms {(MirrorStatus.STATUS_DOWNLOADING).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_DOWNLOADING).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴜᴘʟᴏᴀᴅɪɴɢ",
-        f"canall ms {(MirrorStatus.STATUS_UPLOADING).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_UPLOADING).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ꜱᴇᴇᴅɪɴɢ",
-        f"canall ms {(MirrorStatus.STATUS_SEEDING).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_SEEDING).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ꜱᴘʟᴛᴛɪɴɢ",
-        f"canall ms {(MirrorStatus.STATUS_SPLITTING).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_SPLITTING).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏɴɪɴɢ",
-        f"canall ms {(MirrorStatus.STATUS_CLONING).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_CLONING).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴇxᴛʀᴀᴄᴛɪɴɢ",
-        f"canall ms {(MirrorStatus.STATUS_EXTRACTING).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_EXTRACTING).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴀʀᴄʜɪᴠɪɴɢ",
-        f"canall ms {(MirrorStatus.STATUS_ARCHIVING).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_ARCHIVING).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "Qᴜᴇᴜᴇᴅᴅʟ",
-        f"canall ms {(MirrorStatus.STATUS_QUEUEDL).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_QUEUEDL).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "Qᴜᴇᴜᴇᴅᴜᴘ",
-        f"canall ms {(MirrorStatus.STATUS_QUEUEUP).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_QUEUEUP).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ꜱᴀᴍᴘʟᴇᴠɪᴅᴇᴏ",
-        f"canall ms {(MirrorStatus.STATUS_SAMVID).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_SAMVID).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄᴏɴᴠᴇʀᴛᴍᴇᴅɪᴀ",
-        f"canall ms {(MirrorStatus.STATUS_CONVERTING).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_CONVERTING).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴘᴀᴜꜱᴇᴅ",
-        f"canall ms {(MirrorStatus.STATUS_PAUSED).split(' ')[0]} {userId}"
+        f"canall ms {(MirrorStatus.STATUS_PAUSED).split(' ')[0]} {user_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴀʟʟ",
-        f"canall ms All {userId}"
+        f"canall ms All {user_id}"
     )
     if isSudo:
-        if userId:
-            buttons.ibutton(
+        if user_id:
+            buttons.data_button(
                 "ᴀʟʟ ᴀᴅᴅᴇᴅ ᴛᴀꜱᴋꜱ",
-                f"canall bot ms {userId}"
+                f"canall bot ms {user_id}"
             )
         else:
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴍʏ ᴛᴀꜱᴋꜱ",
-                f"canall user ms {userId}"
+                f"canall user ms {user_id}"
             )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
-        f"canall close ms {userId}"
+        f"canall close ms {user_id}"
     )
     return buttons.build_menu(2)
 
 
+@new_task
 async def cancell_all_buttons(_, message):
     async with task_dict_lock:
         count = len(task_dict)
     if count == 0:
-        tmsg = await sendMessage(
+        tmsg = await send_message(
             message,
             "No active tasks!"
         )
@@ -253,7 +258,7 @@ async def cancell_all_buttons(_, message):
         isSudo,
         uid
     )
-    can_msg = await sendMessage(
+    can_msg = await send_message(
         message,
         "Choose tasks to cancel!",
         button
@@ -265,11 +270,12 @@ async def cancell_all_buttons(_, message):
     )
 
 
+@new_task
 async def cancel_all_update(_, query):
     data = query.data.split()
     message = query.message
     reply_to = message.reply_to_message
-    userId = (
+    user_id = (
         int(data[3])
         if len(data) > 3
         else ""
@@ -280,8 +286,8 @@ async def cancel_all_update(_, query):
     )
     if (
         not isSudo
-        and userId
-        and userId != query.from_user.id
+        and user_id
+        and user_id != query.from_user.id
     ):
         await query.answer(
             "Not Yours!",
@@ -290,14 +296,14 @@ async def cancel_all_update(_, query):
     else:
         await query.answer()
     if data[1] == "close":
-        await deleteMessage(reply_to)
-        await deleteMessage(message)
+        await delete_message(reply_to)
+        await delete_message(message)
     elif data[1] == "back":
         button = create_cancel_buttons(
             isSudo,
-            userId # type: ignore
+            user_id # type: ignore
         )
-        await editMessage(
+        await edit_message(
             message,
             "Choose tasks to cancel!",
             button
@@ -307,7 +313,7 @@ async def cancel_all_update(_, query):
             isSudo,
             ""
         )
-        await editMessage(
+        await edit_message(
             message,
             "Choose tasks to cancel!",
             button
@@ -317,27 +323,27 @@ async def cancel_all_update(_, query):
             isSudo,
             query.from_user.id
         )
-        await editMessage(
+        await edit_message(
             message,
             "Choose tasks to cancel!",
             button
         )
     elif data[1] == "ms":
         buttons = button_build.ButtonMaker()
-        buttons.ibutton(
+        buttons.data_button(
             "ʏᴇꜱ!",
-            f"canall {data[2]} confirm {userId}"
+            f"canall {data[2]} confirm {user_id}"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
-            f"canall back confirm {userId}"
+            f"canall back confirm {user_id}"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
-            f"canall close confirm {userId}"
+            f"canall close confirm {user_id}"
         )
         button = buttons.build_menu(2)
-        await editMessage(
+        await edit_message(
             message,
             f"Are you sure you want to cancel all {data[2]} tasks",
             button
@@ -345,19 +351,19 @@ async def cancel_all_update(_, query):
     else:
         button = create_cancel_buttons(
             isSudo,
-            userId # type: ignore
+            user_id # type: ignore
         )
-        await editMessage(
+        await edit_message(
             message,
             "Choose tasks to cancel.",
             button
         )
         res = await cancel_all(
             data[1],
-            userId
+            user_id
         )
         if not res:
-            tmsg = await sendMessage(
+            tmsg = await send_message(
                 reply_to,
                 f"No matching tasks for {data[1]}!"
             )

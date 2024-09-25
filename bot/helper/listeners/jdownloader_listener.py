@@ -4,17 +4,17 @@ from asyncio import (
 )
 
 from bot import (
-    Intervals,
+    LOGGER,
     jd_lock,
     jd_downloads,
-    LOGGER
+    intervals
 )
-from bot.helper.ext_utils.bot_utils import (
+from ..ext_utils.bot_utils import (
     new_task,
     retry_function
 )
-from bot.helper.ext_utils.jdownloader_booter import jdownloader
-from bot.helper.ext_utils.status_utils import getTaskByGid
+from ..ext_utils.jdownloader_booter import jdownloader
+from ..ext_utils.status_utils import get_task_by_gid
 
 
 @new_task
@@ -24,7 +24,7 @@ async def update_download(gid, value):
             del value["ids"][0]
             new_gid = value["ids"][0]
             jd_downloads[new_gid] = value
-        if task := await getTaskByGid(f"{gid}"):
+        if task := await get_task_by_gid(f"{gid}"):
             task._gid = new_gid
         async with jd_lock:
             del jd_downloads[gid]
@@ -34,21 +34,21 @@ async def update_download(gid, value):
 
 @new_task
 async def remove_download(gid):
-    if Intervals["stopAll"]:
+    if intervals["stopAll"]:
         return
     await retry_function(
         jdownloader.device.downloads.remove_links, # type: ignore
         package_ids=[gid],
     )
-    if task := await getTaskByGid(f"{gid}"):
-        await task.listener.onDownloadError("Download removed manually!")
+    if task := await get_task_by_gid(f"{gid}"):
+        await task.listener.on_download_error("Download removed manually!")
         async with jd_lock:
             del jd_downloads[gid]
 
 
 @new_task
-async def _onDownloadComplete(gid):
-    if task := await getTaskByGid(f"{gid}"):
+async def _on_download_complete(gid):
+    if task := await get_task_by_gid(f"{gid}"):
         if task.listener.select:
             async with jd_lock:
                 await retry_function(
@@ -58,8 +58,8 @@ async def _onDownloadComplete(gid):
                     "SELECTED",
                     package_ids=jd_downloads[gid]["ids"],
                 )
-        await task.listener.onDownloadComplete()
-        if Intervals["stopAll"]:
+        await task.listener.on_download_complete()
+        if intervals["stopAll"]:
             return
         async with jd_lock:
             if gid in jd_downloads:
@@ -76,7 +76,7 @@ async def _jd_listener():
         await sleep(3)
         async with jd_lock:
             if len(jd_downloads) == 0:
-                Intervals["jd"] = ""
+                intervals["jd"] = ""
                 break
             try:
                 await wait_for(
@@ -122,9 +122,9 @@ async def _jd_listener():
                 ):
                     cdi = jd_downloads[k]["ids"]
                     if len(cdi) > 1:
-                        update_download(k, v) # type: ignore
+                        await update_download(k, v)
                     else:
-                        remove_download(k) # type: ignore
+                        await remove_download(k)
                 else:
                     for (
                         index,
@@ -146,10 +146,10 @@ async def _jd_listener():
                     )
                     if is_finished:
                         jd_downloads[gid]["status"] = "done"
-                        _onDownloadComplete(gid) # type: ignore
+                        await _on_download_complete(gid) # type: ignore
 
 
-async def onDownloadStart():
+async def on_download_start():
     async with jd_lock:
-        if not Intervals["jd"]:
-            Intervals["jd"] = _jd_listener()
+        if not intervals["jd"]:
+            intervals["jd"] = await _jd_listener()

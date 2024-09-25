@@ -4,7 +4,7 @@ from bot import (
     LOGGER,
     aria2
 )
-from bot.helper.ext_utils.bot_utils import (
+from ..ext_utils.bot_utils import (
     async_to_sync,
     sync_to_async
 )
@@ -42,7 +42,7 @@ class DirectListener:
     def download(self, contents):
         self.is_downloading = True
         for content in contents:
-            if self.listener.isCancelled:
+            if self.listener.is_cancelled:
                 break
             if content["path"]:
                 self._a2c_opt["dir"] = f"{self._path}/{content['path']}"
@@ -62,7 +62,7 @@ class DirectListener:
                 continue
             self.download_task = self.download_task.live
             while True:
-                if self.listener.isCancelled:
+                if self.listener.is_cancelled:
                     if self.download_task:
                         self.download_task.remove(
                             True,
@@ -86,20 +86,20 @@ class DirectListener:
                     break
                 sleep(1)
             self.download_task = None
-        if self.listener.isCancelled:
+        if self.listener.is_cancelled:
             return
         if self._failed == len(contents):
             async_to_sync(
-                self.listener.onDownloadError,
+                self.listener.on_download_error,
                 "All files are failed to download!"
             )
             return
-        async_to_sync(self.listener.onDownloadComplete)
+        async_to_sync(self.listener.on_download_complete)
 
     async def cancel_task(self):
-        self.listener.isCancelled = True
+        self.listener.is_cancelled = True
         LOGGER.info(f"Cancelling Download: {self.listener.name}")
-        await self.listener.onDownloadError("Download Cancelled by User!")
+        await self.listener.on_download_error("Download Cancelled by User!")
         if self.download_task:
             await sync_to_async(
                 self.download_task.remove,

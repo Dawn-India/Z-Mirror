@@ -5,46 +5,46 @@ from bot import (
     bot,
     cached_dict
 )
-from bot.helper.telegram_helper.message_utils import (
-    deleteMessage,
-    editMessage,
-    isAdmin
+from ..helper.telegram_helper.message_utils import (
+    delete_message,
+    edit_message,
+    is_admin
 )
 
 
-async def verifyAnno(_, query):
+async def verify_annon(_, query):
     message = query.message
     data = query.data.split()
     msg_id = int(data[2])
     if msg_id not in cached_dict:
-        return await editMessage(
+        return await edit_message(
             message,
             "<b>Old Verification Message</b>"
         )
     user = query.from_user
-    is_admin = await isAdmin(
+    if_admin = await is_admin(
         message,
         user.id
     )
     if (
         data[1] == "admin"
-        and is_admin
+        and if_admin
     ):
         await query.answer(f"Username: {user.username}\nYour userid : {user.id}")
         cached_dict[msg_id] = user
-        await deleteMessage(message)
+        await delete_message(message)
     elif data[1] == "admin":
         await query.answer("You are not an admin")
     else:
         await query.answer()
-        await editMessage(
+        await edit_message(
             message,
             "<b>Cancel Verification</b>"
         )
 
 bot.add_handler( # type: ignore
     CallbackQueryHandler(
-        verifyAnno,
+        verify_annon,
         filters=regex(
             "^verify"
         )

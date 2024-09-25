@@ -169,8 +169,8 @@ You can control those values. Example: /cmd -sv 70:5(sample-duration:part-durati
 screenshot = """
 <b>Screenshots</b>: -ss
 
-Create up to 10 screenshots for one video or a folder of videos.
-/cmd -ss (it will take the default values which are 10 photos).
+Create screenshots for one video or folder of videos.
+/cmd -ss (it will take the default values which is 10 photos).
 You can control this value. Example: /cmd -ss 6.
 """
 
@@ -202,7 +202,8 @@ In case default quality is added from yt-dlp options using format option and you
 yt_opt = """
 <b>Options</b>: -opt
 
-/cmd link -opt playliststart:^10|fragment_retries:^inf|matchtitle:S13|writesubtitles:true|live_from_start:true|postprocessor_args:{"ffmpeg": ["-threads", "4"]}|wait_for_video:(5, 100)
+/cmd link -opt playliststart:^10|fragment_retries:^inf|matchtitle:S13|writesubtitles:true|live_from_start:true|postprocessor_args:{"ffmpeg": ["-threads", "4"]}|wait_for_video:(5, 100)|download_ranges:[{"start_time": 0, "end_time": 10}]
+
 Note: Add `^` before integer or float, some values must be numeric and some string.
 Like playlist_items:10 works with string, so no need to add `^` before the number but playlistend works only with integer so you must add `^` before the number like example above.
 You can add tuple and dict also. Use double quotes inside dict.
@@ -245,20 +246,40 @@ If DEFAULT_UPLOAD is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
 /cmd mrcc:rclonePath -up rcl or rc(if you have added rclone path from usetting) (to use user config)
 """
 
-name_sub = """
+name_sub = r"""
 <b>Name Substitution</b>: -ns
 
-/cmd link -ns tea : coffee : s|ACC :  : s|mP4
-This will affect all files. Format: wordToReplace : wordToReplaceWith : sensitiveCase
-1. tea will get replaced by coffee with sensitive case because I have added `s` last of the option.
-2. ACC will get removed because I have added nothing between to replace with sensitive case because I have added `s` last of the option.
-3. mP4 will get removed because I have added nothing to replace with
+b>Name Substitution</b>: -ns
+/cmd link -ns script/code/s | mirror/leech | tea/ /s | clone | cpu/ | \[ZEE\]/ZEE | \\text\\/text/s
+This will affect on all files. Format: wordToReplace/wordToReplaceWith/sensitiveCase
+Word Subtitions. You can add pattern instead of normal text. Timeout: 60 sec
+NOTE: You must add \ before any character, those are the characters: \^$.|?*+()[]{}-
+1. script will get replaced by code with sensitive case
+2. mirror will get replaced by leech
+4. tea will get replaced by space with sensitive case
+5. clone will get removed
+6. cpu will get replaced by space
+7. [ZEE] will get replaced by ZEE
+8. \text\ will get replaced by text with sensitive case
 """
 
 mixed_leech = """
 <b>Mixed Leech</b>: -ml
 
 /cmd link -ml (leech by user and bot session with respect to size)
+"""
+
+thumbnail_layout = """
+Thumbnail Layout: -tl
+
+/cmd link -tl 3x3 (widthxheight) 3 photos in row and 3 photos in column
+"""
+
+leech_as = """
+<b>Leech as</b>: -doc -med
+
+/cmd link -doc (Leech as document)
+/cmd link -med (Leech as media)
 """
 
 YT_HELP_DICT = {
@@ -280,6 +301,8 @@ YT_HELP_DICT = {
     "ꜰᴏʀᴄᴇ\nꜱᴛᴀʀᴛ": force_start,
     "ɴᴀᴍᴇ\nꜱᴜʙꜱᴛɪᴛᴜᴛᴇ": name_sub,
     "ʜʏʙʀɪᴅ\nʟᴇᴇᴄʜ": mixed_leech,
+    "ᴛʜᴜᴍʙ\nʟᴀʏᴏᴜᴛ": thumbnail_layout,
+    "ʟᴇᴇᴄʜ\nᴛʏᴘᴇ": leech_as,
 }
 
 MIRROR_HELP_DICT = {
@@ -307,6 +330,8 @@ MIRROR_HELP_DICT = {
     "ᴜꜱᴇʀ\nᴅᴏᴡɴʟᴏᴀᴅ": user_download,
     "ɴᴀᴍᴇ\nꜱᴜʙꜱᴛɪᴛᴜᴛᴇ": name_sub,
     "ʜʏʙʀɪᴅ\nʟᴇᴇᴄʜ": mixed_leech,
+    "ᴛʜᴜᴍʙ\nʟᴀʏᴏᴜᴛ": thumbnail_layout,
+    "ʟᴇᴇᴄʜ\nᴛʏᴘᴇ": leech_as,
 }
 
 CLONE_HELP_DICT = {

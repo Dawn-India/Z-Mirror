@@ -19,13 +19,14 @@ from urllib.parse import (
 )
 
 from bot import config_dict
-from bot.helper.ext_utils.links_utils import is_gdrive_id
+from ...ext_utils.links_utils import is_gdrive_id
 
 LOGGER = getLogger(__name__)
 getLogger("googleapiclient.discovery").setLevel(ERROR)
 
 
 class GoogleDriveHelper:
+
     def __init__(self):
         self._OAUTH_SCOPE = ["https://www.googleapis.com/auth/drive"]
         self.token_path = "token.pickle"
@@ -104,7 +105,7 @@ class GoogleDriveHelper:
             cache_discovery=False
         )
 
-    def switchServiceAccount(self):
+    def switch_service_account(self):
         if self.sa_index == self.sa_number - 1:
             self.sa_index = 0
         else:
@@ -113,7 +114,7 @@ class GoogleDriveHelper:
         LOGGER.info(f"Switching to {self.sa_index} index")
         self.service = self.authorize()
 
-    def getIdFromUrl(self, link, user_id=""):
+    def get_id_from_url(self, link, user_id=""):
         if (
             user_id and
             link.startswith("mtp:")
@@ -191,7 +192,7 @@ class GoogleDriveHelper:
         stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception),
     )
-    def getFileMetadata(self, file_id):
+    def get_file_metadata(self, file_id):
         return (
             self.service.files() # type: ignore
             .get(
@@ -211,7 +212,7 @@ class GoogleDriveHelper:
         stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception),
     )
-    def getFilesByFolderId(self, folder_id, item_type=""):
+    def get_files_by_folder_id(self, folder_id, item_type=""):
         page_token = None
         files = []
         if not item_type:
@@ -291,43 +292,19 @@ class GoogleDriveHelper:
             )
         return estr.strip()
 
-    """
-    def get_recursive_list(self, file, rootId):
-        rtnlist = []
-        if not rootId:
-            rootId = file.get("teamDriveId")
-        if rootId == "root":
-            rootId = self.service.files().get(
-                fileId="root",
-                fields="id"
-            ).execute().get("id")
-        x = file.get("name")
-        y = file.get("id")
-        while (y != rootId):
-            rtnlist.append(x)
-            file = self.service.files().get(
-                fileId=file.get("parents")[0],
-                supportsAllDrives=True,
-                fields="id, name, parents"
-            ).execute()
-            x = file.get("name")
-            y = file.get("id")
-        rtnlist.reverse()
-        return rtnlist
-    """
 
     async def cancel_task(self):
-        self.listener.isCancelled = True # type: ignore
+        self.listener.is_cancelled = True # type: ignore
         if self.is_downloading:
             LOGGER.info(f"Cancelling Download: {self.listener.name}") # type: ignore
-            await self.listener.onDownloadError("Download stopped by user!") # type: ignore
+            await self.listener.on_download_error("Download stopped by user!") # type: ignore
         elif self.is_cloning:
             LOGGER.info(f"Cancelling Clone: {self.listener.name}") # type: ignore
-            await self.listener.onUploadError( # type: ignore
+            await self.listener.on_upload_error( # type: ignore
                 "Your clone has been stopped and cloned data has been deleted!"
             )
         elif self.is_uploading:
             LOGGER.info(f"Cancelling Upload: {self.listener.name}") # type: ignore
-            await self.listener.onUploadError( # type: ignore
+            await self.listener.on_upload_error( # type: ignore
                 "Your upload has been stopped and uploaded data has been deleted!"
             )

@@ -1,23 +1,29 @@
 from threading import Event
+
 from mega import (
     MegaApi,
-    MegaListener,
     MegaError,
+    MegaListener,
     MegaRequest,
     MegaTransfer
 )
-from bot.helper.ext_utils.bot_utils import (
+
+from bot import LOGGER
+from ..ext_utils.bot_utils import (
     async_to_sync,
     sync_to_async
 )
-from bot import LOGGER
 
 
 class AsyncExecutor:
     def __init__(self):
         self.continue_event = Event()
 
-    def do(self, function, args):
+    def do(
+            self,
+            function,
+            args
+        ):
         self.continue_event.clear()
         function(*args)
         self.continue_event.wait()
@@ -127,7 +133,7 @@ class MegaAppListener(MegaListener):
         if not self.is_cancelled:
             self.is_cancelled = True
             async_to_sync(
-                self.listener.onDownloadError,
+                self.listener.on_download_error,
                 f"RequestTempError: {error.toString()}"
             )
         self.error = error.toString()
@@ -164,7 +170,7 @@ class MegaAppListener(MegaListener):
                     transfer.getFileName() == self._name
                 )
             ):
-                async_to_sync(self.listener.onDownloadComplete)
+                async_to_sync(self.listener.on_download_complete)
                 self.continue_event.set()
         except Exception as e:
             LOGGER.error(e)
@@ -188,4 +194,4 @@ class MegaAppListener(MegaListener):
 
     async def cancel_task(self):
         self.is_cancelled = True
-        await self.listener.onDownloadError("Download Canceled by user")
+        await self.listener.on_download_error("Download Canceled by user")

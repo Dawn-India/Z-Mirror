@@ -10,7 +10,7 @@ class ButtonMaker:
         self._header_button = []
         self._footer_button = []
 
-    def ubutton(self, key, link, position=None):
+    def url_button(self, key, link, position=None):
         if not position:
             self._button.append(
                 InlineKeyboardButton(
@@ -33,7 +33,7 @@ class ButtonMaker:
                 )
             )
 
-    def ibutton(self, key, data, position=None):
+    def data_button(self, key, data, position=None):
         if not position:
             self._button.append(
                 InlineKeyboardButton(

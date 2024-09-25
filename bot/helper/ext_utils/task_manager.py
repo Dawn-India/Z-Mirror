@@ -12,38 +12,38 @@ from bot import (
     queue_dict_lock,
     LOGGER,
 )
-from bot.helper.ext_utils.bot_utils import (
+from .bot_utils import (
     sync_to_async,
     get_telegraph_list,
 )
-from bot.helper.ext_utils.files_utils import (
+from .files_utils import (
     check_storage_threshold,
     get_base_name
 )
-from bot.helper.ext_utils.links_utils import is_gdrive_id
-from bot.helper.ext_utils.status_utils import (
-    getSpecificTasks,
+from .links_utils import is_gdrive_id
+from .status_utils import (
+    get_specific_tasks,
     get_readable_file_size
 )
-from bot.helper.task_utils.gdrive_utils.search import gdSearch
-from bot.helper.telegram_helper.message_utils import isAdmin
+from ..task_utils.gdrive_utils.search import GoogleDriveSearch
+from ..telegram_helper.message_utils import is_admin
 
 
 async def stop_duplicate_check(listener):
     if (
         isinstance(
-            listener.upDest,
+            listener.up_dest,
             int
         )
-        or listener.isLeech
+        or listener.is_leech
         or listener.select
-        or not is_gdrive_id(listener.upDest)
+        or not is_gdrive_id(listener.up_dest)
         or (
-            listener.upDest.startswith("mtp:")
-            and listener.stopDuplicate
+            listener.up_dest.startswith("mtp:")
+            and listener.stop_duplicate
         )
-        or not listener.stopDuplicate
-        or listener.sameDir
+        or not listener.stop_duplicate
+        or listener.same_dir
     ):
         return (
             False,
@@ -66,13 +66,13 @@ async def stop_duplicate_check(listener):
             telegraph_content,
             contents_no
         ) = await sync_to_async(
-            gdSearch(
-                stopDup=True,
-                noMulti=listener.isClone
+            GoogleDriveSearch(
+                stop_dup=True,
+                no_multi=listener.is_clone
             ).drive_list,
             name,
-            listener.upDest,
-            listener.userId,
+            listener.up_dest,
+            listener.user_id,
         )
         if telegraph_content:
             msg = f"File/Folder is already available in Drive.\nHere are {contents_no} list results:"
@@ -102,13 +102,13 @@ async def check_running_tasks(listener, state="dl"):
             non_queued_dl.remove(listener.mid)
         if (
             (all_limit or state_limit)
-            and not listener.forceRun
+            and not listener.force_run
             and not (
-                listener.forceUpload
+                listener.force_upload
                 and state == "up"
             )
             and not (
-                listener.forceDownload
+                listener.force_download
                 and state == "dl"
             )
         ):
@@ -253,7 +253,7 @@ async def start_from_queued():
 
 async def check_user_tasks(user_id, maxtask):
     all_tasks = await sync_to_async(
-        getSpecificTasks,
+        get_specific_tasks,
         "All",
         user_id
     )
@@ -262,7 +262,7 @@ async def check_user_tasks(user_id, maxtask):
 
 async def list_checker(listener):
     try:
-        if await isAdmin(listener.message):
+        if await is_admin(listener.message):
             return
     except Exception as e:
         LOGGER.error(f"Error while checking if the user is Admin: {e}")
@@ -274,15 +274,15 @@ async def list_checker(listener):
 
 async def limit_checker(
         listener,
-        isTorrent=False,
-        isMega=False,
-        isDriveLink=False,
-        isRclone=False,
-        isJd=False,
-        isNzb=False,
+        is_torrent=False,
+        is_mega=False,
+        is_drive_link=False,
+        is_rclone=False,
+        is_jd=False,
+        is_nzb=False,
     ):
     try:
-        if await isAdmin(listener.message):
+        if await is_admin(listener.message):
             return
     except Exception as e:
         LOGGER.error(f"Error while checking if the user is Admin: {e}")
@@ -298,7 +298,7 @@ async def limit_checker(
 
     limit_configs = [
         (
-            listener.isYtDlp,
+            listener.is_ytdlp,
             "YTDLP_LIMIT",
             "Yt-Dlp"
         ),
@@ -309,37 +309,37 @@ async def limit_checker(
             "playlist_count"
         ),
         (
-            listener.isClone,
+            listener.is_clone,
             "CLONE_LIMIT",
             "Clone"
         ),
         (
-            isRclone,
+            is_rclone,
             "RCLONE_LIMIT",
             "Rclone"
         ),
         (
-            isJd,
+            is_jd,
             "JD_LIMIT",
             "Jdownloader"
         ),
         (
-            isMega,
+            is_mega,
             "MEGA_LIMIT",
             "Mega"
         ),
         (
-            isDriveLink,
+            is_drive_link,
             "GDRIVE_LIMIT",
             "Google drive"
         ),
         (
-            isNzb,
+            is_nzb,
             "NZB_LIMIT",
             "NZB"
         ),
         (
-            isTorrent or listener.isTorrent,
+            is_torrent or listener.is_torrent,
             "TORRENT_LIMIT",
             "Torrent"
         ),
@@ -374,7 +374,7 @@ async def limit_checker(
 
     if (
         not limit_exceeded
-        and listener.isLeech
+        and listener.is_leech
     ):
         limit = config_dict.get("LEECH_LIMIT")
         if limit:
@@ -387,7 +387,7 @@ async def limit_checker(
     if (
         not limit_exceeded
         and config_dict.get("STORAGE_THRESHOLD")
-        and not listener.isClone
+        and not listener.is_clone
     ):
         arch = any([
             listener.compress,

@@ -16,11 +16,11 @@ from bot import (
     jd_lock,
     bot_name
 )
-from bot.helper.ext_utils.bot_utils import (
+from .bot_utils import (
     cmd_exec,
     new_task,
 )
-from myjd import Myjdapi
+from myjd import MyJdApi
 from myjd.exception import (
     MYJDException,
     MYJDAuthFailedException,
@@ -30,7 +30,7 @@ from myjd.exception import (
 )
 
 
-class JDownloader(Myjdapi):
+class JDownloader(MyJdApi):
     def __init__(self):
         super().__init__()
         self._username = ""
@@ -46,7 +46,7 @@ class JDownloader(Myjdapi):
         async with jd_lock:
             is_connected = await self.jdconnect()
             if is_connected:
-                self.boot() # type: ignore
+                await self.boot()
                 await self.connectToDevice()
 
     @new_task
@@ -103,7 +103,7 @@ class JDownloader(Myjdapi):
             shell=True
         )
         if code != -9:
-            self.boot() # type: ignore
+            await self.boot()
 
     async def jdconnect(self):
         if (

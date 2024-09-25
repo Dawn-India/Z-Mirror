@@ -1,37 +1,39 @@
-#!/usr/bin/env python3
 from nekozee.filters import command
 from nekozee.handlers import MessageHandler
 
-from bot import DATABASE_URL, bot, config_dict
-from bot.helper.ext_utils.links_utils import (
+from bot import (
+    bot,
+    config_dict
+)
+from ..helper.ext_utils.links_utils import (
     is_magnet,
     is_url
 )
-from bot.helper.ext_utils.db_handler import DbManager
-from bot.helper.z_utils import extract_link
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage
+from ..helper.ext_utils.db_handler import database
+from ..helper.z_utils import extract_link
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import send_message
 
 
-async def rmAllTokens(_, message):
-    if DATABASE_URL:
-        await DbManager().delete_all_access_tokens()
+async def remove_all_tokens(_, message):
+    if config_dict["DATABASE_URL"]:
+        await database.delete_all_access_tokens()
         msg = "All access tokens have been removed from the database."
     else:
         msg = "Database URL not added."
-    return await sendMessage(
+    return await send_message(
         message,
         msg
     )
 
 
-async def rmdbNode(_, message):
+async def remove_specific_task(_, message):
     if (
-        DATABASE_URL
+        config_dict["DATABASE_URL"]
         and not config_dict["STOP_DUPLICATE_TASKS"]
     ):
-        return await sendMessage(
+        return await send_message(
             message,
             "STOP_DUPLICATE_TASKS feature is not enabled"
         )
@@ -41,7 +43,7 @@ async def rmdbNode(_, message):
         maxsplit=1
     )
     file = None
-    shouldDel = False
+    should_delete = False
     try:
         link = message_args[1]
     except IndexError:
@@ -89,35 +91,35 @@ async def rmdbNode(_, message):
                         pass
             elif file.mime_type == "application/x-bittorrent":
                 link = await reply_to.download()
-                shouldDel = True
+                should_delete = True
             else:
                 link = file.file_unique_id
     if not link:
         msg = "Something went wrong!!"
-        return await sendMessage(
+        return await send_message(
             message,
             msg
         )
     raw_url = await extract_link(
         link,
-        shouldDel
+        should_delete
     )
-    if exist := await DbManager().check_download(raw_url):
-        await DbManager().remove_download(exist["_id"])
+    if exist := await database.check_download(raw_url):
+        await database.remove_download(exist["_id"])
         msg = "Download is removed from database successfully"
         msg += f"\n{exist["tag"]} Your download is removed."
     else:
         msg = "This download is not exists in database"
-    return await sendMessage(
+    return await send_message(
         message,
         msg
     )
 
 
-if DATABASE_URL:
+if config_dict["DATABASE_URL"]:
     bot.add_handler( # type: ignore
         MessageHandler(
-            rmdbNode,
+            remove_specific_task,
             filters=command(
                 BotCommands.RmdbCommand,
                 case_sensitive=True
@@ -126,7 +128,7 @@ if DATABASE_URL:
     )
     bot.add_handler( # type: ignore
         MessageHandler(
-            rmAllTokens,
+            remove_all_tokens,
             filters=command(
                 BotCommands.RmalltokensCommand,
                 case_sensitive=True

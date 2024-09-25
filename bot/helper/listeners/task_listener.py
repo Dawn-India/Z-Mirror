@@ -6,62 +6,61 @@ from aiofiles.os import (
 )
 from aioshutil import move
 from asyncio import (
-    sleep,
-    gather
+    gather,
+    sleep
 )
 from html import escape
 from requests import utils as rutils
 from time import time
 
 from bot import (
-    Intervals,
-    aria2,
-    DOWNLOAD_DIR,
-    task_dict,
-    task_dict_lock,
     LOGGER,
-    DATABASE_URL,
+    aria2,
     config_dict,
-    non_queued_up,
+    intervals,
     non_queued_dl,
-    queued_up,
+    non_queued_up,
     queued_dl,
+    queued_up,
     queue_dict_lock,
+    same_directory_lock,
+    task_dict,
+    task_dict_lock
 )
-from bot.helper.common import TaskConfig
-from bot.helper.ext_utils.bot_utils import (
+from ..common import TaskConfig
+from ..ext_utils.bot_utils import (
     extra_btns,
     sync_to_async
 )
-from bot.helper.ext_utils.db_handler import DbManager
-from bot.helper.ext_utils.files_utils import (
-    get_path_size,
+from ..ext_utils.db_handler import database
+from ..ext_utils.files_utils import (
     clean_download,
     clean_target,
-    join_files,
+    get_path_size,
+    join_files
 )
-from bot.helper.ext_utils.links_utils import is_gdrive_id
-from bot.helper.ext_utils.status_utils import (
+from ..ext_utils.links_utils import is_gdrive_id
+from ..ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time
 )
-from bot.helper.ext_utils.task_manager import (
-    start_from_queued,
-    check_running_tasks
+from ..ext_utils.task_manager import (
+    check_running_tasks,
+    start_from_queued
 )
-from bot.helper.task_utils.gdrive_utils.upload import gdUpload
-from bot.helper.task_utils.rclone_utils.transfer import RcloneTransferHelper
-from bot.helper.task_utils.status_utils.gdrive_status import GdriveStatus
-from bot.helper.task_utils.status_utils.queue_status import QueueStatus
-from bot.helper.task_utils.status_utils.rclone_status import RcloneStatus
-from bot.helper.task_utils.status_utils.telegram_status import TelegramStatus
-from bot.helper.task_utils.telegram_uploader import TgUploader
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import (
+from ..task_utils.gdrive_utils.upload import GoogleDriveUpload
+from ..task_utils.rclone_utils.transfer import RcloneTransferHelper
+from ..task_utils.status_utils.gdrive_status import GoogleDriveStatus
+from ..task_utils.status_utils.queue_status import QueueStatus
+from ..task_utils.status_utils.rclone_status import RcloneStatus
+from ..task_utils.status_utils.telegram_status import TelegramStatus
+from ..task_utils.telegram_uploader import TelegramUploader
+from ..telegram_helper.button_build import ButtonMaker
+from ..telegram_helper.message_utils import (
     auto_delete_message,
     delete_links,
-    sendMessage,
     delete_status,
+    send_message,
     update_status_message,
 )
 
@@ -73,10 +72,10 @@ class TaskListener(TaskConfig):
 
     async def clean(self):
         try:
-            if st := Intervals["status"]:
+            if st := intervals["status"]:
                 for intvl in list(st.values()):
                     intvl.cancel()
-            Intervals["status"].clear()
+            intervals["status"].clear()
             await gather(
                 sync_to_async(aria2.purge),
                 delete_status()
@@ -84,70 +83,75 @@ class TaskListener(TaskConfig):
         except:
             pass
 
-    def removeFromSameDir(self):
+    def remove_from_same_dir(self):
         if (
-            self.sameDir # type: ignore
+            self.same_dir # type: ignore
             and self.mid
-            in self.sameDir["tasks"] # type: ignore
+            in self.same_dir["tasks"] # type: ignore
         ):
-            self.sameDir["tasks"].remove(self.mid) # type: ignore
-            self.sameDir["total"] -= 1 # type: ignore
+            self.same_dir["tasks"].remove(self.mid) # type: ignore
+            self.same_dir["total"] -= 1 # type: ignore
 
-    async def onDownloadStart(self):
+    async def on_download_start(self):
         if (
-            DATABASE_URL
+            config_dict["DATABASE_URL"]
             and config_dict["STOP_DUPLICATE_TASKS"]
             and self.raw_url
         ):
-            await DbManager().add_download_url(
+            await database.add_download_url(
                 self.raw_url,
                 self.tag
             )
         if (
-            self.isSuperChat
+            self.is_super_chat
             and config_dict["INCOMPLETE_TASK_NOTIFIER"]
-            and DATABASE_URL
+            and config_dict["DATABASE_URL"]
         ):
-            await DbManager().add_incomplete_task(
+            await database.add_incomplete_task(
                 self.message.chat.id, # type: ignore
                 self.message.link, # type: ignore
                 self.tag
             )
 
-    async def onDownloadComplete(self):
+    async def on_download_complete(self):
         multi_links = False
         if (
-            DATABASE_URL
+            config_dict["DATABASE_URL"]
             and config_dict["STOP_DUPLICATE_TASKS"]
             and self.raw_url
         ):
-            await DbManager().remove_download(self.raw_url)
+            await database.remove_download(self.raw_url)
         if (
-            self.sameDir # type: ignore
+            self.same_dir # type: ignore
             and self.mid
-            in self.sameDir["tasks"] # type: ignore
+            in self.same_dir["tasks"] # type: ignore
         ):
-            while not (
-                self.sameDir["total"] in [1, 0] # type: ignore
-                or self.sameDir["total"] > 1 # type: ignore
-                and len(self.sameDir["tasks"]) > 1 # type: ignore
-            ):
-                await sleep(0.5)
-
+            async with same_directory_lock:
+                while True:
+                    async with task_dict_lock:
+                        if self.mid not in self.same_dir["tasks"]: # type: ignore
+                            return
+                        if (
+                            self.mid in self.same_dir["tasks"] and ( # type: ignore
+                                self.same_dir["total"] == 1 # type: ignore
+                                or len(self.same_dir["tasks"]) > 1 # type: ignore
+                            )
+                        ):
+                            break
+                    await sleep(1)
+        await sleep(2) # wait for qbitorrent or any other package to rearrange files and folders like removing !qB
         async with task_dict_lock:
             if (
-                self.sameDir # type: ignore
-                and self.sameDir["total"] > 1 # type: ignore
+                self.same_dir # type: ignore
+                and self.same_dir["total"] > 1 # type: ignore
                 and self.mid
-                in self.sameDir["tasks"] # type: ignore
+                in self.same_dir["tasks"] # type: ignore
             ):
-                self.sameDir["tasks"].remove(self.mid) # type: ignore
-                self.sameDir["total"] -= 1 # type: ignore
-                folder_name = self.sameDir["name"] # type: ignore
+                self.same_dir["tasks"].remove(self.mid) # type: ignore
+                self.same_dir["total"] -= 1 # type: ignore
+                folder_name = self.same_dir["name"] # type: ignore
                 spath = f"{self.dir}{folder_name}"
-                des_path = (
-                    f"{DOWNLOAD_DIR}{list(self.sameDir["tasks"])[0]}{folder_name}" # type: ignore
-                )
+                des_path = f"{config_dict["DOWNLOAD_DIR"]}{list(self.same_dir["tasks"])[0]}{folder_name}" # type: ignore
                 await makedirs(
                     des_path,
                     exist_ok=True
@@ -170,14 +174,20 @@ class TaskListener(TaskConfig):
                             f"{des_path}/{item}"
                         )
                 multi_links = True
+            elif (
+                self.same_dir # type: ignore
+                and self.mid
+                not in self.same_dir["tasks"] # type: ignore
+            ):
+                return
             download = task_dict[self.mid]
             self.name = download.name()
             gid = download.gid()
         LOGGER.info(f"Download completed: {self.name}")
 
         if not (
-            self.isTorrent or
-            self.isQbit
+            self.is_torrent or
+            self.is_qbit
         ):
             self.seed = False
 
@@ -186,8 +196,11 @@ class TaskListener(TaskConfig):
         files_to_delete = []
 
         if multi_links:
-            await self.onUploadError("Downloaded! Waiting for other tasks...")
+            await self.on_upload_error(f"{self.name} Downloaded!\n\nWaiting for other tasks to finish...")
             return
+
+        if self.same_dir: # type: ignore
+            self.name = self.same_dir["name"].split("/")[-1] # type: ignore
 
         if not await aiopath.exists(f"{self.dir}/{self.name}"):
             try:
@@ -196,7 +209,7 @@ class TaskListener(TaskConfig):
                 if self.name == "yt-dlp-thumb":
                     self.name = files[0]
             except Exception as e:
-                await self.onUploadError(str(e))
+                await self.on_upload_error(str(e))
                 return
 
         up_path = f"{self.dir}/{self.name}"
@@ -210,12 +223,12 @@ class TaskListener(TaskConfig):
         if self.join and await aiopath.isdir(up_path):
             await join_files(up_path)
 
-        if self.extract and not self.isNzb:
-            up_path = await self.proceedExtract(
+        if self.extract and not self.is_nzb:
+            up_path = await self.proceed_extract(
                 up_path,
                 gid
             )
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
             (
                 up_dir,
@@ -226,15 +239,15 @@ class TaskListener(TaskConfig):
             )
             self.size = await get_path_size(up_dir)
 
-        if self.nameSub:
+        if self.name_sub:
             up_path = await self.substitute(up_path)
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
             self.name = up_path.rsplit("/", 1)[1]
 
-        if self.screenShots:
-            up_path = await self.generateScreenshots(up_path)
-            if self.isCancelled:
+        if self.screen_shots:
+            up_path = await self.generate_screenshots(up_path)
+            if self.is_cancelled:
                 return
             (
                 up_dir,
@@ -245,15 +258,15 @@ class TaskListener(TaskConfig):
             )
             self.size = await get_path_size(up_dir)
 
-        if self.convertAudio or self.convertVideo:
-            up_path = await self.convertMedia(
+        if self.convert_audio or self.convert_video:
+            up_path = await self.convert_media(
                 up_path,
                 gid,
                 unwanted_files,
                 unwanted_files_size,
                 files_to_delete
             )
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
             (
                 up_dir,
@@ -264,14 +277,14 @@ class TaskListener(TaskConfig):
             )
             self.size = await get_path_size(up_dir)
 
-        if self.sampleVideo:
-            up_path = await self.generateSampleVideo(
+        if self.sample_video:
+            up_path = await self.generate_sample_video(
                 up_path,
                 gid,
                 unwanted_files,
                 files_to_delete
             )
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
             (
                 up_dir,
@@ -283,13 +296,13 @@ class TaskListener(TaskConfig):
             self.size = await get_path_size(up_dir)
 
         if self.compress:
-            up_path = await self.proceedCompress(
+            up_path = await self.proceed_compress(
                 up_path,
                 gid,
                 unwanted_files,
                 files_to_delete
             )
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
 
         (
@@ -301,30 +314,30 @@ class TaskListener(TaskConfig):
         )
         self.size = await get_path_size(up_dir)
 
-        if self.metaData:
+        if self.metadata:
             await self.proceedMetadata(
                 up_path,
                 gid
             )
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
 
-        if self.metaAttachment:
+        if self.m_attachment:
             await self.proceedAttachment(
                 up_path,
                 gid
             )
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
 
-        if self.isLeech and not self.compress:
-            await self.proceedSplit(
+        if self.is_leech and not self.compress:
+            await self.proceed_split(
                 up_dir,
                 unwanted_files_size,
                 unwanted_files,
                 gid
             )
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
 
         (
@@ -344,7 +357,7 @@ class TaskListener(TaskConfig):
                     "Up"
                 )
             await event.wait() # type: ignore
-            if self.isCancelled:
+            if self.is_cancelled:
                 return
             async with queue_dict_lock:
                 non_queued_up.add(self.mid)
@@ -354,9 +367,9 @@ class TaskListener(TaskConfig):
         for s in unwanted_files_size:
             self.size -= s
 
-        if self.isLeech:
+        if self.is_leech:
             LOGGER.info(f"Leech Name: {self.name}")
-            tg = TgUploader(
+            tg = TelegramUploader(
                 self,
                 up_dir
             )
@@ -374,14 +387,14 @@ class TaskListener(TaskConfig):
                     files_to_delete
                 ),
             )
-        elif is_gdrive_id(self.upDest): # type: ignore
+        elif is_gdrive_id(self.up_dest): # type: ignore
             LOGGER.info(f"Gdrive Upload Name: {self.name}")
-            drive = gdUpload(
+            drive = GoogleDriveUpload(
                 self,
                 up_path
             )
             async with task_dict_lock:
-                task_dict[self.mid] = GdriveStatus(
+                task_dict[self.mid] = GoogleDriveStatus(
                     self,
                     drive,
                     gid,
@@ -424,17 +437,17 @@ class TaskListener(TaskConfig):
         dir_id=""
     ):
         if (
-            DATABASE_URL
+            config_dict["DATABASE_URL"]
             and config_dict["STOP_DUPLICATE_TASKS"]
             and self.raw_url
         ):
-            await DbManager().remove_download(self.raw_url)
+            await database.remove_download(self.raw_url)
         if (
-            self.isSuperChat
+            self.is_super_chat
             and config_dict["INCOMPLETE_TASK_NOTIFIER"]
-            and DATABASE_URL
+            and config_dict["DATABASE_URL"]
         ):
-            await DbManager().rm_complete_task(self.message.link) # type: ignore
+            await database.rm_complete_task(self.message.link) # type: ignore
         LOGGER.info(f"Task Done: {self.name}")
         lmsg = (
             f"<b><i>{escape(self.name)}</i></b>"
@@ -452,20 +465,20 @@ class TaskListener(TaskConfig):
             else f"\n\n<code>Path  </code>: {rclonePath}"
         )
         msg_ = "\n\n<b><i>Link has been sent in your DM.</b></i>"
-        if self.isLeech:
+        if self.is_leech:
             msg += f"\n<code>Files </code>: {folders}\n"
             if mime_type != 0:
                 msg += f"<code>Error </code>: {mime_type}\n"
             msg_ = "\n<b><i>Files has been sent in your DM.</b></i>"
-            if not self.dmMessage:
+            if not self.dm_message:
                 if not files:
-                    await sendMessage(
+                    await send_message(
                         self.message, # type: ignore
                         lmsg + msg
                     )
-                    if self.logMessage:
-                        await sendMessage(
-                            self.logMessage,
+                    if self.log_message:
+                        await send_message(
+                            self.log_message,
                             lmsg + msg
                         )
                 else:
@@ -479,49 +492,49 @@ class TaskListener(TaskConfig):
                     ):
                         fmsg += f"{index}. <a href='{link}'>{self.name}</a>\n"
                         if len(fmsg.encode() + msg.encode()) > 4000:
-                            if self.logMessage:
-                                await sendMessage(
-                                    self.logMessage,
+                            if self.log_message:
+                                await send_message(
+                                    self.log_message,
                                     lmsg + msg + fmsg
                                 )
-                            await sendMessage(
+                            await send_message(
                                 self.message, # type: ignore
                                 lmsg + msg + fmsg
                             )
                             await sleep(1)
                             fmsg = "\n"
                     if fmsg != "\n":
-                        if self.logMessage:
-                            await sendMessage(
-                                self.logMessage,
+                        if self.log_message:
+                            await send_message(
+                                self.log_message,
                                 lmsg + msg + fmsg
                             )
-                        await sendMessage(
+                        await send_message(
                             self.message, # type: ignore
                             lmsg + msg + fmsg
                         )
             else:
                 if not files:
-                    await sendMessage(
+                    await send_message(
                         self.message, # type: ignore
                         gmsg + msg + msg_
                     )
-                    if self.logMessage:
-                        await sendMessage(
-                            self.logMessage,
+                    if self.log_message:
+                        await send_message(
+                            self.log_message,
                             lmsg + msg
                         )
                 elif (
-                    self.dmMessage
+                    self.dm_message
                     and not config_dict["DUMP_CHAT_ID"]
                 ):
-                    await sendMessage(
+                    await send_message(
                         self.message, # type: ignore
                         gmsg + msg + msg_
                     )
-                    if self.logMessage:
-                        await sendMessage(
-                            self.logMessage,
+                    if self.log_message:
+                        await send_message(
+                            self.log_message,
                             lmsg + msg
                         )
                 else:
@@ -535,20 +548,20 @@ class TaskListener(TaskConfig):
                     ):
                         fmsg += f"{index}. <a href='{link}'>{self.name}</a>\n"
                         if len(fmsg.encode() + msg.encode()) > 4000:
-                            if self.logMessage:
-                                await sendMessage(
-                                    self.logMessage,
+                            if self.log_message:
+                                await send_message(
+                                    self.log_message,
                                     lmsg + msg + fmsg
                                 )
                             await sleep(1)
                             fmsg = "\n"
                     if fmsg != "\n":
-                        if self.logMessage:
-                            await sendMessage(
-                                self.logMessage,
+                        if self.log_message:
+                            await send_message(
+                                self.log_message,
                                 lmsg + msg + fmsg
                             )
-                        await sendMessage(
+                        await send_message(
                             self.message, # type: ignore
                             gmsg + msg + msg_
                         )
@@ -568,13 +581,13 @@ class TaskListener(TaskConfig):
                         link.startswith("https://drive.google.com/")
                         and not config_dict["DISABLE_DRIVE_LINK"]
                     ):
-                        buttons.ubutton(
+                        buttons.url_button(
                             "ᴅʀɪᴠᴇ\nʟɪɴᴋ",
                             link,
                             "header"
                         )
                     elif not link.startswith("https://drive.google.com/"):
-                        buttons.ubutton(
+                        buttons.url_button(
                             "ᴄʟᴏᴜᴅ\nʟɪɴᴋ",
                             link,
                             "header"
@@ -593,14 +606,14 @@ class TaskListener(TaskConfig):
                     share_url = f"{RCLONE_SERVE_URL}/{remote}/{url_path}"
                     if mime_type == "Folder":
                         share_url += "/"
-                    buttons.ubutton(
+                    buttons.url_button(
                         "ʀᴄʟᴏɴᴇ\nʟɪɴᴋ",
                         share_url
                     )
                 elif not rclonePath:
                     INDEX_URL = ""
-                    if self.privateLink:
-                        INDEX_URL = self.userDict.get(
+                    if self.private_link:
+                        INDEX_URL = self.user_dict.get(
                             "index_url",
                             ""
                         ) or ""
@@ -609,12 +622,12 @@ class TaskListener(TaskConfig):
                     if INDEX_URL:
                         share_url = f"{INDEX_URL}findpath?id={dir_id}"
                         if mime_type == "Folder":
-                            buttons.ubutton(
+                            buttons.url_button(
                                 "ᴅɪʀᴇᴄᴛ\nꜰɪʟᴇ ʟɪɴᴋ",
                                 share_url
                             )
                         else:
-                            buttons.ubutton(
+                            buttons.url_button(
                                 "ᴅɪʀᴇᴄᴛ\nꜰᴏʟᴅᴇʀ ʟɪɴᴋ",
                                 share_url
                             )
@@ -626,65 +639,65 @@ class TaskListener(TaskConfig):
                                 )
                             ):
                                 share_urls = f"{INDEX_URL}findpath?id={dir_id}&view=true"
-                                buttons.ubutton(
+                                buttons.url_button(
                                     "ᴠɪᴇᴡ\nʟɪɴᴋ",
                                     share_urls
                                 )
                 buttons = extra_btns(buttons)
-                if self.dmMessage:
-                    await sendMessage(
-                        self.dmMessage,
+                if self.dm_message:
+                    await send_message(
+                        self.dm_message,
                         lmsg + msg + _msg,
                         buttons.build_menu(2)
                     )
-                    await sendMessage(
+                    await send_message(
                         self.message, # type: ignore
                         gmsg + msg + msg_
                     )
                 else:
-                    await sendMessage(
+                    await send_message(
                         self.message, # type: ignore
                         lmsg + msg + _msg,
                         buttons.build_menu(2)
                     )
-                if self.logMessage:
+                if self.log_message:
                     if (
                         link.startswith("https://drive.google.com/")
                         and config_dict["DISABLE_DRIVE_LINK"]
                     ):
-                        buttons.ubutton(
+                        buttons.url_button(
                             "ᴅʀɪᴠᴇ\nʟɪɴᴋ",
                             link,
                             "header"
                         )
-                    await sendMessage(
-                        self.logMessage,
+                    await send_message(
+                        self.log_message,
                         lmsg + msg + _msg,
                         buttons.build_menu(2)
                     )
             else:
-                if self.dmMessage:
-                    await sendMessage(
+                if self.dm_message:
+                    await send_message(
                         self.message, # type: ignore
                         gmsg + msg + msg_
                     )
-                    await sendMessage(
-                        self.dmMessage,
+                    await send_message(
+                        self.dm_message,
                         lmsg + msg + _msg
                     )
                 else:
-                    await sendMessage(
+                    await send_message(
                         self.message, # type: ignore
                         lmsg + msg + _msg + msg_
                     )
-                if self.logMessage:
-                    await sendMessage(
-                        self.logMessage,
+                if self.log_message:
+                    await send_message(
+                        self.log_message,
                         lmsg + msg + _msg
                     )
         if self.seed:
-            if self.newDir:
-                await clean_target(self.newDir)
+            if self.new_dir:
+                await clean_target(self.new_dir)
             async with queue_dict_lock:
                 if (
                     self.mid
@@ -709,17 +722,17 @@ class TaskListener(TaskConfig):
 
         await start_from_queued()
 
-    async def onDownloadError(self, error, button=None):
+    async def on_download_error(self, error, button=None):
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
             count = len(task_dict)
-            self.removeFromSameDir()
+            self.remove_from_same_dir()
         msg = f"Sorry {self.tag}!\nYour download has been stopped."
         msg += f"\n\n<code>Reason </code>: {escape(str(error))}"
         msg += f"\n<code>Past   </code>: {get_readable_time(time() - self.time)}"
         msg += f"\n<code>Mode   </code>: {self.mode}"
-        tlmsg = await sendMessage(
+        tlmsg = await send_message(
             self.message, # type: ignore
             msg,
             button
@@ -728,15 +741,15 @@ class TaskListener(TaskConfig):
             self.message, # type: ignore
             tlmsg
         )
-        if self.logMessage:
-            await sendMessage(
-                self.logMessage,
+        if self.log_message:
+            await send_message(
+                self.log_message,
                 msg,
                 button
             )
-        if self.dmMessage:
-            await sendMessage(
-                self.dmMessage,
+        if self.dm_message:
+            await send_message(
+                self.dm_message,
                 msg,
                 button
             )
@@ -746,18 +759,18 @@ class TaskListener(TaskConfig):
             await update_status_message(self.message.chat.id) # type: ignore
 
         if (
-            DATABASE_URL
+            config_dict["DATABASE_URL"]
             and config_dict["STOP_DUPLICATE_TASKS"]
             and self.raw_url
         ):
-            await DbManager().remove_download(self.raw_url)
+            await database.remove_download(self.raw_url)
 
         if (
-            self.isSuperChat
+            self.is_super_chat
             and config_dict["INCOMPLETE_TASK_NOTIFIER"]
-            and DATABASE_URL
+            and config_dict["DATABASE_URL"]
         ):
-            await DbManager().rm_complete_task(self.message.link) # type: ignore
+            await database.rm_complete_task(self.message.link) # type: ignore
 
         async with queue_dict_lock:
             if self.mid in queued_dl:
@@ -775,15 +788,15 @@ class TaskListener(TaskConfig):
         await delete_links(self.message) # type: ignore
         await sleep(3)
         await clean_download(self.dir)
-        if self.newDir:
-            await clean_download(self.newDir)
+        if self.new_dir:
+            await clean_download(self.new_dir)
         if (
             self.thumb and
             await aiopath.exists(self.thumb)
         ):
             await remove(self.thumb)
 
-    async def onUploadError(self, error):
+    async def on_upload_error(self, error):
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
@@ -792,7 +805,7 @@ class TaskListener(TaskConfig):
         msg += f"\n\n<code>Reason </code>: {escape(str(error))}"
         msg += f"\n<code>Past   </code>: {get_readable_time(time() - self.time)}"
         msg += f"\n<code>Mode   </code>: {self.mode}"
-        tlmsg = await sendMessage(
+        tlmsg = await send_message(
             self.message, # type: ignore
             msg
         )
@@ -800,14 +813,14 @@ class TaskListener(TaskConfig):
             self.message, # type: ignore
             tlmsg
         )
-        if self.logMessage:
-            await sendMessage(
-                self.logMessage,
+        if self.log_message:
+            await send_message(
+                self.log_message,
                 msg
             )
-        if self.dmMessage:
-            await sendMessage(
-                self.dmMessage,
+        if self.dm_message:
+            await send_message(
+                self.dm_message,
                 msg,
             )
         if count == 0:
@@ -816,18 +829,18 @@ class TaskListener(TaskConfig):
             await update_status_message(self.message.chat.id) # type: ignore
 
         if (
-            DATABASE_URL
+            config_dict["DATABASE_URL"]
             and config_dict["STOP_DUPLICATE_TASKS"]
             and self.raw_url
         ):
-            await DbManager().remove_download(self.raw_url)
+            await database.remove_download(self.raw_url)
 
         if (
-            self.isSuperChat
+            self.is_super_chat
             and config_dict["INCOMPLETE_TASK_NOTIFIER"]
-            and DATABASE_URL
+            and config_dict["DATABASE_URL"]
         ):
-            await DbManager().rm_complete_task(self.message.link) # type: ignore
+            await database.rm_complete_task(self.message.link) # type: ignore
 
         async with queue_dict_lock:
             if self.mid in queued_dl:
@@ -845,8 +858,8 @@ class TaskListener(TaskConfig):
         await delete_links(self.message) # type: ignore
         await sleep(3)
         await clean_download(self.dir)
-        if self.newDir:
-            await clean_download(self.newDir)
+        if self.new_dir:
+            await clean_download(self.new_dir)
         if (
             self.thumb and
             await aiopath.exists(self.thumb)

@@ -1,20 +1,23 @@
 from nekozee.filters import create
 
-from bot import user_data, OWNER_ID
+from bot import (
+    config_dict,
+    user_data
+)
 
 
 class CustomFilters:
-    async def owner_filter(self, _, update):
+    async def ownerFilter(self, _, update):
         user = (
             update.from_user or
             update.sender_chat
         )
         uid = user.id
-        return uid == OWNER_ID
+        return uid == config_dict["OWNER_ID"]
 
-    owner = create(owner_filter)
+    owner = create(ownerFilter)
 
-    async def authorized_user(self, _, update):
+    async def authorizedUser(self, _, update):
         user = (
             update.from_user or
             update.sender_chat
@@ -22,7 +25,7 @@ class CustomFilters:
         uid = user.id
         chat_id = update.chat.id
         return bool(
-            uid == OWNER_ID
+            uid == config_dict["OWNER_ID"]
             or (
                 uid in user_data
                 and (
@@ -45,18 +48,18 @@ class CustomFilters:
             )
         )
 
-    authorized = create(authorized_user)
+    authorized = create(authorizedUser)
 
-    async def sudo_user(self, _, update):
+    async def sudoUser(self, _, update):
         user = (
             update.from_user or
             update.sender_chat
         )
         uid = user.id
         return bool(
-            uid == OWNER_ID
+            uid == config_dict["OWNER_ID"]
             or uid in user_data
             and user_data[uid].get("is_sudo")
         )
 
-    sudo = create(sudo_user)
+    sudo = create(sudoUser)

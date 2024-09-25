@@ -1,18 +1,19 @@
 from googleapiclient.errors import HttpError
 from logging import getLogger
 
-from bot.helper.task_utils.gdrive_utils.helper import GoogleDriveHelper
+from ...task_utils.gdrive_utils.helper import GoogleDriveHelper
 
 LOGGER = getLogger(__name__)
 
 
-class gdDelete(GoogleDriveHelper):
+class GoogleDriveDelete(GoogleDriveHelper):
+
     def __init__(self):
         super().__init__()
 
-    def deletefile(self, link, user_id):
+    def delete_file(self, link, user_id):
         try:
-            file_id = self.getIdFromUrl(
+            file_id = self.get_id_from_url(
                 link,
                 user_id
             )
@@ -42,7 +43,7 @@ class gdDelete(GoogleDriveHelper):
                     self.alt_auth = True
                     self.use_sa = False
                     LOGGER.error("File not found. Trying with token.pickle...")
-                    return self.deletefile(link, user_id)
+                    return self.delete_file(link, user_id)
                 err = "File not found or insufficientFilePermissions!"
             LOGGER.error(f"Delete Result: {err}")
             msg = str(err)

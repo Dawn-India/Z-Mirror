@@ -5,16 +5,19 @@ from bot import (
     bot,
     bot_name,
     config_dict,
-    DATABASE_URL,
     user_data,
 )
-from bot.helper.ext_utils.db_handler import DbManager
-from bot.helper.ext_utils.status_utils import get_readable_time
-from bot.helper.ext_utils.shortener import short_url
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendLogMessage
+from .bot_utils import new_task
+from .db_handler import database
+from .status_utils import get_readable_time
+from .shortener import short_url
+from ..telegram_helper.bot_commands import BotCommands
+from ..telegram_helper.button_build import ButtonMaker
+from ..telegram_helper.filters import CustomFilters
+from ..telegram_helper.message_utils import (
+    send_message,
+    send_log_message
+)
 
 from nekozee.filters import command
 from nekozee.handlers import MessageHandler
@@ -31,8 +34,8 @@ async def checking_access(user_id, button=None):
         {}
     )
     data = user_data[user_id]
-    if DATABASE_URL:
-        data["time"] = await DbManager().get_token_expire_time(user_id)
+    if config_dict["DATABASE_URL"]:
+        data["time"] = await database.get_token_expire_time(user_id)
     expire = data.get("time")
     isExpired = (
         expire is None
@@ -51,8 +54,8 @@ async def checking_access(user_id, button=None):
             del data["time"]
         data["token"] = token
         data["inittime"] = inittime
-        if DATABASE_URL:
-            await DbManager().update_user_token(
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_token(
                 user_id,
                 token,
                 inittime
@@ -60,7 +63,7 @@ async def checking_access(user_id, button=None):
         user_data[user_id].update(data)
         if button is None:
             button = ButtonMaker()
-        button.ubutton(
+        button.url_button(
             "ɢᴇɴᴇʀᴀᴛᴇ\nɴᴇᴡ ᴛᴏᴋᴇɴ",
             short_url(f"https://redirect.z-mirror.eu.org/{bot_name}/{token}")
         )
@@ -78,6 +81,7 @@ async def checking_access(user_id, button=None):
     )
 
 
+@new_task
 async def start(client, message):
     tag = message.from_user.mention
     if (
@@ -86,19 +90,19 @@ async def start(client, message):
     ):
         userid = message.from_user.id
         input_token = message.command[1]
-        if DATABASE_URL:
-            stored_token = await DbManager().get_user_token(userid)
+        if config_dict["DATABASE_URL"]:
+            stored_token = await database.get_user_token(userid)
             if stored_token is None:
-                return await sendMessage(
+                return await send_message(
                     message,
                     "This token is not associated with your account.\n\nPlease generate your own token."
                 )
             if input_token != stored_token:
-                return await sendMessage(
+                return await send_message(
                     message,
                     "Invalid token.\n\nPlease generate a new one."
                 )
-            inittime = await DbManager().get_token_init_time(userid)
+            inittime = await database.get_token_init_time(userid)
             duration = time() - inittime # type: ignore
             if (
                 config_dict["MINIMUM_DURATOIN"]
@@ -106,17 +110,17 @@ async def start(client, message):
                     duration < config_dict["MINIMUM_DURATOIN"]
                 )
             ):
-                await DbManager().update_user_tdata(
+                await database.update_user_tdata(
                     userid,
                     0,
                     0
                 )
-                await sendLogMessage(
+                await send_log_message(
                     message,
                     f"#BYPASS\n\nShortener bypass detected.",
                     tag
                 )
-                return await sendMessage(
+                return await send_message(
                     message,
                     (
                         "Shortener bypass detected.\nPlease generate a new token.\n\n"
@@ -124,11 +128,11 @@ async def start(client, message):
                         "Don't use any <b>Adblocker</b> or <b>VPN</b> or <b>Proxy</b>\n"
                         "or <b>Incognito</b> or <b>DNS</b> or <b>Extensions</b>\n"
                         "or <b>Any other Bypass methods</b>.\n\nFor your safety and my "
-                        "profit, use telegram's inbuilt browser or chrome without any extensions."
+                        "profit, use google chrome browser without any extensions."
                     )
                 )
         if userid not in user_data:
-            return await sendMessage(
+            return await send_message(
                 message,
                 "This token is not yours!\n\nKindly generate your own."
             )
@@ -137,7 +141,7 @@ async def start(client, message):
             "token" not in data
             or data["token"] != input_token
         ):
-            return await sendMessage(
+            return await send_message(
                 message,
                 "Token already used!\n\nKindly generate a new one."
             )
@@ -149,12 +153,12 @@ async def start(client, message):
             )
         ):
             del data["token"]
-            await sendLogMessage(
+            await send_log_message(
                 message,
                 f"#BYPASS\n\nShortener bypass detected.",
                 tag
             )
-            return await sendMessage(
+            return await send_message(
                 message,
                 (
                     "Shortener bypass detected.\nPlease generate a new token.\n\n"
@@ -170,8 +174,8 @@ async def start(client, message):
         data["token"] = token
         data["time"] = ttime
         user_data[userid].update(data)
-        if DATABASE_URL:
-            await DbManager().update_user_tdata(
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_tdata(
                 userid,
                 token,
                 ttime
@@ -182,7 +186,7 @@ async def start(client, message):
             "<b>Your Limites:</b>\n"
             f"➜ {config_dict["USER_MAX_TASKS"]} parallal tasks.\n"
         )
-        return await sendMessage(
+        return await send_message(
             message,
             msg
         )
@@ -215,7 +219,7 @@ async def start(client, message):
     else:
         start_string = "Start me in DM, not in the group.\n" \
                        f"cc: {tag}"
-    await sendMessage(
+    await send_message(
         message,
         start_string
     )

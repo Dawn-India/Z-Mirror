@@ -1,19 +1,26 @@
 from logging import getLogger
 from tenacity import RetryError
 
-from bot.helper.task_utils.gdrive_utils.helper import GoogleDriveHelper
+from ...task_utils.gdrive_utils.helper import GoogleDriveHelper
 
 LOGGER = getLogger(__name__)
 
 
-class gdCount(GoogleDriveHelper):
+class GoogleDriveCount(GoogleDriveHelper):
+
     def __init__(self):
         super().__init__()
 
     def count(self, link, user_id):
         try:
-            file_id = self.getIdFromUrl(link, user_id)
-        except (KeyError, IndexError):
+            file_id = self.get_id_from_url(
+                link,
+                user_id
+            )
+        except (
+            KeyError,
+            IndexError
+        ):
             return (
                 "Google Drive ID could not be found in the provided link",
                 None,
@@ -21,6 +28,7 @@ class gdCount(GoogleDriveHelper):
                 None,
                 None,
             )
+
         self.service = self.authorize()
         LOGGER.info(f"File ID: {file_id}")
         try:
@@ -60,18 +68,18 @@ class gdCount(GoogleDriveHelper):
         )
 
     def _proceed_count(self, file_id):
-        meta = self.getFileMetadata(file_id)
+        meta = self.get_file_metadata(file_id)
         name = meta["name"]
         LOGGER.info(f"Counting: {name}")
         mime_type = meta.get("mimeType")
         if mime_type == self.G_DRIVE_DIR_MIME_TYPE:
-            self._gDrive_directory(meta)
+            self._google_drive_directory(meta)
             mime_type = "Folder"
         else:
             if mime_type is None:
                 mime_type = "File"
             self.total_files += 1
-            self._gDrive_file(meta)
+            self._google_drive_file(meta)
         return (
             name,
             mime_type,
@@ -80,15 +88,15 @@ class gdCount(GoogleDriveHelper):
             self.total_folders
         )
 
-    def _gDrive_file(self, filee):
+    def _google_drive_file(self, filee):
         size = int(filee.get(
             "size",
             0
         ))
         self.proc_bytes += size
 
-    def _gDrive_directory(self, drive_folder):
-        files = self.getFilesByFolderId(drive_folder["id"])
+    def _google_drive_directory(self, drive_folder):
+        files = self.get_files_by_folder_id(drive_folder["id"])
         if len(files) == 0:
             return
         for filee in files:
@@ -96,12 +104,12 @@ class gdCount(GoogleDriveHelper):
             if shortcut_details is not None:
                 mime_type = shortcut_details["targetMimeType"]
                 file_id = shortcut_details["targetId"]
-                filee = self.getFileMetadata(file_id)
+                filee = self.get_file_metadata(file_id)
             else:
                 mime_type = filee.get("mimeType")
             if mime_type == self.G_DRIVE_DIR_MIME_TYPE:
                 self.total_folders += 1
-                self._gDrive_directory(filee)
+                self._google_drive_directory(filee)
             else:
                 self.total_files += 1
-                self._gDrive_file(filee)
+                self._google_drive_file(filee)

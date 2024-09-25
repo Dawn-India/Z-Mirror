@@ -9,21 +9,21 @@ from bot import (
     non_queued_dl,
     LOGGER
 )
-from bot.helper.ext_utils.bot_utils import cmd_exec
-from bot.helper.ext_utils.status_utils import get_readable_file_size
-from bot.helper.ext_utils.task_manager import (
+from ...ext_utils.bot_utils import cmd_exec
+from ...ext_utils.status_utils import get_readable_file_size
+from ...ext_utils.task_manager import (
     check_running_tasks,
     limit_checker,
     stop_duplicate_check
 )
-from bot.helper.task_utils.rclone_utils.transfer import RcloneTransferHelper
-from bot.helper.task_utils.status_utils.queue_status import QueueStatus
-from bot.helper.task_utils.status_utils.rclone_status import RcloneStatus
-from bot.helper.telegram_helper.message_utils import (
+from ...task_utils.rclone_utils.transfer import RcloneTransferHelper
+from ...task_utils.status_utils.queue_status import QueueStatus
+from ...task_utils.status_utils.rclone_status import RcloneStatus
+from ...telegram_helper.message_utils import (
     auto_delete_message,
     delete_links,
-    sendMessage,
-    sendStatusMessage
+    send_message,
+    send_status_message
 )
 
 
@@ -33,7 +33,7 @@ async def add_rclone_download(listener, path):
             "mrcc:",
             1
         )[1]
-        config_path = f"rclone/{listener.userId}.conf"
+        config_path = f"rclone/{listener.user_id}.conf"
     else:
         config_path = "rclone.conf"
 
@@ -75,7 +75,7 @@ async def add_rclone_download(listener, path):
                 or "Use <code>/shell cat rlog.txt</code> to see more information"
             )
             msg = f"Error: While getting rclone stat/size. Path: {remote}:{listener.link}. Stderr: {err[:4000]}"
-            await listener.onDownloadError(msg)
+            await listener.on_download_error(msg)
         return
     try:
         rstat = loads(res1[0])
@@ -83,7 +83,7 @@ async def add_rclone_download(listener, path):
     except Exception as err:
         if not str(err):
             err = "Use <code>/shell cat rlog.txt</code> to see more information"
-        await listener.onDownloadError(f"RcloneDownload JsonLoad: {err}")
+        await listener.on_download_error(f"RcloneDownload JsonLoad: {err}")
         return
     if rstat["IsDir"]:
         if not listener.name:
@@ -106,14 +106,14 @@ async def add_rclone_download(listener, path):
         button
     ) = await stop_duplicate_check(listener)
     if msg:
-        await listener.onDownloadError(
+        await listener.on_download_error(
             msg,
             button
         )
         return
-    if limit_exceeded := await limit_checker(listener, isRclone=True):
+    if limit_exceeded := await limit_checker(listener, is_rclone=True):
         LOGGER.info(f"Rclone Limit Exceeded: {listener.name} | {get_readable_file_size(listener.size)}")
-        rmsg = await sendMessage(
+        rmsg = await send_message(
             listener.message,
             limit_exceeded
         )
@@ -136,11 +136,11 @@ async def add_rclone_download(listener, path):
                 gid,
                 "dl"
             )
-        await listener.onDownloadStart()
+        await listener.on_download_start()
         if listener.multi <= 1:
-            await sendStatusMessage(listener.message)
+            await send_status_message(listener.message)
         await event.wait() # type: ignore
-        if listener.isCancelled:
+        if listener.is_cancelled:
             return
         async with queue_dict_lock:
             non_queued_dl.add(listener.mid)
@@ -157,9 +157,9 @@ async def add_rclone_download(listener, path):
     if add_to_queue:
         LOGGER.info(f"Start Queued Download with rclone: {listener.link}")
     else:
-        await listener.onDownloadStart()
+        await listener.on_download_start()
         if listener.multi <= 1:
-            await sendStatusMessage(listener.message)
+            await send_status_message(listener.message)
         LOGGER.info(f"Download with rclone: {listener.link}")
 
     await RCTransfer.download(

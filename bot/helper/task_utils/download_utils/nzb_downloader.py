@@ -18,18 +18,17 @@ from bot import (
     LOGGER,
     config_dict,
     non_queued_dl,
-    queue_dict_lock,
-    DATABASE_URL,
+    queue_dict_lock
 )
-from bot.helper.ext_utils.bot_utils import bt_selection_buttons
-from bot.helper.ext_utils.task_manager import check_running_tasks
-from bot.helper.listeners.nzb_listener import onDownloadStart
-from bot.helper.ext_utils.db_handler import DbManager
-from bot.helper.task_utils.status_utils.nzb_status import SabnzbdStatus
-from bot.helper.telegram_helper.message_utils import (
-    sendMessage,
-    sendStatusMessage,
-    deleteMessage,
+from ...ext_utils.bot_utils import bt_selection_buttons
+from ...ext_utils.task_manager import check_running_tasks
+from ...listeners.nzb_listener import on_download_start
+from ...ext_utils.db_handler import database
+from ...task_utils.status_utils.nzb_status import SabnzbdStatus
+from ...telegram_helper.message_utils import (
+    send_message,
+    send_status_message,
+    delete_message,
 )
 
 
@@ -45,9 +44,9 @@ async def add_servers():
             if server["host"] not in servers_hosts:
                 tasks.append(sabnzbd_client.add_server(server))
                 config_dict["USENET_SERVERS"].append(server)
-        if DATABASE_URL:
+        if config_dict["DATABASE_URL"]:
             tasks.append(
-                DbManager().update_config(
+                database.update_config(
                     {"USENET_SERVERS": config_dict["USENET_SERVERS"]}
                 )
             )
@@ -82,7 +81,7 @@ async def add_nzb(listener, path):
         try:
             await add_servers()
         except Exception as e:
-            await listener.onDownloadError(str(e))
+            await listener.on_download_error(str(e))
             return
     try:
         await sabnzbd_client.create_category(
@@ -113,7 +112,7 @@ async def add_nzb(listener, path):
             else 1,
         )
         if not res["status"]:
-            await listener.onDownloadError(
+            await listener.on_download_error(
                 "Not added! Mostly issue in the link",
             )
             return
@@ -128,7 +127,7 @@ async def add_nzb(listener, path):
             history = await sabnzbd_client.get_history(nzo_ids=job_id)
             if err := history["history"]["slots"][0]["fail_message"]:
                 await gather(
-                    listener.onDownloadError(err),
+                    listener.on_download_error(err),
                     sabnzbd_client.delete_history(
                         job_id,
                         delete_files=True
@@ -145,14 +144,14 @@ async def add_nzb(listener, path):
                 job_id,
                 queued=add_to_queue
             )
-        await onDownloadStart(job_id)
+        await on_download_start(job_id)
 
         if add_to_queue:
             LOGGER.info(f"Added to Queue/Download: {name} - Job_id: {job_id}")
         else:
             LOGGER.info(f"NzbDownload started: {name} - Job_id: {job_id}")
 
-        await listener.onDownloadStart()
+        await listener.on_download_start()
 
         if (
             config_dict["BASE_URL"]
@@ -163,7 +162,7 @@ async def add_nzb(listener, path):
                 name.startswith("Trying")
             ):
                 metamsg = "Fetching URL, wait then you can select files. Use nzb file to avoid this wait."
-                meta = await sendMessage(
+                meta = await send_message(
                     listener.message,
                     metamsg
                 )
@@ -173,27 +172,27 @@ async def add_nzb(listener, path):
                         if not nzb_info["queue"]["slots"][0]["filename"].startswith(
                             "Trying"
                         ):
-                            await deleteMessage(meta)
+                            await delete_message(meta)
                             break
                     else:
-                        await deleteMessage(meta)
+                        await delete_message(meta)
                         return
                     await sleep(1)
             if not add_to_queue:
                 await sabnzbd_client.pause_job(job_id)
             SBUTTONS = bt_selection_buttons(job_id)
             msg = "Your download paused. Choose files then press Done Selecting button to start downloading."
-            await sendMessage(
+            await send_message(
                 listener.message,
                 msg,
                 SBUTTONS
             )
         elif listener.multi <= 1:
-            await sendStatusMessage(listener.message)
+            await send_status_message(listener.message)
 
         if add_to_queue:
             await event.wait() # type: ignore
-            if listener.isCancelled:
+            if listener.is_cancelled:
                 return
             async with queue_dict_lock:
                 non_queued_dl.add(listener.mid)
@@ -205,7 +204,7 @@ async def add_nzb(listener, path):
                 f"Start Queued Download from Sabnzbd: {name} - Job_id: {job_id}"
             )
     except Exception as e:
-        await listener.onDownloadError(f"{e}")
+        await listener.on_download_error(f"{e}")
     finally:
         if nzbpath and await aiopath.exists(listener.link):
             await remove(listener.link)

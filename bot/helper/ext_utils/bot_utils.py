@@ -5,10 +5,15 @@ from asyncio import (
     sleep,
 )
 from asyncio.subprocess import PIPE
-from functools import partial, wraps
+from concurrent.futures import ThreadPoolExecutor
+from functools import (
+    partial,
+    wraps
+)
+from os import cpu_count
+from httpx import AsyncClient
 
 from nekozee.types import BotCommand
-from httpx import AsyncClient
 
 from bot import (
     user_data,
@@ -16,19 +21,26 @@ from bot import (
     bot_loop,
     extra_buttons
 )
-from bot.helper.ext_utils.help_messages import (
+from .help_messages import (
     YT_HELP_DICT,
     MIRROR_HELP_DICT,
     CLONE_HELP_DICT,
 )
-from bot.helper.ext_utils.telegraph_helper import telegraph
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.bot_commands import BotCommands
+from .telegraph_helper import telegraph
+from ..telegram_helper.button_build import ButtonMaker
+from ..telegram_helper.bot_commands import BotCommands
 
 COMMAND_USAGE = {}
+max_workers = min(
+    10000,
+    (
+        cpu_count()
+        or 0
+    ) + 4
+)
+THREAD_POOL = ThreadPoolExecutor(max_workers=max_workers)
 
-
-class setInterval:
+class SetInterval:
     def __init__(self, interval, action, *args, **kwargs):
         self.interval = interval
         self.action = action
@@ -51,49 +63,37 @@ class setInterval:
         self.task.cancel()
 
 
-def create_help_buttons():
+def _build_command_usage(help_dict, command_key):
     buttons = ButtonMaker()
-    for name in list(MIRROR_HELP_DICT.keys())[1:]:
-        buttons.ibutton(
+    for name in list(help_dict.keys())[1:]:
+        buttons.data_button(
             name,
-            f"help mirror {name}"
+            f"help {command_key} {name}"
         )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
         "help close"
     )
-    COMMAND_USAGE["mirror"] = [
-        MIRROR_HELP_DICT["main"],
+    COMMAND_USAGE[command_key] = [
+        help_dict["main"],
         buttons.build_menu(2)
     ]
     buttons.reset()
-    for name in list(YT_HELP_DICT.keys())[1:]:
-        buttons.ibutton(
-            name,
-            f"help yt {name}"
-        )
-    buttons.ibutton(
-        "ᴄʟᴏꜱᴇ",
-        "help close"
+
+
+def create_help_buttons():
+    _build_command_usage(
+        MIRROR_HELP_DICT,
+        "mirror"
     )
-    COMMAND_USAGE["yt"] = [
-        YT_HELP_DICT["main"],
-        buttons.build_menu(2)
-    ]
-    buttons.reset()
-    for name in list(CLONE_HELP_DICT.keys())[1:]:
-        buttons.ibutton(
-            name,
-            f"help clone {name}"
-        )
-    buttons.ibutton(
-        "ᴄʟᴏꜱᴇ",
-        "help close"
+    _build_command_usage(
+        YT_HELP_DICT,
+        "yt"
     )
-    COMMAND_USAGE["clone"] = [
-        CLONE_HELP_DICT["main"],
-        buttons.build_menu(2)
-    ]
+    _build_command_usage(
+        CLONE_HELP_DICT,
+        "clone"
+    )
 
 
 def bt_selection_buttons(id_):
@@ -112,24 +112,24 @@ def bt_selection_buttons(id_):
     buttons = ButtonMaker()
     BASE_URL = config_dict["BASE_URL"]
     if config_dict["WEB_PINCODE"]:
-        buttons.ubutton(
+        buttons.url_button(
             "ꜱᴇʟᴇᴄᴛ ꜰɪʟᴇꜱ",
             f"{BASE_URL}/app/files/{id_}"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴘɪɴᴄᴏᴅᴇ",
             f"sel pin {gid} {pincode}"
         )
     else:
-        buttons.ubutton(
+        buttons.url_button(
             "ꜱᴇʟᴇᴄᴛ ꜰɪʟᴇꜱ",
             f"{BASE_URL}/app/files/{id_}?pin_code={pincode}"
         )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴅᴏɴᴇ ꜱᴇʟᴇᴄᴛɪɴɢ",
         f"sel done {gid} {id_}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
         f"sel cancel {gid}"
     )
@@ -142,7 +142,7 @@ def extra_btns(buttons):
             btn_name,
             btn_url
         ) in extra_buttons.items():
-            buttons.ubutton(
+            buttons.url_button(
                 btn_name,
                 btn_url
             )
@@ -251,7 +251,7 @@ async def get_telegraph_list(telegraph_content):
             telegraph_content
         )
     buttons = ButtonMaker()
-    buttons.ubutton(
+    buttons.url_button(
         "🔎 ᴠɪᴇᴡ\nʀᴇꜱᴜʟᴛꜱ",
         f"https://telegra.ph/{path[0]}"
     )
@@ -275,6 +275,8 @@ def arg_parser(items, arg_base):
         "-fu",
         "-sync",
         "-ml",
+        "-doc",
+        "-med"
     }
     t = len(items)
     i = 0
@@ -295,7 +297,9 @@ def arg_parser(items, arg_base):
                     "-fd",
                     "-fu",
                     "-sync",
-                    "-ml"
+                    "-ml",
+                    "-doc",
+                    "-med"
                 ]
             ):
                 arg_base[part] = True
@@ -328,7 +332,7 @@ def arg_parser(items, arg_base):
             arg_base["link"] = " ".join(link)
 
 
-def getSizeBytes(size):
+def get_size_bytes(size):
     size = size.lower()
     if size.endswith("mb"):
         size = size.split("mb")[0]
@@ -407,21 +411,17 @@ async def cmd_exec(cmd, shell=False):
 
 def new_task(func):
     @wraps(func)
-    def wrapper(
+    async def wrapper(
         *args,
         **kwargs
     ):
-        bot_loop.create_task(
+        task = bot_loop.create_task(
             func(
                 *args,
                 **kwargs
             )
         )
-
-        async def dummy():
-            pass
-
-        return dummy
+        return task
 
     return wrapper
 
@@ -433,7 +433,7 @@ async def sync_to_async(func, *args, wait=True, **kwargs):
         **kwargs
     )
     future = bot_loop.run_in_executor(
-        None,
+        THREAD_POOL,
         pfunc
     )
     return (
@@ -458,7 +458,7 @@ def async_to_sync(func, *args, wait=True, **kwargs):
     )
 
 
-def new_thread(func):
+def loop_thread(func):
     @wraps(func)
     def wrapper(
         *args,

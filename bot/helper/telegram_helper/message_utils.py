@@ -2,14 +2,6 @@ from asyncio import (
     sleep,
     create_task,
 )
-from nekozee.errors import (
-    FloodWait,
-    PeerIdInvalid,
-    RPCError,
-    UserNotParticipant,
-)
-from nekozee.types import ChatPermissions
-from nekozee.enums import ChatAction
 from re import match as re_match
 from time import time
 from datetime import (
@@ -18,24 +10,33 @@ from datetime import (
     timezone,
 )
 
+from nekozee.errors import (
+    FloodWait,
+    PeerIdInvalid,
+    RPCError,
+    UserNotParticipant,
+)
+from nekozee.types import ChatPermissions
+from nekozee.enums import ChatAction
+
 from bot import (
+    LOGGER,
     bot,
     bot_name,
     cached_dict,
     config_dict,
-    Intervals,
-    LOGGER,
+    intervals,
     status_dict,
     task_dict_lock,
     user,
 )
-from bot.helper.ext_utils.bot_utils import setInterval
-from bot.helper.ext_utils.exceptions import TgLinkException
-from bot.helper.ext_utils.status_utils import get_readable_message
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from ..ext_utils.bot_utils import SetInterval
+from ..ext_utils.exceptions import TgLinkException
+from ..ext_utils.status_utils import get_readable_message
+from ..telegram_helper.button_build import ButtonMaker
 
 
-async def sendMessage(message, text, buttons=None, block=True):
+async def send_message(message, text, buttons=None, block=True):
     try:
         return await message.reply(
             text=text,
@@ -48,7 +49,7 @@ async def sendMessage(message, text, buttons=None, block=True):
         LOGGER.warning(str(f))
         if block:
             await sleep(f.value * 1.2) # type: ignore
-            return await sendMessage(
+            return await send_message(
                 message,
                 text,
                 buttons
@@ -59,7 +60,7 @@ async def sendMessage(message, text, buttons=None, block=True):
         return str(e)
 
 
-async def editMessage(message, text, buttons=None, block=True):
+async def edit_message(message, text, buttons=None, block=True):
     try:
         await message.edit(
             text=text,
@@ -70,7 +71,7 @@ async def editMessage(message, text, buttons=None, block=True):
         LOGGER.warning(str(f))
         if block:
             await sleep(f.value * 1.2) # type: ignore
-            return await editMessage(
+            return await edit_message(
                 message,
                 text,
                 buttons
@@ -81,7 +82,7 @@ async def editMessage(message, text, buttons=None, block=True):
         return str(e)
 
 
-async def sendFile(message, file, caption=""):
+async def send_file(message, file, caption=""):
     try:
         return await message.reply_document(
             document=file,
@@ -92,7 +93,7 @@ async def sendFile(message, file, caption=""):
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2) # type: ignore
-        return await sendFile(
+        return await send_file(
             message,
             file,
             caption
@@ -102,7 +103,7 @@ async def sendFile(message, file, caption=""):
         return str(e)
 
 
-async def sendRss(text):
+async def send_rss(text):
     try:
         app = user or bot
         return await app.send_message( # type: ignore
@@ -114,13 +115,13 @@ async def sendRss(text):
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2) # type: ignore
-        return await sendRss(text)
+        return await send_rss(text)
     except Exception as e:
         LOGGER.error(str(e))
         return str(e)
 
 
-async def deleteMessage(message):
+async def delete_message(message):
     try:
         await message.delete()
     except Exception as e:
@@ -137,24 +138,24 @@ async def auto_delete_message(
         async def delete_delay():
             await sleep(config_dict["AUTO_DELETE_MESSAGE_DURATION"])
             if cmd_message is not None:
-                await deleteMessage(cmd_message)
+                await delete_message(cmd_message)
             if bot_message is not None:
-                await deleteMessage(bot_message)
+                await delete_message(bot_message)
         create_task(delete_delay())
 
 
 async def delete_links(message):
     if config_dict["DELETE_LINKS"]:
         if reply_to := message.reply_to_message:
-            await deleteMessage(reply_to)
-        await deleteMessage(message)
+            await delete_message(reply_to)
+        await delete_message(message)
 
 
 async def delete_status():
     async with task_dict_lock:
         for key, data in list(status_dict.items()):
             try:
-                await deleteMessage(data["message"])
+                await delete_message(data["message"])
                 del status_dict[key]
             except Exception as e:
                 LOGGER.error(str(e))
@@ -259,13 +260,13 @@ async def get_tg_link_message(link):
 
 
 async def update_status_message(sid, force=False):
-    if Intervals["stopAll"]:
+    if intervals["stopAll"]:
         return
     async with task_dict_lock:
         if not status_dict.get(sid):
-            if obj := Intervals["status"].get(sid):
+            if obj := intervals["status"].get(sid):
                 obj.cancel()
-                del Intervals["status"][sid]
+                del intervals["status"][sid]
             return
         if not force and time() - status_dict[sid]["time"] < 3:
             return
@@ -283,12 +284,12 @@ async def update_status_message(sid, force=False):
         )
         if text is None:
             del status_dict[sid]
-            if obj := Intervals["status"].get(sid):
+            if obj := intervals["status"].get(sid):
                 obj.cancel()
-                del Intervals["status"][sid]
+                del intervals["status"][sid]
             return
         if text != status_dict[sid]["message"].text:
-            message = await editMessage(
+            message = await edit_message(
                 status_dict[sid]["message"],
                 text,
                 buttons,
@@ -297,9 +298,9 @@ async def update_status_message(sid, force=False):
             if isinstance(message, str):
                 if message.startswith("Telegram says: [400"):
                     del status_dict[sid]
-                    if obj := Intervals["status"].get(sid):
+                    if obj := intervals["status"].get(sid):
                         obj.cancel()
-                        del Intervals["status"][sid]
+                        del intervals["status"][sid]
                 else:
                     LOGGER.error(
                         f"Status with id: {sid} haven't been updated. Error: {message}"
@@ -309,8 +310,8 @@ async def update_status_message(sid, force=False):
             status_dict[sid]["time"] = time()
 
 
-async def sendStatusMessage(msg, user_id=0):
-    if Intervals["stopAll"]:
+async def send_status_message(msg, user_id=0):
+    if intervals["stopAll"]:
         return
     async with task_dict_lock:
         sid = user_id or msg.chat.id
@@ -328,13 +329,13 @@ async def sendStatusMessage(msg, user_id=0):
             )
             if text is None:
                 del status_dict[sid]
-                if obj := Intervals["status"].get(sid):
+                if obj := intervals["status"].get(sid):
                     obj.cancel()
-                    del Intervals["status"][sid]
+                    del intervals["status"][sid]
                 return
             message = status_dict[sid]["message"]
-            await deleteMessage(message)
-            message = await sendMessage(
+            await delete_message(message)
+            message = await send_message(
                 msg,
                 text,
                 buttons,
@@ -360,7 +361,7 @@ async def sendStatusMessage(msg, user_id=0):
             )
             if text is None:
                 return
-            message = await sendMessage(
+            message = await send_message(
                 msg,
                 text,
                 buttons,
@@ -381,20 +382,20 @@ async def sendStatusMessage(msg, user_id=0):
                 "is_user": is_user,
             }
     if (
-        not Intervals["status"].get(sid)
+        not intervals["status"].get(sid)
         and not is_user
     ):
-        Intervals["status"][sid] = setInterval(
+        intervals["status"][sid] = SetInterval(
             config_dict["STATUS_UPDATE_INTERVAL"],
             update_status_message,
             sid
         )
 
-async def user_info(client, userId):
-    return await client.get_users(userId)
+async def user_info(client, user_id):
+    return await client.get_users(user_id)
 
 
-async def isBot_canDm(message, dmMode, button=None):
+async def is_bot_can_dm(message, dmMode, button=None):
     if not dmMode:
         return None, button
     await user_info(
@@ -410,7 +411,7 @@ async def isBot_canDm(message, dmMode, button=None):
         if button is None:
             button = ButtonMaker()
         _msg = "You need to <b>Start</b> me in <b>DM</b>."
-        button.ubutton(
+        button.url_button(
             "ꜱᴛᴀʀᴛ\nᴍᴇ",
             f"https://t.me/{bot_name}?start=start",
             "header"
@@ -425,10 +426,10 @@ async def isBot_canDm(message, dmMode, button=None):
     )
 
 
-async def send_to_chat(client, chatId, text, buttons=None):
+async def send_to_chat(client, chat_id, text, buttons=None):
     try:
         return await client.send_message(
-            chatId,
+            chat_id,
             text=text,
             disable_web_page_preview=True,
             disable_notification=True,
@@ -439,7 +440,7 @@ async def send_to_chat(client, chatId, text, buttons=None):
         await sleep(f.value * 1.2) # type: ignore
         return await send_to_chat(
             client,
-            chatId,
+            chat_id,
             text,
             buttons
         )
@@ -449,7 +450,7 @@ async def send_to_chat(client, chatId, text, buttons=None):
         LOGGER.error(str(e))
 
 
-async def sendLogMessage(message, link, tag):
+async def send_log_message(message, link, tag):
     if not (log_chat := config_dict["LOG_CHAT_ID"]):
         return
     try:
@@ -480,7 +481,7 @@ async def sendLogMessage(message, link, tag):
     except FloodWait as r:
         LOGGER.warning(str(r))
         await sleep(r.value * 1.2) # type: ignore
-        return await sendLogMessage(
+        return await send_log_message(
             message,
             link,
             tag
@@ -491,7 +492,7 @@ async def sendLogMessage(message, link, tag):
         LOGGER.error(str(e))
 
 
-async def isAdmin(message, user_id=None):
+async def is_admin(message, user_id=None):
     if message.chat.type == message.chat.type.PRIVATE:
         return
     if user_id:
@@ -504,7 +505,7 @@ async def isAdmin(message, user_id=None):
     ]
 
 
-async def forcesub(message, ids, button=None):
+async def force_subscribe(message, ids, button=None):
     join_button = {}
     _msg = ""
     for channel_id in ids.split():
@@ -539,7 +540,7 @@ async def forcesub(message, ids, button=None):
             key,
             value
         ) in join_button.items():
-            button.ubutton(
+            button.url_button(
                 f"{key}",
                 value,
                 "footer"
@@ -556,19 +557,19 @@ async def message_filter(message):
     _msg = ""
     if reply_to := message.reply_to_message:
         if reply_to.forward_date:
-            await deleteMessage(reply_to)
+            await delete_message(reply_to)
             _msg = "You can't mirror or leech forward messages."
         elif reply_to.reply_markup:
-            await deleteMessage(reply_to)
+            await delete_message(reply_to)
             _msg = "You can't mirror or leech messages with buttons."
         elif reply_to.caption:
-            await deleteMessage(reply_to)
+            await delete_message(reply_to)
             _msg = "You can't mirror or leech with captions text."
     elif message.reply_markup:
-        await deleteMessage(message)
+        await delete_message(message)
         _msg = "You can't mirror or leech messages with buttons."
     elif message.forward_date:
-        await deleteMessage(message)
+        await delete_message(message)
         _msg = "You can't mirror or leech forward messages."
     if _msg:
         message.id = None
@@ -578,24 +579,24 @@ async def message_filter(message):
 async def anno_checker(message, pmsg=None):
     msg_id = message.id
     buttons = ButtonMaker()
-    buttons.ibutton(
+    buttons.data_button(
         "ᴠᴇʀɪꜰʏ",
         f"verify admin {msg_id}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄᴀɴᴄᴇʟ",
         f"verify no {msg_id}"
     )
     user = None
     cached_dict[msg_id] = user
     if pmsg is not None:
-        await editMessage(
+        await edit_message(
             pmsg,
             f"{message.sender_chat.type.name} Anon Verification",
             buttons.build_menu(2)
         )
     else:
-        await sendMessage(
+        await send_message(
             message,
             f"{message.sender_chat.type.name} Anon Verification",
             buttons.build_menu(2)
@@ -660,7 +661,7 @@ async def request_limiter(message=None, query=None):
                 show_alert=True
             )
         else:
-            m69 = await sendMessage(
+            m69 = await send_message(
                 message,
                 "Oops, Spam detected! I will mute you for 69 seconds."
             )

@@ -21,7 +21,7 @@ programming in Python.
   ## qBittorrent
 
   - External access to webui, so you can remove files or edit settings. Then you can sync settings in database with sync button in bsetting
-  - Select files from a Torrent before and during download using mltb file selector (Requires Base URL) (task option)
+  - Select files from a Torrent before and during download using ZEE file selector (Requires Base URL) (task option)
   - Seed torrents to a specific ratio and time (task option)
   - Edit Global Options while the bot is running from bot settings (global option)
 
@@ -37,7 +37,7 @@ programming in Python.
   ## Sabnzbd
 
   - External access to web interface, so you can remove files or edit settings. Then you can sync settings in database with sync button in bsetting
-  - Remove files from job before and during download using mltb file selector (Requires Base URL) (task option)
+  - Remove files from job before and during download using ZEE file selector (Requires Base URL) (task option)
   - Edit Global Options while the bot is running from bot settings (global option)
   - Servers menu to edit/add/remove usenet servers
 
@@ -70,6 +70,7 @@ programming in Python.
   - Download restricted messages (document or link) by tg private/public/super links (task option)
   - Choose transfer by bot or user session in case you have a premium plan (global, user option and task option)
   - Mix upload between user and bot session with respect to file size (global, user option and task option)
+  - Upload with custom layout multiple thubnmail (global, user option and task option)
 
   ## Google Drive
 
@@ -144,6 +145,7 @@ programming in Python.
 
   - Extract splits with or without password
   - Zip file/folder with or without password
+  - Decompress zst files
   - Using 7-zip tool to extract with or without password all supported types:
 
   > ZIP, RAR, TAR, 7z, ISO, WIM, CAB, GZIP, BZIP2, APM, ARJ, CHM, CPIO, CramFS, DEB, DMG, FAT, HFS, LZH, LZMA, LZMA2,MBR,
@@ -175,6 +177,7 @@ programming in Python.
   - Bulk download from telegram txt file or text message contains links seperated by new line (task option)
   - Join splitted files that have splitted before by split(linux pkg) (task option)
   - Sample video Generator (task option)
+  - Screenshots Generator (task option)
   - Ability to cancel upload/clone/archive/extract/split/queue (task option)
   - Cancel all buttons for choosing specific tasks status to cancel (global option)
   - Convert videos and audios to specific format with filter (task option)
@@ -371,20 +374,20 @@ programming in Python.
   - `USER_TRANSMISSION`: Upload/Download by user session. Only in superChat. Default is `False`. `Bool`
   - `MIXED_LEECH`: Upload by user and bot session with respect to file size. Only in superChat. Default is `False`. `Bool`
   - `USER_LEECH_DESTINATION`: ID or USERNAME or PM(private message) to where files would be uploaded. `Int`|`Str`. Add `-100` before channel/superGroup id.
-  - `NAME_SUBSTITUTE`: Add word/letter/sentense/pattern to remove or replace with other words with sensitive case or without.**Notes**: 
+  - `NAME_SUBSTITUTE`: Add word/letter/character/sentense/pattern to remove or replace with other words with sensitive case or without. **Notes**:
     1. Seed will get disbaled while using this option
-    2. Before any character you must add \, those are the characters: `\^$.|?*+()[]{}-`
-    * Example-1: `text : code : s | mirror : leech | tea :  : s | clone`
-      - text will get replaced by code with sensitive case
-      - mirror will get replaced by leech
-      - tea will get removed with sensitive case
-      - clone will get removed
-    * Example-2: `\(text\) | \[test\] : test | \\text\\ : text : s`
-      - `(text)` will get removed
-      - `[test]` will get replaced by test
-      - `\text\` will get replaced by text with sensitive case
+    2. Before any character you must add `\BACKSLASH`, those are the characters: `\^$.|?*+()[]{}-`
+    * Example: script/code/s | mirror/leech | tea/ /s | clone | cpu/ | \[ZEE\]/ZEE | \\text\\/text/s
+    - script will get replaced by code with sensitive case
+    - mirror will get replaced by leech
+    - tea will get replaced by space with sensitive case
+    - clone will get removed
+    - cpu will get replaced by space
+    - [ZEE] will get replaced by ZEE
+    - \text\ will get replaced by text with sensitive case
   - `METADATA_TXT`: Edit metadata of the video. `Str`
   - `META_ATTACHMENT`: Add attachment to the metadata. `Str`
+  - `THUMBNAIL_LAYOUT`: Thumbnail layout (widthxheight, 2x2, 3x3, 2x4, 4x4, ...) of how many photo arranged for the thumbnail.`Str`
 
 **12. Super Group Features**
 

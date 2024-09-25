@@ -2,19 +2,23 @@ from nekozee.filters import command
 from nekozee.handlers import MessageHandler
 
 from bot import bot, LOGGER
-from bot.helper.ext_utils.bot_utils import sync_to_async
-from bot.helper.ext_utils.links_utils import is_gdrive_link
-from bot.helper.task_utils.gdrive_utils.delete import gdDelete
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
+from ..helper.ext_utils.bot_utils import (
+    new_task,
+    sync_to_async
+)
+from ..helper.ext_utils.links_utils import is_gdrive_link
+from ..helper.task_utils.gdrive_utils.delete import GoogleDriveDelete
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import (
     anno_checker,
     auto_delete_message,
-    sendMessage
+    send_message
 )
 
 
-async def deletefile(_, message):
+@new_task
+async def delete_file(_, message):
     args = message.text.split()
     from_user = message.from_user
     if not from_user:
@@ -28,7 +32,7 @@ async def deletefile(_, message):
     if is_gdrive_link(link):
         LOGGER.info(link)
         msg = await sync_to_async(
-            gdDelete().deletefile,
+            GoogleDriveDelete().delete_file,
             link,
             from_user.id
         )
@@ -36,7 +40,7 @@ async def deletefile(_, message):
         msg = (
             "Send Gdrive link along with command or by replying to the link by command"
         )
-    reply_message = await sendMessage(
+    reply_message = await send_message(
         message,
         msg
     )
@@ -48,7 +52,7 @@ async def deletefile(_, message):
 
 bot.add_handler( # type: ignore
     MessageHandler(
-        deletefile,
+        delete_file,
         filters=command(
             BotCommands.DeleteCommand,
             case_sensitive=True

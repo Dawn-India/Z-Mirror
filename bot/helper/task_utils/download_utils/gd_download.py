@@ -7,27 +7,27 @@ from bot import (
     task_dict,
     task_dict_lock,
 )
-from bot.helper.ext_utils.bot_utils import sync_to_async
-from bot.helper.ext_utils.status_utils import get_readable_file_size
-from bot.helper.ext_utils.task_manager import (
+from ...ext_utils.bot_utils import sync_to_async
+from ...ext_utils.status_utils import get_readable_file_size
+from ...ext_utils.task_manager import (
     check_running_tasks,
     limit_checker,
     stop_duplicate_check
 )
-from bot.helper.task_utils.gdrive_utils.count import gdCount
-from bot.helper.task_utils.gdrive_utils.download import gdDownload
-from bot.helper.task_utils.status_utils.gdrive_status import GdriveStatus
-from bot.helper.task_utils.status_utils.queue_status import QueueStatus
-from bot.helper.telegram_helper.message_utils import (
+from ...task_utils.gdrive_utils.count import GoogleDriveCount
+from ...task_utils.gdrive_utils.download import GoogleDriveDownload
+from ...task_utils.status_utils.gdrive_status import GoogleDriveStatus
+from ...task_utils.status_utils.queue_status import QueueStatus
+from ...telegram_helper.message_utils import (
     auto_delete_message,
     delete_links,
-    sendMessage,
-    sendStatusMessage
+    send_message,
+    send_status_message
 )
 
 
 async def add_gd_download(listener, path):
-    drive = gdCount()
+    drive = GoogleDriveCount()
     (
         name,
         mime_type,
@@ -37,10 +37,10 @@ async def add_gd_download(listener, path):
     ) = await sync_to_async(
         drive.count,
         listener.link,
-        listener.userId
+        listener.user_id
     )
     if mime_type is None:
-        await listener.onDownloadError(name)
+        await listener.on_download_error(name)
         return
 
     listener.name = listener.name or name
@@ -51,17 +51,17 @@ async def add_gd_download(listener, path):
         button
     ) = await stop_duplicate_check(listener)
     if msg:
-        await listener.onDownloadError(
+        await listener.on_download_error(
             msg,
             button
         )
         return
     if limit_exceeded := await limit_checker(
         listener,
-        isDriveLink=True
+        is_drive_link=True
     ):
         LOGGER.info(f"GDrive Limit Exceeded: {listener.name} | {get_readable_file_size(listener.size)}")
-        gmsg = await sendMessage(
+        gmsg = await send_message(
             listener.message,
             limit_exceeded
         )
@@ -84,21 +84,21 @@ async def add_gd_download(listener, path):
                 gid,
                 "dl"
             )
-        await listener.onDownloadStart()
+        await listener.on_download_start()
         if listener.multi <= 1:
-            await sendStatusMessage(listener.message)
+            await send_status_message(listener.message)
         await event.wait() # type: ignore
-        if listener.isCancelled:
+        if listener.is_cancelled:
             return
         async with queue_dict_lock:
             non_queued_dl.add(listener.mid)
 
-    drive = gdDownload(
+    drive = GoogleDriveDownload(
         listener,
         path
     )
     async with task_dict_lock:
-        task_dict[listener.mid] = GdriveStatus(
+        task_dict[listener.mid] = GoogleDriveStatus(
             listener,
             drive,
             gid,
@@ -109,8 +109,8 @@ async def add_gd_download(listener, path):
         LOGGER.info(f"Start Queued Download from GDrive: {listener.name}")
     else:
         LOGGER.info(f"Download from GDrive: {listener.name}")
-        await listener.onDownloadStart()
+        await listener.on_download_start()
         if listener.multi <= 1:
-            await sendStatusMessage(listener.message)
+            await send_status_message(listener.message)
 
     await sync_to_async(drive.download)

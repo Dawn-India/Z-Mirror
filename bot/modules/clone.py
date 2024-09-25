@@ -11,40 +11,40 @@ from bot import (
     bot,
     bot_loop
 )
-from bot.helper.ext_utils.bot_utils import (
+from ..helper.ext_utils.bot_utils import (
     sync_to_async,
     cmd_exec,
     arg_parser,
     COMMAND_USAGE
 )
-from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from bot.helper.ext_utils.links_utils import (
+from ..helper.ext_utils.exceptions import DirectDownloadLinkException
+from ..helper.ext_utils.links_utils import (
     is_gdrive_link,
     is_share_link,
     is_rclone_path,
     is_gdrive_id
 )
-from bot.helper.ext_utils.task_manager import (
+from ..helper.ext_utils.task_manager import (
     limit_checker,
     stop_duplicate_check
 )
-from bot.helper.listeners.task_listener import TaskListener
-from bot.helper.task_utils.download_utils.direct_link_generator import (
+from ..helper.listeners.task_listener import TaskListener
+from ..helper.task_utils.download_utils.direct_link_generator import (
     direct_link_generator
 )
-from bot.helper.task_utils.gdrive_utils.clone import gdClone
-from bot.helper.task_utils.gdrive_utils.count import gdCount
-from bot.helper.task_utils.rclone_utils.transfer import RcloneTransferHelper
-from bot.helper.task_utils.status_utils.gdrive_status import GdriveStatus
-from bot.helper.task_utils.status_utils.rclone_status import RcloneStatus
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
+from ..helper.task_utils.gdrive_utils.clone import GoogleDriveClone
+from ..helper.task_utils.gdrive_utils.count import GoogleDriveCount
+from ..helper.task_utils.rclone_utils.transfer import RcloneTransferHelper
+from ..helper.task_utils.status_utils.gdrive_status import GoogleDriveStatus
+from ..helper.task_utils.status_utils.rclone_status import RcloneStatus
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import (
     auto_delete_message,
     delete_links,
-    sendMessage,
-    deleteMessage,
-    sendStatusMessage
+    send_message,
+    delete_message,
+    send_status_message
 )
 
 
@@ -59,22 +59,22 @@ class Clone(TaskListener):
         ____=None,
         _____=None,
         bulk=None,
-        multiTag=None,
+        multi_tag=None,
         options="",
     ):
         if bulk is None:
             bulk = []
         self.message = message
         self.client = client
-        self.multiTag = multiTag
+        self.multi_tag = multi_tag
         self.options = options
-        self.sameDir = {}
+        self.same_dir = {}
         self.bulk = bulk
         super().__init__()
-        self.isClone = True
+        self.is_clone = True
 
-    async def newEvent(self):
-        self.pmsg = await sendMessage(
+    async def new_event(self):
+        self.pmsg = await send_message(
             self.message,
             "Processing your request..."
         )
@@ -100,28 +100,28 @@ class Clone(TaskListener):
         except:
             self.multi = 0
 
-        self.upDest = args["-up"]
-        self.rcFlags = args["-rcf"]
+        self.up_dest = args["-up"]
+        self.rc_flags = args["-rcf"]
         self.link = args["link"]
 
-        isBulk = args["-b"]
+        is_bulk = args["-b"]
         sync = args["-sync"]
         bulk_start = 0
         bulk_end = 0
         self.file_ = None
 
-        await self.getId()
+        await self.get_id()
 
-        if not isinstance(isBulk, bool):
-            dargs = isBulk.split(":")
+        if not isinstance(is_bulk, bool):
+            dargs = is_bulk.split(":")
             bulk_start = dargs[0] or 0
             if len(dargs) == 2:
                 bulk_end = dargs[1] or 0
-            isBulk = True
+            is_bulk = True
 
-        if isBulk:
-            await deleteMessage(self.pmsg)
-            await self.initBulk(
+        if is_bulk:
+            await delete_message(self.pmsg)
+            await self.init_bulk(
                 input_list,
                 bulk_start,
                 bulk_end,
@@ -129,7 +129,7 @@ class Clone(TaskListener):
             )
             return
 
-        await self.getTag(text)
+        await self.get_tag(text)
 
         if (
             not self.link
@@ -137,19 +137,19 @@ class Clone(TaskListener):
         ):
             self.link = reply_to.text.split("\n", 1)[0].strip()
 
-        self.run_multi(
+        await self.run_multi(
             input_list,
             "",
             Clone
-        ) # type: ignore
+        )
 
         if len(self.link) == 0:
-            hmsg = await sendMessage(
+            hmsg = await send_message(
                 self.message,
                 COMMAND_USAGE["clone"][0],
                 COMMAND_USAGE["clone"][1]
             )
-            await deleteMessage(self.pmsg)
+            await delete_message(self.pmsg)
             await auto_delete_message(
                 self.message,
                 hmsg
@@ -157,14 +157,14 @@ class Clone(TaskListener):
             return
         LOGGER.info(self.link)
         
-        if await self.permissionCheck() != True:
+        if await self.permission_check() != True:
             return
-        await deleteMessage(self.pmsg)
+        await delete_message(self.pmsg)
 
         try:
-            await self.beforeStart()
+            await self.before_start()
         except Exception as e:
-            emsg = await sendMessage(
+            emsg = await send_message(
                 self.message,
                 e
             )
@@ -173,9 +173,9 @@ class Clone(TaskListener):
                 emsg
             )
             return
-        await self._proceedToClone(sync)
+        await self._proceed_to_clone(sync)
 
-    async def _proceedToClone(self, sync):
+    async def _proceed_to_clone(self, sync):
         if is_share_link(self.link):
             try:
                 self.link = await sync_to_async(
@@ -186,7 +186,7 @@ class Clone(TaskListener):
             except DirectDownloadLinkException as e:
                 LOGGER.error(str(e))
                 if str(e).startswith("ERROR:"):
-                    smsg = await sendMessage(
+                    smsg = await send_message(
                         self.message,
                         str(e)
                     )
@@ -207,12 +207,12 @@ class Clone(TaskListener):
                 files,
                 _
             ) = await sync_to_async(
-                gdCount().count,
+                GoogleDriveCount().count,
                 self.link,
-                self.userId
+                self.user_id
             )
             if mime_type is None:
-                smsg = await sendMessage(
+                smsg = await send_message(
                     self.message,
                     self.name
                 )
@@ -223,7 +223,7 @@ class Clone(TaskListener):
                 return
             msg, button = await stop_duplicate_check(self)
             if msg:
-                smsg = await sendMessage(
+                smsg = await send_message(
                     self.message,
                     msg,
                     button
@@ -235,7 +235,7 @@ class Clone(TaskListener):
                 return
             if limit_exceeded := await limit_checker(self):
                 LOGGER.info(f"Clone Limit Exceeded: Name: {self.name} | Size: {self.size}")
-                smsg = await sendMessage(
+                smsg = await send_message(
                     self.message,
                     limit_exceeded
                 )
@@ -244,11 +244,11 @@ class Clone(TaskListener):
                     smsg
                 )
                 return
-            await self.onDownloadStart()
+            await self.on_download_start()
             LOGGER.info(f"Clone Started: Name: {self.name} - Source: {self.link}")
-            drive = gdClone(self)
+            drive = GoogleDriveClone(self)
             if files <= 10:
-                msg = await sendMessage(
+                msg = await send_message(
                     self.message,
                     f"Cloning: <code>{self.link}</code>"
                 )
@@ -257,14 +257,14 @@ class Clone(TaskListener):
                 msg = ""
                 gid = token_urlsafe(12)
                 async with task_dict_lock:
-                    task_dict[self.mid] = GdriveStatus(
+                    task_dict[self.mid] = GoogleDriveStatus(
                         self,
                         drive,
                         gid,
                         "cl"
                     )
                 if self.multi <= 1:
-                    await sendStatusMessage(self.message)
+                    await send_status_message(self.message)
             (
                 flink,
                 mime_type,
@@ -273,7 +273,7 @@ class Clone(TaskListener):
                 dir_id
             ) = await sync_to_async(drive.clone)
             if msg:
-                await deleteMessage(msg)
+                await delete_message(msg)
             if not flink:
                 return
             await self.onUploadComplete(
@@ -291,12 +291,12 @@ class Clone(TaskListener):
                     "",
                     1
                 )
-                self.upDest = self.upDest.replace(
+                self.up_dest = self.up_dest.replace(
                     "mrcc:",
                     "",
                     1
                 )
-                config_path = f"rclone/{self.userId}.conf"
+                config_path = f"rclone/{self.user_id}.conf"
             else:
                 config_path = "rclone.conf"
 
@@ -320,7 +320,7 @@ class Clone(TaskListener):
             if res[2] != 0:
                 if res[2] != -9:
                     msg = f"Error: While getting rclone stat. Path: {remote}:{src_path}. Stderr: {res[1][:4000]}"
-                    smsg = await sendMessage(
+                    smsg = await send_message(
                         self.message,
                         msg
                     )
@@ -336,9 +336,9 @@ class Clone(TaskListener):
                     if src_path
                     else remote
                 )
-                self.upDest += (
+                self.up_dest += (
                     self.name
-                    if self.upDest.endswith(":")
+                    if self.up_dest.endswith(":")
                     else f"/{self.name}"
                 )
 
@@ -350,11 +350,11 @@ class Clone(TaskListener):
                 )[-1]
                 mime_type = rstat["MimeType"]
 
-            await self.onDownloadStart()
+            await self.on_download_start()
 
             RCTransfer = RcloneTransferHelper(self)
             LOGGER.info(
-                f"Clone Started: Name: {self.name} - Source: {self.link} - Destination: {self.upDest}"
+                f"Clone Started: Name: {self.name} - Source: {self.link} - Destination: {self.up_dest}"
             )
             gid = token_urlsafe(12)
             async with task_dict_lock:
@@ -365,7 +365,7 @@ class Clone(TaskListener):
                     "cl"
                 )
             if self.multi <= 1:
-                await sendStatusMessage(self.message)
+                await send_status_message(self.message)
             method = (
                 "sync"
                 if sync
@@ -445,7 +445,7 @@ class Clone(TaskListener):
                     destination
                 )
         else:
-            smsg = await sendMessage(
+            smsg = await send_message(
                 self.message,
                 COMMAND_USAGE["clone"][0],
                 COMMAND_USAGE["clone"][1]
@@ -461,7 +461,7 @@ async def clone(client, message):
         Clone(
             client,
             message
-        ).newEvent())
+        ).new_event())
 
 
 bot.add_handler( # type: ignore

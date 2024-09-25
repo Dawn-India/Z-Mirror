@@ -2,49 +2,50 @@ from logging import getLogger
 
 from bot import (
     config_dict,
-    DRIVES_NAMES,
-    DRIVES_IDS,
-    INDEX_URLS,
+    drives_names,
+    drives_ids,
+    index_urls,
     user_data
 )
-from bot.helper.ext_utils.status_utils import get_readable_file_size
-from bot.helper.task_utils.gdrive_utils.helper import GoogleDriveHelper
+from ...ext_utils.status_utils import get_readable_file_size
+from ...task_utils.gdrive_utils.helper import GoogleDriveHelper
 
 LOGGER = getLogger(__name__)
 
 
-class gdSearch(GoogleDriveHelper):
+class GoogleDriveSearch(GoogleDriveHelper):
+
     def __init__(
             self,
-            stopDup=False,
-            noMulti=False,
-            isRecursive=True,
-            itemType=""
+            stop_dup=False,
+            no_multi=False,
+            is_recursive=True,
+            item_type=""
         ):
         super().__init__()
-        self._stopDup = stopDup
-        self._noMulti = noMulti
-        self._isRecursive = isRecursive
-        self._itemType = itemType
+        self._stop_dup = stop_dup
+        self._no_multi = no_multi
+        self._is_recursive = is_recursive
+        self._item_type = item_type
 
-    def _drive_query(self, dirId, fileName, isRecursive):
+    def _drive_query(self, dir_id, file_name, is_recursive):
         try:
-            if isRecursive:
-                if self._stopDup:
-                    query = f"name = '{fileName}' and "
+            if is_recursive:
+                if self._stop_dup:
+                    query = f"name = '{file_name}' and "
                 else:
-                    fileName = fileName.split()
+                    file_name = file_name.split()
                     query = "".join(
                         f"name contains '{name}' and "
-                        for name in fileName
+                        for name in file_name
                         if name != ""
                     )
-                    if self._itemType == "files":
+                    if self._item_type == "files":
                         query += f"mimeType != '{self.G_DRIVE_DIR_MIME_TYPE}' and "
-                    elif self._itemType == "folders":
+                    elif self._item_type == "folders":
                         query += f"mimeType = '{self.G_DRIVE_DIR_MIME_TYPE}' and "
                 query += "trashed = false"
-                if dirId == "root":
+                if dir_id == "root":
                     return (
                         self.service.files()
                         .list(
@@ -62,7 +63,7 @@ class gdSearch(GoogleDriveHelper):
                         .list(
                             supportsAllDrives=True,
                             includeItemsFromAllDrives=True,
-                            driveId=dirId,
+                            driveId=dir_id,
                             q=query,
                             spaces="drive",
                             pageSize=150,
@@ -73,17 +74,17 @@ class gdSearch(GoogleDriveHelper):
                         .execute()
                     )
             else:
-                if self._stopDup:
-                    query = f"'{dirId}' in parents and name = '{fileName}' and "
+                if self._stop_dup:
+                    query = f"'{dir_id}' in parents and name = '{file_name}' and "
                 else:
-                    query = f"'{dirId}' in parents and "
-                    fileName = fileName.split()
-                    for name in fileName:
+                    query = f"'{dir_id}' in parents and "
+                    file_name = file_name.split()
+                    for name in file_name:
                         if name != "":
                             query += f"name contains '{name}' and "
-                    if self._itemType == "files":
+                    if self._item_type == "files":
                         query += f"mimeType != '{self.G_DRIVE_DIR_MIME_TYPE}' and "
-                    elif self._itemType == "folders":
+                    elif self._item_type == "folders":
                         query += f"mimeType = '{self.G_DRIVE_DIR_MIME_TYPE}' and "
                 query += "trashed = false"
                 return (
@@ -110,9 +111,9 @@ class gdSearch(GoogleDriveHelper):
             LOGGER.error(err)
             return {"files": []}
 
-    def drive_list(self, fileName, target_id="", user_id=""):
+    def drive_list(self, file_name, target_id="", user_id=""):
         msg = ""
-        fileName = self.escapes(str(fileName))
+        file_name = self.escapes(str(file_name))
         contents_no = 0
         telegraph_content = []
         Title = False
@@ -131,44 +132,48 @@ class gdSearch(GoogleDriveHelper):
                         "",
                         1
                     ),
-                    INDEX_URLS[0]
-                    if INDEX_URLS
+                    index_urls[0]
+                    if index_urls
                     else "",
                 )
             ]
         else:
             drives = zip(
-                DRIVES_NAMES,
-                DRIVES_IDS,
-                INDEX_URLS
+                drives_names,
+                drives_ids,
+                index_urls
             )
         if (
             not target_id.startswith("mtp:")
-            and len(DRIVES_IDS) > 1
+            and len(drives_ids) > 1
             or target_id.startswith("tp:")
         ):
             self.use_sa = False
 
         self.service = self.authorize()
 
-        for drive_name, dir_id, index_url in drives:
+        for (
+            drive_name,
+            dir_id,
+            index_url
+        ) in drives:
             isRecur = (
                 False
-                if self._isRecursive and len(dir_id) > 23
-                else self._isRecursive
+                if self._is_recursive and len(dir_id) > 23
+                else self._is_recursive
             )
             response = self._drive_query(
                 dir_id,
-                fileName,
+                file_name,
                 isRecur
             )
             if not response["files"]:
-                if self._noMulti:
+                if self._no_multi:
                     break
                 else:
                     continue
             if not Title:
-                msg += f"<h4>Search Result For {fileName}</h4>"
+                msg += f"<h4>Search Result For {file_name}</h4>"
                 Title = True
             if drive_name:
                 msg += f"╾────────────╼<br><b>{drive_name}</b><br>╾────────────╼<br>"
@@ -207,7 +212,7 @@ class gdSearch(GoogleDriveHelper):
                 if len(msg.encode("utf-8")) > 39000:
                     telegraph_content.append(msg)
                     msg = ""
-            if self._noMulti:
+            if self._no_multi:
                 break
 
         if msg != "":

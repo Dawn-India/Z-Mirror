@@ -1,16 +1,14 @@
-#!/usr/bin/env python3
 from asyncio import sleep
 
 from nekozee.filters import command
 from nekozee.handlers import MessageHandler
 
 from bot import bot
-from bot.helper.ext_utils.bot_utils import new_task
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
-    editMessage,
-    sendMessage
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import (
+    edit_message,
+    send_message
 )
 
 delete = set()
@@ -26,7 +24,7 @@ async def delete_leech(client, message):
         link = ""
     if not link.startswith("https://t.me/"):
         msg = "Send telegram message link along with command or by replying to the link by command"
-        return await sendMessage(
+        return await send_message(
             message,
             msg
         )
@@ -35,7 +33,7 @@ async def delete_leech(client, message):
     message_id = int(link[-1])
     if message_id in delete:
         msg = "Already deleting in progress"
-        return await sendMessage(
+        return await send_message(
             message,
             msg
         )
@@ -43,7 +41,7 @@ async def delete_leech(client, message):
     if chat_id.isdigit():
         chat_id = f"-100{chat_id}"
         chat_id = int(chat_id)
-    reply_message = await sendMessage(
+    reply_message = await send_message(
         message,
         msg
     )
@@ -95,12 +93,12 @@ async def deleting(client, chat_id, message_id, message):
             )
             if len(each100) > 100:
                 await sleep(1)
-            await editMessage(
+            await edit_message(
                 message,
                 f"{deleted}/{total_ids} message deleted"
             )
     except Exception as e:
-        await editMessage(message, str(e))
+        await edit_message(message, str(e))
     delete.remove(message_id)
 
 bot.add_handler( # type: ignore

@@ -4,24 +4,23 @@ from asyncio import (
 )
 
 from bot import (
-    Intervals,
-    sabnzbd_client,
+    LOGGER,
+    intervals,
     nzb_jobs,
     nzb_listener_lock,
+    sabnzbd_client,
     task_dict_lock,
-    LOGGER,
-    bot_loop,
 )
-from bot.helper.ext_utils.bot_utils import new_task
-from bot.helper.ext_utils.status_utils import (
-    getTaskByGid,
+from ..ext_utils.bot_utils import new_task
+from ..ext_utils.status_utils import (
+    get_task_by_gid,
     speed_string_to_bytes
 )
-from bot.helper.ext_utils.task_manager import (
+from ..ext_utils.task_manager import (
     limit_checker,
     stop_duplicate_check
 )
-from bot.helper.telegram_helper.message_utils import auto_delete_message
+from ..telegram_helper.message_utils import auto_delete_message
 
 
 async def _remove_job(nzo_id, mid):
@@ -46,12 +45,12 @@ async def _remove_job(nzo_id, mid):
 
 
 @new_task
-async def _onDownloadError(err, nzo_id, button=None):
-    task = await getTaskByGid(nzo_id)
+async def _on_download_error(err, nzo_id, button=None):
+    task = await get_task_by_gid(nzo_id)
     await task.update() # type: ignore
     LOGGER.info(f"Cancelling Download: {task.name()}") # type: ignore
     await gather(
-        task.listener.onDownloadError( # type: ignore
+        task.listener.on_download_error( # type: ignore
             err,
             button
         ),
@@ -72,14 +71,14 @@ async def _onDownloadError(err, nzo_id, button=None):
 
 @new_task
 async def _change_status(nzo_id, status):
-    task = await getTaskByGid(nzo_id)
+    task = await get_task_by_gid(nzo_id)
     async with task_dict_lock:
         task.cstatus = status # type: ignore
 
 
 @new_task
 async def _stop_duplicate(nzo_id):
-    task = await getTaskByGid(nzo_id)
+    task = await get_task_by_gid(nzo_id)
     await task.update() # type: ignore
     task.listener.name = task.name() # type: ignore
     (
@@ -87,7 +86,7 @@ async def _stop_duplicate(nzo_id):
         button
     ) = await stop_duplicate_check(task.listener) # type: ignore
     if msg:
-        _onDownloadError(
+        _on_download_error(
             msg,
             nzo_id,
             button
@@ -96,17 +95,17 @@ async def _stop_duplicate(nzo_id):
 
 @new_task
 async def _size_checker(nzo_id):
-    task = await getTaskByGid(nzo_id)
+    task = await get_task_by_gid(nzo_id)
     await task.update() # type: ignore
     task.listener.size = speed_string_to_bytes(task.size()) # type: ignore
     if limit_exceeded := await limit_checker(
         task.listener, # type: ignore
-        isNzb=True
+        is_nzb=True
     ):
         LOGGER.info(
             f"NZB Limit Exceeded: {task.name()} | {task.size()}" # type: ignore
         )
-        nmsg = _onDownloadError(
+        nmsg = _on_download_error(
             limit_exceeded,
             nzo_id
         )
@@ -117,10 +116,10 @@ async def _size_checker(nzo_id):
 
 
 @new_task
-async def _onDownloadComplete(nzo_id):
-    task = await getTaskByGid(nzo_id)
-    await task.listener.onDownloadComplete() # type: ignore
-    if Intervals["stopAll"]:
+async def _on_download_complete(nzo_id):
+    task = await get_task_by_gid(nzo_id)
+    await task.listener.on_download_complete() # type: ignore
+    if intervals["stopAll"]:
         return
     await _remove_job(
         nzo_id,
@@ -128,14 +127,15 @@ async def _onDownloadComplete(nzo_id):
     )
 
 
+@new_task
 async def _nzb_listener():
-    while not Intervals["stopAll"]:
+    while not intervals["stopAll"]:
         async with nzb_listener_lock:
             try:
                 jobs = (await sabnzbd_client.get_history())["history"]["slots"]
                 downloads = (await sabnzbd_client.get_downloads())["queue"]["slots"]
                 if len(nzb_jobs) == 0:
-                    Intervals["nzb"] = ""
+                    intervals["nzb"] = ""
                     break
                 for job in jobs:
                     nzo_id = job["nzo_id"]
@@ -144,10 +144,10 @@ async def _nzb_listener():
                     if job["status"] == "Completed":
                         if not nzb_jobs[nzo_id]["uploaded"]:
                             nzb_jobs[nzo_id]["uploaded"] = True
-                            _onDownloadComplete(nzo_id) # type: ignore
+                            await _on_download_complete(nzo_id) # type: ignore
                             nzb_jobs[nzo_id]["status"] = "Completed"
                     elif job["status"] == "Failed":
-                        _onDownloadError(
+                        await _on_download_error(
                             job["fail_message"],
                             nzo_id
                         ) # type: ignore
@@ -160,7 +160,7 @@ async def _nzb_listener():
                         "Extracting",
                     ]:
                         if job["status"] != nzb_jobs[nzo_id]["status"]:
-                            _change_status(
+                            await _change_status(
                                 nzo_id,
                                 job["status"]
                             ) # type: ignore
@@ -174,19 +174,19 @@ async def _nzb_listener():
                         and not dl["filename"].startswith("Trying")
                     ):
                         nzb_jobs[nzo_id]["stop_dup_check"] = True
-                        _stop_duplicate(nzo_id) # type: ignore
-                        _size_checker(nzo_id) # type: ignore
+                        await _stop_duplicate(nzo_id) # type: ignore
+                        await _size_checker(nzo_id) # type: ignore
             except Exception as e:
                 LOGGER.error(str(e))
         await sleep(3)
 
 
-async def onDownloadStart(nzo_id):
+async def on_download_start(nzo_id):
     async with nzb_listener_lock:
         nzb_jobs[nzo_id] = {
             "uploaded": False,
             "stop_dup_check": False,
             "status": "Downloading",
         }
-        if not Intervals["nzb"]:
-            Intervals["nzb"] = bot_loop.create_task(_nzb_listener())
+        if not intervals["nzb"]:
+            intervals["nzb"] = await _nzb_listener()

@@ -1,4 +1,4 @@
-from bot.helper.ext_utils.status_utils import (
+from ...ext_utils.status_utils import (
     MirrorStatus,
     get_readable_file_size,
     get_readable_time,
@@ -6,7 +6,7 @@ from bot.helper.ext_utils.status_utils import (
 from pkg_resources import get_distribution
 
 
-class GdriveStatus:
+class GoogleDriveStatus:
     def __init__(
             self,
             listener,

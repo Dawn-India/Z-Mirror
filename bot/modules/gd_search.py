@@ -14,44 +14,45 @@ from bot import (
     bot,
     user_data
 )
-from bot.helper.ext_utils.bot_utils import (
+from ..helper.ext_utils.bot_utils import (
+    new_task,
     sync_to_async,
     get_telegraph_list
 )
-from bot.helper.ext_utils.status_utils import get_readable_time
-from bot.helper.task_utils.gdrive_utils.search import gdSearch
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
+from ..helper.ext_utils.status_utils import get_readable_time
+from ..helper.task_utils.gdrive_utils.search import GoogleDriveSearch
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import (
     anno_checker,
     auto_delete_message,
-    sendMessage,
-    editMessage
+    send_message,
+    edit_message
 )
 
 
-async def list_buttons(user_id, isRecursive=True, user_token=False):
+async def list_buttons(user_id, is_recursive=True, user_token=False):
     buttons = ButtonMaker()
-    buttons.ibutton(
+    buttons.data_button(
         "ꜰᴏʟᴅᴇʀꜱ",
-        f"list_types {user_id} folders {isRecursive} {user_token}"
+        f"list_types {user_id} folders {is_recursive} {user_token}"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ꜰɪʟᴇꜱ",
-        f"list_types {user_id} files {isRecursive} {user_token}")
-    buttons.ibutton(
+        f"list_types {user_id} files {is_recursive} {user_token}")
+    buttons.data_button(
         "ʙᴏᴛʜ",
-        f"list_types {user_id} both {isRecursive} {user_token}")
-    buttons.ibutton(
-        f"ʀᴇᴄᴜʀꜱɪᴠᴇ: {isRecursive}",
-        f"list_types {user_id} rec {isRecursive} {user_token}",
+        f"list_types {user_id} both {is_recursive} {user_token}")
+    buttons.data_button(
+        f"ʀᴇᴄᴜʀꜱɪᴠᴇ: {is_recursive}",
+        f"list_types {user_id} rec {is_recursive} {user_token}",
     )
-    buttons.ibutton(
+    buttons.data_button(
         f"ᴜꜱᴇʀ\nᴛᴏᴋᴇɴ: {user_token}",
-        f"list_types {user_id} ut {isRecursive} {user_token}",
+        f"list_types {user_id} ut {is_recursive} {user_token}",
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄᴀɴᴄᴇʟ",
         f"list_types {user_id} cancel")
     return buttons.build_menu(2)
@@ -61,7 +62,7 @@ async def _list_drive(
         key,
         message,
         item_type,
-        isRecursive,
+        is_recursive,
         user_token,
         user_id
     ):
@@ -91,9 +92,9 @@ async def _list_drive(
         telegraph_content,
         contents_no
     ) = await sync_to_async(
-        gdSearch(
-            isRecursive=isRecursive,
-            itemType=item_type
+        GoogleDriveSearch(
+            is_recursive=is_recursive,
+            item_type=item_type
         ).drive_list,
         key,
         target_id,
@@ -106,24 +107,24 @@ async def _list_drive(
             button = await get_telegraph_list(telegraph_content)
         except Exception as e:
             emsg = f"{e}"
-            await editMessage(
+            await edit_message(
                 message,
                 emsg
             )
             return
         emsg = f"<b>Found {contents_no} result for <i>{key}</i></b>\n"
-        emsg += f"<b>Type</b>: {item_type}\n<b>Recursive list</b>: {isRecursive}\n"
+        emsg += f"<b>Type</b>: {item_type}\n<b>Recursive list</b>: {is_recursive}\n"
         emsg += f"<b>Elapsed</b>: {elapsed}\n\ncc: {tag}"
-        await editMessage(
+        await edit_message(
             message,
             emsg,
             button
         )
     else:
         emsg = f"No result found for <i>{key}</i>\n"
-        emsg += f"<b>Type</b>: {item_type}\n<b>Recursive list</b>: {isRecursive}\n"
+        emsg += f"<b>Type</b>: {item_type}\n<b>Recursive list</b>: {is_recursive}\n"
         emsg += f"<b>Elapsed</b>: {elapsed}\n\ncc: {tag}"
-        await editMessage(
+        await edit_message(
             message,
             emsg
         )
@@ -134,6 +135,7 @@ async def _list_drive(
         )
 
 
+@new_task
 async def select_type(_, query):
     user_id = query.from_user.id
     message = query.message
@@ -147,14 +149,14 @@ async def select_type(_, query):
         )
     elif data[2] == "rec":
         await query.answer()
-        isRecursive = not bool(eval(data[3]))
+        is_recursive = not bool(eval(data[3]))
         buttons = await list_buttons(
             user_id,
-            isRecursive,
+            is_recursive,
             eval(data[4])
         )
         emsg = "Choose list options:"
-        await editMessage(
+        await edit_message(
             message,
             emsg,
             buttons
@@ -169,7 +171,7 @@ async def select_type(_, query):
             user_token
         )
         emsg = "Choose list options:"
-        await editMessage(
+        await edit_message(
             message,
             emsg,
             buttons
@@ -178,7 +180,7 @@ async def select_type(_, query):
     elif data[2] == "cancel":
         await query.answer()
         emsg = "list has been canceled!"
-        await editMessage(
+        await edit_message(
             message,
             emsg,
         )
@@ -190,9 +192,9 @@ async def select_type(_, query):
         )
     await query.answer()
     item_type = data[2]
-    isRecursive = eval(data[3])
+    is_recursive = eval(data[3])
     user_token = eval(data[4])
-    await editMessage(
+    await edit_message(
         message,
         f"<b>Searching for <i>{key}</i></b>"
     )
@@ -200,18 +202,19 @@ async def select_type(_, query):
         key,
         message,
         item_type,
-        isRecursive,
+        is_recursive,
         user_token,
         user_id
     )
 
 
+@new_task
 async def gdrive_search(_, message):
     from_user = message.from_user
     if not from_user:
         from_user = await anno_checker(message)
     if len(message.text.split()) == 1:
-        gmsg = await sendMessage(
+        gmsg = await send_message(
             message,
             "Send a search key along with command"
         )
@@ -222,7 +225,7 @@ async def gdrive_search(_, message):
         return
     user_id = from_user.id
     buttons = await list_buttons(user_id)
-    gmsg = await sendMessage(
+    gmsg = await send_message(
         message,
         "Choose list options:",
         buttons

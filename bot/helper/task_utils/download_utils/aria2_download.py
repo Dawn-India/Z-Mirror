@@ -14,15 +14,15 @@ from bot import (
     non_queued_dl,
     queue_dict_lock,
 )
-from bot.helper.ext_utils.bot_utils import (
+from ...ext_utils.bot_utils import (
     bt_selection_buttons,
     sync_to_async
 )
-from bot.helper.ext_utils.task_manager import check_running_tasks
-from bot.helper.task_utils.status_utils.aria2_status import Aria2Status
-from bot.helper.telegram_helper.message_utils import (
-    sendStatusMessage,
-    sendMessage
+from ...ext_utils.task_manager import check_running_tasks
+from ...task_utils.status_utils.aria2_status import Aria2Status
+from ...telegram_helper.message_utils import (
+    send_status_message,
+    send_message
 )
 
 
@@ -64,14 +64,14 @@ async def add_aria2c_download(listener, dpath, header, ratio, seed_time):
         )[0]
     except Exception as e:
         LOGGER.info(f"Aria2c Download Error: {e}")
-        await listener.onDownloadError(f"{e}")
+        await listener.on_download_error(f"{e}")
         return
     if await aiopath.exists(listener.link):
         await remove(listener.link)
     if download.error_message:
         error = str(download.error_message).replace("<", " ").replace(">", " ")
         LOGGER.info(f"Aria2c Download Error: {error}")
-        await listener.onDownloadError(error)
+        await listener.on_download_error(error)
         return
 
     gid = download.gid
@@ -85,11 +85,11 @@ async def add_aria2c_download(listener, dpath, header, ratio, seed_time):
     if add_to_queue:
         LOGGER.info(f"Added to Queue/Download: {name}. Gid: {gid}")
         if (not listener.select or not download.is_torrent) and listener.multi <= 1:
-            await sendStatusMessage(listener.message)
+            await send_status_message(listener.message)
     else:
         LOGGER.info(f"Aria2Download started: {name}. Gid: {gid}")
 
-    await listener.onDownloadStart()
+    await listener.on_download_start()
 
     if (
         not add_to_queue
@@ -99,7 +99,7 @@ async def add_aria2c_download(listener, dpath, header, ratio, seed_time):
         )
         and listener.multi <= 1
     ):
-        await sendStatusMessage(listener.message)
+        await send_status_message(listener.message)
     elif (
         listener.select
         and download.is_torrent
@@ -111,8 +111,8 @@ async def add_aria2c_download(listener, dpath, header, ratio, seed_time):
                 gid
             )
         SBUTTONS = bt_selection_buttons(gid)
-        msg = "Your download paused. Choose files then press Done Selecting button to start downloading."
-        await sendMessage(
+        msg = f"Your download paused. Choose files then press Done Selecting button to start downloading.\n\ncc: {listener.tag}"
+        await send_message(
             listener.message,
             msg,
             SBUTTONS
@@ -120,7 +120,7 @@ async def add_aria2c_download(listener, dpath, header, ratio, seed_time):
 
     if add_to_queue:
         await event.wait() # type: ignore
-        if listener.isCancelled:
+        if listener.is_cancelled:
             return
         async with queue_dict_lock:
             non_queued_dl.add(listener.mid)

@@ -238,7 +238,7 @@ class DownloadController:
             package_ids
         ]
         return await self.device.action(
-            f"{self.url}/forceDownload",
+            f"{self.url}/force_download",
             params
         )
 
@@ -838,7 +838,7 @@ class Downloads:
             package_ids
         ]
         return await self.device.action(
-            f"{self.url}/forceDownload",
+            f"{self.url}/force_download",
             params
         )
 
@@ -1100,7 +1100,7 @@ class clientSession(AsyncClient):
         )
 
 
-class Myjdapi:
+class MyJdApi:
 
     def __init__(self):
         self.__request_id = int(time() * 1000)

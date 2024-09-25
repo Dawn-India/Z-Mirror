@@ -1,8 +1,8 @@
 from asyncio import gather
 from aiofiles.os import (
-    remove,
+    makedirs,
     path as aiopath,
-    makedirs
+    remove
 )
 from html import escape
 from io import BytesIO
@@ -25,31 +25,33 @@ from nekozee.errors import (
 )
 
 from bot import (
-    bot,
-    user_data,
-    config_dict,
     IS_PREMIUM_USER,
     JAVA,
-    DATABASE_URL,
     MAX_SPLIT_SIZE,
-    GLOBAL_EXTENSION_FILTER,
+    bot,
+    config_dict,
+    global_extension_filter,
+    user_data
 )
-from bot.helper.ext_utils.bot_utils import update_user_ldata
-from bot.helper.ext_utils.db_handler import DbManager
-from bot.helper.ext_utils.media_utils import createThumb
-from bot.helper.ext_utils.status_utils import get_readable_file_size
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
+from ..helper.ext_utils.bot_utils import (
+    new_task,
+    update_user_ldata
+)
+from ..helper.ext_utils.db_handler import database
+from ..helper.ext_utils.media_utils import create_thumb
+from ..helper.ext_utils.status_utils import get_readable_file_size
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.filters import CustomFilters
+from ..helper.telegram_helper.message_utils import (
     anno_checker,
     auto_delete_message,
-    sendMessage,
-    editMessage,
-    sendFile,
-    deleteMessage,
+    delete_message,
+    edit_message,
+    send_file,
+    send_message,
 )
-from bot.helper.z_utils import def_media
+from ..helper.z_utils import def_media
 
 
 async def get_user_settings(from_user):
@@ -74,9 +76,9 @@ async def get_user_settings(from_user):
         ltype = "MEDIA"
 
     thumbmsg = (
-        "Exists"
+        "Added"
         if await aiopath.exists(thumbpath)
-        else "Not Exists"
+        else "Not Added"
     )
 
     if user_dict.get(
@@ -206,19 +208,19 @@ async def get_user_settings(from_user):
     else:
         attachmenturl = "Not Added"
 
-    buttons.ibutton(
+    buttons.data_button(
         "ʟᴇᴇᴄʜ\nꜱᴇᴛᴛɪɴɢꜱ",
         f"userset {user_id} leech"
     )
 
-    buttons.ibutton(
+    buttons.data_button(
         "ʀᴄʟᴏɴᴇ\nᴛᴏᴏʟꜱ",
         f"userset {user_id} rclone"
     )
     rccmsg = (
-        "Exists"
+        "Added"
         if await aiopath.exists(rclone_conf)
-        else "Not Exists"
+        else "Not Added"
     )
     if user_dict.get(
         "rclone_path",
@@ -230,14 +232,14 @@ async def get_user_settings(from_user):
     else:
         rccpath = "Not Added"
 
-    buttons.ibutton(
+    buttons.data_button(
         "ɢᴅʀɪᴠᴇ\nᴛᴏᴏʟꜱ",
         f"userset {user_id} gdrive"
     )
     tokenmsg = (
-        "Exists"
+        "Added"
         if await aiopath.exists(token_pickle)
-        else "Not Exists"
+        else "Not Added"
     )
     gdrive_id = (
         "Added"
@@ -275,7 +277,7 @@ async def get_user_settings(from_user):
         )
         else "Not Added"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ᴜᴘʟᴏᴀᴅ\nᴘᴀᴛʜꜱ",
         f"userset {user_id} upload_paths"
     )
@@ -287,22 +289,22 @@ async def get_user_settings(from_user):
         )
         or config_dict["DEFAULT_UPLOAD"]
     )
-    du = (
-        "Gdrive API"
+    dum = (
+        "Gdrive"
         if default_upload == "gd"
         else "Rclone"
     )
     dub = (
-        "Gdrive API"
+        "Gdrive"
         if default_upload != "gd"
         else "Rclone"
     )
-    buttons.ibutton(
-        f"ᴜᴘʟᴏᴀᴅ\nᴜꜱɪɴɢ {dub}",
+    buttons.data_button(
+        f"ᴜᴘʟᴏᴀᴅ\nᴛᴏ {dub}",
         f"userset {user_id} {default_upload}"
     )
 
-    buttons.ibutton(
+    buttons.data_button(
         "ᴇxᴛᴇɴꜱɪᴏɴ\nꜰɪʟᴛᴇʀ",
         f"userset {user_id} ex_ex"
     )
@@ -323,12 +325,12 @@ async def get_user_settings(from_user):
         )
         else "Not Added"
     )
-    buttons.ibutton(
+    buttons.data_button(
         "ɴᴀᴍᴇ\nꜱᴜʙꜱᴛɪᴛᴜᴛᴇ",
         f"userset {user_id} name_substitute"
     )
 
-    buttons.ibutton(
+    buttons.data_button(
         "ʏᴛ-ᴅʟᴘ\nᴏᴘᴛɪᴏɴꜱ",
         f"userset {user_id} yto"
     )
@@ -345,13 +347,26 @@ async def get_user_settings(from_user):
     else:
         ytopt = "Not Added"
 
+    if user_dict.get(
+        "thumb_layout",
+        False
+    ):
+        thumb_layout = user_dict["thumb_layout"]
+    elif (
+        "thumb_layout" not in user_dict
+        and config_dict["THUMBNAIL_LAYOUT"]
+    ):
+        thumb_layout = config_dict["THUMBNAIL_LAYOUT"]
+    else:
+        thumb_layout = "1 x 1"
+
     if user_dict:
-        buttons.ibutton(
+        buttons.data_button(
             "ʀᴇꜱᴇᴛ ᴀʟʟ\nᴄʜᴀɴɢᴇꜱ",
             f"userset {user_id} reset"
         )
 
-    buttons.ibutton(
+    buttons.data_button(
         "ᴄʟᴏꜱᴇ",
         f"userset {user_id} close",
         position="footer"
@@ -367,11 +382,12 @@ async def get_user_settings(from_user):
 <code>Leech Suffix     :</code> <b>{lsuffix}</b>
 <code>Leech Cap Font   :</code> <b>{lcapfont}</b>
 <code>Leech Split Size :</code> <b>{split_size}</b>
-<code>Leech Destination:</code> <b>{leech_dest}</b>
+<code>Leech Dest       :</code> <b>{leech_dest}</b>
 <code>Metadata Text    :</code> <b>{metatxt}</b>
 <code>Attachment Url   :</code> <b>{attachmenturl}</b>
 
 <code>Thumbnail        :</code> <b>{thumbmsg}</b>
+<code>Thumb Layout     :</code> <b>{thumb_layout}</b>
 <code>Equal Splits     :</code> <b>{equal_splits}</b>
 <code>Media Group      :</code> <b>{media_group}</b>
 <code>Upload Client    :</code> <b>{leech_method} session</b>
@@ -385,7 +401,7 @@ async def get_user_settings(from_user):
 <code>Index Link       :</code> <b>{index}</b>
 
 <code>Stop Duplicate   :</code> <b>{sd_msg}</b>
-<code>Default Upload   :</code> <b>{du}</b>
+<code>Default Upload   :</code> <b>{dum}</b>
 <code>Upload Paths     :</code> <b>{upload_paths}</b>
 <code>Name Substitute  :</code> <b>{ns_msg}</b>
 <code>Extension Filter :</code> <b>{ex_ex}</b>
@@ -415,6 +431,7 @@ async def update_user_settings(query):
     )
 
 
+@new_task
 async def user_settings(client, message):
     await client.stop_listening(
         chat_id=message.chat.id,
@@ -441,9 +458,10 @@ async def user_settings(client, message):
     )
 
 
+@new_task
 async def set_thumb(message):
     user_id = message.from_user.id
-    des_dir = await createThumb(
+    des_dir = await create_thumb(
         message,
         user_id
     )
@@ -452,15 +470,16 @@ async def set_thumb(message):
         "thumb",
         des_dir
     )
-    await deleteMessage(message)
-    if DATABASE_URL:
-        await DbManager().update_user_doc(
+    await delete_message(message)
+    if config_dict["DATABASE_URL"]:
+        await database.update_user_doc(
             user_id,
             "thumb",
             des_dir
         )
 
 
+@new_task
 async def add_rclone(message):
     user_id = message.from_user.id
     rpath = f"{getcwd()}/rclone/"
@@ -472,15 +491,16 @@ async def add_rclone(message):
         "rclone_config",
         f"rclone/{user_id}.conf"
     )
-    await deleteMessage(message)
-    if DATABASE_URL:
-        await DbManager().update_user_doc(
+    await delete_message(message)
+    if config_dict["DATABASE_URL"]:
+        await database.update_user_doc(
             user_id,
             "rclone_config",
             des_dir
         )
 
 
+@new_task
 async def add_token_pickle(message):
     user_id = message.from_user.id
     tpath = f"{getcwd()}/tokens/"
@@ -492,15 +512,16 @@ async def add_token_pickle(message):
         "token_pickle",
         f"tokens/{user_id}.pickle"
     )
-    await deleteMessage(message)
-    if DATABASE_URL:
-        await DbManager().update_user_doc(
+    await delete_message(message)
+    if config_dict["DATABASE_URL"]:
+        await database.update_user_doc(
             user_id,
             "token_pickle",
             des_dir
         )
 
 
+@new_task
 async def delete_path(message):
     user_id = message.from_user.id
     user_dict = user_data.get(user_id, {})
@@ -514,21 +535,22 @@ async def delete_path(message):
         "upload_paths",
         new_value
     )
-    await deleteMessage(message)
-    if DATABASE_URL:
-        await DbManager().update_user_doc(
+    await delete_message(message)
+    if config_dict["DATABASE_URL"]:
+        await database.update_user_doc(
             user_id,
             "upload_paths",
             new_value
         )
 
 
+@new_task
 async def set_option(message, option):
     user_id = message.from_user.id
     value = message.text
     if option == "split_size":
         if re_search(r"[a-zA-Z]", value):
-            smsg = await sendMessage(
+            smsg = await send_message(
                 message,
                 "Invalid format! Send only numbers.\nEx: 4, 2, 0.5, 2.5."
             )
@@ -558,7 +580,7 @@ async def set_option(message, option):
         for line in lines:
             data = line.split(maxsplit=1)
             if len(data) != 2:
-                smsg = await sendMessage(
+                smsg = await send_message(
                     message,
                     "Wrong format! Add <name> <path>"
                 )
@@ -578,9 +600,9 @@ async def set_option(message, option):
         option,
         value
     )
-    await deleteMessage(message)
-    if DATABASE_URL:
-        await DbManager().update_user_data(user_id)
+    await delete_message(message)
+    if config_dict["DATABASE_URL"]:
+        await database.update_user_data(user_id)
 
 
 async def event_handler(client, query, photo=False, document=False):
@@ -598,6 +620,7 @@ async def event_handler(client, query, photo=False, document=False):
     )
 
 
+@new_task
 async def edit_user_settings(client, query):
     from_user = query.from_user
     user_id = from_user.id
@@ -635,8 +658,8 @@ async def edit_user_settings(client, query):
         )
         await query.answer()
         await update_user_settings(query)
-        if DATABASE_URL:
-            await DbManager().update_user_data(user_id)
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_data(user_id)
     elif data[2] in [
         "thumb",
         "rclone_config",
@@ -657,8 +680,8 @@ async def edit_user_settings(client, query):
                 ""
             )
             await update_user_settings(query)
-            if DATABASE_URL:
-                await DbManager().update_user_doc(
+            if config_dict["DATABASE_URL"]:
+                await database.update_user_doc(
                     user_id,
                     data[2]
                 )
@@ -677,6 +700,7 @@ async def edit_user_settings(client, query):
         "lcapfont",
         "index_url",
         "name_sub",
+        "thumb_layout"
     ]:
         await query.answer()
         update_user_ldata(
@@ -685,18 +709,18 @@ async def edit_user_settings(client, query):
             ""
         )
         await update_user_settings(query)
-        if DATABASE_URL:
-            await DbManager().update_user_data(user_id)
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_data(user_id)
     elif data[2] == "excluded_extensions":
         await query.answer()
         update_user_ldata(
             user_id,
             data[2],
-            f"{GLOBAL_EXTENSION_FILTER}"
+            f"{global_extension_filter}"
         )
         await update_user_settings(query)
-        if DATABASE_URL:
-            await DbManager().update_user_data(user_id)
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_data(user_id)
     elif data[2] in [
         "split_size",
         "leech_dest",
@@ -707,22 +731,22 @@ async def edit_user_settings(client, query):
         if data[2] in user_data.get(user_id, {}):
             del user_data[user_id][data[2]]
             await update_user_settings(query)
-            if DATABASE_URL:
-                await DbManager().update_user_data(user_id)
+            if config_dict["DATABASE_URL"]:
+                await database.update_user_data(user_id)
     elif data[2] == "leech":
         await query.answer()
         thumbpath = f"Thumbnails/{user_id}.jpg"
         buttons = ButtonMaker()
-        buttons.ibutton(
+        buttons.data_button(
             "ᴛʜᴜᴍʙ",
             f"userset {user_id} sthumb"
         )
         thumbmsg = (
-            "Exists"
+            "Added"
             if await aiopath.exists(thumbpath)
-            else "Not Exists"
+            else "Not Added"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ꜱᴘʟɪᴛ\nꜱɪᴢᴇ",
             f"userset {user_id} lss"
         )
@@ -734,7 +758,7 @@ async def edit_user_settings(client, query):
         else:
             split_size = config_dict["LEECH_SPLIT_SIZE"]
         split_size = get_readable_file_size(split_size)
-        buttons.ibutton(
+        buttons.data_button(
             "ʟᴇᴇᴄʜ\nᴅᴇꜱᴛ",
             f"userset {user_id} ldest"
         )
@@ -750,7 +774,7 @@ async def edit_user_settings(client, query):
             leech_dest = LD
         else:
             leech_dest = "None"
-        buttons.ibutton(
+        buttons.data_button(
             "ᴘʀᴇꜰɪx",
             f"userset {user_id} leech_prefix"
         )
@@ -759,13 +783,11 @@ async def edit_user_settings(client, query):
             False
         ):
             lprefix = user_dict["lprefix"]
-        elif "lprefix" not in user_dict and (
-            LP := config_dict["LEECH_FILENAME_PREFIX"]
-        ):
-            lprefix = LP
+        elif "lprefix" not in user_dict and config_dict["LEECH_FILENAME_PREFIX"]:
+            lprefix = config_dict["LEECH_FILENAME_PREFIX"]
         else:
             lprefix = "None"
-        buttons.ibutton(
+        buttons.data_button(
             "ꜱᴜꜰꜰɪx",
             f"userset {user_id} leech_suffix"
         )
@@ -780,7 +802,7 @@ async def edit_user_settings(client, query):
             lsuffix = LS
         else:
             lsuffix = "None"
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄᴀᴘ\nꜰᴏɴᴛ",
             f"userset {user_id} leech_cap_font"
         )
@@ -804,13 +826,13 @@ async def edit_user_settings(client, query):
             and config_dict["AS_DOCUMENT"]
         ):
             ltype = "DOCUMENT"
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴜᴘʟᴏᴀᴅ\nᴀꜱ ᴍᴇᴅɪᴀ",
                 f"userset {user_id} as_doc false"
             )
         else:
             ltype = "MEDIA"
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴜᴘʟᴏᴀᴅ\nᴀꜱ ᴅᴏᴄᴜᴍᴇɴᴛ",
                 f"userset {user_id} as_doc true"
             )
@@ -822,13 +844,13 @@ async def edit_user_settings(client, query):
             or "equal_splits" not in user_dict
             and config_dict["EQUAL_SPLITS"]
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴅɪꜱᴀʙʟᴇ\nᴇQᴜᴀʟ ꜱᴘʟɪᴛꜱ",
                 f"userset {user_id} equal_splits false"
             )
             equal_splits = "Enabled"
         else:
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴇɴᴀʙʟᴇ\nᴇQᴜᴀʟ ꜱᴘʟɪᴛꜱ",
                 f"userset {user_id} equal_splits true"
             )
@@ -841,13 +863,13 @@ async def edit_user_settings(client, query):
             or "media_group" not in user_dict
             and config_dict["MEDIA_GROUP"]
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴅɪꜱᴀʙʟᴇ\nᴍᴇᴅɪᴀ ɢʀᴏᴜᴘ",
                 f"userset {user_id} media_group false"
             )
             media_group = "Enabled"
         else:
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴇɴᴀʙʟᴇ\nᴍᴇᴅɪᴀ ɢʀᴏᴜᴘ",
                 f"userset {user_id} media_group true"
             )
@@ -861,14 +883,14 @@ async def edit_user_settings(client, query):
             or "user_transmission" not in user_dict
             and config_dict["USER_TRANSMISSION"]
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴜᴘʟᴏᴀᴅ\nᴡɪᴛʜ ʙᴏᴛ",
                 f"userset {user_id} user_transmission false"
             )
             leech_method = "user"
         elif IS_PREMIUM_USER:
             leech_method = "bot"
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴜᴘʟᴏᴀᴅ\nᴡɪᴛʜ ᴜꜱᴇʀ",
                 f"userset {user_id} user_transmission true"
             )
@@ -885,19 +907,35 @@ async def edit_user_settings(client, query):
             and config_dict["MIXED_LEECH"]
         ):
             mixed_leech = "Enabled"
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴅɪꜱᴀʙʟᴇ\nʜʏʙʀɪᴅ ᴜᴘʟᴏᴀᴅ",
                 f"userset {user_id} mixed_leech false"
             )
         elif IS_PREMIUM_USER:
             mixed_leech = "Disabled"
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴇɴᴀʙʟᴇ\nʜʏʙʀɪᴅ ᴜᴘʟᴏᴀᴅ",
                 f"userset {user_id} mixed_leech true"
             )
         else:
             mixed_leech = "Disabled"
-        buttons.ibutton(
+        buttons.data_button(
+            "ᴛʜᴜᴍʙ\nʟᴀʏᴏᴜᴛ",
+            f"userset {user_id} tlayout"
+        )
+        if user_dict.get(
+            "thumb_layout",
+            False
+        ):
+            thumb_layout = user_dict["thumb_layout"]
+        elif (
+            "thumb_layout" not in user_dict
+            and config_dict["THUMBNAIL_LAYOUT"]
+        ):
+            thumb_layout = config_dict["THUMBNAIL_LAYOUT"]
+        else:
+            thumb_layout = "1 x 1"
+        buttons.data_button(
             "ᴍᴇᴛᴀᴅᴀᴛᴀ\nᴛᴇxᴛ",
             f"userset {user_id} metadata_text"
         )
@@ -908,7 +946,7 @@ async def edit_user_settings(client, query):
             metatxt = user_dict["metatxt"]
         else:
             metatxt = "None"
-        buttons.ibutton(
+        buttons.data_button(
             "ᴀᴛᴛᴀᴄʜᴍᴇɴᴛ\nᴜʀʟ",
             f"userset {user_id} attachment_url"
         )
@@ -919,12 +957,12 @@ async def edit_user_settings(client, query):
             attachmenturl = user_dict["attachmenturl"]
         else:
             attachmenturl = "None"
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} back",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
@@ -942,41 +980,42 @@ async def edit_user_settings(client, query):
 <code>Attachment Url   :</code> <b>{escape(attachmenturl)}</b>
 
 <code>Thumbnail        :</code> <b>{thumbmsg}</b>
+<code>Thumb Layout     :</code> <b>{thumb_layout}</b>
 <code>Equal Splits     :</code> <b>{equal_splits}</b>
 <code>Media Group      :</code> <b>{media_group}</b>
 <code>Upload Client    :</code> <b>{leech_method} session</b>
 <code>Hybrid Upload    :</code> <b>{mixed_leech}</b>
 """
-        await editMessage(
+        await edit_message(
             message,
             text,
-            buttons.build_menu(3)
+            buttons.build_menu(2)
         )
     elif data[2] == "rclone":
         await query.answer()
         buttons = ButtonMaker()
-        buttons.ibutton(
+        buttons.data_button(
             "ʀᴄʟᴏɴᴇ\nᴄᴏɴꜰɪɢ",
             f"userset {user_id} rcc"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴅᴇꜰᴀᴜʟᴛ\nʀᴄʟᴏɴᴇ ᴘᴀᴛʜ",
             f"userset {user_id} rcp"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} back",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
         rccmsg = (
-            "Exists"
+            "Added"
             if await aiopath.exists(rclone_conf)
-            else "Not Exists"
+            else "Not Added"
         )
         if user_dict.get(
             "rclone_path",
@@ -993,7 +1032,7 @@ async def edit_user_settings(client, query):
 <code>Rclone Config :</code> <b>{rccmsg}</b>
 <code>Rclone Path   :</code> <b>{rccpath}</b>
 """
-        await editMessage(
+        await edit_message(
             message,
             text,
             buttons.build_menu(2)
@@ -1001,15 +1040,15 @@ async def edit_user_settings(client, query):
     elif data[2] == "gdrive":
         await query.answer()
         buttons = ButtonMaker()
-        buttons.ibutton(
+        buttons.data_button(
             "ᴜᴘʟᴏᴀᴅ\nᴛᴏᴋᴇɴ ᴘɪᴄᴋʟᴇ",
             f"userset {user_id} token"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴅᴇꜰᴀᴜʟᴛ\nɢᴅʀɪᴠᴇ ɪᴅ",
             f"userset {user_id} gdid"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ɪɴᴅᴇx ᴜʀʟ",
             f"userset {user_id} index"
         )
@@ -1021,31 +1060,31 @@ async def edit_user_settings(client, query):
             or "stop_duplicate" not in user_dict
             and config_dict["STOP_DUPLICATE"]
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴅɪꜱᴀʙʟᴇ\nꜱᴛᴏᴘ ᴅᴜᴘʟɪᴄᴀᴛᴇ",
                 f"userset {user_id} stop_duplicate false"
             )
             sd_msg = "Enabled"
         else:
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴇɴᴀʙʟᴇ\nꜱᴛᴏᴘ ᴅᴜᴘʟɪᴄᴀᴛᴇ",
                 f"userset {user_id} stop_duplicate true"
             )
             sd_msg = "Disabled"
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} back",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
         tokenmsg = (
-            "Exists"
+            "Added"
             if await aiopath.exists(token_pickle)
-            else "Not Exists"
+            else "Not Added"
         )
         if user_dict.get(
             "gdrive_id",
@@ -1074,7 +1113,7 @@ async def edit_user_settings(client, query):
 
 <code>Stop Duplicate :</code> <b>{sd_msg}</b>
 """
-        await editMessage(
+        await edit_message(
             message,
             text,
             buttons.build_menu(2)
@@ -1083,21 +1122,21 @@ async def edit_user_settings(client, query):
         await query.answer()
         buttons = ButtonMaker()
         if await aiopath.exists(thumb_path):
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴅᴇʟᴇᴛᴇ\nᴛʜᴜᴍʙɴᴀɪʟ",
                 f"userset {user_id} thumb"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} leech",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             "Send a photo to save it as custom thumbnail. Timeout: 60 sec",
             buttons.build_menu(2),
@@ -1124,17 +1163,17 @@ async def edit_user_settings(client, query):
             "yt_opt",
             False
         ) or config_dict["YT_DLP_OPTIONS"]:
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇᴍᴏᴠᴇ\nʏᴛ-ᴅʟᴘ ᴏᴘᴛɪᴏɴꜱ",
                 f"userset {user_id} yt_opt",
                 "header"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} back",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
@@ -1149,7 +1188,7 @@ Example: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a>
 or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to convert cli arguments to api options.
 """
-        await editMessage(
+        await edit_message(
             message,
             rmsg,
             buttons.build_menu(2)
@@ -1178,23 +1217,23 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             "split_size",
             False
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇꜱᴇᴛ\nꜱᴘʟɪᴛ ꜱɪᴢᴇ",
                 f"userset {user_id} split_size"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} leech",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
         sp_msg = "Send Leech split size.\nDon't add unit(MB, GB), default unit is <b>GB</b>\n"
         sp_msg += "\nExamples:\nSend 4 for 4GB\nor 0.5 for 512MB\n\nTimeout: 60 sec"
-        await editMessage(
+        await edit_message(
             message,
             sp_msg,
             buttons.build_menu(2),
@@ -1220,21 +1259,21 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
         await query.answer()
         buttons = ButtonMaker()
         if await aiopath.exists(rclone_conf):
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴅᴇʟᴇᴛᴇ\nʀᴄʟᴏɴᴇ.ᴄᴏɴꜰ",
                 f"userset {user_id} rclone_config"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} rclone",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             "Send rclone.conf. Timeout: 60 sec",
             buttons.build_menu(2)
@@ -1261,22 +1300,22 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             "rclone_path",
             False
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇꜱᴇᴛ\nʀᴄʟᴏɴᴇ ᴘᴀᴛʜ",
                 f"userset {user_id} rclone_path"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} rclone",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
         rmsg = "Send Rclone Path. Timeout: 60 sec"
-        await editMessage(
+        await edit_message(
             message,
             rmsg,
             buttons.build_menu(2)
@@ -1302,21 +1341,21 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
         await query.answer()
         buttons = ButtonMaker()
         if await aiopath.exists(token_pickle):
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴅᴇʟᴇᴛᴇ\nᴛᴏᴋᴇɴ.ᴘɪᴄᴋʟᴇ",
                 f"userset {user_id} token_pickle"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} gdrive",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             "Send token.pickle.\n\nTimeout: 60 sec",
             buttons.build_menu(2)
@@ -1343,22 +1382,22 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             "gdrive_id",
             False
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇꜱᴇᴛ\nɢᴅʀɪᴠᴇ ɪᴅ",
                 f"userset {user_id} gdrive_id"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} gdrive",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
         rmsg = "Send Gdrive ID.\n\nTimeout: 60 sec"
-        await editMessage(
+        await edit_message(
             message,
             rmsg,
             buttons.build_menu(2)
@@ -1387,22 +1426,22 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             "index_url",
             False
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇᴍᴏᴠᴇ\nɪɴᴅᴇx ᴜʀʟ",
                 f"userset {user_id} index_url"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} gdrive",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
         rmsg = "Send Index URL.\n\nTimeout: 60 sec"
-        await editMessage(
+        await edit_message(
             message,
             rmsg,
             buttons.build_menu(2)
@@ -1435,21 +1474,21 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             or "lprefix" not in user_dict
             and config_dict["LEECH_FILENAME_PREFIX"]
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇᴍᴏᴠᴇ\nᴘʀᴇꜰɪx",
                 f"userset {user_id} lprefix"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} leech",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             "Send Leech Filename Prefix.\nYou can add HTML tags.\n\nTimeout: 60 sec",
             buttons.build_menu(2),
@@ -1471,94 +1510,6 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
                 ),
                 update_user_settings(query)
             )
-
-    elif data[2] == "metadata_text":
-        await query.answer()
-        buttons = ButtonMaker()
-        if (
-            user_dict.get(
-                "metatxt",
-                False
-            )
-        ):
-            buttons.ibutton(
-                "ʀᴇᴍᴏᴠᴇ\nᴍᴇᴛᴀᴅᴀᴛᴀ ᴛᴇxᴛ",
-                f"userset {user_id} metatxt"
-            )
-        buttons.ibutton(
-            "ʙᴀᴄᴋ",
-            f"userset {user_id} leech"
-        )
-        buttons.ibutton(
-            "ᴄʟᴏꜱᴇ",
-            f"userset {user_id} close"
-        )
-        await editMessage(
-            message,
-            "Send Leech Metadata Text, Whatever You want to add in the Videos.\n\nTimeout: 60 sec",
-            buttons.build_menu(1),
-        )
-        try:
-            event = await event_handler(
-                client,
-                query
-            )
-        except ListenerTimeout:
-            await update_user_settings(query)
-        except ListenerStopped:
-            pass
-        else:
-            await gather(
-                set_option(
-                    event,
-                    "metatxt"
-                ),
-                update_user_settings(query)
-            )
-
-    elif data[2] == "attachment_url":
-        await query.answer()
-        buttons = ButtonMaker()
-        if (
-            user_dict.get(
-                "attachmenturl",
-                False
-            )
-        ):
-            buttons.ibutton(
-                "ʀᴇᴍᴏᴠᴇ ᴀᴛᴛᴀᴄʜᴍᴇɴᴛ ᴜʀʟ",
-                f"userset {user_id} attachmenturl"
-            )
-        buttons.ibutton(
-            "ʙᴀᴄᴋ",
-            f"userset {user_id} leech"
-        )
-        buttons.ibutton(
-            "ᴄʟᴏꜱᴇ",
-            f"userset {user_id} close"
-        )
-        await editMessage(
-            message,
-            "Send Leech Attachment Url, which you want to get embedded with the video.\n\nTimeout: 60 sec",
-            buttons.build_menu(1),
-        )
-        try:
-            event = await event_handler(
-                client,
-                query
-            )
-        except ListenerTimeout:
-            await update_user_settings(query)
-        except ListenerStopped:
-            pass
-        else:
-            await gather(
-                set_option(
-                    event,
-                    "attachmenturl"
-                ),
-                update_user_settings(query)
-            )
     elif data[2] == "leech_suffix":
         await query.answer()
         buttons = ButtonMaker()
@@ -1570,21 +1521,21 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             or "lsuffix" not in user_dict
             and config_dict["LEECH_FILENAME_SUFFIX"]
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇᴍᴏᴠᴇ\nꜱᴜꜰꜰɪx",
                 f"userset {user_id} lsuffix"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} leech",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             "Send Leech Filename Suffix.\nYou can add HTML tags.\n\nTimeout: 60 sec",
             buttons.build_menu(2),
@@ -1617,16 +1568,16 @@ or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to conve
             or "lcapfont" not in user_dict
             and config_dict["LEECH_CAPTION_FONT"]
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇᴍᴏᴠᴇ\nᴄᴀᴘᴛɪᴏɴ ꜰᴏɴᴛ",
                 f"userset {user_id} lcapfont"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} leech",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
@@ -1646,7 +1597,7 @@ m or mono or monospace for <code>monospace</code>
 
 Timeout: 60 sec
 """
-        await editMessage(
+        await edit_message(
             message,
             msg,
             buttons.build_menu(2),
@@ -1679,21 +1630,21 @@ Timeout: 60 sec
             or "leech_dest" not in user_dict
             and config_dict["USER_LEECH_DESTINATION"]
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇꜱᴇᴛ\nʟᴇᴇᴄʜ ᴅᴇꜱᴛɪɴᴀᴛɪᴏɴ",
                 f"userset {user_id} leech_dest"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} leech",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             "Send leech destination\nID or USERNAME or PM.\n\nTimeout: 60 sec",
             buttons.build_menu(2),
@@ -1715,6 +1666,137 @@ Timeout: 60 sec
                 ),
                 update_user_settings(query)
             )
+    elif data[2] == "metadata_text":
+        await query.answer()
+        buttons = ButtonMaker()
+        if (
+            user_dict.get(
+                "metatxt",
+                False
+            )
+        ):
+            buttons.data_button(
+                "ʀᴇᴍᴏᴠᴇ\nᴍᴇᴛᴀᴅᴀᴛᴀ ᴛᴇxᴛ",
+                f"userset {user_id} metatxt"
+            )
+        buttons.data_button(
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech"
+        )
+        buttons.data_button(
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close"
+        )
+        await edit_message(
+            message,
+            "Send Leech Metadata Text, Whatever You want to add in the Videos.\n\nTimeout: 60 sec",
+            buttons.build_menu(1),
+        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "metatxt"
+                ),
+                update_user_settings(query)
+            )
+    elif data[2] == "attachment_url":
+        await query.answer()
+        buttons = ButtonMaker()
+        if (
+            user_dict.get(
+                "attachmenturl",
+                False
+            )
+        ):
+            buttons.data_button(
+                "ʀᴇᴍᴏᴠᴇ ᴀᴛᴛᴀᴄʜᴍᴇɴᴛ ᴜʀʟ",
+                f"userset {user_id} attachmenturl"
+            )
+        buttons.data_button(
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech"
+        )
+        buttons.data_button(
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close"
+        )
+        await edit_message(
+            message,
+            "Send Leech Attachment Url, which you want to get embedded with the video.\n\nTimeout: 60 sec",
+            buttons.build_menu(1),
+        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "attachmenturl"
+                ),
+                update_user_settings(query)
+            )
+    elif data[2] == "tlayout":
+        await query.answer()
+        buttons = ButtonMaker()
+        if (
+            user_dict.get(
+                "thumb_layout",
+                False
+            )
+            or "thumb_layout" not in user_dict
+            and config_dict["THUMBNAIL_LAYOUT"]
+        ):
+            buttons.data_button(
+                "ʀᴇꜱᴇᴛ\nᴛʜᴜᴍʙ ʟᴀʏᴏᴜᴛ",
+                f"userset {user_id} thumb_layout"
+            )
+        buttons.data_button(
+            "ʙᴀᴄᴋ",
+            f"userset {user_id} leech"
+        )
+        buttons.data_button(
+            "ᴄʟᴏꜱᴇ",
+            f"userset {user_id} close"
+        )
+        await edit_message(
+            message,
+            "Send thumbnail layout as Width x Height (2x2, 3x3, 2x4, 4x4) etc.\n\nTimeout: 60 sec",
+            buttons.build_menu(1),
+        )
+        try:
+            event = await event_handler(
+                client,
+                query
+            )
+        except ListenerTimeout:
+            await update_user_settings(query)
+        except ListenerStopped:
+            pass
+        else:
+            await gather(
+                set_option(
+                    event,
+                    "thumb_layout"
+                ),
+                update_user_settings(query)
+            )
     elif data[2] == "ex_ex":
         await query.answer()
         buttons = ButtonMaker()
@@ -1724,26 +1806,26 @@ Timeout: 60 sec
                 False
             )
             or "excluded_extensions" not in user_dict
-            and GLOBAL_EXTENSION_FILTER
+            and global_extension_filter
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇᴍᴏᴠᴇ\nᴇxᴄʟᴜᴅᴇᴅ ᴇxᴛᴇɴꜱɪᴏɴꜱ",
                 f"userset {user_id} excluded_extensions"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} back",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
         ex_msg = "<b>Send exluded extenions seperated by space without dot at beginning.</b>\n"
         ex_msg += "<b>Ex:</b> <code>zip mp4 jpg</code>\n<b>Timeout:</b> 60 sec\n\n"
-        ex_msg += f"<b>Added by Owner:</b> <code>{GLOBAL_EXTENSION_FILTER}</code>"
-        await editMessage(
+        ex_msg += f"<b>Added by Owner:</b> <code>{global_extension_filter}</code>"
+        await edit_message(
             message,
             ex_msg,
             buttons.build_menu(2),
@@ -1772,16 +1854,16 @@ Timeout: 60 sec
             "name_sub",
             False
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇᴍᴏᴠᴇ\nɴᴀᴍᴇ ꜱᴜʙꜱᴛɪᴛᴜᴛᴇ",
                 f"userset {user_id} name_sub"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} back",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
@@ -1790,21 +1872,17 @@ Timeout: 60 sec
 Word Substitutions. You can add pattern instead of normal text. Timeout: 60 sec
 
 NOTE: You must add \ before any character, those are the characters: \^$.|?*+()[]{}-
-
-Example-1: text : code : s|mirror : leech|tea :  : s|clone
-
-1. text will get replaced by code with sensitive case
+Example: script/code/s | mirror/leech | tea/ /s | clone | cpu/ | \[ZEE\]/ZEE | \\text\\/text/s
+1. script will get replaced by code with sensitive case
 2. mirror will get replaced by leech
-4. tea will get removed with sensitive case
+4. tea will get replaced by space with sensitive case
 5. clone will get removed
-
-Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
-1. (text) will get removed
-2. [test] will get replaced by test
-3. \text\ will get replaced by text with sensitive case
+6. cpu will get replaced by space
+7. [ZEE] will get replaced by ZEE
+8. \text\ will get replaced by text with sensitive case
 """
         emsg += f"Your Current Value is {user_dict.get('name_sub') or 'not added yet!'}"
-        await editMessage(
+        await edit_message(
             message,
             emsg,
             buttons.build_menu(2),
@@ -1842,12 +1920,12 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
             du
         )
         await update_user_settings(query)
-        if DATABASE_URL:
-            await DbManager().update_user_data(user_id)
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_data(user_id)
     elif data[2] == "upload_paths":
         await query.answer()
         buttons = ButtonMaker()
-        buttons.ibutton(
+        buttons.data_button(
             "ɴᴇᴡ\nᴘᴀᴛʜ",
             f"userset {user_id} new_path"
         )
@@ -1855,25 +1933,25 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
             data[2],
             False
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "ꜱʜᴏᴡ\nᴀʟʟ ᴘᴀᴛʜꜱ",
                 f"userset {user_id} show_path"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ʀᴇᴍᴏᴠᴇ\nᴘᴀᴛʜ",
                 f"userset {user_id} rm_path"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} back",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             "Add or remove upload path.\n",
             buttons.build_menu(2),
@@ -1881,17 +1959,17 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
     elif data[2] == "new_path":
         await query.answer()
         buttons = ButtonMaker()
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} upload_paths",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             (
                 "Send path name(no space in name) which you will use it as"
@@ -1920,17 +1998,17 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
     elif data[2] == "rm_path":
         await query.answer()
         buttons = ButtonMaker()
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} upload_paths",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
         )
-        await editMessage(
+        await edit_message(
             message,
             "Send paths names which you want to delete, separated by space.\n\nTimeout: 60 sec",
             buttons.build_menu(2),
@@ -1952,12 +2030,12 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
     elif data[2] == "show_path":
         await query.answer()
         buttons = ButtonMaker()
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             f"userset {user_id} upload_paths",
             position="footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄʟᴏꜱᴇ",
             f"userset {user_id} close",
             position="footer"
@@ -1970,7 +2048,7 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
             f"<b>{key}</b>: <code>{value}</code>\n"
             for key, value in user_dict["upload_paths"].items()
         )
-        await editMessage(
+        await edit_message(
             message,
             msg,
             buttons.build_menu(2),
@@ -1994,8 +2072,8 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
             else:
                 user_data[user_id].clear()
         await update_user_settings(query)
-        if DATABASE_URL:
-            await DbManager().update_user_data(user_id)
+        if config_dict["DATABASE_URL"]:
+            await database.update_user_data(user_id)
         for fpath in [
             thumb_path,
             rclone_conf,
@@ -2008,10 +2086,11 @@ Example-2: \(text\) | \[test\] : test | \\text\\ : text : s
         await update_user_settings(query)
     else:
         await query.answer()
-        await deleteMessage(message.reply_to_message)
-        await deleteMessage(message)
+        await delete_message(message.reply_to_message)
+        await delete_message(message)
 
 
+@new_task
 async def send_users_settings(_, message):
     if user_data:
         msg = ""
@@ -2028,17 +2107,17 @@ async def send_users_settings(_, message):
         if len(msg_ecd) > 4000:
             with BytesIO(msg_ecd) as ofile:
                 ofile.name = "users_settings.txt"
-                await sendFile(
+                await send_file(
                     message,
                     ofile
                 )
         else:
-            await sendMessage(
+            await send_message(
                 message,
                 msg
             )
     else:
-        await sendMessage(
+        await send_message(
             message,
             "No users data!"
         )

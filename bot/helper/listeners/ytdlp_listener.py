@@ -1,21 +1,22 @@
-from time import time
-from functools import partial
 from asyncio import (
     Event,
     wait_for,
 )
+from functools import partial
+from time import time
 
-from bot.helper.ext_utils.status_utils import (
+from ..ext_utils.bot_utils import new_task
+from ..ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time
 )
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import (
+from ..telegram_helper.button_build import ButtonMaker
+from ..telegram_helper.message_utils import (
     auto_delete_message,
     delete_links,
-    deleteMessage,
-    editMessage,
-    sendMessage
+    delete_message,
+    edit_message,
+    send_message
 )
 
 from nekozee.handlers import CallbackQueryHandler
@@ -28,6 +29,7 @@ from httpx import AsyncClient
 from yt_dlp import YoutubeDL
 
 
+@new_task
 async def select_format(_, query, obj):
     data = query.data.split()
     message = query.message
@@ -48,12 +50,12 @@ async def select_format(_, query, obj):
     elif data[1] == "back":
         await obj.back_to_main()
     elif data[1] == "cancel":
-        cmsg = await editMessage(
+        cmsg = await edit_message(
             message,
             "Yt-Dlp task has been cancelled."
         )
         obj.qual = None
-        obj.listener.isCancelled = True
+        obj.listener.is_cancelled = True
         obj.event.set()
     else:
         if data[1] == "sub":
@@ -63,7 +65,7 @@ async def select_format(_, query, obj):
         else:
             obj.qual = data[1]
         obj.event.set()
-    if obj.listener.isCancelled:
+    if obj.listener.is_cancelled:
         await auto_delete_message(
             message,
             cmsg
@@ -96,7 +98,7 @@ class YtSelection:
                 pfunc,
                 filters=regex("^ytq")
                 &
-                user(self.listener.userId)
+                user(self.listener.user_id)
             ),
             group=-1,
         )
@@ -106,12 +108,12 @@ class YtSelection:
                 timeout=self._timeout
             )
         except:
-            await editMessage(
+            await edit_message(
                 self._reply_to,
                 "Timed Out. Task has been cancelled!"
             )
             self.qual = None
-            self.listener.isCancelled = True
+            self.listener.is_cancelled = True
             await auto_delete_message(
                 self.listener.message,
                 self._reply_to
@@ -119,7 +121,7 @@ class YtSelection:
             self.event.set()
         finally:
             self.listener.client.remove_handler(*handler)
-            if self.listener.isCancelled:
+            if self.listener.is_cancelled:
                 await delete_links(self.listener.message)
 
     async def get_quality(self, result):
@@ -139,34 +141,34 @@ class YtSelection:
                 video_format = f"bv*[height<=?{i}][ext=mp4]+ba[ext=m4a]/b[height<=?{i}]"
                 b_data = f"{i}|mp4"
                 self.formats[b_data] = video_format
-                buttons.ibutton(
+                buttons.data_button(
                     f"{i}-ᴍᴘ4",
                     f"ytq {b_data}"
                 )
                 video_format = f"bv*[height<=?{i}][ext=webm]+ba/b[height<=?{i}]"
                 b_data = f"{i}|webm"
                 self.formats[b_data] = video_format
-                buttons.ibutton(
+                buttons.data_button(
                     f"{i}-ᴡᴇʙᴍ",
                     f"ytq {b_data}"
                 )
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴍᴘ3",
                 "ytq mp3"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴀᴜᴅɪᴏ\nꜰᴏʀᴍᴀᴛꜱ",
                 "ytq audio"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ʙᴇꜱᴛ\nᴠɪᴅᴇᴏꜱ",
                 "ytq bv*+ba/b"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ʙᴇꜱᴛ\nᴀᴜᴅɪᴏꜱ",
                 "ytq ba/b"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴄᴀɴᴄᴇʟ",
                 "ytq cancel",
                 "footer"
@@ -236,46 +238,46 @@ class YtSelection:
                             v_list
                         ) = next(iter(tbr_dict.items()))
                         buttonName = f"{b_name} ({get_readable_file_size(v_list[0])})"
-                        buttons.ibutton(
+                        buttons.data_button(
                             buttonName,
                             f"ytq sub {b_name} {tbr}"
                         )
                     else:
-                        buttons.ibutton(
+                        buttons.data_button(
                             b_name,
                             f"ytq dict {b_name}"
                         )
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴍᴘ3",
                 "ytq mp3"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴀᴜᴅɪᴏ\nꜰᴏʀᴍᴀᴛꜱ",
                 "ytq audio"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ʙᴇꜱᴛ\nᴠɪᴅᴇᴏ",
                 "ytq bv*+ba/b"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ʙᴇꜱᴛ\nᴀᴜᴅɪᴏ",
                 "ytq ba/b"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "ᴄᴀɴᴄᴇʟ",
                 "ytq cancel",
                 "footer"
             )
             self._main_buttons = buttons.build_menu(2)
             msg = f"Choose Video Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}"
-        self._reply_to = await sendMessage(
+        self._reply_to = await send_message(
             self.listener.message,
             msg,
             self._main_buttons
         )
         await self._event_handler()
-        if not self.listener.isCancelled:
-            await deleteMessage(self._reply_to)
+        if not self.listener.is_cancelled:
+            await delete_message(self._reply_to)
         return self.qual
 
     async def back_to_main(self):
@@ -283,7 +285,7 @@ class YtSelection:
             msg = f"Choose Playlist Videos Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}"
         else:
             msg = f"Choose Video Quality:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}"
-        await editMessage(
+        await edit_message(
             self._reply_to,
             msg,
             self._main_buttons
@@ -297,16 +299,16 @@ class YtSelection:
             d_data
         ) in tbr_dict.items():
             button_name = f"{tbr}K ({get_readable_file_size(d_data[0])})"
-            buttons.ibutton(
+            buttons.data_button(
                 button_name,
                 f"ytq sub {b_name} {tbr}"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             "ytq back",
             "footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄᴀɴᴄᴇʟ",
             "ytq cancel",
             "footer"
@@ -316,7 +318,7 @@ class YtSelection:
             f"Choose Bit rate for <b>{b_name}</b>:\n"
             f"Timeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}"
         )
-        await editMessage(
+        await edit_message(
             self._reply_to,
             msg,
             subbuttons
@@ -332,21 +334,21 @@ class YtSelection:
         ]
         for q in audio_qualities:
             audio_format = f"ba/b-mp3-{q}"
-            buttons.ibutton(
+            buttons.data_button(
                 f"{q}ᴋ-ᴍᴘ3",
                 f"ytq {audio_format}"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             "ytq back"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄᴀɴᴄᴇʟ",
             "ytq cancel"
         )
         subbuttons = buttons.build_menu(3)
         msg = f"Choose mp3 Audio{i} Bitrate:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}"
-        await editMessage(
+        await edit_message(
             self._reply_to,
             msg,
             subbuttons
@@ -365,23 +367,23 @@ class YtSelection:
             "wav"
         ]:
             audio_format = f"ba/b-{frmt}-"
-            buttons.ibutton(
+            buttons.data_button(
                 frmt,
                 f"ytq aq {audio_format}"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             "ytq back",
             "footer"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄᴀɴᴄᴇʟ",
             "ytq cancel",
             "footer"
         )
         subbuttons = buttons.build_menu(3)
         msg = f"Choose Audio{i} Format:\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}"
-        await editMessage(
+        await edit_message(
             self._reply_to,
             msg,
             subbuttons
@@ -396,15 +398,15 @@ class YtSelection:
         buttons = ButtonMaker()
         for qual in range(11):
             audio_format = f"{format}{qual}"
-            buttons.ibutton(
+            buttons.data_button(
                 qual,
                 f"ytq {audio_format}"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "ʙᴀᴄᴋ",
             "ytq aq back"
         )
-        buttons.ibutton(
+        buttons.data_button(
             "ᴄᴀɴᴄᴇʟ",
             "ytq aq cancel"
         )
@@ -413,7 +415,7 @@ class YtSelection:
             f"Choose Audio{i} Qaulity:\n0 is best and 10 is worst\n"
             f"Timeout: {get_readable_time(self._timeout - (time() - self._time))}\n\ncc: {self.tag}"
         )
-        await editMessage(
+        await edit_message(
             self._reply_to,
             msg,
             subbuttons

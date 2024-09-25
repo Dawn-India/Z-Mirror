@@ -1,10 +1,10 @@
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from asyncio import (
-    wait_for,
     Event,
-    wrap_future,
-    gather
+    gather,
+    wait_for,
+    wrap_future
 )
 from configparser import ConfigParser
 from functools import partial
@@ -16,28 +16,33 @@ from nekozee.filters import (
 from nekozee.handlers import CallbackQueryHandler
 from time import time
 
-from bot import LOGGER, config_dict
-from bot.helper.ext_utils.bot_utils import (
+from bot import (
+    LOGGER,
+    config_dict
+)
+from ...ext_utils.bot_utils import (
     cmd_exec,
-    new_thread,
+    loop_thread,
+    new_task,
     update_user_ldata,
 )
-from bot.helper.ext_utils.db_handler import DbManager
-from bot.helper.ext_utils.status_utils import (
+from ...ext_utils.db_handler import database
+from ...ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time
 )
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import (
-    sendMessage,
-    editMessage,
-    deleteMessage,
+from ...telegram_helper.button_build import ButtonMaker
+from ...telegram_helper.message_utils import (
+    send_message,
+    edit_message,
+    delete_message,
     auto_delete_message,
 )
 
 LIST_LIMIT = 6
 
 
+@new_task
 async def path_updates(_, query, obj):
     await query.answer()
     message = query.message
@@ -45,9 +50,9 @@ async def path_updates(_, query, obj):
     if data[1] == "cancel":
         obj.remote = "Task has been cancelled!"
         obj.path = ""
-        obj.listener.isCancelled = True
+        obj.listener.is_cancelled = True
         obj.event.set()
-        await deleteMessage(message)
+        await delete_message(message)
         return
     if obj.query_proc:
         return
@@ -78,7 +83,7 @@ async def path_updates(_, query, obj):
         if data[2] == "fo":
             await obj.get_path()
         else:
-            await deleteMessage(message)
+            await delete_message(message)
             obj.event.set()
     elif data[1] == "ps":
         if obj.page_step == int(data[2]):
@@ -92,7 +97,7 @@ async def path_updates(_, query, obj):
         obj.item_type = data[2]
         await obj.get_path()
     elif data[1] == "cur":
-        await deleteMessage(message)
+        await delete_message(message)
         obj.event.set()
     elif data[1] == "def":
         path = (
@@ -100,15 +105,15 @@ async def path_updates(_, query, obj):
             if obj.config_path == "rclone.conf"
             else f"mrcc:{obj.remote}{obj.path}"
         )
-        if path != obj.listener.userDict.get("rclone_path"):
+        if path != obj.listener.user_dict.get("rclone_path"):
             update_user_ldata(
-                obj.listener.userId,
+                obj.listener.user_id,
                 "rclone_path",
                 path
             )
             await obj.get_path_buttons()
             if config_dict["DATABASE_URL"]:
-                await DbManager().update_user_data(obj.listener.userId)
+                await database.update_user_data(obj.listener.user_id)
     elif data[1] == "owner":
         obj.config_path = "rclone.conf"
         obj.path = ""
@@ -123,6 +128,7 @@ async def path_updates(_, query, obj):
 
 
 class RcloneList:
+
     def __init__(
             self,
             listener
@@ -138,7 +144,7 @@ class RcloneList:
         self.query_proc = False
         self.item_type = "--dirs-only"
         self.event = Event()
-        self.user_rcc_path = f"rclone/{self.listener.userId}.conf"
+        self.user_rcc_path = f"rclone/{self.listener.user_id}.conf"
         self.config_path = ""
         self.path = ""
         self.list_status = ""
@@ -146,7 +152,7 @@ class RcloneList:
         self.iter_start = 0
         self.page_step = 1
 
-    @new_thread
+    @loop_thread
     async def _event_handler(self):
         pfunc = partial(
             path_updates,
@@ -155,7 +161,7 @@ class RcloneList:
         handler = self.listener.client.add_handler(
             CallbackQueryHandler(
                 pfunc,
-                filters=regex("^rcq") & user(self.listener.userId)
+                filters=regex("^rcq") & user(self.listener.user_id)
             ),
             group=-1,
         )
@@ -167,7 +173,7 @@ class RcloneList:
         except:
             self.path = ""
             self.remote = "Timed Out. Task has been cancelled!"
-            self.listener.isCancelled = True
+            self.listener.is_cancelled = True
             await auto_delete_message(
                 self.listener.message,
                 self.remote
@@ -177,15 +183,15 @@ class RcloneList:
             self.listener.client.remove_handler(*handler)
 
     async def _send_list_message(self, msg, button):
-        if not self.listener.isCancelled:
+        if not self.listener.is_cancelled:
             if self._reply_to is None:
-                self._reply_to = await sendMessage(
+                self._reply_to = await send_message(
                     self.listener.message,
                     msg,
                     button
                 )
             else:
-                await editMessage(
+                await edit_message(
                     self._reply_to,
                     msg,
                     button
@@ -214,7 +220,7 @@ class RcloneList:
             else:
                 ptype = "fi"
                 name = f"[{get_readable_file_size(idict['Size'])}] {idict['Path']}"
-            buttons.ibutton(
+            buttons.data_button(
                 name,
                 f"rcq pa {ptype} {orig_index}"
             )
@@ -229,30 +235,30 @@ class RcloneList:
                 50,
                 100
             ]:
-                buttons.ibutton(
+                buttons.data_button(
                     i,
                     f"rcq ps {i}",
                     position="header"
                 )
-            buttons.ibutton(
+            buttons.data_button(
                 "Previous",
                 "rcq pre",
                 position="footer"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "Next",
                 "rcq nex",
                 position="footer"
             )
         if self.list_status == "rcd":
             if self.item_type == "--dirs-only":
-                buttons.ibutton(
+                buttons.data_button(
                     "Files",
                     "rcq itype --files-only",
                     position="footer"
                 )
             else:
-                buttons.ibutton(
+                buttons.data_button(
                     "Folders",
                     "rcq itype --dirs-only",
                     position="footer"
@@ -261,13 +267,13 @@ class RcloneList:
             self.list_status == "rcu"
             or len(self.path_list) > 0
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "Choose Current Path",
                 "rcq cur",
                 position="footer"
             )
         if self.list_status == "rcu":
-            buttons.ibutton(
+            buttons.data_button(
                 "Set as Default Path",
                 "rcq def",
                 position="footer"
@@ -278,18 +284,18 @@ class RcloneList:
             or self._rc_user
             and self._rc_owner
         ):
-            buttons.ibutton(
+            buttons.data_button(
                 "Back",
                 "rcq back pa",
                 position="footer"
             )
         if self.path:
-            buttons.ibutton(
+            buttons.data_button(
                 "Back To Root",
                 "rcq root", 
                 position="footer"
             )
-        buttons.ibutton(
+        buttons.data_button(
             "Cancel",
             "rcq cancel",
             position="footer"
@@ -331,7 +337,7 @@ class RcloneList:
             self.config_path,
             f"{self.remote}{self.path}",
         ]
-        if self.listener.isCancelled:
+        if self.listener.is_cancelled:
             return
         (
             res,
@@ -394,17 +400,17 @@ class RcloneList:
             )
             buttons = ButtonMaker()
             for remote in self._sections:
-                buttons.ibutton(
+                buttons.data_button(
                     remote,
                     f"rcq re {remote}:"
                 )
             if self._rc_user and self._rc_owner:
-                buttons.ibutton(
+                buttons.data_button(
                     "Back",
                     "rcq back re",
                     position="footer"
                 )
-            buttons.ibutton(
+            buttons.data_button(
                 "Cancel",
                 "rcq cancel",
                 position="footer"
@@ -426,15 +432,15 @@ class RcloneList:
                 f"\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}" # type: ignore
             )
             buttons = ButtonMaker()
-            buttons.ibutton(
+            buttons.data_button(
                 "Owner Config",
                 "rcq owner"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "My Config",
                 "rcq user"
             )
-            buttons.ibutton(
+            buttons.data_button(
                 "Cancel",
                 "rcq cancel"
             )
@@ -484,10 +490,10 @@ class RcloneList:
             self.config_path = config_path
             await self.list_remotes()
         await wrap_future(future) # type: ignore
-        await deleteMessage(self._reply_to)
+        await delete_message(self._reply_to)
         if (
             self.config_path != "rclone.conf"
-            and not self.listener.isCancelled
+            and not self.listener.is_cancelled
         ):
             return f"mrcc:{self.remote}{self.path}"
         return f"{self.remote}{self.path}"
