@@ -27,9 +27,10 @@ programming in Python.
 
   ## Rclone
 
-  - Rclone transfer (download/upload/clone-server-side) without or with random service accounts (global and user option)
-  - Ability to choose config, remote and path from list with buttons (global, user and task option)
-  - Ability to set rclone flags for each task or globally from config (global, user and task option)
+  - Transfer (download/upload/clone-server-side) without or with random service accounts (global and user option)
+  - Ability to choose config, remote and path from list with or without buttons (global, user and task option)
+  - Ability to set flags for each task or globally from config (global, user and task option)
+  - Abitity to select specific files or folders to download/copy using buttons (task option)
   - Rclone.conf (global and user option)
   - Rclone serve for combine remote to use it as index from all remotes (global option)
   - Upload destination (global, user and task option)
@@ -378,13 +379,13 @@ programming in Python.
     1. Seed will get disbaled while using this option
     2. Before any character you must add `\BACKSLASH`, those are the characters: `\^$.|?*+()[]{}-`
     * Example: script/code/s | mirror/leech | tea/ /s | clone | cpu/ | \[ZEE\]/ZEE | \\text\\/text/s
-    - script will get replaced by code with sensitive case
-    - mirror will get replaced by leech
-    - tea will get replaced by space with sensitive case
-    - clone will get removed
-    - cpu will get replaced by space
-    - [ZEE] will get replaced by ZEE
-    - \text\ will get replaced by text with sensitive case
+      - script will get replaced by code with sensitive case
+      - mirror will get replaced by leech
+      - tea will get replaced by space with sensitive case
+      - clone will get removed
+      - cpu will get replaced by space
+      - [ZEE] will get replaced by ZEE
+      - \text\ will get replaced by text with sensitive case
   - `METADATA_TXT`: Edit metadata of the video. `Str`
   - `META_ATTACHMENT`: Add attachment to the metadata. `Str`
   - `THUMBNAIL_LAYOUT`: Thumbnail layout (widthxheight, 2x2, 3x3, 2x4, 4x4, ...) of how many photo arranged for the thumbnail.`Str`

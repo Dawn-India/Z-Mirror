@@ -71,7 +71,11 @@ class _BotCommands:
             f"ping{CMD_SUFFIX}",
             "p",
         ]
-        self.RestartCommand = f"restart{CMD_SUFFIX}"
+        self.RestartCommand = [
+            f"restart{CMD_SUFFIX}",
+            f"r{CMD_SUFFIX}",
+            "rall"
+        ]
         self.StatsCommand = [
             f"stats{CMD_SUFFIX}",
             "s",

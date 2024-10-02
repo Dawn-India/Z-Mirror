@@ -116,22 +116,21 @@ async def _jd_listener():
                 k,
                 v
             ) in list(jd_downloads.items()):
-                if (
-                    v["status"] == "down" and
-                    k not in all_packages
-                ):
-                    cdi = jd_downloads[k]["ids"]
-                    if len(cdi) > 1:
-                        await update_download(k, v)
+                if v["status"] == "down":
+                    if k in all_packages:
+                        for (
+                            index,
+                            pid
+                        ) in enumerate(v["ids"]):
+                            if pid not in all_packages:
+                                del jd_downloads[k]["ids"][index]
+
                     else:
-                        await remove_download(k)
-                else:
-                    for (
-                        index,
-                        pid
-                    ) in enumerate(v["ids"]):
-                        if pid not in all_packages:
-                            del jd_downloads[k]["ids"][index]
+                        cdi = jd_downloads[k]["ids"]
+                        if len(cdi) > 1:
+                            await update_download(k, v)
+                        else:
+                            await remove_download(k)
 
             for gid in finished:
                 if (

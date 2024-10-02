@@ -42,8 +42,8 @@ def _get_combined_info(result):
             "speed",
             0
         )
-    if not status:
-        status = "UnknownError"
+    if len(status) == 0:
+        status = "UnknownError Check Web Interface"
     try:
         eta = (bytesTotal - bytesLoaded) / speed
     except:
@@ -164,6 +164,8 @@ class JDownloaderStatus:
             "status",
             "jdlimit"
         )
+        if len(state) == 0:
+            return "UnknownError Check Web Interface"
         return (
             MirrorStatus.STATUS_QUEUEDL
             if state == "jdlimit"

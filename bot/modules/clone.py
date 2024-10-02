@@ -3,6 +3,7 @@ from json import loads
 from nekozee.filters import command
 from nekozee.handlers import MessageHandler
 from secrets import token_urlsafe
+from aiofiles.os import remove
 
 from bot import (
     LOGGER,
@@ -85,6 +86,7 @@ class Clone(TaskListener):
             "link": "",
             "-m": 0,
             "-b": False,
+            "-n": "",
             "-up": "",
             "-rcf": "",
             "-sync": False,
@@ -103,6 +105,7 @@ class Clone(TaskListener):
         self.up_dest = args["-up"]
         self.rc_flags = args["-rcf"]
         self.link = args["link"]
+        self.name = args["-n"]
 
         is_bulk = args["-b"]
         sync = args["-sync"]
@@ -304,51 +307,62 @@ class Clone(TaskListener):
                 remote,
                 src_path
             ) = self.link.split(":", 1)
-            src_path = src_path.strip("/")
-
-            cmd = [
-                "rclone",
-                "lsjson",
-                "--fast-list",
-                "--stat",
-                "--no-modtime",
-                "--config",
-                config_path,
-                f"{remote}:{src_path}",
-            ]
-            res = await cmd_exec(cmd)
-            if res[2] != 0:
-                if res[2] != -9:
-                    msg = f"Error: While getting rclone stat. Path: {remote}:{src_path}. Stderr: {res[1][:4000]}"
-                    smsg = await send_message(
-                        self.message,
-                        msg
-                    )
-                    await auto_delete_message(
-                        self.message,
-                        smsg
-                    )
-                return
-            rstat = loads(res[0])
-            if rstat["IsDir"]:
-                self.name = (
-                    src_path.rsplit("/", 1)[-1]
-                    if src_path
-                    else remote
-                )
-                self.up_dest += (
-                    self.name
-                    if self.up_dest.endswith(":")
-                    else f"/{self.name}"
-                )
-
+            self.link = src_path.strip("/")
+            if self.link.startswith("rclone_select"):
                 mime_type = "Folder"
+                src_path = ""
+                if not self.name:
+                    self.name = self.link
             else:
-                self.name = src_path.rsplit(
-                    "/",
-                    1
-                )[-1]
-                mime_type = rstat["MimeType"]
+                src_path = self.link
+                cmd = [
+                    "rclone",
+                    "lsjson",
+                    "--fast-list",
+                    "--stat",
+                    "--no-modtime",
+                    "--config",
+                    config_path,
+                    f"{remote}:{src_path}",
+                ]
+                res = await cmd_exec(cmd)
+                if res[2] != 0:
+                    if res[2] != -9:
+                        msg = f"Error: While getting rclone stat. Path: {remote}:{src_path}. Stderr: {res[1][:4000]}"
+                        smsg = await send_message(
+                            self.message,
+                            msg
+                        )
+                        await auto_delete_message(
+                            self.message,
+                            smsg
+                        )
+                    return
+                rstat = loads(res[0])
+                if rstat["IsDir"]:
+                    if not self.name:
+                        self.name = (
+                            src_path.rsplit(
+                                "/",
+                                1
+                            )[-1]
+                            if src_path
+                            else remote
+                        )
+                    self.up_dest += (
+                        self.name
+                        if self.up_dest.endswith(":")
+                        else f"/{self.name}"
+                    )
+
+                    mime_type = "Folder"
+                else:
+                    if not self.name:
+                        self.name = src_path.rsplit(
+                            "/",
+                            1
+                        )[-1]
+                    mime_type = rstat["MimeType"]
 
             await self.on_download_start()
 
@@ -371,13 +385,18 @@ class Clone(TaskListener):
                 if sync
                 else "copy"
             )
-            flink, destination = await RCTransfer.clone(
+            (
+                flink,
+                destination
+            ) = await RCTransfer.clone(
                 config_path,
                 remote,
                 src_path,
                 mime_type,
                 method,
             ) # type: ignore
+            if self.link.startswith("rclone_select"):
+                await remove(self.link)
             if not destination:
                 return
             LOGGER.info(f"Cloning Done: {self.name}")

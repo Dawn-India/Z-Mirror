@@ -1484,7 +1484,7 @@ async def edit_bot_settings(client, query):
             query
         ):
             value = "Only owner can view this!"
-        if len(value) > 500:
+        if len(value) > 200:
             await query.answer()
             with BytesIO(str.encode(value)) as out_file:
                 out_file.name = f"{data[2]}.txt"

@@ -192,7 +192,7 @@ help_string = f"""
 /{BotCommands.RmSudoCommand}: Remove sudo users (Only Owner).
 
 <b>Maintainance:</b>
-/{BotCommands.RestartCommand}: Restart and update the bot (Only Owner & Sudo).
+/{BotCommands.RestartCommand[0]}: Restart and update the bot (Only Owner & Sudo).
 /{BotCommands.LogCommand}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo).
 /{BotCommands.ShellCommand}: Run shell commands (Only Owner).
 /{BotCommands.AExecCommand}: Exec async functions (Only Owner).
