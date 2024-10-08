@@ -229,7 +229,7 @@ async def gdrive_search(_, message):
     if not await is_admin(message, user_id):
         msg, btn = await checking_access(user_id)
         if msg is not None:
-            msg += f"\n\n<b>cc</b>: {tag}"
+            msg += f"\n\n<b>cc</b>: {message.from_user.mention}"
             msg += f"\n<b>Thank You</b>"
             gdmsg = await send_message(message, msg, btn.build_menu(1))
             await auto_delete_message(message, gdmsg)
