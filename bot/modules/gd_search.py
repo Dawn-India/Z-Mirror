@@ -20,6 +20,7 @@ from ..helper.ext_utils.bot_utils import (
     get_telegraph_list
 )
 from ..helper.ext_utils.status_utils import get_readable_time
+from ..helper.ext_utils.token_manager import checking_access
 from ..helper.task_utils.gdrive_utils.search import GoogleDriveSearch
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
@@ -27,6 +28,7 @@ from ..helper.telegram_helper.filters import CustomFilters
 from ..helper.telegram_helper.message_utils import (
     anno_checker,
     auto_delete_message,
+    is_admin,
     send_message,
     edit_message
 )
@@ -224,6 +226,14 @@ async def gdrive_search(_, message):
         )
         return
     user_id = from_user.id
+    if not await is_admin(message, user_id):
+        msg, btn = await checking_access(user_id)
+        if msg is not None:
+            msg += f"\n\n<b>cc</b>: {message.from_user.mention}"
+            msg += f"\n<b>Thank You</b>"
+            gdmsg = await send_message(message, msg, btn.build_menu(1))
+            await auto_delete_message(message, gdmsg)
+            return
     buttons = await list_buttons(user_id)
     gmsg = await send_message(
         message,

@@ -270,7 +270,7 @@ mixed_leech = """
 """
 
 thumbnail_layout = """
-Thumbnail Layout: -tl
+<b>Thumbnail Layout</b>: -tl
 
 /cmd link -tl 3x3 (widthxheight) 3 photos in row and 3 photos in column
 """
@@ -280,6 +280,17 @@ leech_as = """
 
 /cmd link -doc (Leech as document)
 /cmd link -med (Leech as media)
+"""
+
+metadata = """
+<b>Metadata</b>: -md
+/cmd link -md text
+It will add text in your video metadata. (MKV & MP4 supports only)
+
+
+<b>Metadata Attachment</b>: -mda
+/cmd link -mda tg-message-link(doc or photo) or any direct link
+It will embed thumb in your video. (MKV & MP4 supports only)
 """
 
 YT_HELP_DICT = {
@@ -303,6 +314,7 @@ YT_HELP_DICT = {
     "ʜʏʙʀɪᴅ\nʟᴇᴇᴄʜ": mixed_leech,
     "ᴛʜᴜᴍʙ\nʟᴀʏᴏᴜᴛ": thumbnail_layout,
     "ʟᴇᴇᴄʜ\nᴛʏᴘᴇ": leech_as,
+    "ᴍᴇᴛᴀᴅᴀᴛᴀ\nᴀᴛᴛᴀᴄʜ": metadata,
 }
 
 MIRROR_HELP_DICT = {
@@ -332,6 +344,7 @@ MIRROR_HELP_DICT = {
     "ʜʏʙʀɪᴅ\nʟᴇᴇᴄʜ": mixed_leech,
     "ᴛʜᴜᴍʙ\nʟᴀʏᴏᴜᴛ": thumbnail_layout,
     "ʟᴇᴇᴄʜ\nᴛʏᴘᴇ": leech_as,
+    "ᴍᴇᴛᴀᴅᴀᴛᴀ\nᴀᴛᴛᴀᴄʜ": metadata,
 }
 
 CLONE_HELP_DICT = {
