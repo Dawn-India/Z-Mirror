@@ -46,6 +46,7 @@ from bot import (
     index_urls,
     intervals,
     jd_downloads,
+    jd_lock,
     nzb_options,
     qbit_options,
     qbittorrent_client,
@@ -688,7 +689,7 @@ async def edit_variable(message, pre_message, key):
         "JD_EMAIL",
         "JD_PASS"
     ]:
-        jdownloader.initiate() # type: ignore
+        await jdownloader.initiate()
     elif key == "RSS_DELAY":
         add_job()
     elif key == "USET_SERVERS":
@@ -864,19 +865,27 @@ async def edit_nzb_server(message, pre_message, key, index=0):
 
 
 async def sync_jdownloader():
-    if (
-        not config_dict["DATABASE_URL"]
-        or jdownloader.device is None
-    ):
-        return
-    try:
-        await wait_for(
-            retry_function(
-                jdownloader.update_devices
-            ),
-            timeout=10
-        )
-    except:
+    async with jd_lock:
+        if (
+            not config_dict["DATABASE_URL"]
+            or jdownloader.device is None
+        ):
+            return
+        try:
+            await wait_for(
+                retry_function(jdownloader.update_devices),
+                timeout=10
+            )
+        except:
+            is_connected = await jdownloader.jdconnect()
+            if not is_connected:
+                LOGGER.error(jdownloader.error)
+                return
+            isDeviceConnected = await jdownloader.connectToDevice()
+            if not isDeviceConnected:
+                LOGGER.error(jdownloader.error)
+                return
+        await jdownloader.device.system.exit_jd()
         is_connected = await jdownloader.jdconnect()
         if not is_connected:
             LOGGER.error(jdownloader.error)
@@ -884,17 +893,8 @@ async def sync_jdownloader():
         isDeviceConnected = await jdownloader.connectToDevice()
         if not isDeviceConnected:
             LOGGER.error(jdownloader.error)
-            return
-    await jdownloader.device.system.exit_jd()
     if await aiopath.exists("cfg.zip"):
         await remove("cfg.zip")
-    is_connected = await jdownloader.jdconnect()
-    if not is_connected:
-        LOGGER.error(jdownloader.error)
-        return
-    isDeviceConnected = await jdownloader.connectToDevice()
-    if not isDeviceConnected:
-        LOGGER.error(jdownloader.error)
     await (
         await create_subprocess_exec(
             "7z",
@@ -1146,14 +1146,8 @@ async def edit_bot_settings(client, query):
                 show_alert=True,
             )
             return
-        if jd_downloads:
-            await query.answer(
-                "You can't sync settings while using jdownloader!",
-                show_alert=True,
-            )
-            return
         await query.answer(
-            "Syncronization Started. JDownloader will get restarted. It takes up to 5 sec!",
+            "Syncronization Started. JDownloader will get restarted. It takes up to 10 sec!",
             show_alert=True,
         )
         await sync_jdownloader()

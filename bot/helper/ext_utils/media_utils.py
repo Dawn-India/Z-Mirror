@@ -83,11 +83,15 @@ async def convert_video(listener, video_file, ext, retry=False):
         ]
     if listener.is_cancelled:
         return False
-    listener.suproc = await create_subprocess_exec(
-        *cmd,
-        stderr=PIPE
-    )
-    _, stderr = await listener.suproc.communicate()
+    async with subprocess_lock:
+        listener.suproc = await create_subprocess_exec(
+            *cmd,
+            stderr=PIPE
+        )
+    (
+        _,
+        stderr
+    ) = await listener.suproc.communicate()
     if listener.is_cancelled:
         return False
     code = listener.suproc.returncode
@@ -130,10 +134,11 @@ async def convert_audio(listener, audio_file, ext):
     ]
     if listener.is_cancelled:
         return False
-    listener.suproc = await create_subprocess_exec(
-        *cmd,
-        stderr=PIPE
-    )
+    async with subprocess_lock:
+        listener.suproc = await create_subprocess_exec(
+            *cmd,
+            stderr=PIPE
+        )
     (
         _,
         stderr
@@ -863,10 +868,11 @@ async def create_sample_video(listener, video_file, sample_duration, part_durati
 
     if listener.is_cancelled:
         return False
-    listener.suproc = await create_subprocess_exec(
-        *cmd,
-        stderr=PIPE
-    )
+    async with subprocess_lock:
+        listener.suproc = await create_subprocess_exec(
+            *cmd,
+            stderr=PIPE
+        )
     (
         _,
         stderr
@@ -897,7 +903,10 @@ async def edit_video_metadata(listener, dir):
     data = listener.metadata
     dir_path = Path(dir)
 
-    if not dir_path.lower().endswith(("mkv", "mp4")):
+    if not dir_path.suffix.lower().endswith((
+        "mkv",
+        "mp4"
+    )):
         return dir
 
     file_name = dir_path.name
@@ -1070,7 +1079,10 @@ async def add_attachment(listener, dir):
     data = listener.m_attachment
     dir_path = Path(dir)
 
-    if not dir_path.lower().endswith(("mkv", "mp4")):
+    if not dir_path.suffix.lower().endswith((
+        "mkv",
+        "mp4"
+    )):
         return dir
 
     file_name = dir_path.name
@@ -1078,9 +1090,11 @@ async def add_attachment(listener, dir):
 
     if data:
         if is_telegram_link(data):
-            msg = (await get_tg_link_message(data))[0]
+            msg = (await get_tg_link_message(data))[0] # type: ignore
             data = (
-                await create_thumb(msg) if msg.photo or msg.document else ""
+                await create_thumb(msg)
+                if msg.photo or msg.document # type: ignore
+                else ""
             )
 
     data_ext = data.split(".")[-1].lower()

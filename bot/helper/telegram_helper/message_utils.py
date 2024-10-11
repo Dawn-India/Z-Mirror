@@ -22,6 +22,7 @@ from nekozee.enums import ChatAction
 from bot import (
     LOGGER,
     bot,
+    bot_loop,
     bot_name,
     cached_dict,
     config_dict,
@@ -135,13 +136,13 @@ async def auto_delete_message(
     if (config_dict["DELETE_LINKS"]
         and int(config_dict["AUTO_DELETE_MESSAGE_DURATION"])
     ) > 0:
-        async def delete_delay():
+        async def auto_delete():
             await sleep(config_dict["AUTO_DELETE_MESSAGE_DURATION"])
             if cmd_message is not None:
                 await delete_message(cmd_message)
             if bot_message is not None:
                 await delete_message(bot_message)
-        create_task(delete_delay())
+        bot_loop.create_task(auto_delete())
 
 
 async def delete_links(message):

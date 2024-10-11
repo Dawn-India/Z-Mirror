@@ -142,7 +142,6 @@ class Clone(TaskListener):
 
         await self.run_multi(
             input_list,
-            "",
             Clone
         )
 

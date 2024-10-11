@@ -3,7 +3,8 @@ from bot import (
     LOGGER,
     bot,
     bot_loop,
-    config_dict
+    config_dict,
+    task_dict_lock
 )
 from bot.helper.ext_utils.bot_utils import (
     COMMAND_USAGE,
@@ -68,30 +69,30 @@ class YtDlp(TaskListener):
         qual = ""
 
         args = {
-            "-doc": False,
-            "-med": False,
-            "-s": False,
-            "-b": False,
-            "-z": False,
-            "-sv": False,
-            "-ss": False,
-            "-f": False,
-            "-fd": False,
-            "-fu": False,
-            "-ml": False,
+            "-doc": False, "-document": False,
+            "-med": False, "-media": False,
+            "-s": False, "-select": False,
+            "-b": False, "-bulk": False,
+            "-z": False, "-zip": False, "-compress": False,
+            "-sv": False, "-samplevideo": False,
+            "-ss": False, "-screenshot": False,
+            "-f": False, "-forcerun": False,
+            "-fd": False, "-forcedownload": False,
+            "-fu": False, "-forceupload": False,
+            "-ml": False, "-mixedleech": False,
             "-m": 0,
-            "-sp": 0,
+            "-sp": 0, "-splitsize": 0,
             "link": "",
-            "-sd": "",
+            "-sd": "", "-samedir": "",
             "-opt": "",
-            "-n": "",
-            "-up": "",
+            "-n": "", "-rename": "",
+            "-up": "", "-upload": "",
             "-rcf": "",
-            "-t": "",
-            "-ca": "",
-            "-cv": "",
-            "-ns": "",
-            "-tl": "",
+            "-t": "", "-thumb": "",
+            "-tl": "", "-thumblayout": "",
+            "-ca": "", "-convertaudio": "",
+            "-cv": "", "-convertvideo": "",
+            "-ns": "", "-namesub": ""
         }
 
         arg_parser(
@@ -104,29 +105,35 @@ class YtDlp(TaskListener):
         except:
             self.multi = 0
 
-        self.select = args["-s"]
-        self.name = args["-n"]
-        self.up_dest = args["-up"]
+        self.select = args["-s"] or args["-select"]
+        self.name = args["-n"] or args["-rename"]
+        self.up_dest = args["-up"] or args["-upload"]
         self.rc_flags = args["-rcf"]
         self.link = args["link"]
-        self.compress = args["-z"]
-        self.thumb = args["-t"]
-        self.split_size = args["-sp"]
-        self.sample_video = args["-sv"]
-        self.screen_shots = args["-ss"]
-        self.force_run = args["-f"]
-        self.force_download = args["-fd"]
-        self.force_upload = args["-fu"]
-        self.convert_audio = args["-ca"]
-        self.convert_video = args["-cv"]
-        self.name_sub = args["-ns"]
-        self.mixed_leech = args["-ml"]
-        self.thumbnail_layout = args["-tl"]
-        self.as_doc = args["-doc"]
-        self.as_med = args["-med"]
+        self.compress = args["-z"] or args["-zip"] or args["-compress"]
+        self.thumb = args["-t"] or args["-thumb"]
+        self.thumbnail_layout = args["-tl"] or args["-thumblayout"]
+        self.split_size = args["-sp"] or args["-splitsize"]
+        self.sample_video = args["-sv"] or args["-samplevideo"]
+        self.screen_shots = args["-ss"] or args["-screenshot"]
+        self.force_run = args["-f"] or args["-forcerun"]
+        self.force_download = args["-fd"] or args["-forcedownload"]
+        self.force_upload = args["-fu"] or args["-forceupload"]
+        self.convert_audio = args["-ca"] or args["-convertaudio"]
+        self.convert_video = args["-cv"] or args["-convertvideo"]
+        self.name_sub = args["-ns"] or args["-namesub"]
+        self.mixed_leech = args["-ml"] or args["-mixedleech"]
+        self.as_doc = args["-doc"] or args["-document"]
+        self.as_med = args["-med"] or args["-media"]
+        self.folder_name = ((
+            f"/{args["-sd"]}" or
+            f"/{args["-samedir"]}"
+        ) if (
+            len(args["-sd"]) or
+            len(args["-samedir"])
+        ) > 0 else "")
 
         is_bulk = args["-b"]
-        folder_name = args["-sd"]
 
         bulk_start = 0
         bulk_end = 0
@@ -144,17 +151,33 @@ class YtDlp(TaskListener):
             is_bulk = True
 
         if not is_bulk:
-            if folder_name:
-                folder_name = f"/{folder_name}"
-                if not self.same_dir:
-                    self.same_dir = {
-                        "total": self.multi,
-                        "tasks": set(),
-                        "name": folder_name,
-                    }
-                self.same_dir["tasks"].add(self.mid)
-            elif self.same_dir:
-                self.same_dir["total"] -= 1
+            if self.multi > 0:
+                if self.folder_name:
+                    async with task_dict_lock:
+                        if self.folder_name in self.same_dir:
+                            self.same_dir[self.folder_name]["tasks"].add(self.mid)
+                            for fd_name in self.same_dir:
+                                if fd_name != self.folder_name:
+                                    self.same_dir[fd_name]["total"] -= 1
+                        elif self.same_dir:
+                            self.same_dir[self.folder_name] = {
+                                "total": self.multi,
+                                "tasks": {self.mid},
+                            }
+                            for fd_name in self.same_dir:
+                                if fd_name != self.folder_name:
+                                    self.same_dir[fd_name]["total"] -= 1
+                        else:
+                            self.same_dir = {
+                                self.folder_name: {
+                                    "total": self.multi,
+                                    "tasks": {self.mid},
+                                }
+                            }
+                elif self.same_dir:
+                    async with task_dict_lock:
+                        for fd_name in self.same_dir:
+                            self.same_dir[fd_name]["total"] -= 1
         else:
             await delete_message(self.pmsg)
             await self.init_bulk(
@@ -168,7 +191,7 @@ class YtDlp(TaskListener):
         if len(self.bulk) != 0:
             del self.bulk[0]
 
-        path = f"{DOWNLOAD_DIR}{self.mid}{folder_name}"
+        path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
 
         await self.get_tag(text)
 
@@ -193,7 +216,7 @@ class YtDlp(TaskListener):
                 COMMAND_USAGE["yt"][0],
                 COMMAND_USAGE["yt"][1]
             )
-            self.remove_from_same_dir()
+            await self.remove_from_same_dir()
             await delete_message(self.pmsg)
             await auto_delete_message(
                 self.message,
@@ -221,7 +244,7 @@ class YtDlp(TaskListener):
                 self.message,
                 e
             )
-            self.remove_from_same_dir()
+            await self.remove_from_same_dir()
             await auto_delete_message(
                 self.message,
                 emsg
@@ -307,7 +330,7 @@ class YtDlp(TaskListener):
                 self.message,
                 f"{self.tag} {msg}"
             )
-            self.remove_from_same_dir()
+            await self.remove_from_same_dir()
             await auto_delete_message(
                 self.message,
                 emsg
@@ -316,14 +339,13 @@ class YtDlp(TaskListener):
         finally:
             await self.run_multi(
                 input_list,
-                folder_name,
                 YtDlp
             )
 
         if not qual:
             qual = await YtSelection(self).get_quality(result)
             if qual is None:
-                self.remove_from_same_dir()
+                await self.remove_from_same_dir()
                 return
 
         await delete_message(self.pmsg)

@@ -126,6 +126,7 @@ class TaskConfig:
         self.thumbnail_layout = ""
         self.metadata = None
         self.m_attachment = None
+        self.folder_name = ""
         self.get_chat = None
         self.split_size = 0
         self.max_split_size = 0
@@ -776,7 +777,7 @@ class TaskConfig:
                 self.tag = self.user.id
 
     @new_task
-    async def run_multi(self, input_list, folder_name, obj):
+    async def run_multi(self, input_list, obj):
         if (
             config_dict["DISABLE_MULTI"]
             and self.multi > 1
@@ -816,6 +817,9 @@ class TaskConfig:
                 self.message, # type: ignore
                 smsg
             )
+            async with task_dict_lock:
+                for fd_name in self.same_dir: # type: ignore
+                    self.same_dir[fd_name]["total"] -= self.multi # type: ignore
             return
         if len(self.bulk) != 0:
             msg = input_list[:1]
@@ -850,8 +854,6 @@ class TaskConfig:
             chat_id=self.message.chat.id, # type: ignore
             message_ids=nextmsg.id # type: ignore
         )
-        if folder_name:
-            self.same_dir["tasks"].add(nextmsg.id) # type: ignore
         if self.message.from_user: # type: ignore
             nextmsg.from_user = self.user
         else:
@@ -901,9 +903,14 @@ class TaskConfig:
                 del self.options[index + 1]
             self.options = " ".join(self.options)
             b_msg.append(f"{self.bulk[0]} -m {len(self.bulk)} {self.options}")
+            msg = " ".join(b_msg)
+            if len(self.bulk) > 2:
+                self.multi_tag = token_urlsafe(3)
+                multi_tags.add(self.multi_tag)
+                msg += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
             nextmsg = await send_message(
                 self.message, # type: ignore
-                " ".join(b_msg)
+                msg
             )
             nextmsg = await self.client.get_messages( # type: ignore
                 chat_id=self.message.chat.id, # type: ignore
@@ -1352,15 +1359,14 @@ class TaskConfig:
         if await aiopath.isfile(dl_path):
             if (await get_document_type(dl_path))[0]:
                 checked = True
-                await cpu_eater_lock.acquire()
-                LOGGER.info(f"Creating Sample video: {self.name}")
-                res = await create_sample_video(
-                    self,
-                    dl_path,
-                    sample_duration,
-                    part_duration
-                )
-                cpu_eater_lock.release()
+                async with cpu_eater_lock:
+                    LOGGER.info(f"Creating Sample video: {self.name}")
+                    res = await create_sample_video(
+                        self,
+                        dl_path,
+                        sample_duration,
+                        part_duration
+                    )
                 if res:
                     newfolder = ospath.splitext(dl_path)[0]
                     name = dl_path.rsplit(

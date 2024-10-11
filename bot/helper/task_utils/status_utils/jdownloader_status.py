@@ -112,7 +112,7 @@ class JDownloaderStatus:
 
     async def _update(self):
         self._info = await get_download(
-            int(self._gid),
+            self._gid,
             self._info
         )
 
@@ -183,8 +183,8 @@ class JDownloaderStatus:
         LOGGER.info(f"Cancelling Download: {self.name()}")
         await retry_function(
             jdownloader.device.downloads.remove_links, # type: ignore
-            package_ids=jd_downloads[int(self._gid)]["ids"],
+            package_ids=jd_downloads[self._gid]["ids"],
         )
         async with jd_lock:
-            del jd_downloads[int(self._gid)]
+            del jd_downloads[self._gid]
         await self.listener.on_download_error("Download cancelled by user!")

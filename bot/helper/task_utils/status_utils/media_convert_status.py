@@ -1,5 +1,8 @@
 from time import time
-from bot import LOGGER
+from bot import (
+    LOGGER,
+    subprocess_lock
+)
 from ...ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time,
@@ -83,6 +86,7 @@ class MediaConvertStatus:
     async def cancel_task(self):
         LOGGER.info(f"Cancelling Converting: {self.listener.name}")
         self.listener.is_cancelled = True
-        if self.listener.suproc is not None and self.listener.suproc.returncode is None:
-            self.listener.suproc.kill()
+        async with subprocess_lock:
+            if self.listener.suproc is not None and self.listener.suproc.returncode is None:
+                self.listener.suproc.kill()
         await self.listener.on_upload_error("Converting stopped by user!")

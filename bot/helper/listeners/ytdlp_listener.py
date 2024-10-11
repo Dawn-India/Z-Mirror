@@ -29,7 +29,6 @@ from httpx import AsyncClient
 from yt_dlp import YoutubeDL
 
 
-@new_task
 async def select_format(_, query, obj):
     data = query.data.split()
     message = query.message
@@ -115,7 +114,7 @@ class YtSelection:
             self.qual = None
             self.listener.is_cancelled = True
             await auto_delete_message(
-                self.listener.message,
+                None,
                 self._reply_to
             )
             self.event.set()

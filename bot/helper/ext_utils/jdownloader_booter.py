@@ -7,7 +7,7 @@ from aiofiles.os import (
 from aioshutil import rmtree
 from json import dump
 from random import randint
-from asyncio import sleep
+from asyncio import sleep, wait_for
 from re import match
 
 from bot import (
@@ -19,6 +19,7 @@ from bot import (
 from .bot_utils import (
     cmd_exec,
     new_task,
+    retry_function
 )
 from myjd import MyJdApi
 from myjd.exception import (
@@ -168,6 +169,18 @@ class JDownloader(MyJdApi):
         self.error = ""
         LOGGER.info("JDownloader is ready to use!")
         return True
+
+    async def check_jdownloader_state(self):
+        try:
+            await wait_for(retry_function(self.device.jd.version), timeout=10)
+        except:
+            is_connected = await self.jdconnect()
+            if not is_connected:
+                raise MYJDException(self.error)
+            await self.boot()
+            isDeviceConnected = await self.connectToDevice()
+            if not isDeviceConnected:
+                raise MYJDException(self.error)
 
 
 jdownloader = JDownloader()

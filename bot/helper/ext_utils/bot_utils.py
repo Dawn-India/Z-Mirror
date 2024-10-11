@@ -370,6 +370,7 @@ async def retry_function(func, *args, **kwargs):
             **kwargs
         )
     except:
+        await sleep(0.2)
         return await retry_function(
             func,
             *args,
