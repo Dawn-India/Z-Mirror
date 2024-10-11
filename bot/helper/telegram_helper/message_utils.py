@@ -22,7 +22,6 @@ from nekozee.enums import ChatAction
 from bot import (
     LOGGER,
     bot,
-    bot_loop,
     bot_name,
     cached_dict,
     config_dict,
@@ -142,7 +141,7 @@ async def auto_delete_message(
                 await delete_message(cmd_message)
             if bot_message is not None:
                 await delete_message(bot_message)
-        bot_loop.create_task(auto_delete())
+        create_task(auto_delete())
 
 
 async def delete_links(message):
