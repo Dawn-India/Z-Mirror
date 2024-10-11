@@ -29,6 +29,7 @@ from httpx import AsyncClient
 from yt_dlp import YoutubeDL
 
 
+@new_task
 async def select_format(_, query, obj):
     data = query.data.split()
     message = query.message
