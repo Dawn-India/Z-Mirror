@@ -31,17 +31,16 @@ from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.bot_commands import BotCommands
 
 COMMAND_USAGE = {}
-max_workers = min(
-    10000,
-    (
-        cpu_count()
-        or 0
-    ) + 4
-)
-THREAD_POOL = ThreadPoolExecutor(max_workers=max_workers)
+THREAD_POOL = ThreadPoolExecutor(max_workers=4000)
 
 class SetInterval:
-    def __init__(self, interval, action, *args, **kwargs):
+    def __init__(
+            self,
+            interval,
+            action,
+            *args,
+            **kwargs
+        ):
         self.interval = interval
         self.action = action
         self.task = bot_loop.create_task(

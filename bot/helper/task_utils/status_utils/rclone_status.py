@@ -2,7 +2,6 @@ from ...ext_utils.status_utils import MirrorStatus
 from subprocess import run as rrun
 
 
-
 class RcloneStatus:
     def __init__(
             self,

@@ -276,7 +276,10 @@ async def update_status_message(sid, force=False):
         status = status_dict[sid]["status"]
         is_user = status_dict[sid]["is_user"]
         page_step = status_dict[sid]["page_step"]
-        text, buttons = await get_readable_message(
+        (
+            text,
+            buttons
+        ) = await get_readable_message(
             sid,
             is_user,
             page_no,
@@ -303,9 +306,7 @@ async def update_status_message(sid, force=False):
                         obj.cancel()
                         del intervals["status"][sid]
                 else:
-                    LOGGER.error(
-                        f"Status with id: {sid} haven't been updated. Error: {message}"
-                    )
+                    LOGGER.error(f"Status with id: {sid} haven't been updated. Error: {message}")
                 return
             status_dict[sid]["message"].text = text
             status_dict[sid]["time"] = time()
@@ -321,7 +322,10 @@ async def send_status_message(msg, user_id=0):
             page_no = status_dict[sid]["page_no"]
             status = status_dict[sid]["status"]
             page_step = status_dict[sid]["page_step"]
-            text, buttons = await get_readable_message(
+            (
+                text,
+                buttons
+            ) = await get_readable_message(
                 sid,
                 is_user,
                 page_no,
@@ -343,9 +347,7 @@ async def send_status_message(msg, user_id=0):
                 block=False
             )
             if isinstance(message, str):
-                LOGGER.error(
-                    f"Status with id: {sid} haven't been sent. Error: {message}"
-                )
+                LOGGER.error(f"Status with id: {sid} haven't been sent. Error: {message}")
                 return
             message.text = text
             status_dict[sid].update({

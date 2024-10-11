@@ -102,7 +102,7 @@ async def _stop_duplicate(tor):
                 button
             ) = await stop_duplicate_check(task.listener) # type: ignore
             if msg:
-                await _on_download_error(
+                _on_download_error(
                     msg,
                     tor,
                     button
@@ -120,7 +120,7 @@ async def _size_checked(tor):
             LOGGER.info(
                 f"qBit Limit Exceeded: {task.listener.name} | {get_readable_file_size(task.listener.size)}" # type: ignore
             )
-            qmsg = await _on_download_error(
+            qmsg = _on_download_error(
                 limit_exceeded,
                 tor
             )
@@ -157,7 +157,7 @@ async def _avg_speed_check(tor):
                 LOGGER.info(
                     f"Task is slower than minimum download speed: {task.listener.name} | {get_readable_file_size(dl_speed)}ps"
                 )
-                qmsg = await _on_download_error(
+                qmsg = _on_download_error(
                     min_speed,
                     tor
                 )

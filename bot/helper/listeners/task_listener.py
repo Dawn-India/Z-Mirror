@@ -371,14 +371,14 @@ class TaskListener(TaskConfig):
                     self,
                     tg,
                     gid,
-                    "up",
+                    "up"
                 )
             await gather(
                 update_status_message(self.message.chat.id), # type: ignore
                 tg.upload(
                     unwanted_files,
                     files_to_delete
-                ),
+                )
             )
         elif is_gdrive_id(self.up_dest): # type: ignore
             LOGGER.info(f"Gdrive Upload Name: {self.name}")
@@ -391,7 +391,7 @@ class TaskListener(TaskConfig):
                     self,
                     drive,
                     gid,
-                    "up",
+                    "up"
                 )
             await gather(
                 update_status_message(self.message.chat.id), # type: ignore
@@ -399,7 +399,7 @@ class TaskListener(TaskConfig):
                     drive.upload,
                     unwanted_files,
                     files_to_delete
-                ),
+                )
             )
         else:
             LOGGER.info(f"Rclone Upload Name: {self.name}")
