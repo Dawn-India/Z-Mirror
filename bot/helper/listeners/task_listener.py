@@ -720,7 +720,7 @@ class TaskListener(TaskConfig):
             if self.mid in task_dict:
                 del task_dict[self.mid]
             count = len(task_dict)
-            await self.remove_from_same_dir()
+        await self.remove_from_same_dir()
         msg = f"Sorry {self.tag}!\nYour download has been stopped."
         msg += f"\n\n<code>Reason </code>: {escape(str(error))}"
         msg += f"\n<code>Past   </code>: {get_readable_time(time() - self.time)}"
