@@ -98,21 +98,18 @@ async def _size_checker(nzo_id):
     task = await get_task_by_gid(nzo_id)
     await task.update() # type: ignore
     task.listener.size = speed_string_to_bytes(task.size()) # type: ignore
-    if limit_exceeded := await limit_checker(
+    limit_exceeded = await limit_checker(
         task.listener, # type: ignore
         is_nzb=True
-    ):
+    )
+    if limit_exceeded:
         LOGGER.info(
             f"NZB Limit Exceeded: {task.name()} | {task.size()}" # type: ignore
         )
-        nmsg = _on_download_error(
+        _on_download_error(
             limit_exceeded,
             nzo_id
-        )
-        await auto_delete_message(
-            None,
-            nmsg
-        )
+        ) # type: ignore
 
 
 @new_task

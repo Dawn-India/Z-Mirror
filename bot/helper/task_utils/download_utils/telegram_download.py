@@ -6,14 +6,14 @@ from time import time
 from nekozee.errors import FloodWait
 
 from bot import (
-    config_dict,
     LOGGER,
-    task_dict,
-    task_dict_lock,
+    bot,
+    config_dict,
     non_queued_dl,
     queue_dict_lock,
-    bot,
-    user,
+    task_dict,
+    task_dict_lock,
+    user
 )
 from ...ext_utils.task_manager import (
     check_running_tasks,

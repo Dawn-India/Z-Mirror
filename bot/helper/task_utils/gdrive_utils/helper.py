@@ -2,16 +2,22 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from google_auth_httplib2 import AuthorizedHttp
 from googleapiclient.http import build_http
-from logging import getLogger, ERROR
-from os import path as ospath, listdir
+from logging import (
+    ERROR,
+    getLogger
+)
+from os import (
+    listdir,
+    path as ospath
+)
 from pickle import load as pload
 from random import randrange
 from re import search as re_search
 from tenacity import (
     retry,
-    wait_exponential,
-    stop_after_attempt,
     retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential
 )
 from urllib.parse import (
     parse_qs,
@@ -28,12 +34,10 @@ getLogger("googleapiclient.discovery").setLevel(ERROR)
 class GoogleDriveHelper:
 
     def __init__(self):
-        self._OAUTH_SCOPE = ["https://www.googleapis.com/auth/drive"]
+        self._OAUTH_SCOPE = "https://www.googleapis.com/auth/drive"
         self.token_path = "token.pickle"
         self.G_DRIVE_DIR_MIME_TYPE = "application/vnd.google-apps.folder"
-        self.G_DRIVE_BASE_DOWNLOAD_URL = (
-            "https://drive.google.com/uc?id={}&export=download"
-        )
+        self.G_DRIVE_BASE_DOWNLOAD_URL = "https://drive.google.com/uc?id={}&export=download"
         self.G_DRIVE_DIR_BASE_DOWNLOAD_URL = "https://drive.google.com/drive/folders/{}"
         self.is_uploading = False
         self.is_downloading = False

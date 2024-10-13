@@ -1,10 +1,6 @@
-from asyncio import (
-    sleep,
-    wait_for
-)
+from asyncio import sleep
 
 from bot import (
-    LOGGER,
     jd_lock,
     jd_downloads,
     intervals

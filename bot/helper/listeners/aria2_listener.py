@@ -77,7 +77,10 @@ async def _on_download_started(api, gid):
         await sync_to_async(download.update)
         task.listener.name = download.name
         task.listener.is_torrent = download.is_torrent
-        msg, button = await stop_duplicate_check(task.listener)
+        (
+            msg,
+            button
+        ) = await stop_duplicate_check(task.listener)
         if msg:
             await task.listener.on_download_error(
                 msg,
@@ -111,17 +114,12 @@ async def _on_download_started(api, gid):
         if not task.listener.select:
             if limit_exceeded := await limit_checker(task.listener):
                 LOGGER.info(f"Aria2 Limit Exceeded: {task.listener.name} | {get_readable_file_size(task.listener.size)}")
-                amsg = await task.listener.on_download_error(limit_exceeded)
+                await task.listener.on_download_error(limit_exceeded)
                 await sync_to_async(
                     api.remove,
                     [download],
                     force=True,
                     files=True
-                )
-                await delete_links(task.listener.message)
-                await auto_delete_message(
-                    task.listener.message,
-                    amsg
                 )
         if config_dict["AVG_SPEED"]:
             start_time = time()
@@ -140,17 +138,12 @@ async def _on_download_started(api, gid):
                 LOGGER.info(
                     f"Task is slower than minimum download speed: {task.listener.name} | {get_readable_file_size(dl_speed)}ps"
                 )
-                smsg = await task.listener.on_download_error(min_speed)
+                await task.listener.on_download_error(min_speed)
                 await sync_to_async(
                     api.remove,
                     [download],
                     force=True,
                     files=True
-                )
-                await delete_links(task.listener.message)
-                await auto_delete_message(
-                    task.listener.message,
-                    smsg
                 )
 
 
