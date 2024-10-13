@@ -6,9 +6,9 @@ except Exception:
     exit(1)
 
 print("Get your app creds from https://my.telegram.org/apps and enter them below.")
-API_KEY = int(input("22787559"))
-API_HASH = input("e771139d8f3d4ae57f663ad049bbb710")
-PHONE_NO = input("+48884789769")
+API_KEY = int(input(""))
+API_HASH = input("")
+PHONE_NO = input("")
 
 with Client(
     name="ZEE",
