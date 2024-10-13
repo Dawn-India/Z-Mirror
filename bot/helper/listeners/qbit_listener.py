@@ -89,8 +89,8 @@ async def _on_seed_finish(tor):
 @new_task
 async def _stop_duplicate(tor):
     if task := await get_task_by_gid(tor.hash[:12]):
-        if task.listener.stop_duplicate: # type: ignore
-            task.listener.name = tor.content_path.rsplit( # type: ignore
+        if task.listener.stop_duplicate:
+            task.listener.name = tor.content_path.rsplit(
                 "/",
                 1
             )[-1].rsplit(
@@ -100,9 +100,9 @@ async def _stop_duplicate(tor):
             (
                 msg,
                 button
-            ) = await stop_duplicate_check(task.listener) # type: ignore
+            ) = await stop_duplicate_check(task.listener)
             if msg:
-                await _on_download_error(
+                _on_download_error(
                     msg,
                     tor,
                     button
@@ -112,21 +112,21 @@ async def _stop_duplicate(tor):
 @new_task
 async def _size_checked(tor):
     if task := await get_task_by_gid(tor.hash[:12]):
-        task.listener.size = tor.size # type: ignore
+        task.listener.size = tor.size
         if limit_exceeded := await limit_checker(
-            task.listener, # type: ignore
+            task.listener,
             is_torrent=True
         ):
             LOGGER.info(
-                f"qBit Limit Exceeded: {task.listener.name} | {get_readable_file_size(task.listener.size)}" # type: ignore
+                f"qBit Limit Exceeded: {task.listener.name} | {get_readable_file_size(task.listener.size)}"
             )
-            qmsg = await _on_download_error(
+            qmsg = _on_download_error(
                 limit_exceeded,
                 tor
             )
-            await delete_links(task.listener.message) # type: ignore
+            await delete_links(task.listener.message)
             await auto_delete_message(
-                task.listener.message, # type: ignore
+                task.listener.message,
                 qmsg
             )
 
@@ -157,13 +157,13 @@ async def _avg_speed_check(tor):
                 LOGGER.info(
                     f"Task is slower than minimum download speed: {task.listener.name} | {get_readable_file_size(dl_speed)}ps"
                 )
-                qmsg = await _on_download_error(
+                qmsg = _on_download_error(
                     min_speed,
                     tor
                 )
-                await delete_links(task.listener.message) # type: ignore
+                await delete_links(task.listener.message)
                 await auto_delete_message(
-                    task.listener.message, # type: ignore
+                    task.listener.message,
                     qmsg
                 )
 
@@ -173,13 +173,13 @@ async def _on_download_complete(tor):
     ext_hash = tor.hash
     tag = tor.tags
     if task := await get_task_by_gid(tor.hash[:12]):
-        if not task.listener.seed: # type: ignore
+        if not task.listener.seed:
             await sync_to_async(
                 qbittorrent_client.torrents_pause,
                 torrent_hashes=ext_hash
                 )
-        if task.listener.select: # type: ignore
-            await clean_unwanted(task.listener.dir) # type: ignore
+        if task.listener.select:
+            await clean_unwanted(task.listener.dir)
             path = tor.content_path.rsplit(
                 "/",
                 1
@@ -197,18 +197,18 @@ async def _on_download_complete(tor):
                         await remove(f"{path}/{f.name}")
                     except:
                         pass
-        await task.listener.on_download_complete() # type: ignore
+        await task.listener.on_download_complete()
         if intervals["stopAll"]:
             return
         if (
-            task.listener.seed and not # type: ignore
-            task.listener.is_cancelled # type: ignore
+            task.listener.seed and not
+            task.listener.is_cancelled
         ):
             async with task_dict_lock:
-                if task.listener.mid in task_dict: # type: ignore
+                if task.listener.mid in task_dict:
                     removed = False
-                    task_dict[task.listener.mid] = QbittorrentStatus( # type: ignore
-                        task.listener, # type: ignore
+                    task_dict[task.listener.mid] = QbittorrentStatus(
+                        task.listener,
                         True
                     )
                 else:
@@ -281,7 +281,7 @@ async def _qb_listener():
                             await _on_download_error(
                                 "Dead Torrent!",
                                 tor_info
-                            ) # type: ignore
+                            )
                         else:
                             await sync_to_async(
                                 qbittorrent_client.torrents_reannounce,
@@ -291,9 +291,9 @@ async def _qb_listener():
                         qb_torrents[tag]["stalled_time"] = time()
                         if not qb_torrents[tag]["stop_dup_check"]:
                             qb_torrents[tag]["stop_dup_check"] = True
-                            await _stop_duplicate(tor_info) # type: ignore
-                            await _size_checked(tor_info) # type: ignore
-                            await _avg_speed_check(tor_info) # type: ignore
+                            await _stop_duplicate(tor_info)
+                            await _size_checked(tor_info)
+                            await _avg_speed_check(tor_info)
                     elif state == "stalledDL":
                         TORRENT_TIMEOUT = config_dict["TORRENT_TIMEOUT"]
                         if (
@@ -317,7 +317,7 @@ async def _qb_listener():
                             await _on_download_error(
                                 "Dead Torrent!",
                                 tor_info
-                            ) # type: ignore
+                            )
                         else:
                             await sync_to_async(
                                 qbittorrent_client.torrents_reannounce,
@@ -331,7 +331,7 @@ async def _qb_listener():
                     elif state == "error":
                         await _on_download_error(
                             "No enough space for this torrent on device",
-                            tor_info # type: ignore
+                            tor_info
                         )
                     elif (
                         tor_info.completion_on != 0
@@ -344,7 +344,7 @@ async def _qb_listener():
                         ]
                     ):
                         qb_torrents[tag]["uploaded"] = True
-                        await _on_download_complete(tor_info) # type: ignore
+                        await _on_download_complete(tor_info)
                     elif (
                         state in [
                             "pausedUP",
@@ -352,7 +352,7 @@ async def _qb_listener():
                         ] and qb_torrents[tag]["seeding"]
                     ):
                         qb_torrents[tag]["seeding"] = False
-                        await _on_seed_finish(tor_info) # type: ignore
+                        await _on_seed_finish(tor_info)
                         await sleep(0.5)
             except Exception as e:
                 LOGGER.error(str(e))

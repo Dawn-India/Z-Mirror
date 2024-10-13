@@ -1,7 +1,4 @@
-from asyncio import (
-    sleep,
-    create_task,
-)
+from asyncio import sleep
 from re import match as re_match
 from time import time
 from datetime import (
@@ -22,6 +19,7 @@ from nekozee.enums import ChatAction
 from bot import (
     LOGGER,
     bot,
+    bot_loop,
     bot_name,
     cached_dict,
     config_dict,
@@ -135,13 +133,13 @@ async def auto_delete_message(
     if (config_dict["DELETE_LINKS"]
         and int(config_dict["AUTO_DELETE_MESSAGE_DURATION"])
     ) > 0:
-        async def delete_delay():
+        async def auto_delete():
             await sleep(config_dict["AUTO_DELETE_MESSAGE_DURATION"])
             if cmd_message is not None:
                 await delete_message(cmd_message)
             if bot_message is not None:
                 await delete_message(bot_message)
-        create_task(delete_delay())
+        bot_loop.create_task(auto_delete())
 
 
 async def delete_links(message):
@@ -275,7 +273,10 @@ async def update_status_message(sid, force=False):
         status = status_dict[sid]["status"]
         is_user = status_dict[sid]["is_user"]
         page_step = status_dict[sid]["page_step"]
-        text, buttons = await get_readable_message(
+        (
+            text,
+            buttons
+        ) = await get_readable_message(
             sid,
             is_user,
             page_no,
@@ -302,9 +303,7 @@ async def update_status_message(sid, force=False):
                         obj.cancel()
                         del intervals["status"][sid]
                 else:
-                    LOGGER.error(
-                        f"Status with id: {sid} haven't been updated. Error: {message}"
-                    )
+                    LOGGER.error(f"Status with id: {sid} haven't been updated. Error: {message}")
                 return
             status_dict[sid]["message"].text = text
             status_dict[sid]["time"] = time()
@@ -320,7 +319,10 @@ async def send_status_message(msg, user_id=0):
             page_no = status_dict[sid]["page_no"]
             status = status_dict[sid]["status"]
             page_step = status_dict[sid]["page_step"]
-            text, buttons = await get_readable_message(
+            (
+                text,
+                buttons
+            ) = await get_readable_message(
                 sid,
                 is_user,
                 page_no,
@@ -342,9 +344,7 @@ async def send_status_message(msg, user_id=0):
                 block=False
             )
             if isinstance(message, str):
-                LOGGER.error(
-                    f"Status with id: {sid} haven't been sent. Error: {message}"
-                )
+                LOGGER.error(f"Status with id: {sid} haven't been sent. Error: {message}")
                 return
             message.text = text
             status_dict[sid].update({

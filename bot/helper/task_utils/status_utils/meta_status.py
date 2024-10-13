@@ -4,7 +4,6 @@ from bot import (
 )
 from ...ext_utils.status_utils import (
     get_readable_file_size,
-    get_readable_time,
     MirrorStatus
 )
 from subprocess import run as frun

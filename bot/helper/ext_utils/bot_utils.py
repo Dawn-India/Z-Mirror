@@ -31,6 +31,7 @@ from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.bot_commands import BotCommands
 
 COMMAND_USAGE = {}
+
 max_workers = min(
     10000,
     (
@@ -40,8 +41,15 @@ max_workers = min(
 )
 THREAD_POOL = ThreadPoolExecutor(max_workers=max_workers)
 
+
 class SetInterval:
-    def __init__(self, interval, action, *args, **kwargs):
+    def __init__(
+            self,
+            interval,
+            action,
+            *args,
+            **kwargs
+        ):
         self.interval = interval
         self.action = action
         self.task = bot_loop.create_task(
@@ -370,6 +378,7 @@ async def retry_function(func, *args, **kwargs):
             **kwargs
         )
     except:
+        await sleep(0.2)
         return await retry_function(
             func,
             *args,

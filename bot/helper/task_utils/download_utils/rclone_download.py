@@ -200,7 +200,7 @@ async def add_rclone_download(listener, path):
             await send_status_message(listener.message)
         LOGGER.info(f"Download with rclone: {listener.link}")
 
-    await RCTransfer.download( # type: ignore
+    await RCTransfer.download(
         remote,
         config_path,
         path

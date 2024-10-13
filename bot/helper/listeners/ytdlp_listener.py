@@ -115,7 +115,7 @@ class YtSelection:
             self.qual = None
             self.listener.is_cancelled = True
             await auto_delete_message(
-                self.listener.message,
+                None,
                 self._reply_to
             )
             self.event.set()
