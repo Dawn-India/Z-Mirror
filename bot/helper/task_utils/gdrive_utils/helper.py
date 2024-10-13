@@ -34,7 +34,7 @@ getLogger("googleapiclient.discovery").setLevel(ERROR)
 class GoogleDriveHelper:
 
     def __init__(self):
-        self._OAUTH_SCOPE = "https://www.googleapis.com/auth/drive"
+        self._OAUTH_SCOPE = ["https://www.googleapis.com/auth/drive"]
         self.token_path = "token.pickle"
         self.G_DRIVE_DIR_MIME_TYPE = "application/vnd.google-apps.folder"
         self.G_DRIVE_BASE_DOWNLOAD_URL = "https://drive.google.com/uc?id={}&export=download"
