@@ -257,7 +257,7 @@ class YoutubeDLHelper:
                 self._on_download_error("No video available to download from this playlist. Check logs for more details")
                 return
             if self._listener.is_cancelled:
-                raise ValueError
+                return
             async_to_sync(self._listener.on_download_complete)
         except ValueError:
             self._on_download_error("Download Stopped by User!")

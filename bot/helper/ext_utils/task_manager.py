@@ -178,7 +178,6 @@ async def start_from_queued():
                         list(queued_up.keys()),
                         start=1
                     ):
-                        f_tasks = all_limit - all_
                         await start_up_from_queued(mid)
                         f_tasks -= 1
                         if f_tasks == 0 or (
