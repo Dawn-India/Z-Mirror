@@ -164,11 +164,6 @@ def trim_path(path):
 async def add_jd_download(listener, path):
     try:
         async with jd_lock:
-            gid = token_urlsafe(12)
-            jd_downloads[gid] = {
-                "status": "collect",
-                "path": path
-            }
             if jdownloader.device is None:
                 raise MYJDException(jdownloader.error)
 
@@ -201,6 +196,13 @@ async def add_jd_download(listener, path):
                         jdownloader.device.linkgrabber.remove_links,
                         package_ids=odl_list
                     )
+
+            gid = token_urlsafe(12)
+            jd_downloads[gid] = {
+                "status": "collect",
+                "path": path
+            }
+
             if await aiopath.exists(listener.link):
                 async with aiopen(
                     listener.link,
@@ -399,14 +401,9 @@ async def add_jd_download(listener, path):
                 package_ids=online_packages
             )
             LOGGER.info(f"JDownloader Limit Exceeded: {listener.name} | {listener.size}")
-            jdmsg = await listener.on_download_error(limit_exceeded)
+            await listener.on_download_error(limit_exceeded)
             async with jd_lock:
                 del jd_downloads[gid]
-            await delete_links(listener.message)
-            await auto_delete_message(
-                listener.message,
-                jdmsg
-            )
             return
 
         if listener.select:

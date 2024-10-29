@@ -64,7 +64,10 @@ async def add_direct_download(listener, path):
         return
 
     gid = token_urlsafe(10)
-    add_to_queue, event = await check_running_tasks(listener)
+    (
+        add_to_queue,
+        event
+    ) = await check_running_tasks(listener)
     if add_to_queue:
         LOGGER.info(f"Added to Queue/Download: {listener.name}")
         async with task_dict_lock:

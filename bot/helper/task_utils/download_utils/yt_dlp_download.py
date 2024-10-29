@@ -1,7 +1,7 @@
 from logging import getLogger
 from os import (
-    path as ospath,
-    listdir
+    listdir,
+    path as ospath
 )
 from re import search as re_search
 from secrets import token_urlsafe
@@ -18,8 +18,8 @@ from ...ext_utils.bot_utils import (
 )
 from ...ext_utils.status_utils import get_readable_file_size
 from yt_dlp import (
-    YoutubeDL,
-    DownloadError
+    DownloadError,
+    YoutubeDL
 )
 from ...ext_utils.task_manager import (
     check_running_tasks,
@@ -175,7 +175,10 @@ class YoutubeDLHelper:
 
     def _on_download_error(self, error):
         self._listener.is_cancelled = True
-        async_to_sync(self._listener.on_download_error, error)
+        async_to_sync(
+            self._listener.on_download_error,
+            error
+        )
 
     def _extract_meta_data(self):
         if self._listener.link.startswith((
@@ -251,12 +254,10 @@ class YoutubeDLHelper:
                 not ospath.exists(path)
                 or len(listdir(path)) == 0
             ):
-                self._on_download_error(
-                    "No video available to download from this playlist. Check logs for more details"
-                )
+                self._on_download_error("No video available to download from this playlist. Check logs for more details")
                 return
             if self._listener.is_cancelled:
-                raise ValueError
+                return
             async_to_sync(self._listener.on_download_complete)
         except ValueError:
             self._on_download_error("Download Stopped by User!")
@@ -403,29 +404,20 @@ class YoutubeDLHelper:
             return
         self._listener.is_playlist = self.is_playlist
         self._listener.playlist_count = self.playlist_count
-        if limit_exceeded := await limit_checker(self._listener):
+        limit_exceeded = await limit_checker(self._listener)
+        if limit_exceeded:
             LOGGER.info(
                 f"Yt-Dlp Limit Exceeded: {self._listener.name} | {get_readable_file_size(self._listener.size)} | {self.playlist_count}"
             )
-            ymsg = await self._listener.on_download_error(limit_exceeded)
-            await delete_links(self._listener.message)
-            await auto_delete_message(
-                self._listener.message,
-                ymsg
-            )
+            await self._listener.on_download_error(limit_exceeded)
             return
-        if list_exceeded := await list_checker(self._listener):
+        list_exceeded = await list_checker(self._listener)
+        if list_exceeded:
             LOGGER.info(
                 f"Yt-Dlp Limit Exceeded: {self._listener.name} | {get_readable_file_size(self._listener.size)} | {self.playlist_count}"
             )
-            ymsg = await self._listener.on_download_error(list_exceeded)
-            await delete_links(self._listener.message)
-            await auto_delete_message(
-                self._listener.message,
-                ymsg
-            )
+            await self._listener.on_download_error(list_exceeded)
             return
-
         (
             add_to_queue,
             event

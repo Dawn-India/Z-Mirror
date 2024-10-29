@@ -1,14 +1,14 @@
 from asyncio import gather
+from aiofiles.os import remove
 from json import loads
 from secrets import token_urlsafe
-from aiofiles.os import remove
 
 from bot import (
-    task_dict,
-    task_dict_lock,
-    queue_dict_lock,
+    LOGGER,
     non_queued_dl,
-    LOGGER
+    queue_dict_lock,
+    task_dict,
+    task_dict_lock
 )
 from ...ext_utils.bot_utils import cmd_exec
 from ...ext_utils.status_utils import get_readable_file_size
