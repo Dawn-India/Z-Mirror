@@ -3,10 +3,7 @@ from bot import (
     jd_lock,
     jd_downloads
 )
-from ...ext_utils.bot_utils import (
-    retry_function,
-    async_to_sync
-)
+from ...ext_utils.bot_utils import async_to_sync
 from ...ext_utils.jdownloader_booter import jdownloader
 from ...ext_utils.status_utils import (
     MirrorStatus,
@@ -181,10 +178,7 @@ class JDownloaderStatus:
     async def cancel_task(self):
         self.listener.is_cancelled = True
         LOGGER.info(f"Cancelling Download: {self.name()}")
-        await retry_function(
-            jdownloader.device.downloads.remove_links, # type: ignore
-            package_ids=jd_downloads[self._gid]["ids"],
-        )
+        await jdownloader.device.downloads.remove_links(package_ids=jd_downloads[self._gid]["ids"])
         async with jd_lock:
             del jd_downloads[self._gid]
         await self.listener.on_download_error("Download cancelled by user!")

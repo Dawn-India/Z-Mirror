@@ -138,7 +138,23 @@ class Clone(TaskListener):
             not self.link
             and (reply_to := self.message.reply_to_message)
         ):
-            self.link = reply_to.text.split("\n", 1)[0].strip()
+            try:
+                self.link = reply_to.text.split(
+                    "\n",
+                    1
+                )[0].strip()
+            except:
+                hmsg = await send_message(
+                    self.message,
+                    COMMAND_USAGE["clone"][0],
+                    COMMAND_USAGE["clone"][1]
+                )
+                await delete_message(self.pmsg)
+                await auto_delete_message(
+                    self.message,
+                    hmsg
+                )
+                return
 
         await self.run_multi(
             input_list,

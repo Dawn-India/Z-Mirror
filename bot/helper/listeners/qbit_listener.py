@@ -31,11 +31,7 @@ from ..ext_utils.task_manager import (
     stop_duplicate_check
 )
 from ..task_utils.status_utils.qbit_status import QbittorrentStatus
-from ..telegram_helper.message_utils import (
-    auto_delete_message,
-    delete_links,
-    update_status_message
-)
+from ..telegram_helper.message_utils import update_status_message
 
 
 async def _remove_torrent(hash_, tag):
@@ -154,10 +150,10 @@ async def _avg_speed_check(tor):
                 LOGGER.info(
                     f"Task is slower than minimum download speed: {task.listener.name} | {get_readable_file_size(dl_speed)}ps"
                 )
-                _on_download_error(
+                await _on_download_error(
                     min_speed,
                     tor
-                ) # type: ignore
+                )
 
 
 @new_task

@@ -9,7 +9,6 @@ from asyncio import (
     create_subprocess_exec,
     create_subprocess_shell,
     gather,
-    wait_for,
 )
 from dotenv import load_dotenv
 from io import BytesIO
@@ -45,7 +44,6 @@ from bot import (
     global_extension_filter,
     index_urls,
     intervals,
-    jd_downloads,
     jd_lock,
     nzb_options,
     qbit_options,
@@ -59,8 +57,7 @@ from ..helper.ext_utils.bot_utils import (
     SetInterval,
     new_task,
     set_commands,
-    sync_to_async,
-    retry_function,
+    sync_to_async
 )
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.jdownloader_booter import jdownloader
@@ -71,11 +68,11 @@ from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.filters import CustomFilters
 from ..helper.telegram_helper.message_utils import (
-    send_message,
-    send_file,
-    edit_message,
-    update_status_message,
     delete_message,
+    edit_message,
+    send_file,
+    send_message,
+    update_status_message,
 )
 from ..modules.rss import add_job
 from ..modules.torrent_search import initiate_search_tools
@@ -689,7 +686,7 @@ async def edit_variable(message, pre_message, key):
         "JD_EMAIL",
         "JD_PASS"
     ]:
-        await jdownloader.initiate()
+        await jdownloader.boot()
     elif key == "RSS_DELAY":
         add_job()
     elif key == "USET_SERVERS":
@@ -867,32 +864,11 @@ async def edit_nzb_server(message, pre_message, key, index=0):
 async def sync_jdownloader():
     async with jd_lock:
         if (
-            not config_dict["DATABASE_URL"]
-            or jdownloader.device is None
+            not config_dict["DATABASE_URL"] or
+            not jdownloader.is_connected
         ):
             return
-        try:
-            await wait_for(
-                retry_function(jdownloader.update_devices),
-                timeout=10
-            )
-        except:
-            is_connected = await jdownloader.jdconnect()
-            if not is_connected:
-                LOGGER.error(jdownloader.error)
-                return
-            isDeviceConnected = await jdownloader.connectToDevice()
-            if not isDeviceConnected:
-                LOGGER.error(jdownloader.error)
-                return
         await jdownloader.device.system.exit_jd()
-        is_connected = await jdownloader.jdconnect()
-        if not is_connected:
-            LOGGER.error(jdownloader.error)
-            return
-        isDeviceConnected = await jdownloader.connectToDevice()
-        if not isDeviceConnected:
-            LOGGER.error(jdownloader.error)
     if await aiopath.exists("cfg.zip"):
         await remove("cfg.zip")
     await (
@@ -1248,8 +1224,6 @@ async def edit_bot_settings(client, query):
             "JD_EMAIL",
             "JD_PASS"
         ]:
-            jdownloader.device = None
-            jdownloader.error = "JDownloader Credentials not provided!"
             await create_subprocess_exec(
                 "pkill",
                 "-9",

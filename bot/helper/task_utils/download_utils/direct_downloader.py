@@ -6,9 +6,7 @@ from bot import (
     aria2_options,
     aria2c_global,
     task_dict,
-    task_dict_lock,
-    non_queued_dl,
-    queue_dict_lock,
+    task_dict_lock
 )
 from ...ext_utils.bot_utils import sync_to_async
 from ...ext_utils.status_utils import get_readable_file_size
@@ -82,8 +80,6 @@ async def add_direct_download(listener, path):
         await event.wait() # type: ignore
         if listener.is_cancelled:
             return
-        async with queue_dict_lock:
-            non_queued_dl.add(listener.mid)
 
     a2c_opt = {**aria2_options}
     [

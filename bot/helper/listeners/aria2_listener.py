@@ -30,8 +30,6 @@ from ..ext_utils.task_manager import (
 )
 from ..task_utils.status_utils.aria2_status import Aria2Status
 from ..telegram_helper.message_utils import (
-    auto_delete_message,
-    delete_links,
     delete_message,
     send_message,
     update_status_message,

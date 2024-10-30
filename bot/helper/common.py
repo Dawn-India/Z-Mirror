@@ -1761,6 +1761,9 @@ class TaskConfig:
                     if sen
                     else 0
                 )
+                if len(name.encode()) > 255:
+                    LOGGER.error(f"Substitute: {name} is too long")
+                    return dl_path
             new_path = ospath.join(
                 up_dir,
                 name
@@ -1806,6 +1809,9 @@ class TaskConfig:
                             if sen
                             else 0
                         )
+                        if len(file_.encode()) > 255:
+                            LOGGER.error(f"Substitute: {file_} is too long")
+                            continue
                     await move(
                         f_path,
                         ospath.join(

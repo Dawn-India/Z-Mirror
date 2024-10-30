@@ -14,8 +14,6 @@ from sabnzbdapi.exception import (
 from bot import (
     LOGGER,
     config_dict,
-    non_queued_dl,
-    queue_dict_lock,
     sabnzbd_client,
     task_dict,
     task_dict_lock
@@ -194,8 +192,6 @@ async def add_nzb(listener, path):
             await event.wait() # type: ignore
             if listener.is_cancelled:
                 return
-            async with queue_dict_lock:
-                non_queued_dl.add(listener.mid)
             async with task_dict_lock:
                 task_dict[listener.mid].queued = False
 

@@ -9,8 +9,6 @@ from bot import (
     LOGGER,
     bot,
     config_dict,
-    non_queued_dl,
-    queue_dict_lock,
     task_dict,
     task_dict_lock,
     user
@@ -198,8 +196,6 @@ class TelegramDownloadHelper:
                     await event.wait() # type: ignore
                     if self._listener.is_cancelled:
                         return
-                    async with queue_dict_lock:
-                        non_queued_dl.add(self._listener.mid)
 
                 await self._on_download_start(gid, add_to_queue)
                 await self._download(message, path)

@@ -20,7 +20,6 @@ motor
 natsort
 pillow
 psutil
-pycryptodome
 pymongo
 python-dotenv
 python-magic

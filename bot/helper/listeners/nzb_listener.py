@@ -20,7 +20,6 @@ from ..ext_utils.task_manager import (
     limit_checker,
     stop_duplicate_check
 )
-from ..telegram_helper.message_utils import auto_delete_message
 
 
 async def _remove_job(nzo_id, mid):

@@ -47,8 +47,7 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
             is_paused=add_to_queue,
             tags=f"{listener.mid}",
             ratio_limit=ratio,
-            seeding_time_limit=seed_time,
-            headers={"user-agent": "Wget/1.12"}
+            seeding_time_limit=seed_time
         )
 
         if op.lower() == "ok.":
@@ -59,20 +58,18 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
 
             if len(tor_info) == 0:
                 start_time = time()
-                while True:
+                while (time() - start_time) <= 60:
+                    if add_to_queue and event.is_set():
+                        add_to_queue = False
                     tor_info = await sync_to_async(
                         qbittorrent_client.torrents_info,
                         tag=f"{listener.mid}"
                     )
                     if len(tor_info) > 0:
                         break
-                    if time() - start_time > 60:
-                        LOGGER.error("Download not started! This Torrent already added or unsupported/invalid link/file.")
-                        await listener.on_download_error(
-                            "Download not started!\nThis Torrent already added or unsupported/invalid link/file."
-                        )
-                        return
                     await sleep(1)
+                else:
+                    raise Exception("Use torrent file or magnet link incase you have added direct link! Timed Out!")
 
             tor_info = tor_info[0]
             listener.name = tor_info.name
@@ -146,20 +143,19 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
         elif listener.multi <= 1:
             await send_status_message(listener.message)
 
-        if add_to_queue:
-            await event.wait() # type: ignore
-            if listener.is_cancelled:
-                return
-            async with queue_dict_lock:
-                non_queued_dl.add(listener.mid)
-            async with task_dict_lock:
-                task_dict[listener.mid].queued = False
-
+        if event is not None:
+            if not event.is_set():
+                await event.wait()
+                if listener.is_cancelled:
+                    return
+                async with task_dict_lock:
+                    task_dict[listener.mid].queued = False
+                LOGGER.info(f"Start Queued Download from Qbittorrent: {tor_info.name} - Hash: {ext_hash}")
             await sync_to_async(
                 qbittorrent_client.torrents_resume,
                 torrent_hashes=ext_hash
             )
-            LOGGER.info(f"Start Queued Download from Qbittorrent: {tor_info.name} - Hash: {ext_hash}")
+
     except Exception as e:
         LOGGER.error(f"Qbittorrent download error: {e}")
         await listener.on_download_error(f"{e}")
