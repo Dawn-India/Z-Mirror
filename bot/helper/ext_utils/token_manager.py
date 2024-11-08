@@ -186,10 +186,16 @@ async def start(client, message):
             "<b>Your Limites:</b>\n"
             f"➜ {config_dict["USER_MAX_TASKS"]} parallal tasks.\n"
         )
-        return await send_message(
+        await send_message(
             message,
             msg
         )
+        await send_log_message(
+            message,
+            f"#TOKEN\n\nToken refreshed successfully.",
+            tag
+        )
+        return
     elif (
         config_dict["DM_MODE"]
         and message.chat.type != message.chat.type.SUPERGROUP

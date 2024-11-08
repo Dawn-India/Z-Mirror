@@ -576,7 +576,10 @@ async def set_option(message, option):
     elif option == "excluded_extensions":
         fx = config_dict["EXTENSION_FILTER"].split()
         fx += value.split()
-        value = ["aria2", "!qB"]
+        value = [
+            "aria2",
+            "!qB"
+        ]
         for x in fx:
             x = x.lstrip(".")
             value.append(x.strip().lower())

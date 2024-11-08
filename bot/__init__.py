@@ -91,6 +91,7 @@ intervals = {
 qb_torrents = {}
 jd_downloads = {}
 nzb_jobs = {}
+
 drives_names = []
 drives_ids = []
 index_urls = []
@@ -99,6 +100,7 @@ global_extension_filter = [
     "!qB"
 ]
 shorteneres_list = []
+
 extra_buttons = {}
 user_data = {}
 aria2_options = {}
@@ -106,6 +108,7 @@ qbit_options = {}
 nzb_options = {}
 queued_dl = {}
 queued_up = {}
+
 non_queued_dl = set()
 non_queued_up = set()
 multi_tags = set()
@@ -125,6 +128,7 @@ jd_lock = Lock()
 cpu_eater_lock = Lock()
 subprocess_lock = Lock()
 same_directory_lock = Lock()
+
 status_dict = {}
 task_dict = {}
 rss_dict = {}
