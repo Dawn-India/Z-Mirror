@@ -31,7 +31,6 @@ from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 from ...ext_utils.links_utils import is_share_link
 from ...ext_utils.status_utils import speed_string_to_bytes
 
-
 user_agent = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
 )
@@ -42,7 +41,7 @@ def direct_link_generator(link):
     domain = urlparse(link).hostname
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
-    if "yadi.sk" in link or "disk.yandex." in link:
+    elif "yadi.sk" in link or "disk.yandex." in link:
         return yandex_disk(link)
     elif "mediafire.com" in domain:
         return mediafire(link)
@@ -54,7 +53,14 @@ def direct_link_generator(link):
         return hxfile(link)
     elif "1drv.ms" in domain:
         return onedrive(link)
-    elif "pixeldrain.com" in domain:
+    elif any(
+        x in domain
+        for x
+        in [
+            "pixeldrain.com",
+            "pixeldra.in"
+        ]
+    ):
         return pixeldrain(link)
     elif "racaty" in domain:
         return racaty(link)
@@ -448,11 +454,11 @@ def pixeldrain(url):
     url = url.strip("/ ")
     file_id = url.split("/")[-1]
     if url.split("/")[-2] == "l":
-        info_link = f"https://pixeldrain.com/api/list/{file_id}"
-        dl_link = f"https://pixeldrain.com/api/list/{file_id}/zip?download"
+        info_link = f"https://pixeldra.in/api/list/{file_id}"
+        dl_link = f"https://pixeldra.in/api/list/{file_id}/zip?download"
     else:
-        info_link = f"https://pixeldrain.com/api/file/{file_id}/info"
-        dl_link = f"https://pixeldrain.com/api/file/{file_id}?download"
+        info_link = f"https://pixeldra.in/api/file/{file_id}/info"
+        dl_link = f"https://pixeldra.in/api/file/{file_id}?download"
     with create_scraper() as session:
         try:
             resp = session.get(info_link).json()
@@ -462,8 +468,9 @@ def pixeldrain(url):
         return dl_link
     else:
         raise DirectDownloadLinkException(
-            f"ERROR: Cant't download due {resp['message']}."
+            f"ERROR: Can't download due to {resp['message']}."
         )
+
 
 
 def streamtape(url):
@@ -1107,11 +1114,11 @@ def gofile(url):
             "Accept": "*/*",
             "Connection": "keep-alive",
         }
-        __url = f"https://api.gofile.io/accounts"
+        __url = "https://api.gofile.io/accounts"
         try:
             __res = session.post(__url, headers=headers).json()
             if __res["status"] != "ok":
-                raise DirectDownloadLinkException(f"ERROR: Failed to get token.")
+                raise DirectDownloadLinkException("ERROR: Failed to get token.")
             return __res["data"]["token"]
         except Exception as e:
             raise e

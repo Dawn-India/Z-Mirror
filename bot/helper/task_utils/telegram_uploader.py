@@ -430,7 +430,7 @@ class TelegramUploader:
                         msgs_list
                     )
                 dm_msgs_list = await self._sent_DMmsg.reply_media_group(
-                    media=grouped_media,
+                    media=grouped_media, # type: ignore
                     quote=True
                 )
                 self._sent_DMmsg = dm_msgs_list[-1]
@@ -572,20 +572,18 @@ class TelegramUploader:
                     self._corrupted += 1
                     if self._listener.is_cancelled:
                         return
-                    continue
-                finally:
-                    if (
-                        not self._listener.is_cancelled
-                        and await aiopath.exists(self._up_path)
-                        and (
-                            not self._listener.seed
-                            or self._listener.new_dir
-                            or dirpath.endswith("/splited_files_zee")
-                            or "/copied_zee/" in self._up_path
-                            or delete_file
-                        )
-                    ):
-                        await remove(self._up_path)
+                if (
+                    not self._listener.is_cancelled
+                    and await aiopath.exists(self._up_path)
+                    and (
+                        not self._listener.seed
+                        or self._listener.new_dir
+                        or dirpath.endswith("/splited_files_zee")
+                        or "/copied_zee/" in self._up_path
+                        or delete_file
+                    )
+                ):
+                    await remove(self._up_path)
         for (
             key,
             value
@@ -884,7 +882,7 @@ class TelegramUploader:
             LOGGER.error(f"{err_type}{err}. Path: {self._up_path}")
             if (
                 "Telegram says: [400" in str(err)
-                and key != "documents"
+                and key != "documents" # type: ignore
             ):
                 LOGGER.error(f"Retrying As Document. Path: {self._up_path}")
                 return await self._upload_file(
