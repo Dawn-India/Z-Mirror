@@ -1,3 +1,4 @@
+zenv/*
 config.env
 *.pyc
 data*

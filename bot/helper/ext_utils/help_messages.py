@@ -270,7 +270,7 @@ If DEFAULT_UPLOAD is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
 name_sub = r"""
 <b>Name Substitution</b>: -ns
 
-b>Name Substitution</b>: -ns
+<b>Name Substitution</b>: -ns
 /cmd link -ns script/code/s | mirror/leech | tea/ /s | clone | cpu/ | \[ZEE\]/ZEE | \\text\\/text/s
 This will affect on all files. Format: wordToReplace/wordToReplaceWith/sensitiveCase
 Word Subtitions. You can add pattern instead of normal text. Timeout: 60 sec
