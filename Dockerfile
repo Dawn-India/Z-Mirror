@@ -6,7 +6,7 @@ RUN chmod 777 /usr/src/app
 #RUN apt-get update && apt-get upgrade -y
 
 COPY requirements.txt .
-RUN pip3 install --upgrade pip & pip3 install --break-system-packages --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
 
