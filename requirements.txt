@@ -33,3 +33,4 @@ uvloop
 xattr
 yt-dlp[default]
 pymediainfo
+MediaInfo
