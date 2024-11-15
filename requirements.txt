@@ -34,3 +34,4 @@ xattr
 yt-dlp[default]
 pymediainfo
 MediaInfo
+pymkv
