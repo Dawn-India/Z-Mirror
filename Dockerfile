@@ -102,7 +102,7 @@ COPY --from=mediainfo /tmp/mediainfo-install/usr/lib /usr/lib/
     #true
 
 # Define mountable directories.
-#VOLUME ["/storage"]
+VOLUME ["/storage"]
 
 # Metadata.
 LABEL \
