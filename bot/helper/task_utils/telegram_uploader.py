@@ -57,9 +57,11 @@ from ..ext_utils.media_utils import (
     get_document_type,
     get_video_thumbnail,
     get_audio_thumbnail,
+    get_mediainfo_link,
     get_multiple_frames_thumbnail
 )
 from ..telegram_helper.message_utils import delete_message
+from ..telegram_helper.button_build import ButtonMaker
 
 LOGGER = getLogger(__name__)
 
@@ -104,6 +106,11 @@ class TelegramUploader:
             if "media_group" not in self._listener.user_dict
             else False
         )
+        self.__mediainfo = self._listener.user_dict.get('mediainfo') or (
+            config_dict['SHOW_MEDIAINFO']
+            if 'mediainfo' not in self._listener.user_dict
+            else False
+        )
         self._lprefix = self._listener.user_dict.get("lprefix") or (
             config_dict["LEECH_FILENAME_PREFIX"]
             if "lprefix" not in self._listener.user_dict
@@ -122,6 +129,24 @@ class TelegramUploader:
         if not await aiopath.exists(self._thumb): # type: ignore
             self._thumb = None
 
+    async def __buttons(self, up_path, is_video=False):
+        buttons = ButtonMaker()
+        #try:
+           # if config_dict['SCREENSHOTS_MODE'] and is_video and bool(self.__leech_utils['screenshots']):
+               # buttons.ubutton(BotTheme('SCREENSHOTS'), await get_ss(up_path, self.__leech_utils['screenshots']))
+       # except Exception as e:
+            #LOGGER.error(f"ScreenShots Error: {e}")
+        try:
+            if self.__mediainfo:
+                buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
+        except Exception as e:
+            LOGGER.error(f"MediaInfo Error: {e}")
+       # if config_dict['SAVE_MSG'] and (config_dict['LEECH_LOG_ID'] or not self.__listener.isPrivate):
+           # buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+        if self.__has_buttons:
+            return buttons.build_menu(1)
+        return None
+        
     async def _msg_to_reply(self):
         if DUMP_CHAT_ID := config_dict["DUMP_CHAT_ID"]:
             if self._listener.log_message:
@@ -720,14 +745,24 @@ class TelegramUploader:
 
                 if self._listener.is_cancelled:
                     return
+
+                LOGGER.info(f"path: {file} - {o_path} - {self._up_path} ")
+                buttons = await self.__buttons(self._up_path, is_video)
+                #name = "@REQ_MVS" + " - " + os.path.basename(file)
+                #cap = "Join @REQ_MVS" + " - " + cap_mono
+                #LOGGER.info(f"File_name: {name}")
+                #LOGGER.info(f"Caption: {cap}")
+                
                 self._sent_msg = await self._sent_msg.reply_document( # type: ignore
                     document=self._up_path,
+                   # file_name=name,
                     quote=True,
                     thumb=thumb,
                     caption=cap_mono,
                     force_document=True,
                     disable_notification=True,
                     progress=self._upload_progress,
+                    reply_markup=buttons,
                 )
             elif is_video:
                 key = "videos"
