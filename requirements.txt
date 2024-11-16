@@ -6,6 +6,7 @@ aria2p
 asyncio
 bencoding
 cloudscraper
+cryptography
 dnspython
 feedparser
 flask
@@ -34,4 +35,3 @@ xattr
 yt-dlp[default]
 pymediainfo
 MediaInfo
-pymkv
