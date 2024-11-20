@@ -1,3 +1,4 @@
+import subprocess
 from aiofiles.os import (
     path as aiopath,
     listdir,
@@ -237,7 +238,14 @@ class TaskListener(TaskConfig):
             if self.is_cancelled:
                 return
             self.name = up_path.rsplit("/", 1)[1]
+            
+        LOGGER.info(f"Upload path: {up_dir}")
 
+        #cmd = f"ffmpeg -y -i '{file}' {quality} -c:v h264_nvenc -c:a copy '{out_file}'"
+        #cmd = f"mkv-tools -ds -da -dv --apply -f '{up_dir}'"
+        #proc = subprocess.Popen(cmd, shell=True)
+       # LOGGER.info(f"Upload path: {proc}")
+        
         if self.screen_shots:
             up_path = await self.generate_screenshots(up_path)
             if self.is_cancelled:
@@ -307,13 +315,13 @@ class TaskListener(TaskConfig):
         )
         self.size = await get_path_size(up_dir)
 
-        if self.metadata:
-            await self.proceedMetadata(
-                up_path,
-                gid
-            )
-            if self.is_cancelled:
-                return
+        #if self.metadata:
+            #await self.proceedMetadata(
+                #up_path,
+                #gid
+            #)
+            #if self.is_cancelled:
+                #return
 
         if self.m_attachment:
             await self.proceedAttachment(

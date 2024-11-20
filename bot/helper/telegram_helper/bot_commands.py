@@ -44,6 +44,18 @@ class _BotCommands:
             f"ytdlleech{CMD_SUFFIX}",
             f"ytl{CMD_SUFFIX}",
         ]
+        self.MediaInfoCommand = [
+            f'mediainfo{CMD_SUFFIX}',
+            f'mi{CMD_SUFFIX}',
+        ]
+        self.tmlmvpstCommand = [
+            f'Tmlpst{CMD_SUFFIX}',
+            f'tp{CMD_SUFFIX}',
+        ]
+        self.tmlmvlstCommand = [
+            f'tmllst{CMD_SUFFIX}',
+            f'tl{CMD_SUFFIX}',
+        ]
         self.CloneCommand = f"clone{CMD_SUFFIX}"
         self.CountCommand = f"count{CMD_SUFFIX}"
         self.DeleteCommand = f"del{CMD_SUFFIX}"
