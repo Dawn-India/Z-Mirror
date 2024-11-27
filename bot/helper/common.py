@@ -800,7 +800,10 @@ class TaskConfig:
             not self.multi_tag
             and self.multi > 1
         ):
-            self.multi_tag = token_urlsafe(3)
+            self.multi_tag = token_urlsafe(3).replace(
+                "-",
+                ""
+            )
             multi_tags.add(self.multi_tag)
         elif self.multi <= 1:
             if self.multi_tag in multi_tags:
@@ -908,7 +911,10 @@ class TaskConfig:
             b_msg.append(f"{self.bulk[0]} -m {len(self.bulk)} {self.options}")
             msg = " ".join(b_msg)
             if len(self.bulk) > 2:
-                self.multi_tag = token_urlsafe(3)
+                self.multi_tag = token_urlsafe(3).replace(
+                    "-",
+                    ""
+                )
                 multi_tags.add(self.multi_tag)
                 msg += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
             nextmsg = await send_message(
@@ -1753,16 +1759,24 @@ class TaskConfig:
                         res = substitution[1]
                 else:
                     res = ""
-                name = sub(
-                    rf"{pattern}",
-                    res,
-                    name,
-                    flags=I
-                    if sen
-                    else 0
-                )
+                try:
+                    name = sub(
+                        rf"{pattern}",
+                        res,
+                        name,
+                        flags=I
+                        if sen
+                        else 0
+                    )
+                except Exception as e:
+                    LOGGER.error(
+                        f"Substitute Error: pattern: {pattern} res: {res}. Error: {e}"
+                    )
+                    return dl_path
                 if len(name.encode()) > 255:
-                    LOGGER.error(f"Substitute: {name} is too long")
+                    LOGGER.error(
+                        f"Substitute: {name} is too long"
+                    )
                     return dl_path
             new_path = ospath.join(
                 up_dir,
@@ -1801,16 +1815,24 @@ class TaskConfig:
                                 res = substitution[1]
                         else:
                             res = ""
-                        file_ = sub(
-                            rf"{pattern}",
-                            res,
-                            file_,
-                            flags=I
-                            if sen
-                            else 0
-                        )
+                        try:
+                            file_ = sub(
+                                rf"{pattern}",
+                                res,
+                                file_,
+                                flags=I
+                                if sen
+                                else 0
+                            )
+                        except Exception as e:
+                            LOGGER.error(
+                                f"Substitute Error: pattern: {pattern} res: {res}. Error: {e}"
+                            )
+                            continue
                         if len(file_.encode()) > 255:
-                            LOGGER.error(f"Substitute: {file_} is too long")
+                            LOGGER.error(
+                                f"Substitute: {file_} is too long"
+                            )
                             continue
                     await move(
                         f_path,

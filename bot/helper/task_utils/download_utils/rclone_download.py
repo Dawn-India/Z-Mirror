@@ -131,7 +131,10 @@ async def add_rclone_download(listener, path):
                 1
             )[-1]
     listener.size = rsize["bytes"]
-    gid = token_urlsafe(12)
+    gid = token_urlsafe(12).replace(
+        "-",
+        ""
+    )
 
     if not rclone_select:
         (
