@@ -273,7 +273,10 @@ class Clone(TaskListener):
                 await delete_links(self.message)
             else:
                 msg = ""
-                gid = token_urlsafe(12)
+                gid = token_urlsafe(12).replace(
+                    "-",
+                    ""
+                )
                 async with task_dict_lock:
                     task_dict[self.mid] = GoogleDriveStatus(
                         self,
@@ -385,7 +388,10 @@ class Clone(TaskListener):
             LOGGER.info(
                 f"Clone Started: Name: {self.name} - Source: {self.link} - Destination: {self.up_dest}"
             )
-            gid = token_urlsafe(12)
+            gid = token_urlsafe(12).replace(
+                "-",
+                ""
+            )
             async with task_dict_lock:
                 task_dict[self.mid] = RcloneStatus(
                     self,

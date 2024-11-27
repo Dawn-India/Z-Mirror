@@ -310,10 +310,12 @@ class DbManager:
     async def add_download_url(self, url: str, tag: str):
         if self._return :
             return
+        suffix = config_dict["CMD_SUFFIX"]
         download = {
             "_id": url,
             "tag": tag,
-            "botname": bot_name
+            "botname": bot_name,
+            "suffix": suffix
         }
         await self._db.download_links.update_one( # type: ignore
             {"_id": url},

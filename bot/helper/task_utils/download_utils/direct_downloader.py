@@ -61,7 +61,10 @@ async def add_direct_download(listener, path):
         )
         return
 
-    gid = token_urlsafe(10)
+    gid = token_urlsafe(10).replace(
+        "-",
+        ""
+    )
     (
         add_to_queue,
         event

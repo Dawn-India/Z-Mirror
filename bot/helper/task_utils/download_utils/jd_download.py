@@ -194,7 +194,10 @@ async def add_jd_download(listener, path):
                 ]:
                     await jdownloader.device.linkgrabber.remove_links(package_ids=odl_list)
 
-            gid = token_urlsafe(12)
+            gid = token_urlsafe(12).replace(
+                "-",
+                ""
+            )
             jd_downloads[gid] = {
                 "status": "collect",
                 "path": path

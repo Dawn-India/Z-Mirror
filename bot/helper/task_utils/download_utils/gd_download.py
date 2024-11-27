@@ -42,7 +42,10 @@ async def add_gd_download(listener, path):
         return
 
     listener.name = listener.name or name
-    gid = token_urlsafe(12)
+    gid = token_urlsafe(12).replace(
+        "-",
+        ""
+    )
 
     (
         msg,
