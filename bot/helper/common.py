@@ -800,10 +800,7 @@ class TaskConfig:
             not self.multi_tag
             and self.multi > 1
         ):
-            self.multi_tag = token_urlsafe(3).replace(
-                "-",
-                ""
-            )
+            self.multi_tag = token_urlsafe(3)
             multi_tags.add(self.multi_tag)
         elif self.multi <= 1:
             if self.multi_tag in multi_tags:
@@ -911,10 +908,7 @@ class TaskConfig:
             b_msg.append(f"{self.bulk[0]} -m {len(self.bulk)} {self.options}")
             msg = " ".join(b_msg)
             if len(self.bulk) > 2:
-                self.multi_tag = token_urlsafe(3).replace(
-                    "-",
-                    ""
-                )
+                self.multi_tag = token_urlsafe(3)
                 multi_tags.add(self.multi_tag)
                 msg += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
             nextmsg = await send_message(
